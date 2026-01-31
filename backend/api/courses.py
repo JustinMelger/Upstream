@@ -20,8 +20,7 @@ def list_courses(
 @router.get("/{course_id}", response_model=dict)
 def get_course(course_id: int):
     courses = fetch_courses()
-    if course_id < 1 or course_id > len(courses):
-        return {"error": "not_found"}
-    course = courses[course_id - 1].copy()
-    course["id"] = course_id
-    return course
+    for course in courses:
+        if course["id"] == course_id:
+            return course
+    return {"error": "not_found"}

@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 
+from pathlib import Path
+
 from backend.core.config import settings
 from backend.api import courses, paths, tracking
+from backend.database.db import init_db, seed_courses_from_csv
 
 app = FastAPI(title=settings.api_title, version=settings.api_version)
 
@@ -17,4 +20,5 @@ def health():
 
 @app.on_event("startup")
 def on_startup():
-    pass
+    init_db()
+    seed_courses_from_csv(Path(settings.courses_csv))

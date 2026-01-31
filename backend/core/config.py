@@ -7,7 +7,7 @@ class Settings:
     api_title: str = os.getenv("API_TITLE", "Learning Hub API")
     api_version: str = os.getenv("API_VERSION", "0.1.0")
     courses_csv: str = os.getenv("COURSES_CSV", "courses.csv")
-    tracking_csv: str = os.getenv("TRACKING_CSV", "tracking.csv")
+    db_path: str = os.getenv("DATABASE_PATH", "learning_hub.db")
 
 
 settings = Settings()

@@ -7,7 +7,7 @@ services:
       - .:/app
     environment:
       - COURSES_CSV=/app/courses.csv
-      - TRACKING_CSV=/app/tracking.csv
+      - DATABASE_PATH=/app/learning_hub.db
 
   ui:
     build: .
