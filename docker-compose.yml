@@ -1,0 +1,22 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - COURSES_CSV=/app/courses.csv
+      - TRACKING_CSV=/app/tracking.csv
+
+  ui:
+    build: .
+    command: ["streamlit", "run", "frontend/app.py", "--server.port=8502", "--server.address=0.0.0.0"]
+    ports:
+      - "8502:8502"
+    volumes:
+      - .:/app
+    depends_on:
+      - api
+    environment:
+      - API_BASE_URL=http://api:8000
