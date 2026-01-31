@@ -28,6 +28,34 @@ def list_tracking(colleague_id: Optional[str] = None) -> List[Dict[str, str]]:
     ]
 
 
+def stats_for_colleague(colleague_id: str) -> Dict[str, int]:
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT status, COUNT(*) as count
+            FROM tracking
+            WHERE colleague_id = ?
+            GROUP BY status
+            """,
+            (colleague_id,),
+        ).fetchall()
+
+    return {row["status"]: row["count"] for row in rows}
+
+
+def stats_all() -> Dict[str, int]:
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT status, COUNT(*) as count
+            FROM tracking
+            GROUP BY status
+            """
+        ).fetchall()
+
+    return {row["status"]: row["count"] for row in rows}
+
+
 def upsert_tracking(colleague_id: str, course_id: int, status: str) -> Dict[str, str]:
     if status not in STATUS_VALUES:
         raise ValueError("invalid_status")

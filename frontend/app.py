@@ -55,6 +55,39 @@ def load_tracking(colleague_id: str):
     return status_map
 
 
+@st.cache_data
+def load_role(email: str):
+    if not email:
+        return "user"
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/auth/role", headers={"X-User-Email": email}, timeout=10
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data.get("role", "user")
+    except Exception:
+        return "user"
+
+
+@st.cache_data
+def load_stats(email: str, colleague_id: str):
+    params = {}
+    if colleague_id:
+        params["colleague_id"] = colleague_id
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/tracking/stats",
+            params=params,
+            headers={"X-User-Email": email} if email else {},
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception:
+        return {}
+
+
 def card_start():
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
@@ -263,6 +296,7 @@ st.markdown(
 # Sidebar filters
 st.sidebar.header("Filters")
 colleague_id = st.sidebar.text_input("Your name or email", "")
+role = load_role(colleague_id.strip())
 search = st.sidebar.text_input("Search", "")
 category = st.sidebar.multiselect("Category", sorted([c for c in df["category"].unique() if c]))
 provider = st.sidebar.multiselect("Provider", sorted([p for p in df["provider"].unique() if p]))
@@ -293,6 +327,16 @@ st.markdown(
 
 # Tracking map
 tracking_map = load_tracking(colleague_id.strip())
+stats = load_stats(colleague_id.strip(), colleague_id.strip() if role != "admin" else "")
+
+if stats:
+    st.sidebar.subheader("Your stats" if role != "admin" else "Team stats")
+    st.sidebar.write(f"Interested: {stats.get('interested', 0)}")
+    st.sidebar.write(f"In progress: {stats.get('in_progress', 0)}")
+    st.sidebar.write(f"Completed: {stats.get('completed', 0)}")
+
+if role == "admin":
+    st.sidebar.caption("Admin mode enabled.")
 
 # Render items
 for _, row in filtered.iterrows():
@@ -353,6 +397,7 @@ for _, row in filtered.iterrows():
                                 "course_id": course_id,
                                 "status": status,
                             },
+                            headers={"X-User-Email": colleague_id.strip()},
                             timeout=10,
                         )
                         response.raise_for_status()
@@ -367,4 +412,38 @@ st.divider()
 
 # Optional: add course form (persists to CSV)
 with st.expander("➕ Add a course"):
-    st.info("Read-only mode. Course edits will be added later via the admin service.")
+    if role != "admin":
+        st.info("Read-only mode. Admins can add or edit courses.")
+    else:
+        with st.form("add_course"):
+            t = st.text_input("Title*")
+            p = st.text_input("Provider (Udemy/Coursera/etc.)")
+            c = st.text_input("Category")
+            l = st.selectbox("Level", ["", "Beginner", "Intermediate", "Advanced"])
+            d = st.number_input("Duration (hours)", min_value=0.0, step=0.5)
+            u = st.text_input("URL")
+            submitted = st.form_submit_button("Add course")
+
+        if submitted:
+            if not t.strip():
+                st.error("Title is required.")
+            else:
+                try:
+                    response = requests.post(
+                        f"{API_BASE_URL}/courses",
+                        json={
+                            "title": t.strip(),
+                            "provider": p.strip(),
+                            "category": c.strip(),
+                            "level": l.strip(),
+                            "duration_hours": d if d > 0 else None,
+                            "url": u.strip(),
+                        },
+                        headers={"X-User-Email": colleague_id.strip()},
+                        timeout=10,
+                    )
+                    response.raise_for_status()
+                    st.success("Course added.")
+                    st.cache_data.clear()
+                except Exception:
+                    st.error("Could not add course.")

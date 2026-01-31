@@ -1,8 +1,15 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 
-from backend.services.courses_service import list_courses as fetch_courses
+from backend.services.auth_service import is_admin
+from backend.services.courses_service import (
+    create_course,
+    delete_course,
+    get_course_by_id,
+    list_courses as fetch_courses,
+    update_course,
+)
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
@@ -19,8 +26,33 @@ def list_courses(
 
 @router.get("/{course_id}", response_model=dict)
 def get_course(course_id: int):
-    courses = fetch_courses()
-    for course in courses:
-        if course["id"] == course_id:
-            return course
-    return {"error": "not_found"}
+    course = get_course_by_id(course_id)
+    return course or {"error": "not_found"}
+
+
+@router.post("", response_model=dict)
+def add_course(payload: dict, x_user_email: str | None = Header(default=None)):
+    if not is_admin(x_user_email):
+        raise HTTPException(status_code=403, detail="admin_required")
+    try:
+        return create_course(payload)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="missing_title")
+
+
+@router.put("/{course_id}", response_model=dict)
+def edit_course(course_id: int, payload: dict, x_user_email: str | None = Header(default=None)):
+    if not is_admin(x_user_email):
+        raise HTTPException(status_code=403, detail="admin_required")
+    course = update_course(course_id, payload)
+    if not course:
+        return {"error": "not_found"}
+    return course
+
+
+@router.delete("/{course_id}", response_model=dict)
+def remove_course(course_id: int, x_user_email: str | None = Header(default=None)):
+    if not is_admin(x_user_email):
+        raise HTTPException(status_code=403, detail="admin_required")
+    ok = delete_course(course_id)
+    return {"deleted": ok}
