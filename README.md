@@ -4,7 +4,7 @@ A simple internal website where colleagues can browse a curated list of courses,
 
 ## Docs
 - Architecture: [architecture.md](architecture.md)
-- Roadmap: [requirements.md](roadmap.md)
+- Roadmap: [roadmap.md](roadmap.md)
 
 ## Run locally (Docker)
 1. Build and start services:
