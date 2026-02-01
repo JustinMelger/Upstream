@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
 sys.path.append(str(Path(__file__).parent))
 
@@ -35,27 +35,29 @@ col3.metric("Providers", courses_df["provider"].replace("", pd.NA).nunique())
 
 st.divider()
 
-st.subheader("How it works")
-st.markdown(
-    """
-- **Browse** curated courses in one place.
-- **Track** your progress with simple status updates.
-- **Follow** learning paths designed for specific goals.
-"""
-)
+st.subheader("Featured paths")
+if not paths:
+    st.info("No paths yet. Create one on the Paths page.")
+else:
+    for path in paths[:3]:
+        st.markdown(f"**{path.get('name', '(untitled path)')}**")
+        if path.get("description"):
+            st.write(path["description"])
+        st.page_link("pages/Paths.py", label="View paths", icon="🧭")
+        st.divider()
 
-st.subheader("Jump in")
-col_a, col_b, col_c = st.columns(3)
-with col_a:
-    st.page_link("pages/Overview.py", label="Overview", icon="📊")
-with col_b:
-    st.page_link("pages/Courses.py", label="Courses", icon="📚")
-with col_c:
-    st.page_link("pages/Paths.py", label="Paths", icon="🧭")
+st.subheader("Recently added courses")
+if courses_df.empty:
+    st.info("No courses yet. Add one on the Courses page.")
+else:
+    recent = courses_df.sort_values("id", ascending=False).head(3)
+    for _, row in recent.iterrows():
+        st.write(f"• {row['title']} — {row['provider']}")
+
+st.divider()
 
 st.markdown(
     """
 **Why this exists:** shared learning accelerates onboarding, skill growth, and alignment.
 """
 )
-st.divider()

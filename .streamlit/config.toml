@@ -2,38 +2,38 @@
 base = "light"
 showSidebarBorder = true
 showWidgetBorder = true
-baseRadius = "0.75rem"
-buttonRadius = "0.75rem"
+baseRadius = "0.6rem"
+buttonRadius = "0.6rem"
 
 [theme.light]
-primaryColor = "#1f7a8c"
-backgroundColor = "#f7f6f2"
-secondaryBackgroundColor = "#eef3f6"
+primaryColor = "#0f5c6e"
+backgroundColor = "#f4f2ee"
+secondaryBackgroundColor = "#e9eef2"
 textColor = "#0f172a"
-borderColor = "#d4d7dd"
-linkColor = "#1f7a8c"
+borderColor = "#c7cfd8"
+linkColor = "#0f5c6e"
 linkUnderline = false
 
 [theme.light.sidebar]
-backgroundColor = "#eef3f6"
-secondaryBackgroundColor = "#e6edf1"
+backgroundColor = "#e5ecf2"
+secondaryBackgroundColor = "#dfe7ee"
 textColor = "#0f172a"
-borderColor = "#d4d7dd"
+borderColor = "#c7cfd8"
 
 [theme.dark]
-primaryColor = "#62b6cb"
-backgroundColor = "#10192d"
+primaryColor = "#6bc1d4"
+backgroundColor = "#0a0e17"
 secondaryBackgroundColor = "#111827"
 textColor = "#e5e7eb"
-borderColor = "#2b3646"
-linkColor = "#62b6cb"
+borderColor = "#263241"
+linkColor = "#6bc1d4"
 linkUnderline = false
 
 [theme.dark.sidebar]
-backgroundColor = "#121826"
-secondaryBackgroundColor = "#0f1624"
+backgroundColor = "#0f1522"
+secondaryBackgroundColor = "#0c1320"
 textColor = "#e5e7eb"
-borderColor = "#2b3646"
+borderColor = "#263241"
 
 [server]
 headless = true
