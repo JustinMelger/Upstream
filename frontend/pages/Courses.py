@@ -192,6 +192,7 @@ st.markdown(
 
 for _, row in filtered.iterrows():
     render_course_card(row, email, role, tracking_map)
+    st.divider()
 
 st.divider()
 render_add_course(role, email)

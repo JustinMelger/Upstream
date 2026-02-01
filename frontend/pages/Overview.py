@@ -78,9 +78,8 @@ else:
     if not activity:
         st.caption("No recent updates yet.")
     else:
-        course_lookup = {
-            int(row["id"]): row["title"] for _, row in courses_df.iterrows() if row.get("id")
-        }
+        course_lookup = {int(row["id"]): row["title"] for _, row in courses_df.iterrows() if row.get("id")}
+
         def _format_time(ts: str) -> str:
             if not ts:
                 return ""
@@ -89,6 +88,7 @@ else:
                 return dt.strftime("%b %d, %Y %H:%M")
             except ValueError:
                 return ts
+
         for item in activity:
             cid = int(item.get("course_id", 0))
             title = course_lookup.get(cid, f"Course {cid}")
@@ -97,13 +97,6 @@ else:
             st.write(f"• {title} — {status} ({updated})")
 
 st.divider()
-
-st.subheader("Quick actions")
-col_a, col_b = st.columns(2)
-with col_a:
-    st.page_link("pages/Courses.py", label="Go to Courses", icon="📚")
-with col_b:
-    st.page_link("pages/Paths.py", label="Go to Paths", icon="🧭")
 
 if role == "admin":
     st.divider()
@@ -119,9 +112,7 @@ if role == "admin":
     if not team_activity:
         st.info("No team activity yet.")
     else:
-        course_lookup = {
-            int(row["id"]): row["title"] for _, row in courses_df.iterrows() if row.get("id")
-        }
+        course_lookup = {int(row["id"]): row["title"] for _, row in courses_df.iterrows() if row.get("id")}
         for item in team_activity:
             cid = int(item.get("course_id", 0))
             title = course_lookup.get(cid, f"Course {cid}")
