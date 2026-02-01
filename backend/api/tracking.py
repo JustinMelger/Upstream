@@ -12,6 +12,7 @@ from backend.services.tracking_service import (
     upsert_tracking,
 )
 
+
 router = APIRouter(prefix="/tracking", tags=["tracking"])
 
 

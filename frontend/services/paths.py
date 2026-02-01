@@ -1,6 +1,5 @@
-import streamlit as st
-
 from services.api import delete, get, post
+import streamlit as st
 
 
 @st.cache_data
@@ -29,3 +28,19 @@ def load_path(path_id: int):
         return response.json(), None
     except Exception:
         return None, "Could not load path."
+
+
+def select_path(path_id: int, colleague_id: str):
+    return post(f"/paths/{path_id}/select", json={"colleague_id": colleague_id})
+
+
+@st.cache_data(ttl=5)
+def load_selected_paths(colleague_id: str):
+    if not colleague_id:
+        return []
+    try:
+        response = get("/paths/selected", params={"colleague_id": colleague_id})
+        response.raise_for_status()
+        return response.json()
+    except Exception:
+        return []

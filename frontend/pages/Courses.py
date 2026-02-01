@@ -1,16 +1,18 @@
-import sys
 from pathlib import Path
+import sys
 
 import pandas as pd
 import streamlit as st
 
+
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from ui.style import apply_global_style
-from ui.components import hero_header
 from services.auth import load_role
 from services.courses import add_course, delete_course, load_courses
 from services.tracking import load_stats, load_tracking, save_status
+from ui.components import hero_header
+from ui.style import apply_global_style
+
 
 st.set_page_config(page_title="Learning Hub", page_icon="📚", layout="wide")
 apply_global_style()

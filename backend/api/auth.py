@@ -2,6 +2,7 @@ from fastapi import APIRouter, Header
 
 from backend.core.config import settings
 
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 

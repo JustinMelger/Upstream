@@ -1,13 +1,16 @@
-import sys
 from pathlib import Path
+import sys
+
 import streamlit as st
+
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from ui.style import apply_global_style
 from services.auth import load_role
 from services.courses import load_courses
-from services.paths import add_path, delete_path, load_path, load_paths
+from services.paths import add_path, delete_path, load_path, load_paths, load_selected_paths, select_path
+from ui.style import apply_global_style
+
 
 st.set_page_config(page_title="Learning Paths", page_icon="🧭", layout="wide")
 apply_global_style()
@@ -17,6 +20,15 @@ st.caption("Curated paths to guide learning journeys.")
 
 email = st.sidebar.text_input("Your name or email", "")
 role = load_role(email.strip())
+
+if email.strip():
+    st.sidebar.subheader("My paths")
+    my_paths = load_selected_paths(email.strip())
+    if not my_paths:
+        st.sidebar.caption("No paths selected.")
+    else:
+        for p in my_paths:
+            st.sidebar.write(p.get("name", "(untitled path)"))
 
 paths, load_error = load_paths()
 if load_error:
@@ -36,6 +48,16 @@ else:
             st.subheader(path_detail.get("name", "(untitled path)"))
             if path_detail.get("description"):
                 st.write(path_detail["description"])
+            if email.strip():
+                if st.button("Add to my paths", key=f"add_path_{path_id}"):
+                    try:
+                        response = select_path(path_id, email.strip())
+                        response.raise_for_status()
+                        st.success("Path added.")
+                        st.cache_data.clear()
+                        st.rerun()
+                    except Exception:
+                        st.error("Could not add path.")
 
             courses = path_detail.get("courses", [])
             if not courses:
@@ -43,7 +65,15 @@ else:
             else:
                 st.markdown("**Courses in this path**")
                 for course in courses:
-                    st.write(f"• {course.get('title', '(untitled)')}")
+                    title = course.get("title", "(untitled)")
+                    url = course.get("url", "")
+                    if url:
+                        try:
+                            st.link_button(title, url)
+                        except Exception:
+                            st.markdown(f"[{title}]({url})")
+                    else:
+                        st.write(f"• {title}")
 
             if role == "admin":
                 confirm = st.checkbox("Confirm delete path", key=f"confirm_delete_path_{path_id}")

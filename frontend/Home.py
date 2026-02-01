@@ -1,15 +1,17 @@
-import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+import sys
 
 import pandas as pd
 import streamlit as st
 
+
 sys.path.append(str(Path(__file__).parent))
 
-from ui.style import apply_global_style
 from services.courses import load_courses
 from services.paths import load_paths
+from ui.style import apply_global_style
+
 
 st.set_page_config(page_title="Home", page_icon="🏠", layout="wide")
 apply_global_style()
@@ -51,6 +53,7 @@ st.subheader("Recently added courses")
 if courses_df.empty:
     st.info("No courses yet. Add one on the Courses page.")
 else:
+
     def _format_date(ts: str | None) -> str:
         if not ts:
             return ""

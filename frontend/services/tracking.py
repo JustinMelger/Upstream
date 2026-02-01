@@ -1,6 +1,5 @@
-import streamlit as st
-
 from services.api import get, post
+import streamlit as st
 
 
 @st.cache_data

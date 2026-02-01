@@ -11,6 +11,7 @@ from backend.services.courses_service import (
     update_course,
 )
 
+
 router = APIRouter(prefix="/courses", tags=["courses"])
 
 

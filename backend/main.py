@@ -1,10 +1,11 @@
-from fastapi import FastAPI
-
 from pathlib import Path
 
-from backend.core.config import settings
+from fastapi import FastAPI
+
 from backend.api import auth, courses, paths, tracking
+from backend.core.config import settings
 from backend.database.db import init_db, seed_courses_from_csv
+
 
 app = FastAPI(title=settings.api_title, version=settings.api_version)
 
