@@ -90,9 +90,12 @@ with st.expander("➕ Create a path"):
                         },
                         email.strip(),
                     )
-                    response.raise_for_status()
-                    st.success("Path created.")
-                    st.cache_data.clear()
-                    st.rerun()
+                    if response.status_code == 409:
+                        st.error("A path with that name already exists.")
+                    else:
+                        response.raise_for_status()
+                        st.success("Path created.")
+                        st.cache_data.clear()
+                        st.rerun()
                 except Exception:
                     st.error("Could not create path.")
