@@ -43,11 +43,9 @@ if not paths:
     st.info("No paths yet. Create one on the Paths page.")
 else:
     for path in paths[:3]:
-        st.markdown(f"**{path.get('name', '(untitled path)')}**")
+        st.page_link("pages/Paths.py", label=path.get("name", "(untitled path)"))
         if path.get("description"):
             st.write(path["description"])
-        st.page_link("pages/Paths.py", label="View paths", icon="🧭")
-        st.page_link("pages/MyPaths.py", label="My paths", icon="✅")
         st.divider()
 
 st.subheader("Recently added courses")
