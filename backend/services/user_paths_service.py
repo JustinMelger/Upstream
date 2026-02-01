@@ -33,3 +33,17 @@ def list_user_paths(colleague_id: str) -> List[Dict[str, str]]:
         ).fetchall()
 
     return [{"id": row["id"], "name": row["name"], "description": row["description"] or ""} for row in rows]
+
+
+def remove_user_path(colleague_id: str, path_id: int) -> int:
+    with get_conn() as conn:
+        cur = conn.execute(
+            """
+            DELETE FROM user_paths
+            WHERE colleague_id = ? AND path_id = ?
+            """,
+            (colleague_id, path_id),
+        )
+        conn.commit()
+
+    return cur.rowcount

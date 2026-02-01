@@ -6,6 +6,7 @@ from backend.services.auth_service import is_admin
 from backend.services.tracking_service import (
     list_recent_activity,
     list_tracking,
+    remove_tracking,
     stats_all,
     stats_by_user,
     stats_for_colleague,
@@ -39,6 +40,23 @@ def set_tracking(payload: dict):
         return upsert_tracking(colleague_id, course_id_int, status)
     except ValueError:
         raise HTTPException(status_code=400, detail="invalid_status")
+
+
+@router.post("/delete", response_model=dict)
+def delete_tracking(payload: dict):
+    colleague_id = (payload.get("colleague_id") or "").strip()
+    course_id = payload.get("course_id")
+
+    if not colleague_id or not course_id:
+        raise HTTPException(status_code=400, detail="missing_fields")
+
+    try:
+        course_id_int = int(course_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid_course_id")
+
+    removed = remove_tracking(colleague_id, course_id_int)
+    return {"removed": removed}
 
 
 @router.get("/stats", response_model=dict)
