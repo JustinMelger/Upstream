@@ -30,8 +30,7 @@ A simple internal learning hub where colleagues can browse curated courses, trac
    - `http://localhost:8501`
 
 ## Pages
-- Home: entry point.
-- Overview: personal progress snapshot + path progress.
+- Home (Dashboard): progress snapshot, path progress, recent activity, featured paths, and recently added courses.
 - Courses: browse + add/remove to My Courses (admins can edit/delete).
 - My Courses: update status and remove tracked courses.
 - Paths: browse and add to My Paths (admins can edit/delete and set order).
