@@ -9,20 +9,23 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from services.courses import load_courses
 from services.tracking import delete_status, load_tracking, save_status
+from state.session import get_email, logout, require_login
 from ui.style import apply_global_style
 
 
-st.set_page_config(page_title="My Courses", page_icon="✅", layout="wide")
+st.set_page_config(page_title="My Courses", layout="wide")
 apply_global_style()
+
+require_login()
 
 st.title("My Courses")
 st.caption("Your tracked courses and current status.")
 
-email = st.sidebar.text_input("Your name or email", "")
-
-if not email.strip():
-    st.info("Enter your name or email in the sidebar to view your courses.")
-    st.stop()
+email = get_email()
+st.sidebar.caption(f"Signed in as {email}")
+if st.sidebar.button("Log out"):
+    logout()
+    st.switch_page("pages/Login.py")
 
 courses_df, load_error = load_courses()
 if load_error:

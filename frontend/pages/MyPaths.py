@@ -8,20 +8,23 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from services.paths import load_path, load_selected_paths, unselect_path
 from services.tracking import load_tracking, save_status
+from state.session import get_email, logout, require_login
 from ui.style import apply_global_style
 
 
-st.set_page_config(page_title="My Paths", page_icon="🧭", layout="wide")
+st.set_page_config(page_title="My Paths", layout="wide")
 apply_global_style()
+
+require_login()
 
 st.title("My Paths")
 st.caption("Update course status and manage your selected learning paths.")
 
-email = st.sidebar.text_input("Your name or email", "")
-
-if not email.strip():
-    st.info("Enter your name or email in the sidebar to view your paths.")
-    st.stop()
+email = get_email()
+st.sidebar.caption(f"Signed in as {email}")
+if st.sidebar.button("Log out"):
+    logout()
+    st.switch_page("pages/Login.py")
 
 tracking_map = load_tracking(email.strip())
 my_paths = load_selected_paths(email.strip())
@@ -55,22 +58,12 @@ for path in my_paths:
                 st.info("No courses in this path yet.")
             else:
                 total = len(courses)
-                completed = sum(
-                    1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed"
-                )
-                in_progress = sum(
-                    1
-                    for course in courses
-                    if tracking_map.get(int(course.get("id", 0)), "") == "in_progress"
-                )
-                interested = sum(
-                    1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested"
-                )
+                completed = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed")
+                in_progress = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "in_progress")
+                interested = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested")
                 progress = completed / total if total else 0
                 st.progress(progress)
-                st.caption(
-                    f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}"
-                )
+                st.caption(f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}")
                 st.markdown("**Courses in this path**")
                 for idx, course in enumerate(courses, start=1):
                     title = course.get("title", "(untitled)")

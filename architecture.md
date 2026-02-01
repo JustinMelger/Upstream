@@ -44,7 +44,7 @@ flowchart LR
 
 ### Path service
 - CRUD for learning paths.
-- Attach courses to paths (no ordering yet).
+- Attach courses to paths with explicit ordering.
 
 ### Tracking service
 - Track per‑colleague progress (interested / in_progress / completed).

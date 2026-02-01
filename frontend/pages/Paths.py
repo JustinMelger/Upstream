@@ -19,11 +19,14 @@ from services.paths import (
     unselect_path,
     update_path,
 )
+from state.session import get_email, logout, require_login
 from ui.style import apply_global_style
 
 
-st.set_page_config(page_title="Learning Paths", page_icon="🧭", layout="wide")
+st.set_page_config(page_title="Learning Paths", layout="wide")
 apply_global_style()
+
+require_login()
 
 st.title("Learning Paths")
 st.caption("Curated paths to guide learning journeys.")
@@ -57,9 +60,7 @@ def _course_selector(options: list[tuple[int, str]], selected_ids: set[int], key
     return [course_id for course_id, _ in options if course_id in selected]
 
 
-def _course_order_editor(
-    selected_ids: list[int], id_to_label: dict[int, str], key_prefix: str
-) -> list[int]:
+def _course_order_editor(selected_ids: list[int], id_to_label: dict[int, str], key_prefix: str) -> list[int]:
     if not selected_ids:
         return []
     st.markdown("**Order courses**")
@@ -79,14 +80,16 @@ def _course_order_editor(
         key=f"{key_prefix}_order_editor",
     )
     edited["Order"] = pd.to_numeric(edited["Order"], errors="coerce").fillna(0).astype(int)
-    ordered_labels = (
-        edited.sort_values(["Order", "Course"], kind="mergesort")["Course"].tolist()
-    )
+    ordered_labels = edited.sort_values(["Order", "Course"], kind="mergesort")["Course"].tolist()
     label_to_id = {label: cid for cid, label in id_to_label.items()}
     return [label_to_id[label] for label in ordered_labels if label in label_to_id]
 
 
-email = st.sidebar.text_input("Your name or email", "")
+email = get_email()
+st.sidebar.caption(f"Signed in as {email}")
+if st.sidebar.button("Log out"):
+    logout()
+    st.switch_page("pages/Login.py")
 role = load_role(email.strip())
 
 my_paths = []
@@ -154,9 +157,7 @@ else:
                         courses_df, _ = load_courses()
                         options = [(int(row["id"]), _format_course_label(row)) for _, row in courses_df.iterrows()]
                         id_to_label = {course_id: label for course_id, label in options}
-                        selected_ids = [
-                            course.get("id") for course in path_detail.get("courses", []) if course.get("id")
-                        ]
+                        selected_ids = [course.get("id") for course in path_detail.get("courses", []) if course.get("id")]
 
                         with st.form(f"edit_path_{path_id}"):
                             edit_name = st.text_input(

@@ -18,11 +18,14 @@ from services.tracking import (
     load_tracking,
     load_user_stats,
 )
+from state.session import get_email, logout, require_login
 from ui.style import apply_global_style
 
 
-st.set_page_config(page_title="Overview", page_icon="📚", layout="wide")
+st.set_page_config(page_title="Overview", layout="wide")
 apply_global_style()
+
+require_login()
 
 st.title("Overview")
 st.caption("Overview of courses and progress.")
@@ -32,8 +35,11 @@ if load_error:
     st.error(load_error)
 
 st.subheader("Progress snapshot")
-st.text_input("Your name or email", key="colleague_email")
-email = st.session_state.get("colleague_email", "")
+email = get_email()
+st.sidebar.caption(f"Signed in as {email}")
+if st.sidebar.button("Log out"):
+    logout()
+    st.switch_page("pages/Login.py")
 role = load_role(email.strip())
 mode = "My stats"
 if role == "admin":
@@ -92,22 +98,14 @@ else:
 
             courses = path_detail.get("courses", [])
             total = len(courses)
-            completed = sum(
-                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed"
-            )
-            in_progress = sum(
-                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "in_progress"
-            )
-            interested = sum(
-                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested"
-            )
+            completed = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed")
+            in_progress = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "in_progress")
+            interested = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested")
             progress = completed / total if total else 0
 
             st.markdown(f"**{path_detail.get('name', '(untitled path)')}**")
             st.progress(progress)
-            st.caption(
-                f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}"
-            )
+            st.caption(f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}")
 
     st.divider()
 
