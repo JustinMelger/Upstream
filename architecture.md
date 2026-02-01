@@ -1,11 +1,11 @@
 # Architecture
 
 ## Overview
-This project uses a simple three-tier layout:
+This project uses a simple three‑tier layout:
 
-- Streamlit UI for the colleague-facing web experience.
+- Streamlit UI for the colleague‑facing web experience.
 - FastAPI backend for auth, course management, learning paths, and tracking.
-- SQLite (local) or Postgres (hosted) for persistence.
+- SQLite for persistence (seeded from `courses.csv` on startup).
 
 ## Mermaid diagram
 
@@ -25,7 +25,7 @@ flowchart LR
   UI --> Paths
   UI --> Tracking
 
-  DB[(SQLite / Postgres)]
+  DB[(SQLite)]
   Auth --> DB
   Courses --> DB
   Paths --> DB
@@ -35,8 +35,8 @@ flowchart LR
 ## Service responsibilities (brief)
 
 ### Auth service
-- User login and basic role checks (curator vs colleague).
-- Session management for the Streamlit UI.
+- Email allow‑list role detection (admin vs user).
+- Role enforcement for admin‑only endpoints.
 
 ### Course service
 - CRUD for courses (title, provider, category, level, duration, url).
@@ -44,8 +44,8 @@ flowchart LR
 
 ### Path service
 - CRUD for learning paths.
-- Attach courses to paths with ordering.
+- Attach courses to paths (no ordering yet).
 
 ### Tracking service
-- Track per‑colleague progress (interested/completed).
-- Aggregate stats (popular courses, completion rate).
+- Track per‑colleague progress (interested / in_progress / completed).
+- Aggregate stats (team vs individual).
