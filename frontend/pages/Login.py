@@ -1,13 +1,13 @@
+import os
 from pathlib import Path
 import sys
-import os
 
 import streamlit as st
 
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from state.session import login, is_authenticated
+from state.session import is_authenticated, login
 from ui.style import apply_global_style
 
 

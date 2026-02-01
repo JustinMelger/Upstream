@@ -9,8 +9,8 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from services.courses import load_courses
 from services.tracking import delete_status, load_tracking, save_status
-from ui.style import apply_global_style
 from state.session import get_email, logout, require_login
+from ui.style import apply_global_style
 
 
 st.set_page_config(page_title="My Courses", layout="wide")

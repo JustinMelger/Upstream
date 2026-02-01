@@ -18,8 +18,8 @@ from services.tracking import (
     load_tracking,
     load_user_stats,
 )
-from ui.style import apply_global_style
 from state.session import get_email, logout, require_login
+from ui.style import apply_global_style
 
 
 st.set_page_config(page_title="Overview", layout="wide")
@@ -98,22 +98,14 @@ else:
 
             courses = path_detail.get("courses", [])
             total = len(courses)
-            completed = sum(
-                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed"
-            )
-            in_progress = sum(
-                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "in_progress"
-            )
-            interested = sum(
-                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested"
-            )
+            completed = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed")
+            in_progress = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "in_progress")
+            interested = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested")
             progress = completed / total if total else 0
 
             st.markdown(f"**{path_detail.get('name', '(untitled path)')}**")
             st.progress(progress)
-            st.caption(
-                f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}"
-            )
+            st.caption(f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}")
 
     st.divider()
 

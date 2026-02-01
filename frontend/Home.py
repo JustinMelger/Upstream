@@ -10,8 +10,8 @@ sys.path.append(str(Path(__file__).parent))
 
 from services.courses import load_courses
 from services.paths import load_paths
-from ui.style import apply_global_style
 from state.session import get_email, logout, require_login
+from ui.style import apply_global_style
 
 
 st.set_page_config(page_title="Home", layout="wide")
