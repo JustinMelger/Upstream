@@ -9,11 +9,7 @@ class Settings:
     courses_csv: str = os.getenv("COURSES_CSV", "courses.csv")
     db_path: str = os.getenv("DATABASE_PATH", "learning_hub.db")
     admin_emails: set[str] = field(
-        default_factory=lambda: {
-            email.strip().lower()
-            for email in os.getenv("ADMIN_EMAILS", "").split(",")
-            if email.strip()
-        }
+        default_factory=lambda: {email.strip().lower() for email in os.getenv("ADMIN_EMAILS", "").split(",") if email.strip()}
     )
 
 

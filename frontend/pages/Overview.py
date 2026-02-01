@@ -1,13 +1,13 @@
-import sys
+from datetime import datetime
 from pathlib import Path
+import sys
 
 import pandas as pd
 import streamlit as st
-from datetime import datetime
+
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from ui.style import apply_global_style
 from services.auth import load_role
 from services.courses import load_courses
 from services.tracking import (
@@ -17,6 +17,8 @@ from services.tracking import (
     load_tracking,
     load_user_stats,
 )
+from ui.style import apply_global_style
+
 
 st.set_page_config(page_title="Overview", page_icon="📚", layout="wide")
 apply_global_style()

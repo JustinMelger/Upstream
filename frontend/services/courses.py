@@ -1,7 +1,6 @@
 import pandas as pd
+from services.api import delete, get, post
 import streamlit as st
-
-from services.api import get, post, delete
 
 
 @st.cache_data

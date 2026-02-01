@@ -1,0 +1,12 @@
+line-length = 128
+
+[lint]
+select = ["I"]
+
+[lint.isort]
+known-first-party = ["backend", "frontend"]
+combine-as-imports = true
+force-sort-within-sections = true
+lines-after-imports = 2
+order-by-type = false
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]

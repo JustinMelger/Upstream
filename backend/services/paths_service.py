@@ -6,17 +6,12 @@ from backend.database.db import get_conn
 def list_paths() -> List[Dict[str, str]]:
     with get_conn() as conn:
         rows = conn.execute("SELECT id, name, description FROM paths ORDER BY name ASC").fetchall()
-    return [
-        {"id": row["id"], "name": row["name"], "description": row["description"] or ""}
-        for row in rows
-    ]
+    return [{"id": row["id"], "name": row["name"], "description": row["description"] or ""} for row in rows]
 
 
 def get_path(path_id: int) -> Optional[Dict[str, str]]:
     with get_conn() as conn:
-        path = conn.execute(
-            "SELECT id, name, description FROM paths WHERE id = ?", (path_id,)
-        ).fetchone()
+        path = conn.execute("SELECT id, name, description FROM paths WHERE id = ?", (path_id,)).fetchone()
         if not path:
             return None
         courses = conn.execute(
@@ -57,9 +52,7 @@ def create_path(payload: dict) -> Dict[str, str]:
     course_ids = payload.get("course_ids") or []
 
     with get_conn() as conn:
-        existing = conn.execute(
-            "SELECT id FROM paths WHERE lower(name) = lower(?)", (name,)
-        ).fetchone()
+        existing = conn.execute("SELECT id FROM paths WHERE lower(name) = lower(?)", (name,)).fetchone()
         if existing:
             raise ValueError("duplicate_name")
 

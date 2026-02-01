@@ -1,7 +1,7 @@
 import csv
-import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+import sqlite3
 from typing import Iterable
 
 from backend.core.config import settings
@@ -39,6 +39,14 @@ CREATE TABLE IF NOT EXISTS path_courses (
   path_id INTEGER NOT NULL,
   course_id INTEGER NOT NULL,
   UNIQUE(path_id, course_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_paths (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  colleague_id TEXT NOT NULL,
+  path_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE(colleague_id, path_id)
 );
 """
 
