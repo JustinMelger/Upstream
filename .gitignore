@@ -1,3 +1,11 @@
-courses.csv
-tracking.csv
+__pycache__/
+**/__pycache__/
+**/__pycache__/**
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv/
+venv/
 learning_hub.db

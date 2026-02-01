@@ -56,6 +56,34 @@ def stats_all() -> Dict[str, int]:
     return {row["status"]: row["count"] for row in rows}
 
 
+def stats_by_user() -> List[Dict[str, int | str]]:
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT colleague_id, status, COUNT(*) as count
+            FROM tracking
+            GROUP BY colleague_id, status
+            ORDER BY colleague_id ASC
+            """
+        ).fetchall()
+
+    by_user: Dict[str, Dict[str, int]] = {}
+    for row in rows:
+        user = row["colleague_id"]
+        by_user.setdefault(user, {"interested": 0, "in_progress": 0, "completed": 0})
+        by_user[user][row["status"]] = row["count"]
+
+    return [
+        {
+            "colleague_id": user,
+            "interested": stats["interested"],
+            "in_progress": stats["in_progress"],
+            "completed": stats["completed"],
+        }
+        for user, stats in by_user.items()
+    ]
+
+
 def upsert_tracking(colleague_id: str, course_id: int, status: str) -> Dict[str, str]:
     if status not in STATUS_VALUES:
         raise ValueError("invalid_status")

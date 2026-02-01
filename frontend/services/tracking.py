@@ -3,7 +3,7 @@ import streamlit as st
 from services.api import get, post
 
 
-@st.cache_data
+@st.cache_data(ttl=5)
 def load_tracking(colleague_id: str):
     if not colleague_id:
         return {}
@@ -24,7 +24,7 @@ def load_tracking(colleague_id: str):
     return status_map
 
 
-@st.cache_data
+@st.cache_data(ttl=5)
 def load_stats(email: str, colleague_id: str, is_admin: bool):
     params = {}
     if colleague_id and not is_admin:
@@ -47,3 +47,14 @@ def save_status(colleague_id: str, course_id: int, status: str):
         json={"colleague_id": colleague_id, "course_id": course_id, "status": status},
         headers={"X-User-Email": colleague_id},
     )
+
+
+@st.cache_data(ttl=5)
+def load_user_stats(email: str):
+    try:
+        response = get("/tracking/stats/users", headers={"X-User-Email": email})
+        print(response)
+        response.raise_for_status()
+        return response.json()
+    except Exception:
+        return []
