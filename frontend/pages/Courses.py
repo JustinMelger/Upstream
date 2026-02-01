@@ -7,7 +7,7 @@ import streamlit as st
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from ui.style import apply_global_style
-from ui.components import card_end, card_start, course_meta, course_pills, hero_header
+from ui.components import hero_header
 from services.auth import load_role
 from services.courses import add_course, delete_course, load_courses
 from services.tracking import load_stats, load_tracking, save_status
@@ -62,70 +62,76 @@ def filter_courses(df: pd.DataFrame, search: str, category: list, provider: list
 
 
 def render_course_card(row: pd.Series, email: str, role: str, tracking_map: dict) -> None:
-    card_start()
-    col1, col2 = st.columns([5, 1])
+    with st.container(border=True):
+        col1, col2 = st.columns([5, 1])
 
-    with col1:
-        title = row["title"] or "(untitled)"
-        st.markdown(f"<h3 class='card-title'>{title}</h3>", unsafe_allow_html=True)
+        with col1:
+            title = row["title"] or "(untitled)"
+            st.subheader(title)
 
-        pills = course_pills(row)
-        if pills:
-            st.markdown(pills, unsafe_allow_html=True)
+            pills = []
+            if row.get("provider"):
+                pills.append(f"<span class='pill'>🏢 {row['provider']}</span>")
+            if row.get("category"):
+                pills.append(f"<span class='pill alt'>🏷️ {row['category']}</span>")
+            if row.get("level"):
+                pills.append(f"<span class='pill'>🎯 {row['level']}</span>")
+            if pills:
+                st.markdown("".join(pills), unsafe_allow_html=True)
 
-        meta = course_meta(row)
-        if meta:
-            st.markdown(f"<div class='card-meta'>{meta}</div>", unsafe_allow_html=True)
+            meta = []
+            if pd.notna(row.get("duration_hours")):
+                meta.append(f"⏱ {row['duration_hours']} hours")
+            if meta:
+                st.caption(" • ".join(meta))
 
-        if row["url"]:
-            st.markdown(f"<a class='link-muted' href='{row['url']}'>{row['url']}</a>", unsafe_allow_html=True)
-        else:
-            st.warning("Missing URL")
+            if row.get("url"):
+                st.write(row["url"])
+            else:
+                st.warning("Missing URL")
 
-    with col2:
-        if row["url"]:
-            try:
-                st.link_button("Open", row["url"])
-            except Exception:
-                st.markdown(f"[Open]({row['url']})")
+        with col2:
+            if row.get("url"):
+                try:
+                    st.link_button("Open", row["url"])
+                except Exception:
+                    st.markdown(f"[Open]({row['url']})")
 
-        course_id = int(row.get("id", 0) or 0)
-        if course_id:
-            current_status = tracking_map.get(course_id, "")
-            status = st.selectbox(
-                "Status",
-                ["", "interested", "in_progress", "completed"],
-                index=["", "interested", "in_progress", "completed"].index(current_status or ""),
-                key=f"status_{course_id}",
-            )
-            if st.button("Save status", key=f"save_{course_id}"):
-                if not email:
-                    st.warning("Enter your name/email in the sidebar first.")
-                else:
-                    try:
-                        response = save_status(email, course_id, status)
-                        response.raise_for_status()
-                        st.success("Status saved.")
-                        st.cache_data.clear()
-                    except Exception:
-                        st.error("Could not save status.")
+            course_id = int(row.get("id", 0) or 0)
+            if course_id:
+                current_status = tracking_map.get(course_id, "")
+                status = st.selectbox(
+                    "Status",
+                    ["", "interested", "in_progress", "completed"],
+                    index=["", "interested", "in_progress", "completed"].index(current_status or ""),
+                    key=f"status_{course_id}",
+                )
+                if st.button("Save status", key=f"save_{course_id}"):
+                    if not email:
+                        st.warning("Enter your name/email in the sidebar first.")
+                    else:
+                        try:
+                            response = save_status(email, course_id, status)
+                            response.raise_for_status()
+                            st.success("Status saved.")
+                            st.cache_data.clear()
+                        except Exception:
+                            st.error("Could not save status.")
 
-        if role == "admin" and course_id:
-            confirm = st.checkbox("Confirm delete", key=f"confirm_delete_{course_id}")
-            if st.button("Delete course", key=f"delete_{course_id}"):
-                if not confirm:
-                    st.warning("Check confirm before deleting.")
-                else:
-                    try:
-                        response = delete_course(course_id, email)
-                        response.raise_for_status()
-                        st.success("Course deleted.")
-                        st.cache_data.clear()
-                        st.rerun()
-                    except Exception:
-                        st.error("Could not delete course.")
-
-    card_end()
+            if role == "admin" and course_id:
+                confirm = st.checkbox("Confirm delete", key=f"confirm_delete_{course_id}")
+                if st.button("Delete course", key=f"delete_{course_id}"):
+                    if not confirm:
+                        st.warning("Check confirm before deleting.")
+                    else:
+                        try:
+                            response = delete_course(course_id, email)
+                            response.raise_for_status()
+                            st.success("Course deleted.")
+                            st.cache_data.clear()
+                            st.rerun()
+                        except Exception:
+                            st.error("Could not delete course.")
 
 
 def render_add_course(role: str, email: str) -> None:
@@ -173,6 +179,7 @@ if load_error:
     st.error(load_error)
 
 hero_header(courses_df)
+st.divider()
 
 email, role, search, category, provider, level = render_sidebar(courses_df)
 tracking_map = load_tracking(email)
@@ -180,8 +187,7 @@ tracking_map = load_tracking(email)
 filtered = filter_courses(courses_df, search, category, provider, level)
 
 st.markdown(
-    f"<div class='count'>Showing <strong>{len(filtered)}</strong> of <strong>{len(courses_df)}</strong> courses</div>",
-    unsafe_allow_html=True,
+    f"Showing {len(filtered)} of {len(courses_df)} courses",
 )
 
 for _, row in filtered.iterrows():
