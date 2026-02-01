@@ -1,5 +1,6 @@
 import csv
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -14,7 +15,8 @@ CREATE TABLE IF NOT EXISTS courses (
   category TEXT,
   level TEXT,
   duration_hours REAL,
-  url TEXT
+  url TEXT,
+  created_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS tracking (
@@ -50,6 +52,7 @@ def get_conn() -> sqlite3.Connection:
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        _ensure_column(conn, "courses", "created_at", "TEXT")
 
 
 def seed_courses_from_csv(csv_path: Path) -> None:
@@ -65,10 +68,12 @@ def seed_courses_from_csv(csv_path: Path) -> None:
         if not rows:
             return
 
+        now = datetime.now(timezone.utc).isoformat()
+
         conn.executemany(
             """
-            INSERT INTO courses (title, provider, category, level, duration_hours, url)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO courses (title, provider, category, level, duration_hours, url, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
@@ -78,6 +83,7 @@ def seed_courses_from_csv(csv_path: Path) -> None:
                     row.get("level"),
                     _parse_float(row.get("duration_hours")),
                     row.get("url"),
+                    now,
                 )
                 for row in rows
                 if (row.get("title") or "").strip()
@@ -97,3 +103,11 @@ def _parse_float(value):
         return float(value) if value not in (None, "") else None
     except ValueError:
         return None
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, col_type: str) -> None:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    columns = {row["name"] for row in rows}
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+        conn.commit()

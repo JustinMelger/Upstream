@@ -3,7 +3,7 @@ import streamlit as st
 from services.api import get, post
 
 
-@st.cache_data(ttl=5)
+@st.cache_data
 def load_tracking(colleague_id: str):
     if not colleague_id:
         return {}
@@ -24,7 +24,7 @@ def load_tracking(colleague_id: str):
     return status_map
 
 
-@st.cache_data(ttl=5)
+@st.cache_data
 def load_stats(email: str, colleague_id: str, is_admin: bool):
     params = {}
     if colleague_id and not is_admin:
@@ -49,11 +49,41 @@ def save_status(colleague_id: str, course_id: int, status: str):
     )
 
 
-@st.cache_data(ttl=5)
+@st.cache_data
 def load_user_stats(email: str):
     try:
         response = get("/tracking/stats/users", headers={"X-User-Email": email})
-        print(response)
+        response.raise_for_status()
+        return response.json()
+    except Exception:
+        return []
+
+
+@st.cache_data
+def load_recent_activity(colleague_id: str, limit: int = 3):
+    if not colleague_id:
+        return []
+    try:
+        response = get("/tracking", params={"colleague_id": colleague_id})
+        response.raise_for_status()
+        data = response.json()
+    except Exception:
+        return []
+
+    data.sort(key=lambda x: x.get("updated_at", ""), reverse=True)
+    return data[:limit]
+
+
+@st.cache_data
+def load_team_recent_activity(email: str, limit: int = 5):
+    if not email:
+        return []
+    try:
+        response = get(
+            "/tracking/recent",
+            params={"limit": limit},
+            headers={"X-User-Email": email},
+        )
         response.raise_for_status()
         return response.json()
     except Exception:

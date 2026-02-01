@@ -4,6 +4,7 @@ from fastapi import APIRouter, Header, HTTPException, Query
 
 from backend.services.auth_service import is_admin
 from backend.services.tracking_service import (
+    list_recent_activity,
     list_tracking,
     stats_all,
     stats_by_user,
@@ -56,3 +57,13 @@ def get_stats_by_user(x_user_email: str | None = Header(default=None)):
     if not is_admin(x_user_email):
         raise HTTPException(status_code=403, detail="admin_required")
     return stats_by_user()
+
+
+@router.get("/recent", response_model=list[dict])
+def get_recent_activity(
+    limit: int = Query(default=10),
+    x_user_email: str | None = Header(default=None),
+):
+    if not is_admin(x_user_email):
+        raise HTTPException(status_code=403, detail="admin_required")
+    return list_recent_activity(limit=limit)
