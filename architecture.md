@@ -32,6 +32,40 @@ flowchart LR
   Tracking --> DB
 ```
 
+## Auth design (self-hosted)
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant UI as Streamlit UI
+  participant API as FastAPI Auth Router
+  participant S as Session Store
+  participant OP as OAuth Provider (optional)
+
+  U->>UI: Open app
+  UI->>API: GET /auth/me
+  API->>S: Check session
+  S-->>API: Session found / not found
+  API-->>UI: 200 user / 401
+
+  alt Invite code mode
+    U->>UI: Submit email + invite code
+    UI->>API: POST /auth/login
+    API->>S: Create session
+    API-->>UI: Set session cookie
+  else OAuth mode
+    U->>UI: Click Sign in
+    UI->>API: GET /auth/login
+    API-->>UI: Redirect to OP
+    U->>OP: Approve consent
+    OP-->>API: Redirect /auth/callback?code=...
+    API->>OP: Exchange code for token
+    API-->>API: Fetch userinfo
+    API->>S: Create session
+    API-->>UI: Set session cookie
+  end
+```
+
 ## Service responsibilities (brief)
 
 ### Auth service
