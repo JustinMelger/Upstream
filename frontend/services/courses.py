@@ -1,5 +1,5 @@
 import pandas as pd
-from services.api import delete, get, post
+from services.api import delete, get, post, put
 import streamlit as st
 
 
@@ -33,3 +33,7 @@ def add_course(payload: dict, email: str):
 
 def delete_course(course_id: int, email: str):
     return delete(f"/courses/{course_id}", headers={"X-User-Email": email})
+
+
+def update_course(course_id: int, payload: dict, email: str):
+    return put(f"/courses/{course_id}", json=payload, headers={"X-User-Email": email})

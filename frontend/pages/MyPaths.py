@@ -54,6 +54,23 @@ for path in my_paths:
             if not courses:
                 st.info("No courses in this path yet.")
             else:
+                total = len(courses)
+                completed = sum(
+                    1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed"
+                )
+                in_progress = sum(
+                    1
+                    for course in courses
+                    if tracking_map.get(int(course.get("id", 0)), "") == "in_progress"
+                )
+                interested = sum(
+                    1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested"
+                )
+                progress = completed / total if total else 0
+                st.progress(progress)
+                st.caption(
+                    f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}"
+                )
                 st.markdown("**Courses in this path**")
                 for course in courses:
                     title = course.get("title", "(untitled)")
