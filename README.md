@@ -7,10 +7,17 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 - Roadmap: [roadmap.md](roadmap.md)
 
 ## Run locally (Docker)
+### Quick start
 1. Build and start services:
    - `docker compose up --build`
 2. Open the UI:
    - `http://localhost:8502`
+
+### Environment variables
+- `ADMIN_EMAILS`: comma-separated admin emails (API + UI).
+- `INVITE_CODE`: optional invite code for login (UI).
+- `DATABASE_PATH`: SQLite file path (API).
+- `COURSES_CSV`: seed CSV path (API).
 
 ## Run locally (without Docker)
 1. Install dependencies:
