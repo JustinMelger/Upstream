@@ -25,6 +25,19 @@ CREATE TABLE IF NOT EXISTS tracking (
   updated_at TEXT NOT NULL,
   UNIQUE(colleague_id, course_id)
 );
+
+CREATE TABLE IF NOT EXISTS paths (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS path_courses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  path_id INTEGER NOT NULL,
+  course_id INTEGER NOT NULL,
+  UNIQUE(path_id, course_id)
+);
 """
 
 
