@@ -69,4 +69,4 @@ if role == "admin":
     if not user_stats:
         st.info("No user stats yet.")
     else:
-        st.dataframe(user_stats, use_container_width=True)
+        st.dataframe(user_stats)

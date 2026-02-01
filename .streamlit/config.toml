@@ -22,7 +22,7 @@ borderColor = "#d4d7dd"
 
 [theme.dark]
 primaryColor = "#62b6cb"
-backgroundColor = "#0b0f19"
+backgroundColor = "#10192d"
 secondaryBackgroundColor = "#111827"
 textColor = "#e5e7eb"
 borderColor = "#2b3646"
