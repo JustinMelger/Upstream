@@ -1,6 +1,6 @@
 import streamlit as st
 
-from services.api import get, post
+from services.api import delete, get, post
 
 
 @st.cache_data
@@ -15,6 +15,10 @@ def load_paths():
 
 def add_path(payload: dict, email: str):
     return post("/paths", json=payload, headers={"X-User-Email": email})
+
+
+def delete_path(path_id: int, email: str):
+    return delete(f"/paths/{path_id}", headers={"X-User-Email": email})
 
 
 @st.cache_data

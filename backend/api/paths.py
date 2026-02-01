@@ -32,3 +32,14 @@ def add_path(payload: dict, x_user_email: str | None = Header(default=None)):
         return create_path(payload)
     except ValueError:
         raise HTTPException(status_code=400, detail="missing_name")
+
+
+@router.delete("/{path_id}", response_model=dict)
+def remove_path(path_id: int, x_user_email: str | None = Header(default=None)):
+    from backend.services.auth_service import is_admin
+    from backend.services.paths_service import delete_path
+
+    if not is_admin(x_user_email):
+        raise HTTPException(status_code=403, detail="admin_required")
+
+    return {"deleted": delete_path(path_id)}

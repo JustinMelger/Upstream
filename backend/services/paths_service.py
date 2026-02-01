@@ -71,3 +71,11 @@ def create_path(payload: dict) -> Dict[str, str]:
         conn.commit()
 
     return get_path(path_id) or {"error": "not_found"}
+
+
+def delete_path(path_id: int) -> bool:
+    with get_conn() as conn:
+        conn.execute("DELETE FROM path_courses WHERE path_id = ?", (path_id,))
+        cur = conn.execute("DELETE FROM paths WHERE id = ?", (path_id,))
+        conn.commit()
+    return cur.rowcount > 0

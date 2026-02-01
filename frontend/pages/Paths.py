@@ -7,7 +7,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from ui.style import apply_global_style
 from services.auth import load_role
 from services.courses import load_courses
-from services.paths import add_path, load_path, load_paths
+from services.paths import add_path, delete_path, load_path, load_paths
 
 st.set_page_config(page_title="Learning Paths", page_icon="🧭", layout="wide")
 apply_global_style()
@@ -44,6 +44,21 @@ else:
                 st.markdown("**Courses in this path**")
                 for course in courses:
                     st.write(f"• {course.get('title', '(untitled)')}")
+
+            if role == "admin":
+                confirm = st.checkbox("Confirm delete path", key=f"confirm_delete_path_{path_id}")
+                if st.button("Delete path", key=f"delete_path_{path_id}"):
+                    if not confirm:
+                        st.warning("Check confirm before deleting.")
+                    else:
+                        try:
+                            response = delete_path(path_id, email.strip())
+                            response.raise_for_status()
+                            st.success("Path deleted.")
+                            st.cache_data.clear()
+                            st.rerun()
+                        except Exception:
+                            st.error("Could not delete path.")
 
 with st.expander("➕ Create a path"):
     if role != "admin":
