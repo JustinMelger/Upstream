@@ -9,7 +9,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from services.auth import load_role
 from services.courses import add_course, delete_course, load_courses
-from services.tracking import load_stats, load_tracking, save_status
+from services.tracking import delete_status, load_stats, load_tracking, save_status
 from ui.components import hero_header
 from ui.style import apply_global_style
 
@@ -27,13 +27,6 @@ def render_sidebar(df: pd.DataFrame) -> tuple[str, str, str, list, list, list]:
     category = st.sidebar.multiselect("Category", sorted([c for c in df["category"].unique() if c]))
     provider = st.sidebar.multiselect("Provider", sorted([p for p in df["provider"].unique() if p]))
     level = st.sidebar.multiselect("Level", sorted([l for l in df["level"].unique() if l]))
-
-    stats = load_stats(email.strip(), email.strip(), role == "admin")
-    if stats:
-        st.sidebar.subheader("Team stats" if role == "admin" else "Your stats")
-        st.sidebar.write(f"Interested: {stats.get('interested', 0)}")
-        st.sidebar.write(f"In progress: {stats.get('in_progress', 0)}")
-        st.sidebar.write(f"Completed: {stats.get('completed', 0)}")
 
     if role == "admin":
         st.sidebar.caption("Admin mode enabled.")
@@ -101,24 +94,33 @@ def render_course_card(row: pd.Series, email: str, role: str, tracking_map: dict
 
             course_id = int(row.get("id", 0) or 0)
             if course_id:
-                current_status = tracking_map.get(course_id, "")
-                status = st.selectbox(
-                    "Status",
-                    ["", "interested", "in_progress", "completed"],
-                    index=["", "interested", "in_progress", "completed"].index(current_status or ""),
-                    key=f"status_{course_id}",
-                )
-                if st.button("Save status", key=f"save_{course_id}"):
-                    if not email:
-                        st.warning("Enter your name/email in the sidebar first.")
-                    else:
-                        try:
-                            response = save_status(email, course_id, status)
-                            response.raise_for_status()
-                            st.success("Status saved.")
-                            st.cache_data.clear()
-                        except Exception:
-                            st.error("Could not save status.")
+                if course_id in tracking_map:
+                    st.caption("In My Courses")
+                    if st.button("Remove", key=f"remove_mycourse_{course_id}"):
+                        if not email:
+                            st.warning("Enter your name/email in the sidebar first.")
+                        else:
+                            try:
+                                response = delete_status(email, course_id)
+                                response.raise_for_status()
+                                st.success("Removed from My Courses.")
+                                st.cache_data.clear()
+                                st.rerun()
+                            except Exception:
+                                st.error("Could not remove course.")
+                else:
+                    if st.button("Add to My Courses", key=f"add_mycourse_{course_id}"):
+                        if not email:
+                            st.warning("Enter your name/email in the sidebar first.")
+                        else:
+                            try:
+                                response = save_status(email, course_id, "interested")
+                                response.raise_for_status()
+                                st.success("Added to My Courses.")
+                                st.cache_data.clear()
+                                st.rerun()
+                            except Exception:
+                                st.error("Could not add course.")
 
             if role == "admin" and course_id:
                 confirm = st.checkbox("Confirm delete", key=f"confirm_delete_{course_id}")

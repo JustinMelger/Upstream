@@ -47,6 +47,7 @@ else:
         if path.get("description"):
             st.write(path["description"])
         st.page_link("pages/Paths.py", label="View paths", icon="🧭")
+        st.page_link("pages/MyPaths.py", label="My paths", icon="✅")
         st.divider()
 
 st.subheader("Recently added courses")

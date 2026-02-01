@@ -48,6 +48,14 @@ def save_status(colleague_id: str, course_id: int, status: str):
     )
 
 
+def delete_status(colleague_id: str, course_id: int):
+    return post(
+        "/tracking/delete",
+        json={"colleague_id": colleague_id, "course_id": course_id},
+        headers={"X-User-Email": colleague_id},
+    )
+
+
 @st.cache_data
 def load_user_stats(email: str):
     try:

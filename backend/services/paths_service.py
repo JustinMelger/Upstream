@@ -78,3 +78,33 @@ def delete_path(path_id: int) -> bool:
         cur = conn.execute("DELETE FROM paths WHERE id = ?", (path_id,))
         conn.commit()
     return cur.rowcount > 0
+
+
+def update_path(path_id: int, payload: dict) -> Dict[str, str]:
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise ValueError("missing_name")
+    description = (payload.get("description") or "").strip() or None
+    course_ids = payload.get("course_ids") or []
+
+    with get_conn() as conn:
+        existing = conn.execute(
+            "SELECT id FROM paths WHERE lower(name) = lower(?) AND id != ?",
+            (name, path_id),
+        ).fetchone()
+        if existing:
+            raise ValueError("duplicate_name")
+
+        conn.execute(
+            "UPDATE paths SET name = ?, description = ? WHERE id = ?",
+            (name, description, path_id),
+        )
+        conn.execute("DELETE FROM path_courses WHERE path_id = ?", (path_id,))
+        if course_ids:
+            conn.executemany(
+                "INSERT OR IGNORE INTO path_courses (path_id, course_id) VALUES (?, ?)",
+                [(path_id, int(cid)) for cid in course_ids],
+            )
+        conn.commit()
+
+    return get_path(path_id) or {"error": "not_found"}

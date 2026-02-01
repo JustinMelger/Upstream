@@ -131,3 +131,17 @@ def upsert_tracking(colleague_id: str, course_id: int, status: str) -> Dict[str,
         "status": status,
         "updated_at": now,
     }
+
+
+def remove_tracking(colleague_id: str, course_id: int) -> int:
+    with get_conn() as conn:
+        cur = conn.execute(
+            """
+            DELETE FROM tracking
+            WHERE colleague_id = ? AND course_id = ?
+            """,
+            (colleague_id, course_id),
+        )
+        conn.commit()
+
+    return cur.rowcount
