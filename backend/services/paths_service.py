@@ -16,11 +16,11 @@ def get_path(path_id: int) -> Optional[Dict[str, str]]:
             return None
         courses = conn.execute(
             """
-            SELECT c.id, c.title, c.provider, c.category, c.level, c.duration_hours, c.url
+            SELECT c.id, c.title, c.provider, c.category, c.level, c.duration_hours, c.url, pc.position
             FROM path_courses pc
             JOIN courses c ON c.id = pc.course_id
             WHERE pc.path_id = ?
-            ORDER BY c.title ASC
+            ORDER BY COALESCE(pc.position, 9999) ASC, c.title ASC
             """,
             (path_id,),
         ).fetchall()
@@ -64,8 +64,8 @@ def create_path(payload: dict) -> Dict[str, str]:
 
         if course_ids:
             conn.executemany(
-                "INSERT OR IGNORE INTO path_courses (path_id, course_id) VALUES (?, ?)",
-                [(path_id, int(cid)) for cid in course_ids],
+                "INSERT OR IGNORE INTO path_courses (path_id, course_id, position) VALUES (?, ?, ?)",
+                [(path_id, int(cid), idx) for idx, cid in enumerate(course_ids)],
             )
         conn.commit()
 
@@ -102,8 +102,8 @@ def update_path(path_id: int, payload: dict) -> Dict[str, str]:
         conn.execute("DELETE FROM path_courses WHERE path_id = ?", (path_id,))
         if course_ids:
             conn.executemany(
-                "INSERT OR IGNORE INTO path_courses (path_id, course_id) VALUES (?, ?)",
-                [(path_id, int(cid)) for cid in course_ids],
+                "INSERT OR IGNORE INTO path_courses (path_id, course_id, position) VALUES (?, ?, ?)",
+                [(path_id, int(cid), idx) for idx, cid in enumerate(course_ids)],
             )
         conn.commit()
 

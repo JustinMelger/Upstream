@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS path_courses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   path_id INTEGER NOT NULL,
   course_id INTEGER NOT NULL,
+  position INTEGER,
   UNIQUE(path_id, course_id)
 );
 
@@ -61,6 +62,7 @@ def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(SCHEMA)
         _ensure_column(conn, "courses", "created_at", "TEXT")
+        _ensure_column(conn, "path_courses", "position", "INTEGER")
 
 
 def seed_courses_from_csv(csv_path: Path) -> None:
