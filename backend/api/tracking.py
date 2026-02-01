@@ -3,7 +3,13 @@ from typing import List, Optional
 from fastapi import APIRouter, Header, HTTPException, Query
 
 from backend.services.auth_service import is_admin
-from backend.services.tracking_service import list_tracking, stats_all, stats_for_colleague, upsert_tracking
+from backend.services.tracking_service import (
+    list_tracking,
+    stats_all,
+    stats_by_user,
+    stats_for_colleague,
+    upsert_tracking,
+)
 
 router = APIRouter(prefix="/tracking", tags=["tracking"])
 
@@ -43,3 +49,10 @@ def get_stats(
     if is_admin(x_user_email):
         return stats_all()
     raise HTTPException(status_code=403, detail="admin_required")
+
+
+@router.get("/stats/users", response_model=list[dict])
+def get_stats_by_user(x_user_email: str | None = Header(default=None)):
+    if not is_admin(x_user_email):
+        raise HTTPException(status_code=403, detail="admin_required")
+    return stats_by_user()
