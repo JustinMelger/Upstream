@@ -1,14 +1,22 @@
 import sys
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
+from datetime import datetime
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from ui.style import apply_global_style
 from services.auth import load_role
 from services.courses import load_courses
-from services.tracking import load_stats, load_tracking, load_user_stats
+from services.tracking import (
+    load_recent_activity,
+    load_stats,
+    load_team_recent_activity,
+    load_tracking,
+    load_user_stats,
+)
 
 st.set_page_config(page_title="Overview", page_icon="📚", layout="wide")
 apply_global_style()
@@ -20,7 +28,7 @@ courses_df, load_error = load_courses()
 if load_error:
     st.error(load_error)
 
-st.subheader("📈 Progress snapshot")
+st.subheader("Progress snapshot")
 email = st.text_input("Your name or email", "")
 role = load_role(email.strip())
 mode = "My stats"
@@ -38,6 +46,8 @@ stats = load_stats(
 col1.metric("Interested", stats.get("interested", 0))
 col2.metric("In progress", stats.get("in_progress", 0))
 col3.metric("Completed", stats.get("completed", 0))
+
+st.divider()
 
 if not email.strip():
     st.info("Enter your email above to see your personal course list.")
@@ -57,16 +67,65 @@ else:
         for _, row in subset.iterrows():
             st.write(f"• {row['title']}")
 
-    _render_course_list("⭐ Interested", interested_ids)
-    _render_course_list("🚧 In progress", in_progress_ids)
-    _render_course_list("✅ Completed", completed_ids)
+    _render_course_list("Interested", interested_ids)
+    _render_course_list("In progress", in_progress_ids)
+    _render_course_list("Completed", completed_ids)
 
-st.markdown("Go to the **Courses** page to browse and update your status.")
+    st.divider()
+
+    st.subheader("Recent activity")
+    activity = load_recent_activity(email.strip(), limit=3)
+    if not activity:
+        st.caption("No recent updates yet.")
+    else:
+        course_lookup = {
+            int(row["id"]): row["title"] for _, row in courses_df.iterrows() if row.get("id")
+        }
+        def _format_time(ts: str) -> str:
+            if not ts:
+                return ""
+            try:
+                dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                return dt.strftime("%b %d, %Y %H:%M")
+            except ValueError:
+                return ts
+        for item in activity:
+            cid = int(item.get("course_id", 0))
+            title = course_lookup.get(cid, f"Course {cid}")
+            status = item.get("status", "")
+            updated = _format_time(item.get("updated_at", ""))
+            st.write(f"• {title} — {status} ({updated})")
+
+st.divider()
+
+st.subheader("Quick actions")
+col_a, col_b = st.columns(2)
+with col_a:
+    st.page_link("pages/Courses.py", label="Go to Courses", icon="📚")
+with col_b:
+    st.page_link("pages/Paths.py", label="Go to Paths", icon="🧭")
 
 if role == "admin":
-    st.subheader("👥 Team stats by user")
+    st.divider()
+    st.subheader("Team stats by user")
     user_stats = load_user_stats(email.strip())
     if not user_stats:
         st.info("No user stats yet.")
     else:
         st.dataframe(user_stats)
+
+    st.subheader("Team recent activity")
+    team_activity = load_team_recent_activity(email.strip(), limit=5)
+    if not team_activity:
+        st.info("No team activity yet.")
+    else:
+        course_lookup = {
+            int(row["id"]): row["title"] for _, row in courses_df.iterrows() if row.get("id")
+        }
+        for item in team_activity:
+            cid = int(item.get("course_id", 0))
+            title = course_lookup.get(cid, f"Course {cid}")
+            status = item.get("status", "")
+            updated = _format_time(item.get("updated_at", ""))
+            who = item.get("colleague_id", "someone")
+            st.write(f"• {who}: {title} — {status} ({updated})")

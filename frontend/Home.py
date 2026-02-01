@@ -22,6 +22,8 @@ This app is built to create structure around learning from online resources.
 """
 )
 
+st.divider()
+
 col1, col2, col3 = st.columns(3)
 
 courses_df, _ = load_courses()
@@ -30,6 +32,8 @@ paths, _ = load_paths()
 col1.metric("Courses", len(courses_df))
 col2.metric("Paths", len(paths))
 col3.metric("Providers", courses_df["provider"].replace("", pd.NA).nunique())
+
+st.divider()
 
 st.subheader("How it works")
 st.markdown(
@@ -54,3 +58,4 @@ st.markdown(
 **Why this exists:** shared learning accelerates onboarding, skill growth, and alignment.
 """
 )
+st.divider()

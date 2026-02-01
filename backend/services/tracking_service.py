@@ -28,6 +28,29 @@ def list_tracking(colleague_id: Optional[str] = None) -> List[Dict[str, str]]:
     ]
 
 
+def list_recent_activity(limit: int = 10) -> List[Dict[str, str]]:
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT colleague_id, course_id, status, updated_at
+            FROM tracking
+            ORDER BY updated_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+
+    return [
+        {
+            "colleague_id": row["colleague_id"],
+            "course_id": str(row["course_id"]),
+            "status": row["status"],
+            "updated_at": row["updated_at"],
+        }
+        for row in rows
+    ]
+
+
 def stats_for_colleague(colleague_id: str) -> Dict[str, int]:
     with get_conn() as conn:
         rows = conn.execute(
