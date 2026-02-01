@@ -119,11 +119,6 @@ else:
             col1, col2 = st.columns([5, 1])
 
             with col1:
-                st.subheader(path_detail.get("name", "(untitled path)"))
-                if path_detail.get("description"):
-                    st.write(path_detail["description"])
-
-                courses = path_detail.get("courses", [])
                 if role == "admin":
                     with st.expander("Edit path"):
                         courses_df, _ = load_courses()
@@ -188,6 +183,11 @@ else:
                                 except Exception:
                                     st.error("Could not delete path.")
 
+                st.subheader(path_detail.get("name", "(untitled path)"))
+                if path_detail.get("description"):
+                    st.write(path_detail["description"])
+
+                courses = path_detail.get("courses", [])
                 if not courses:
                     st.info("No courses in this path yet.")
                 else:

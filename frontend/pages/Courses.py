@@ -8,7 +8,7 @@ import streamlit as st
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from services.auth import load_role
-from services.courses import add_course, delete_course, load_courses
+from services.courses import add_course, delete_course, load_courses, update_course
 from services.tracking import delete_status, load_stats, load_tracking, save_status
 from ui.components import hero_header
 from ui.style import apply_global_style
@@ -61,6 +61,51 @@ def render_course_card(row: pd.Series, email: str, role: str, tracking_map: dict
         col1, col2 = st.columns([5, 1])
 
         with col1:
+            if role == "admin" and int(row.get("id", 0) or 0):
+                course_id = int(row.get("id", 0) or 0)
+                with st.expander("Edit course"):
+                    with st.form(f"edit_course_{course_id}"):
+                        edit_title = st.text_input("Title*", value=row.get("title") or "")
+                        edit_provider = st.text_input("Provider", value=row.get("provider") or "")
+                        edit_category = st.text_input("Category", value=row.get("category") or "")
+                        edit_level = st.selectbox(
+                            "Level",
+                            ["", "Beginner", "Intermediate", "Advanced"],
+                            index=["", "Beginner", "Intermediate", "Advanced"].index(row.get("level") or ""),
+                        )
+                        edit_duration = st.number_input(
+                            "Duration (hours)",
+                            min_value=0.0,
+                            step=0.5,
+                            value=float(row.get("duration_hours") or 0.0),
+                        )
+                        edit_url = st.text_input("URL", value=row.get("url") or "")
+                        submitted = st.form_submit_button("Save changes")
+
+                    if submitted:
+                        if not edit_title.strip():
+                            st.error("Title is required.")
+                        else:
+                            try:
+                                response = update_course(
+                                    course_id,
+                                    {
+                                        "title": edit_title.strip(),
+                                        "provider": edit_provider.strip(),
+                                        "category": edit_category.strip(),
+                                        "level": edit_level.strip(),
+                                        "duration_hours": edit_duration if edit_duration > 0 else None,
+                                        "url": edit_url.strip(),
+                                    },
+                                    email,
+                                )
+                                response.raise_for_status()
+                                st.success("Course updated.")
+                                st.cache_data.clear()
+                                st.rerun()
+                            except Exception:
+                                st.error("Could not update course.")
+
             title = row["title"] or "(untitled)"
             st.subheader(title)
 
