@@ -19,10 +19,13 @@ from services.tracking import (
     load_user_stats,
 )
 from ui.style import apply_global_style
+from state.session import get_email, logout, require_login
 
 
-st.set_page_config(page_title="Overview", page_icon="📚", layout="wide")
+st.set_page_config(page_title="Overview", layout="wide")
 apply_global_style()
+
+require_login()
 
 st.title("Overview")
 st.caption("Overview of courses and progress.")
@@ -32,8 +35,11 @@ if load_error:
     st.error(load_error)
 
 st.subheader("Progress snapshot")
-st.text_input("Your name or email", key="colleague_email")
-email = st.session_state.get("colleague_email", "")
+email = get_email()
+st.sidebar.caption(f"Signed in as {email}")
+if st.sidebar.button("Log out"):
+    logout()
+    st.switch_page("pages/Login.py")
 role = load_role(email.strip())
 mode = "My stats"
 if role == "admin":

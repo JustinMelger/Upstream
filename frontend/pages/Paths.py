@@ -20,10 +20,13 @@ from services.paths import (
     update_path,
 )
 from ui.style import apply_global_style
+from state.session import get_email, logout, require_login
 
 
-st.set_page_config(page_title="Learning Paths", page_icon="🧭", layout="wide")
+st.set_page_config(page_title="Learning Paths", layout="wide")
 apply_global_style()
+
+require_login()
 
 st.title("Learning Paths")
 st.caption("Curated paths to guide learning journeys.")
@@ -86,7 +89,11 @@ def _course_order_editor(
     return [label_to_id[label] for label in ordered_labels if label in label_to_id]
 
 
-email = st.sidebar.text_input("Your name or email", "")
+email = get_email()
+st.sidebar.caption(f"Signed in as {email}")
+if st.sidebar.button("Log out"):
+    logout()
+    st.switch_page("pages/Login.py")
 role = load_role(email.strip())
 
 my_paths = []

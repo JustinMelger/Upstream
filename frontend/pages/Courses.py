@@ -9,18 +9,25 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from services.auth import load_role
 from services.courses import add_course, delete_course, load_courses, update_course
-from services.tracking import delete_status, load_stats, load_tracking, save_status
+from services.tracking import delete_status, load_tracking, save_status
+from state.session import get_email, logout, require_login
 from ui.components import hero_header
 from ui.style import apply_global_style
 
 
-st.set_page_config(page_title="Learning Hub", page_icon="📚", layout="wide")
+st.set_page_config(page_title="Learning Hub", layout="wide")
 apply_global_style()
+
+require_login()
+email = get_email()
 
 
 def render_sidebar(df: pd.DataFrame) -> tuple[str, str, str, list, list, list]:
     st.sidebar.header("Filters")
-    email = st.sidebar.text_input("Your name or email", "")
+    st.sidebar.caption(f"Signed in as {email}")
+    if st.sidebar.button("Log out"):
+        logout()
+        st.switch_page("pages/Login.py")
     role = load_role(email.strip())
 
     search = st.sidebar.text_input("Search", "")

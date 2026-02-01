@@ -11,10 +11,18 @@ sys.path.append(str(Path(__file__).parent))
 from services.courses import load_courses
 from services.paths import load_paths
 from ui.style import apply_global_style
+from state.session import get_email, logout, require_login
 
 
-st.set_page_config(page_title="Home", page_icon="🏠", layout="wide")
+st.set_page_config(page_title="Home", layout="wide")
 apply_global_style()
+
+require_login()
+email = get_email()
+st.sidebar.caption(f"Signed in as {email}")
+if st.sidebar.button("Log out"):
+    logout()
+    st.switch_page("pages/Login.py")
 
 st.title("Home")
 st.caption("A simple learning hub for colleagues.")
