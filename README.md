@@ -18,9 +18,15 @@ A simple internal website where colleagues can browse a curated list of courses,
 2. Start the API:
    - `uvicorn backend.main:app --reload`
 3. Start the UI (in a new terminal):
-   - `streamlit run frontend/app.py`
+   - `streamlit run frontend/Home.py`
 4. Open the UI:
    - `http://localhost:8501`
+
+## Pages
+- Home: overview and entry point.
+- Overview: personal progress snapshot and team stats (admins).
+- Courses: browse, filter, track status, add/delete (admins).
+- Paths: create and view learning paths (admins manage).
 
 ## API endpoints (read-first)
 - `GET /health`
@@ -39,6 +45,7 @@ Admin-only:
 - `POST /paths`
 - `DELETE /paths/{id}`
 - `GET /tracking/stats` (team stats)
+- `GET /tracking/stats/users` (team stats by user)
 
 ## Roles (temporary, email-based)
 - Admins can add/edit/delete courses and manage paths.
