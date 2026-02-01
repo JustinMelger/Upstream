@@ -30,8 +30,12 @@ def add_path(payload: dict, x_user_email: str | None = Header(default=None)):
 
     try:
         return create_path(payload)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="missing_name")
+    except ValueError as exc:
+        if str(exc) == "missing_name":
+            raise HTTPException(status_code=400, detail="missing_name")
+        if str(exc) == "duplicate_name":
+            raise HTTPException(status_code=409, detail="duplicate_name")
+        raise HTTPException(status_code=400, detail="invalid_request")
 
 
 @router.delete("/{path_id}", response_model=dict)

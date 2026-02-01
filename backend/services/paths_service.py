@@ -57,6 +57,12 @@ def create_path(payload: dict) -> Dict[str, str]:
     course_ids = payload.get("course_ids") or []
 
     with get_conn() as conn:
+        existing = conn.execute(
+            "SELECT id FROM paths WHERE lower(name) = lower(?)", (name,)
+        ).fetchone()
+        if existing:
+            raise ValueError("duplicate_name")
+
         cur = conn.execute(
             "INSERT INTO paths (name, description) VALUES (?, ?)",
             (name, description),
