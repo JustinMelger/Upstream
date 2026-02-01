@@ -27,6 +27,7 @@ apply_global_style()
 st.title("Learning Paths")
 st.caption("Curated paths to guide learning journeys.")
 
+
 def _format_course_label(row) -> str:
     title = row.get("title") or "(untitled)"
     provider = row.get("provider") or ""
@@ -53,6 +54,7 @@ def _course_selector(options: list[tuple[int, str]], selected_ids: set[int], key
             selected.discard(course_id)
 
     return list(selected)
+
 
 email = st.sidebar.text_input("Your name or email", "")
 role = load_role(email.strip())
@@ -227,7 +229,6 @@ else:
                                 st.error("Could not add path.")
                 else:
                     st.caption("Enter your name/email in the sidebar to save.")
-
 
         st.divider()
 

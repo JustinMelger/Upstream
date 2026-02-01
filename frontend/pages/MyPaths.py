@@ -6,7 +6,7 @@ import streamlit as st
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from services.paths import load_selected_paths, load_path, unselect_path
+from services.paths import load_path, load_selected_paths, unselect_path
 from services.tracking import load_tracking, save_status
 from ui.style import apply_global_style
 
@@ -74,9 +74,7 @@ for path in my_paths:
                             status = st.selectbox(
                                 "Status",
                                 ["", "interested", "in_progress", "completed"],
-                                index=["", "interested", "in_progress", "completed"].index(
-                                    current_status or ""
-                                ),
+                                index=["", "interested", "in_progress", "completed"].index(current_status or ""),
                                 key=f"mypath_course_status_{path_id}_{course_id}",
                                 label_visibility="collapsed",
                             )

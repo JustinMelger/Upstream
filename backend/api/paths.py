@@ -12,6 +12,7 @@ from backend.services.paths_service import (
 )
 from backend.services.user_paths_service import add_user_path, list_user_paths, remove_user_path
 
+
 router = APIRouter(prefix="/paths", tags=["paths"])
 
 
