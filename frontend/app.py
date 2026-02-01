@@ -406,6 +406,25 @@ for _, row in filtered.iterrows():
                     except Exception:
                         st.error("Could not save status.")
 
+        if role == "admin" and course_id:
+            confirm = st.checkbox("Confirm delete", key=f"confirm_delete_{course_id}")
+            if st.button("Delete course", key=f"delete_{course_id}"):
+                if not confirm:
+                    st.warning("Check confirm before deleting.")
+                else:
+                    try:
+                        response = requests.delete(
+                            f"{API_BASE_URL}/courses/{course_id}",
+                            headers={"X-User-Email": colleague_id.strip()},
+                            timeout=10,
+                        )
+                        response.raise_for_status()
+                        st.success("Course deleted.")
+                        st.cache_data.clear()
+                        st.rerun()
+                    except Exception:
+                        st.error("Could not delete course.")
+
     card_end()
 
 st.divider()
@@ -445,5 +464,6 @@ with st.expander("➕ Add a course"):
                     response.raise_for_status()
                     st.success("Course added.")
                     st.cache_data.clear()
+                    st.rerun()
                 except Exception:
                     st.error("Could not add course.")
