@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 
+import pandas as pd
 import streamlit as st
 
 
@@ -53,7 +54,36 @@ def _course_selector(options: list[tuple[int, str]], selected_ids: set[int], key
         else:
             selected.discard(course_id)
 
-    return list(selected)
+    return [course_id for course_id, _ in options if course_id in selected]
+
+
+def _course_order_editor(
+    selected_ids: list[int], id_to_label: dict[int, str], key_prefix: str
+) -> list[int]:
+    if not selected_ids:
+        return []
+    st.markdown("**Order courses**")
+    rows = []
+    for idx, course_id in enumerate(selected_ids, start=1):
+        rows.append(
+            {
+                "Order": idx,
+                "Course": id_to_label.get(course_id, str(course_id)),
+            }
+        )
+    df = pd.DataFrame(rows)
+    edited = st.data_editor(
+        df,
+        hide_index=True,
+        disabled=["Course"],
+        key=f"{key_prefix}_order_editor",
+    )
+    edited["Order"] = pd.to_numeric(edited["Order"], errors="coerce").fillna(0).astype(int)
+    ordered_labels = (
+        edited.sort_values(["Order", "Course"], kind="mergesort")["Course"].tolist()
+    )
+    label_to_id = {label: cid for cid, label in id_to_label.items()}
+    return [label_to_id[label] for label in ordered_labels if label in label_to_id]
 
 
 email = st.sidebar.text_input("Your name or email", "")
@@ -123,7 +153,10 @@ else:
                     with st.expander("Edit path"):
                         courses_df, _ = load_courses()
                         options = [(int(row["id"]), _format_course_label(row)) for _, row in courses_df.iterrows()]
-                        selected_ids = {course.get("id") for course in path_detail.get("courses", []) if course.get("id")}
+                        id_to_label = {course_id: label for course_id, label in options}
+                        selected_ids = [
+                            course.get("id") for course in path_detail.get("courses", []) if course.get("id")
+                        ]
 
                         with st.form(f"edit_path_{path_id}"):
                             edit_name = st.text_input(
@@ -136,7 +169,12 @@ else:
                             )
                             edit_selected_ids = _course_selector(
                                 options,
-                                selected_ids,
+                                set(selected_ids),
+                                key_prefix=f"edit_path_{path_id}",
+                            )
+                            ordered_ids = _course_order_editor(
+                                edit_selected_ids,
+                                id_to_label,
                                 key_prefix=f"edit_path_{path_id}",
                             )
                             submitted = st.form_submit_button("Save changes")
@@ -154,7 +192,7 @@ else:
                                         {
                                             "name": cleaned_name,
                                             "description": edit_description.strip(),
-                                            "course_ids": edit_selected_ids,
+                                            "course_ids": ordered_ids,
                                         },
                                         email.strip(),
                                     )
@@ -194,16 +232,20 @@ else:
                     st.markdown("**Courses in this path**")
                     if not email.strip():
                         st.caption("Enter your name/email in the sidebar to track course status.")
-                    for course in courses:
+                    for idx, course in enumerate(courses, start=1):
                         title = course.get("title", "(untitled)")
                         url = course.get("url", "")
-                        if url:
-                            try:
-                                st.link_button(title, url)
-                            except Exception:
-                                st.markdown(f"[{title}]({url})")
-                        else:
-                            st.write(f"• {title}")
+                        row = st.columns([0.5, 9.5])
+                        with row[0]:
+                            st.markdown(f"**{idx}.**")
+                        with row[1]:
+                            if url:
+                                try:
+                                    st.link_button(title, url)
+                                except Exception:
+                                    st.markdown(f"[{title}]({url})")
+                            else:
+                                st.write(f"• {title}")
 
             with col2:
                 if email.strip():
@@ -238,7 +280,9 @@ with st.expander("➕ Create a path"):
     else:
         courses_df, _ = load_courses()
         options = [(int(row["id"]), _format_course_label(row)) for _, row in courses_df.iterrows()]
+        id_to_label = {course_id: label for course_id, label in options}
         selected_ids = _course_selector(options, set(), key_prefix="create_path")
+        ordered_ids = _course_order_editor(selected_ids, id_to_label, key_prefix="create_path")
 
         name = st.text_input("Path name*")
         description = st.text_area("Description")
@@ -256,7 +300,7 @@ with st.expander("➕ Create a path"):
                         {
                             "name": cleaned_name,
                             "description": description.strip(),
-                            "course_ids": selected_ids,
+                            "course_ids": ordered_ids,
                         },
                         email.strip(),
                     )

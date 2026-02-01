@@ -1,0 +1,30 @@
+[[pages]]
+path = "frontend/Home.py"
+name = "Home"
+icon = "🏠"
+
+[[pages]]
+path = "frontend/pages/Overview.py"
+name = "Overview"
+icon = "📊"
+
+[[pages]]
+[[pages]]
+path = "frontend/pages/Paths.py"
+name = "Paths"
+icon = "🧭"
+
+[[pages]]
+path = "frontend/pages/MyPaths.py"
+name = "My Paths"
+icon = "✅"
+
+[[pages]]
+path = "frontend/pages/Courses.py"
+name = "Courses"
+icon = "📚"
+
+[[pages]]
+path = "frontend/pages/MyCourses.py"
+name = "My Courses"
+icon = "✅"

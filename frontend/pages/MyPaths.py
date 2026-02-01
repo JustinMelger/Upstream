@@ -72,12 +72,14 @@ for path in my_paths:
                     f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}"
                 )
                 st.markdown("**Courses in this path**")
-                for course in courses:
+                for idx, course in enumerate(courses, start=1):
                     title = course.get("title", "(untitled)")
                     url = course.get("url", "")
                     course_id = course.get("id")
-                    row = st.columns([6, 2])
+                    row = st.columns([0.6, 5.4, 2])
                     with row[0]:
+                        st.markdown(f"**{idx}.**")
+                    with row[1]:
                         if url:
                             try:
                                 st.link_button(title, url)
@@ -85,7 +87,7 @@ for path in my_paths:
                                 st.markdown(f"[{title}]({url})")
                         else:
                             st.write(f"• {title}")
-                    with row[1]:
+                    with row[2]:
                         if course_id:
                             current_status = tracking_map.get(int(course_id), "")
                             status = st.selectbox(

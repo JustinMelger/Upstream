@@ -10,6 +10,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from services.auth import load_role
 from services.courses import load_courses
+from services.paths import load_path, load_selected_paths
 from services.tracking import (
     load_recent_activity,
     load_stats,
@@ -31,7 +32,8 @@ if load_error:
     st.error(load_error)
 
 st.subheader("Progress snapshot")
-email = st.text_input("Your name or email", "")
+st.text_input("Your name or email", key="colleague_email")
+email = st.session_state.get("colleague_email", "")
 role = load_role(email.strip())
 mode = "My stats"
 if role == "admin":
@@ -72,6 +74,40 @@ else:
     _render_course_list("Interested", interested_ids)
     _render_course_list("In progress", in_progress_ids)
     _render_course_list("Completed", completed_ids)
+
+    st.divider()
+
+    st.subheader("My path progress")
+    my_paths = load_selected_paths(email.strip())
+    if not my_paths:
+        st.caption("No paths selected yet.")
+    else:
+        for path in my_paths:
+            path_id = path.get("id")
+            if not path_id:
+                continue
+            path_detail, path_error = load_path(path_id)
+            if path_error or not path_detail:
+                continue
+
+            courses = path_detail.get("courses", [])
+            total = len(courses)
+            completed = sum(
+                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed"
+            )
+            in_progress = sum(
+                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "in_progress"
+            )
+            interested = sum(
+                1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested"
+            )
+            progress = completed / total if total else 0
+
+            st.markdown(f"**{path_detail.get('name', '(untitled path)')}**")
+            st.progress(progress)
+            st.caption(
+                f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}"
+            )
 
     st.divider()
 
