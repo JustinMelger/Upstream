@@ -12,7 +12,7 @@ from services.paths import add_path, delete_path, load_path, load_paths
 st.set_page_config(page_title="Learning Paths", page_icon="🧭", layout="wide")
 apply_global_style()
 
-st.title("🧭 Learning Paths")
+st.title("Learning Paths")
 st.caption("Curated paths to guide learning journeys.")
 
 email = st.sidebar.text_input("Your name or email", "")
@@ -65,10 +65,7 @@ with st.expander("➕ Create a path"):
         st.info("Read-only mode. Admins can create paths.")
     else:
         courses_df, _ = load_courses()
-        options = [
-            (int(row["id"]), f"{row['title']} ({row['provider']})".strip())
-            for _, row in courses_df.iterrows()
-        ]
+        options = [(int(row["id"]), f"{row['title']} ({row['provider']})".strip()) for _, row in courses_df.iterrows()]
         course_labels = [label for _, label in options]
         selected_labels = st.multiselect("Select courses", course_labels)
         selected_ids = [options[course_labels.index(label)][0] for label in selected_labels]

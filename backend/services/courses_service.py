@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from backend.database.db import get_conn
@@ -9,7 +10,7 @@ def list_courses(
     category: Optional[str] = None,
     level: Optional[str] = None,
 ) -> List[Dict[str, str]]:
-    sql = "SELECT id, title, provider, category, level, duration_hours, url FROM courses"
+    sql = "SELECT id, title, provider, category, level, duration_hours, url, created_at FROM courses"
     clauses = []
     params: List[str] = []
 
@@ -44,6 +45,7 @@ def list_courses(
             "level": row["level"] or "",
             "duration_hours": row["duration_hours"],
             "url": row["url"] or "",
+            "created_at": row["created_at"],
         }
         for row in rows
     ]
@@ -52,7 +54,7 @@ def list_courses(
 def get_course_by_id(course_id: int) -> Optional[Dict[str, str]]:
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id, title, provider, category, level, duration_hours, url FROM courses WHERE id = ?",
+            "SELECT id, title, provider, category, level, duration_hours, url, created_at FROM courses WHERE id = ?",
             (course_id,),
         ).fetchone()
 
@@ -67,6 +69,7 @@ def get_course_by_id(course_id: int) -> Optional[Dict[str, str]]:
         "level": row["level"] or "",
         "duration_hours": row["duration_hours"],
         "url": row["url"] or "",
+        "created_at": row["created_at"],
     }
 
 
@@ -80,14 +83,15 @@ def create_course(payload: dict) -> Dict[str, str]:
     level = (payload.get("level") or "").strip() or None
     url = (payload.get("url") or "").strip() or None
     duration_hours = _parse_float(payload.get("duration_hours"))
+    created_at = datetime.now(timezone.utc).isoformat()
 
     with get_conn() as conn:
         cur = conn.execute(
             """
-            INSERT INTO courses (title, provider, category, level, duration_hours, url)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO courses (title, provider, category, level, duration_hours, url, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (title, provider, category, level, duration_hours, url),
+            (title, provider, category, level, duration_hours, url, created_at),
         )
         conn.commit()
         course_id = cur.lastrowid

@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -50,9 +51,20 @@ st.subheader("Recently added courses")
 if courses_df.empty:
     st.info("No courses yet. Add one on the Courses page.")
 else:
-    recent = courses_df.sort_values("id", ascending=False).head(3)
+    def _format_date(ts: str | None) -> str:
+        if not ts:
+            return ""
+        try:
+            dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            return dt.strftime("%b %d, %Y")
+        except ValueError:
+            return ts
+
+    recent = courses_df.sort_values("created_at", ascending=False).head(3)
     for _, row in recent.iterrows():
-        st.write(f"• {row['title']} — {row['provider']}")
+        added = _format_date(row.get("created_at"))
+        date_str = f" ({added})" if added else ""
+        st.write(f"• {row['title']} — {row['provider']}{date_str}")
 
 st.divider()
 
