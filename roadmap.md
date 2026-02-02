@@ -19,10 +19,17 @@
 - UI: login screen + guard all pages.
 - Admin allowlist (`ADMIN_EMAILS`) applied post-auth.
 
-## Phase 4 — Colleague tracking + analytics
+## Phase 4 — UI migration to NiceGUI
+- Create NiceGUI shell app with shared navigation and layout.
+- Port login/session flow to NiceGUI (reuse backend auth).
+- Port core pages: Home/Dashboard, Courses, My Courses.
+- Port Paths + My Paths (including ordering UI and admin edit flows).
+- Parity check + remove Streamlit UI once stable.
+
+## Phase 5 — Colleague tracking + analytics
 - Colleague profiles with interest/completion tracking.
 - Basic analytics (popular courses, completion rates).
 
-## Phase 5 — Data durability + polish
+## Phase 6 — Data durability + polish
 - Import/export tools for course data.
 - UI polish + accessibility improvements.
