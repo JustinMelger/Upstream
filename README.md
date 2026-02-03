@@ -3,8 +3,8 @@
 A simple internal learning hub where colleagues can browse curated courses, track progress, and follow ordered learning paths.
 
 ## Docs
-- Architecture: [architecture.md](architecture.md)
-- Roadmap: [roadmap.md](roadmap.md)
+- Architecture: [docs/architecture.md](docs/architecture.md)
+- Roadmap: [docs/roadmap.md](docs/roadmap.md)
 
 ## Run locally (Docker)
 ### Quick start
