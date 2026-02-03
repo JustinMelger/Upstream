@@ -40,6 +40,24 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 - Users sign in on the Login page and stay logged in for the Streamlit session.
 - Optional invite code: set `INVITE_CODE` in the UI environment.
 
+## Conventional commits
+We use Conventional Commits for automated release notes.
+
+Format:
+`type(scope): description`
+
+Common types:
+- `feat`: new feature
+- `fix`: bug fix
+- `chore`: tooling or maintenance
+- `docs`: documentation changes
+- `refactor`: code change without behavior change
+
+Examples:
+- `feat(paths): add course ordering`
+- `fix(tracking): prevent empty status save`
+- `chore: add semantic-release config`
+
 ## API endpoints (read-first)
 - `GET /health`
 - `GET /courses`
