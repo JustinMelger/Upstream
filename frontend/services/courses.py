@@ -27,13 +27,13 @@ def load_courses():
     return df, None
 
 
-def add_course(payload: dict, email: str):
-    return post("/courses", json=payload, headers={"X-User-Email": email})
+def add_course(payload: dict):
+    return post("/courses", json=payload)
 
 
-def delete_course(course_id: int, email: str):
-    return delete(f"/courses/{course_id}", headers={"X-User-Email": email})
+def delete_course(course_id: int):
+    return delete(f"/courses/{course_id}")
 
 
-def update_course(course_id: int, payload: dict, email: str):
-    return put(f"/courses/{course_id}", json=payload, headers={"X-User-Email": email})
+def update_course(course_id: int, payload: dict):
+    return put(f"/courses/{course_id}", json=payload)

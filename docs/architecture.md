@@ -48,8 +48,8 @@ sequenceDiagram
   S-->>API: Session found / not found
   API-->>UI: 200 user / 401
 
-  alt Invite code mode
-    U->>UI: Submit email + invite code
+  alt Username/password mode
+    U->>UI: Submit username + password
     UI->>API: POST /auth/login
     API->>S: Create session
     API-->>UI: Set session cookie

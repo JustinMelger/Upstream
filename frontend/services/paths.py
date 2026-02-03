@@ -12,16 +12,16 @@ def load_paths():
         return [], "Could not reach API."
 
 
-def add_path(payload: dict, email: str):
-    return post("/paths", json=payload, headers={"X-User-Email": email})
+def add_path(payload: dict):
+    return post("/paths", json=payload)
 
 
-def delete_path(path_id: int, email: str):
-    return delete(f"/paths/{path_id}", headers={"X-User-Email": email})
+def delete_path(path_id: int):
+    return delete(f"/paths/{path_id}")
 
 
-def update_path(path_id: int, payload: dict, email: str):
-    return put(f"/paths/{path_id}", json=payload, headers={"X-User-Email": email})
+def update_path(path_id: int, payload: dict):
+    return put(f"/paths/{path_id}", json=payload)
 
 
 @st.cache_data
@@ -34,20 +34,18 @@ def load_path(path_id: int):
         return None, "Could not load path."
 
 
-def select_path(path_id: int, colleague_id: str):
-    return post(f"/paths/{path_id}/select", json={"colleague_id": colleague_id})
+def select_path(path_id: int):
+    return post(f"/paths/{path_id}/select", json={})
 
 
-def unselect_path(path_id: int, colleague_id: str):
-    return post(f"/paths/{path_id}/unselect", json={"colleague_id": colleague_id})
+def unselect_path(path_id: int):
+    return post(f"/paths/{path_id}/unselect", json={})
 
 
 @st.cache_data(ttl=5)
-def load_selected_paths(colleague_id: str):
-    if not colleague_id:
-        return []
+def load_selected_paths():
     try:
-        response = get("/paths/selected/list", params={"colleague_id": colleague_id})
+        response = get("/paths/selected/list")
         response.raise_for_status()
         return response.json()
     except Exception:

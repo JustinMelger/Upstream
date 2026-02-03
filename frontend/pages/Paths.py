@@ -7,7 +7,7 @@ import streamlit as st
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from services.auth import load_role
+from services.auth import load_role, logout as api_logout
 from services.courses import load_courses
 from services.paths import (
     add_path,
@@ -88,14 +88,18 @@ def _course_order_editor(selected_ids: list[int], id_to_label: dict[int, str], k
 email = get_email()
 st.sidebar.caption(f"Signed in as {email}")
 if st.sidebar.button("Log out"):
+    try:
+        api_logout()
+    except Exception:
+        pass
     logout()
     st.switch_page("pages/Login.py")
-role = load_role(email.strip())
+role = load_role()
 
 my_paths = []
 if email.strip():
     st.sidebar.subheader("My paths")
-    my_paths = load_selected_paths(email.strip())
+    my_paths = load_selected_paths()
     if not my_paths:
         st.sidebar.caption("No paths selected.")
     else:
@@ -107,7 +111,7 @@ if email.strip():
                 st.switch_page("pages/MyPaths.py")
             if col2.button("✕", key=f"sidebar_unselect_{p.get('id', label)}"):
                 try:
-                    response = unselect_path(p.get("id"), email.strip())
+                    response = unselect_path(p.get("id"))
                     response.raise_for_status()
                     st.success("Path removed.")
                     st.cache_data.clear()
@@ -195,7 +199,6 @@ else:
                                             "description": edit_description.strip(),
                                             "course_ids": ordered_ids,
                                         },
-                                        email.strip(),
                                     )
                                     if response.status_code == 409:
                                         st.error("A path with that name already exists.")
@@ -214,7 +217,7 @@ else:
                                 st.warning("Check confirm before deleting.")
                             else:
                                 try:
-                                    response = delete_path(path_id, email.strip())
+                                    response = delete_path(path_id)
                                     response.raise_for_status()
                                     st.success("Path deleted.")
                                     st.cache_data.clear()
@@ -231,8 +234,6 @@ else:
                     st.info("No courses in this path yet.")
                 else:
                     st.markdown("**Courses in this path**")
-                    if not email.strip():
-                        st.caption("Enter your name/email in the sidebar to track course status.")
                     for idx, course in enumerate(courses, start=1):
                         title = course.get("title", "(untitled)")
                         url = course.get("url", "")
@@ -253,7 +254,7 @@ else:
                     if path_id in selected_path_ids:
                         if st.button("Remove from my paths", key=f"remove_path_{path_id}"):
                             try:
-                                response = unselect_path(path_id, email.strip())
+                                response = unselect_path(path_id)
                                 response.raise_for_status()
                                 st.success("Path removed.")
                                 st.cache_data.clear()
@@ -263,15 +264,13 @@ else:
                     else:
                         if st.button("Add to my paths", key=f"add_path_{path_id}"):
                             try:
-                                response = select_path(path_id, email.strip())
+                                response = select_path(path_id)
                                 response.raise_for_status()
                                 st.success("Path added.")
                                 st.cache_data.clear()
                                 st.rerun()
                             except Exception:
                                 st.error("Could not add path.")
-                else:
-                    st.caption("Enter your name/email in the sidebar to save.")
 
         st.divider()
 
@@ -303,7 +302,6 @@ with st.expander("➕ Create a path"):
                             "description": description.strip(),
                             "course_ids": ordered_ids,
                         },
-                        email.strip(),
                     )
                     if response.status_code == 409:
                         st.error("A path with that name already exists.")

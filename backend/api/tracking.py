@@ -1,7 +1,8 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from backend.api.deps import require_session
 from backend.services.auth_service import is_admin
 from backend.services.tracking_service import (
     list_recent_activity,
@@ -18,17 +19,23 @@ router = APIRouter(prefix="/tracking", tags=["tracking"])
 
 
 @router.get("", response_model=List[dict])
-def get_tracking(colleague_id: Optional[str] = Query(default=None)):
-    return list_tracking(colleague_id=colleague_id)
+def get_tracking(
+    colleague_id: Optional[str] = Query(default=None),
+    current_user: str = Depends(require_session),
+):
+    target = colleague_id or current_user
+    if target != current_user and not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="admin_required")
+    return list_tracking(colleague_id=target)
 
 
 @router.post("", response_model=dict)
-def set_tracking(payload: dict):
-    colleague_id = (payload.get("colleague_id") or "").strip()
+def set_tracking(payload: dict, current_user: str = Depends(require_session)):
+    colleague_id = current_user
     course_id = payload.get("course_id")
     status = (payload.get("status") or "").strip()
 
-    if not colleague_id or not course_id or not status:
+    if not course_id or not status:
         raise HTTPException(status_code=400, detail="missing_fields")
 
     try:
@@ -43,11 +50,11 @@ def set_tracking(payload: dict):
 
 
 @router.post("/delete", response_model=dict)
-def delete_tracking(payload: dict):
-    colleague_id = (payload.get("colleague_id") or "").strip()
+def delete_tracking(payload: dict, current_user: str = Depends(require_session)):
+    colleague_id = current_user
     course_id = payload.get("course_id")
 
-    if not colleague_id or not course_id:
+    if not course_id:
         raise HTTPException(status_code=400, detail="missing_fields")
 
     try:
@@ -62,18 +69,20 @@ def delete_tracking(payload: dict):
 @router.get("/stats", response_model=dict)
 def get_stats(
     colleague_id: Optional[str] = Query(default=None),
-    x_user_email: str | None = Header(default=None),
+    current_user: str = Depends(require_session),
 ):
+    if colleague_id and colleague_id != current_user and not is_admin(current_user):
+        raise HTTPException(status_code=403, detail="admin_required")
     if colleague_id:
         return stats_for_colleague(colleague_id)
-    if is_admin(x_user_email):
+    if is_admin(current_user):
         return stats_all()
     raise HTTPException(status_code=403, detail="admin_required")
 
 
 @router.get("/stats/users", response_model=list[dict])
-def get_stats_by_user(x_user_email: str | None = Header(default=None)):
-    if not is_admin(x_user_email):
+def get_stats_by_user(current_user: str = Depends(require_session)):
+    if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return stats_by_user()
 
@@ -81,8 +90,8 @@ def get_stats_by_user(x_user_email: str | None = Header(default=None)):
 @router.get("/recent", response_model=list[dict])
 def get_recent_activity(
     limit: int = Query(default=10),
-    x_user_email: str | None = Header(default=None),
+    current_user: str = Depends(require_session),
 ):
-    if not is_admin(x_user_email):
+    if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return list_recent_activity(limit=limit)

@@ -17,3 +17,7 @@ name = "Courses"
 [[pages]]
 path = "frontend/pages/MyCourses.py"
 name = "My Courses"
+
+[[pages]]
+path = "frontend/pages/Admin.py"
+name = "Admin"

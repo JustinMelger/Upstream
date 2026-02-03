@@ -24,42 +24,33 @@ def load_tracking(colleague_id: str):
 
 
 @st.cache_data
-def load_stats(email: str, colleague_id: str, is_admin: bool):
+def load_stats(colleague_id: str, is_admin: bool):
     params = {}
     if colleague_id and not is_admin:
         params["colleague_id"] = colleague_id
     try:
-        response = get(
-            "/tracking/stats",
-            params=params,
-            headers={"X-User-Email": email} if email else {},
-        )
+        response = get("/tracking/stats", params=params)
         response.raise_for_status()
         return response.json()
     except Exception:
         return {}
 
 
-def save_status(colleague_id: str, course_id: int, status: str):
+def save_status(course_id: int, status: str):
     return post(
         "/tracking",
-        json={"colleague_id": colleague_id, "course_id": course_id, "status": status},
-        headers={"X-User-Email": colleague_id},
+        json={"course_id": course_id, "status": status},
     )
 
 
-def delete_status(colleague_id: str, course_id: int):
-    return post(
-        "/tracking/delete",
-        json={"colleague_id": colleague_id, "course_id": course_id},
-        headers={"X-User-Email": colleague_id},
-    )
+def delete_status(course_id: int):
+    return post("/tracking/delete", json={"course_id": course_id})
 
 
 @st.cache_data
-def load_user_stats(email: str):
+def load_user_stats():
     try:
-        response = get("/tracking/stats/users", headers={"X-User-Email": email})
+        response = get("/tracking/stats/users")
         response.raise_for_status()
         return response.json()
     except Exception:
@@ -82,15 +73,9 @@ def load_recent_activity(colleague_id: str, limit: int = 3):
 
 
 @st.cache_data
-def load_team_recent_activity(email: str, limit: int = 5):
-    if not email:
-        return []
+def load_team_recent_activity(limit: int = 5):
     try:
-        response = get(
-            "/tracking/recent",
-            params={"limit": limit},
-            headers={"X-User-Email": email},
-        )
+        response = get("/tracking/recent", params={"limit": limit})
         response.raise_for_status()
         return response.json()
     except Exception:

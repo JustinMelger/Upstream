@@ -8,11 +8,14 @@ services:
     environment:
       - COURSES_CSV=/app/courses.csv
       - DATABASE_PATH=/app/learning_hub.db
-      - ADMIN_EMAILS=admin@example.com
+      - SESSION_DAYS=30
+      - BOOTSTRAP_ADMIN_USERNAME=admin
+      - BOOTSTRAP_ADMIN_PASSWORD=admin
 
   ui:
     build: .
-    command: ["streamlit", "run", "frontend/Home.py", "--server.port=8502", "--server.address=0.0.0.0"]
+    working_dir: /app/frontend
+    command: ["streamlit", "run", "Home.py", "--server.port=8502", "--server.address=0.0.0.0"]
     ports:
       - "8502:8502"
     volumes:
@@ -21,3 +24,4 @@ services:
       - api
     environment:
       - API_BASE_URL=http://api:8000
+      - COOKIE_SECURE=false
