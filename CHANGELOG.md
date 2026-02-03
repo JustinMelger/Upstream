@@ -13,6 +13,15 @@
 ### Bug Fixes
 
 * set release to 0.* ([ca92865](https://github.com/JustinMelger/learning-platform/commit/ca928654f1fca4d640d46be717cca38ad98f3967))
+* set release to 0.* ([1e8a48f](https://github.com/JustinMelger/learning-platform/commit/1e8a48f094364d48035a7012e6795d3f511af706))
+* set release to 0.* ([dcd2cd0](https://github.com/JustinMelger/learning-platform/commit/dcd2cd0d1e13fd0d9e6a2a026b53244d455efa9f))
+
+## [0.1.1](https://github.com/JustinMelger/learning-platform/compare/v0.1.0...v0.1.1) (2026-02-03)
+
+
+### Bug Fixes
+
+* set release to 0.* ([ca92865](https://github.com/JustinMelger/learning-platform/commit/ca928654f1fca4d640d46be717cca38ad98f3967))
 
 # 1.0.0 (2026-02-03)
 
