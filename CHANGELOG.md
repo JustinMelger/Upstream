@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/JustinMelger/learning-platform/compare/v0.2.0...v0.3.0) (2026-02-03)
+
+
+### Features
+
+* add login username + pass + admin page + sessions ([99dde40](https://github.com/JustinMelger/learning-platform/commit/99dde40f0bc8dafc5d43be9d1e6d6821e4471971))
+
 # [0.2.0](https://github.com/JustinMelger/learning-platform/compare/v0.1.0...v0.2.0) (2026-02-03)
 
 
