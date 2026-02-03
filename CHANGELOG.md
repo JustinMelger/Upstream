@@ -1,3 +1,10 @@
+## [0.1.1](https://github.com/JustinMelger/learning-platform/compare/v0.1.0...v0.1.1) (2026-02-03)
+
+
+### Bug Fixes
+
+* set release to 0.* ([ca92865](https://github.com/JustinMelger/learning-platform/commit/ca928654f1fca4d640d46be717cca38ad98f3967))
+
 # 1.0.0 (2026-02-03)
 
 
