@@ -8,12 +8,22 @@ import streamlit as st
 
 sys.path.append(str(Path(__file__).parent))
 
-from services.auth import load_role
+from services.auth import load_role, logout as api_logout
 from services.courses import load_courses
 from services.paths import load_path, load_paths, load_selected_paths
 from services.tracking import load_recent_activity, load_stats, load_team_recent_activity, load_tracking, load_user_stats
 from state.session import get_email, logout, require_login
 from ui.style import apply_global_style
+
+
+def _format_time(ts: str) -> str:
+    if not ts:
+        return ""
+    try:
+        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        return dt.strftime("%b %d, %Y %H:%M")
+    except ValueError:
+        return ts
 
 
 st.set_page_config(page_title="Home", layout="wide")
@@ -23,6 +33,10 @@ require_login()
 email = get_email()
 st.sidebar.caption(f"Signed in as {email}")
 if st.sidebar.button("Log out"):
+    try:
+        api_logout()
+    except Exception:
+        pass
     logout()
     st.switch_page("pages/Login.py")
 
@@ -34,7 +48,7 @@ if load_error:
     st.error(load_error)
 
 paths, _ = load_paths()
-role = load_role(email.strip())
+role = load_role()
 
 st.subheader("Progress snapshot")
 mode = "My stats"
@@ -43,8 +57,7 @@ if role == "admin":
 
 col1, col2, col3 = st.columns(3)
 stats = load_stats(
-    email.strip(),
-    email.strip(),
+    "" if role == "admin" and mode == "Team totals" else email.strip(),
     role == "admin" and mode == "Team totals",
 )
 col1.metric("Interested", stats.get("interested", 0))
@@ -59,6 +72,7 @@ interested_ids = [cid for cid, status in tracking_map.items() if status == "inte
 in_progress_ids = [cid for cid, status in tracking_map.items() if status == "in_progress"]
 completed_ids = [cid for cid, status in tracking_map.items() if status == "completed"]
 
+
 def _render_course_list(title: str, ids: list[int]):
     st.subheader(title)
     if not ids:
@@ -68,6 +82,7 @@ def _render_course_list(title: str, ids: list[int]):
     for _, row in subset.iterrows():
         st.write(f"• {row['title']}")
 
+
 _render_course_list("Interested", interested_ids)
 _render_course_list("In progress", in_progress_ids)
 _render_course_list("Completed", completed_ids)
@@ -75,7 +90,7 @@ _render_course_list("Completed", completed_ids)
 st.divider()
 
 st.subheader("My path progress")
-my_paths = load_selected_paths(email.strip())
+my_paths = load_selected_paths()
 if not my_paths:
     st.caption("No paths selected yet.")
 else:
@@ -89,22 +104,14 @@ else:
 
         courses = path_detail.get("courses", [])
         total = len(courses)
-        completed = sum(
-            1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed"
-        )
-        in_progress = sum(
-            1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "in_progress"
-        )
-        interested = sum(
-            1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested"
-        )
+        completed = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "completed")
+        in_progress = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "in_progress")
+        interested = sum(1 for course in courses if tracking_map.get(int(course.get("id", 0)), "") == "interested")
         progress = completed / total if total else 0
 
         st.markdown(f"**{path_detail.get('name', '(untitled path)')}**")
         st.progress(progress)
-        st.caption(
-            f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}"
-        )
+        st.caption(f"Progress: {completed}/{total} completed • In progress: {in_progress} • Interested: {interested}")
 
 st.divider()
 
@@ -114,15 +121,6 @@ if not activity:
     st.caption("No recent updates yet.")
 else:
     course_lookup = {int(row["id"]): row["title"] for _, row in courses_df.iterrows() if row.get("id")}
-
-    def _format_time(ts: str) -> str:
-        if not ts:
-            return ""
-        try:
-            dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-            return dt.strftime("%b %d, %Y %H:%M")
-        except ValueError:
-            return ts
 
     for item in activity:
         cid = int(item.get("course_id", 0))
@@ -135,14 +133,14 @@ st.divider()
 
 if role == "admin":
     st.subheader("Team stats by user")
-    user_stats = load_user_stats(email.strip())
+    user_stats = load_user_stats()
     if not user_stats:
         st.info("No user stats yet.")
     else:
         st.dataframe(user_stats)
 
     st.subheader("Team recent activity")
-    team_activity = load_team_recent_activity(email.strip(), limit=5)
+    team_activity = load_team_recent_activity(limit=5)
     if not team_activity:
         st.info("No team activity yet.")
     else:

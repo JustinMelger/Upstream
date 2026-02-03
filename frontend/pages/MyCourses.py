@@ -7,6 +7,7 @@ import streamlit as st
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+from services.auth import logout as api_logout
 from services.courses import load_courses
 from services.tracking import delete_status, load_tracking, save_status
 from state.session import get_email, logout, require_login
@@ -24,6 +25,10 @@ st.caption("Your tracked courses and current status.")
 email = get_email()
 st.sidebar.caption(f"Signed in as {email}")
 if st.sidebar.button("Log out"):
+    try:
+        api_logout()
+    except Exception:
+        pass
     logout()
     st.switch_page("pages/Login.py")
 
@@ -90,7 +95,7 @@ for _, row in filtered.iterrows():
             )
             if status != current_status:
                 try:
-                    response = save_status(email.strip(), course_id, status)
+                    response = save_status(course_id, status)
                     response.raise_for_status()
                     st.success("Status saved.")
                     st.cache_data.clear()
@@ -100,7 +105,7 @@ for _, row in filtered.iterrows():
 
             if st.button("Remove", key=f"mycourses_remove_{course_id}"):
                 try:
-                    response = delete_status(email.strip(), course_id)
+                    response = delete_status(course_id)
                     response.raise_for_status()
                     st.success("Removed from My Courses.")
                     st.cache_data.clear()

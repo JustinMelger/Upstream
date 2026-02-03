@@ -14,8 +14,10 @@ A simple internal learning hub where colleagues can browse curated courses, trac
    - `http://localhost:8502`
 
 ### Environment variables
-- `ADMIN_EMAILS`: comma-separated admin emails (API + UI).
-- `INVITE_CODE`: optional invite code for login (UI).
+- `SESSION_DAYS`: session lifetime in days (API).
+- `BOOTSTRAP_ADMIN_USERNAME`: first admin username when no users exist (API).
+- `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist (API).
+- `COOKIE_SECURE`: set to `true` behind HTTPS (UI).
 - `DATABASE_PATH`: SQLite file path (API).
 - `COURSES_CSV`: seed CSV path (API).
 
@@ -35,10 +37,11 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 - My Courses: update status and remove tracked courses.
 - Paths: browse and add to My Paths (admins can edit/delete and set order).
 - My Paths: manage selected paths and update course status.
+- Admin: create user accounts (admin only).
 
-## Login (simple, no OAuth)
-- Users sign in on the Login page and stay logged in for the Streamlit session.
-- Optional invite code: set `INVITE_CODE` in the UI environment.
+## Login (username + password)
+- First login bootstraps an admin user (if no users exist yet) using the bootstrap credentials.
+- Admins can create additional user accounts from the Dashboard.
 
 ## Conventional commits
 We use Conventional Commits for automated release notes.
@@ -60,6 +63,9 @@ Examples:
 
 ## API endpoints (read-first)
 - `GET /health`
+- `POST /auth/login`
+- `GET /auth/me`
+- `POST /auth/logout`
 - `GET /courses`
 - `GET /courses/{id}`
 - `GET /paths`
@@ -72,6 +78,11 @@ Examples:
 - `POST /paths/{id}/unselect`
 
 Admin-only:
+- `POST /auth/users`
+- `GET /auth/users`
+- `POST /auth/users/reset`
+- `POST /auth/users/disable`
+- `DELETE /auth/users/{username}`
 - `POST /courses`
 - `PUT /courses/{id}`
 - `DELETE /courses/{id}`
@@ -81,10 +92,9 @@ Admin-only:
 - `GET /tracking/stats` (team stats)
 - `GET /tracking/stats/users` (team stats by user)
 
-## Roles (temporary, email-based)
+## Roles
 - Admins can add/edit/delete courses and manage paths.
 - Users can browse courses, manage My Courses, and manage My Paths.
-- Admins are defined by `ADMIN_EMAILS` in `docker-compose.yml` (comma-separated).
 
 ## Tracking
 - Set status per course: `interested`, `in_progress`, or `completed` (My Courses or My Paths).

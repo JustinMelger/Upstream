@@ -7,7 +7,7 @@ import streamlit as st
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from services.auth import load_role
+from services.auth import load_role, logout as api_logout
 from services.courses import add_course, delete_course, load_courses, update_course
 from services.tracking import delete_status, load_tracking, save_status
 from state.session import get_email, logout, require_login
@@ -26,9 +26,13 @@ def render_sidebar(df: pd.DataFrame) -> tuple[str, str, str, list, list, list]:
     st.sidebar.header("Filters")
     st.sidebar.caption(f"Signed in as {email}")
     if st.sidebar.button("Log out"):
+        try:
+            api_logout()
+        except Exception:
+            pass
         logout()
         st.switch_page("pages/Login.py")
-    role = load_role(email.strip())
+    role = load_role()
 
     search = st.sidebar.text_input("Search", "")
     category = st.sidebar.multiselect("Category", sorted([c for c in df["category"].unique() if c]))
@@ -104,7 +108,6 @@ def render_course_card(row: pd.Series, email: str, role: str, tracking_map: dict
                                         "duration_hours": edit_duration if edit_duration > 0 else None,
                                         "url": edit_url.strip(),
                                     },
-                                    email,
                                 )
                                 response.raise_for_status()
                                 st.success("Course updated.")
@@ -150,10 +153,10 @@ def render_course_card(row: pd.Series, email: str, role: str, tracking_map: dict
                     st.caption("In My Courses")
                     if st.button("Remove", key=f"remove_mycourse_{course_id}"):
                         if not email:
-                            st.warning("Enter your name/email in the sidebar first.")
+                            st.warning("Sign in to manage My Courses.")
                         else:
                             try:
-                                response = delete_status(email, course_id)
+                                response = delete_status(course_id)
                                 response.raise_for_status()
                                 st.success("Removed from My Courses.")
                                 st.cache_data.clear()
@@ -163,10 +166,10 @@ def render_course_card(row: pd.Series, email: str, role: str, tracking_map: dict
                 else:
                     if st.button("Add to My Courses", key=f"add_mycourse_{course_id}"):
                         if not email:
-                            st.warning("Enter your name/email in the sidebar first.")
+                            st.warning("Sign in to manage My Courses.")
                         else:
                             try:
-                                response = save_status(email, course_id, "interested")
+                                response = save_status(course_id, "interested")
                                 response.raise_for_status()
                                 st.success("Added to My Courses.")
                                 st.cache_data.clear()
@@ -181,7 +184,7 @@ def render_course_card(row: pd.Series, email: str, role: str, tracking_map: dict
                         st.warning("Check confirm before deleting.")
                     else:
                         try:
-                            response = delete_course(course_id, email)
+                            response = delete_course(course_id)
                             response.raise_for_status()
                             st.success("Course deleted.")
                             st.cache_data.clear()
@@ -190,7 +193,7 @@ def render_course_card(row: pd.Series, email: str, role: str, tracking_map: dict
                             st.error("Could not delete course.")
 
 
-def render_add_course(role: str, email: str) -> None:
+def render_add_course(role: str) -> None:
     with st.expander("➕ Add a course"):
         if role != "admin":
             st.info("Read-only mode. Admins can add or edit courses.")
@@ -220,7 +223,6 @@ def render_add_course(role: str, email: str) -> None:
                         "duration_hours": d if d > 0 else None,
                         "url": u.strip(),
                     },
-                    email,
                 )
                 response.raise_for_status()
                 st.success("Course added.")
@@ -251,4 +253,4 @@ for _, row in filtered.iterrows():
     st.divider()
 
 st.divider()
-render_add_course(role, email)
+render_add_course(role)

@@ -42,6 +42,26 @@ CREATE TABLE IF NOT EXISTS path_courses (
   UNIQUE(path_id, course_id)
 );
 
+CREATE TABLE IF NOT EXISTS sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  colleague_id TEXT NOT NULL,
+  token_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  last_seen TEXT NOT NULL,
+  expires_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_login_at TEXT,
+  disabled INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS user_paths (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   colleague_id TEXT NOT NULL,
@@ -63,6 +83,24 @@ def init_db() -> None:
         conn.executescript(SCHEMA)
         _ensure_column(conn, "courses", "created_at", "TEXT")
         _ensure_column(conn, "path_courses", "position", "INTEGER")
+        _ensure_column(conn, "sessions", "expires_at", "TEXT")
+        _ensure_column(conn, "sessions", "last_seen", "TEXT")
+        _ensure_column(conn, "sessions", "token_hash", "TEXT")
+        _ensure_column(conn, "sessions", "colleague_id", "TEXT")
+        _ensure_column(conn, "sessions", "created_at", "TEXT")
+        _ensure_column(conn, "users", "username", "TEXT")
+        _ensure_column(conn, "users", "password_hash", "TEXT")
+        _ensure_column(conn, "users", "role", "TEXT")
+        _ensure_column(conn, "users", "created_at", "TEXT")
+        _ensure_column(conn, "users", "updated_at", "TEXT")
+        _ensure_column(conn, "users", "last_login_at", "TEXT")
+        _ensure_column(conn, "users", "disabled", "INTEGER")
+        _ensure_column(conn, "user_paths", "status", "TEXT")
+        _ensure_column(conn, "user_paths", "updated_at", "TEXT")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions (token_hash)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_colleague ON sessions (colleague_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users (username)")
+        conn.commit()
 
 
 def seed_courses_from_csv(csv_path: Path) -> None:

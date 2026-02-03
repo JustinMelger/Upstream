@@ -1,7 +1,8 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from backend.api.deps import require_session
 from backend.services.auth_service import is_admin
 from backend.services.courses_service import (
     create_course,
@@ -21,19 +22,20 @@ def list_courses(
     provider: Optional[str] = None,
     category: Optional[str] = None,
     level: Optional[str] = None,
+    current_user: str = Depends(require_session),
 ):
     return fetch_courses(query=q, provider=provider, category=category, level=level)
 
 
 @router.get("/{course_id}", response_model=dict)
-def get_course(course_id: int):
+def get_course(course_id: int, current_user: str = Depends(require_session)):
     course = get_course_by_id(course_id)
     return course or {"error": "not_found"}
 
 
 @router.post("", response_model=dict)
-def add_course(payload: dict, x_user_email: str | None = Header(default=None)):
-    if not is_admin(x_user_email):
+def add_course(payload: dict, current_user: str = Depends(require_session)):
+    if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     try:
         return create_course(payload)
@@ -42,8 +44,8 @@ def add_course(payload: dict, x_user_email: str | None = Header(default=None)):
 
 
 @router.put("/{course_id}", response_model=dict)
-def edit_course(course_id: int, payload: dict, x_user_email: str | None = Header(default=None)):
-    if not is_admin(x_user_email):
+def edit_course(course_id: int, payload: dict, current_user: str = Depends(require_session)):
+    if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     course = update_course(course_id, payload)
     if not course:
@@ -52,8 +54,8 @@ def edit_course(course_id: int, payload: dict, x_user_email: str | None = Header
 
 
 @router.delete("/{course_id}", response_model=dict)
-def remove_course(course_id: int, x_user_email: str | None = Header(default=None)):
-    if not is_admin(x_user_email):
+def remove_course(course_id: int, current_user: str = Depends(require_session)):
+    if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     ok = delete_course(course_id)
     return {"deleted": ok}

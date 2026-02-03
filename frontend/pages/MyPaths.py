@@ -6,6 +6,7 @@ import streamlit as st
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+from services.auth import logout as api_logout
 from services.paths import load_path, load_selected_paths, unselect_path
 from services.tracking import load_tracking, save_status
 from state.session import get_email, logout, require_login
@@ -23,11 +24,15 @@ st.caption("Update course status and manage your selected learning paths.")
 email = get_email()
 st.sidebar.caption(f"Signed in as {email}")
 if st.sidebar.button("Log out"):
+    try:
+        api_logout()
+    except Exception:
+        pass
     logout()
     st.switch_page("pages/Login.py")
 
 tracking_map = load_tracking(email.strip())
-my_paths = load_selected_paths(email.strip())
+my_paths = load_selected_paths()
 
 if not my_paths:
     st.info("No paths selected yet. Add one on the Learning Paths page.")
@@ -92,7 +97,7 @@ for path in my_paths:
                             )
                             if status != current_status:
                                 try:
-                                    response = save_status(email.strip(), int(course_id), status)
+                                    response = save_status(int(course_id), status)
                                     response.raise_for_status()
                                     st.success("Status saved.")
                                     st.cache_data.clear()
@@ -103,7 +108,7 @@ for path in my_paths:
         with col2:
             if st.button("Remove path", key=f"mypath_remove_{path_id}"):
                 try:
-                    response = unselect_path(path_id, email.strip())
+                    response = unselect_path(path_id)
                     response.raise_for_status()
                     st.success("Path removed.")
                     st.cache_data.clear()
