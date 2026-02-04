@@ -1,4 +1,3 @@
-
 import pytest
 
 from backend.database.db import get_conn, init_db
@@ -6,7 +5,6 @@ from backend.services.courses_service import create_course, delete_course, get_c
 
 
 def _clear_courses():
-
     init_db()
     with get_conn() as conn:
         conn.execute("DELETE FROM courses")

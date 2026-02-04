@@ -1,4 +1,3 @@
-
 import pytest
 
 from backend.database.db import get_conn, init_db
@@ -6,7 +5,6 @@ from backend.services.user_paths_service import add_user_path, list_user_paths, 
 
 
 def _clear_user_paths():
-
     init_db()
     with get_conn() as conn:
         conn.execute("DELETE FROM user_paths")

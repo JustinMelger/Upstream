@@ -1,4 +1,3 @@
-
 import pytest
 
 from backend.database.db import get_conn, init_db
@@ -13,7 +12,6 @@ from backend.services.tracking_service import (
 
 
 def _clear_tracking():
-
     init_db()
     with get_conn() as conn:
         conn.execute("DELETE FROM tracking")

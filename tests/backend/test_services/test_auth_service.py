@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -17,7 +16,6 @@ from backend.services.auth_service import (
 
 
 def _clear_auth_tables():
-
     init_db()
     with get_conn() as conn:
         conn.execute("DELETE FROM sessions")

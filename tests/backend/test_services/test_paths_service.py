@@ -1,4 +1,3 @@
-
 from datetime import datetime, timezone
 
 import pytest
@@ -8,7 +7,6 @@ from backend.services.paths_service import create_path, delete_path, get_path, u
 
 
 def _clear_paths():
-
     init_db()
     with get_conn() as conn:
         conn.execute("DELETE FROM path_courses")

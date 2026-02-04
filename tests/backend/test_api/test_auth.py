@@ -1,4 +1,3 @@
-
 import pytest
 
 from backend.database.db import get_conn

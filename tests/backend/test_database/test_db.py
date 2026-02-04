@@ -1,4 +1,3 @@
-
 import pytest
 
 from backend.database.db import get_conn, init_db, seed_courses_from_csv
