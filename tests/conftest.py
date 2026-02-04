@@ -1,15 +1,13 @@
 import importlib
 import os
-import tempfile
-
 import pytest
 from fastapi.testclient import TestClient
 
 
-@pytest.fixture(scope="session")
-def app_client():
-    tmp = tempfile.NamedTemporaryFile(delete=False)
-    os.environ["DATABASE_PATH"] = tmp.name
+@pytest.fixture()
+def app_client(tmp_path):
+    db_path = tmp_path / "test.db"
+    os.environ["DATABASE_PATH"] = str(db_path)
     os.environ["SESSION_DAYS"] = "30"
     os.environ["BOOTSTRAP_ADMIN_USERNAME"] = "admin"
     os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin"
