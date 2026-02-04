@@ -14,3 +14,17 @@ dependencies = [
     "ruff>=0.14.14",
     "pytest>=8.0.0",
 ]
+
+[tool.ruff]
+line-length = 128
+
+[tool.ruff.lint]
+select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend", "frontend"]
+combine-as-imports = true
+force-sort-within-sections = true
+lines-after-imports = 2
+order-by-type = false
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
