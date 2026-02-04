@@ -23,6 +23,15 @@ def get_tracking(
     colleague_id: Optional[str] = Query(default=None),
     current_user: str = Depends(require_session),
 ):
+    """List tracking entries for a colleague.
+
+    Args:
+        colleague_id: Optional colleague username to query.
+        current_user: Authenticated username.
+
+    Returns:
+        list[dict]: Tracking entries.
+    """
     target = colleague_id or current_user
     if target != current_user and not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
@@ -31,6 +40,15 @@ def get_tracking(
 
 @router.post("", response_model=dict)
 def set_tracking(payload: dict, current_user: str = Depends(require_session)):
+    """Create or update tracking status for a course.
+
+    Args:
+        payload: Tracking payload with course_id and status.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Tracking record.
+    """
     colleague_id = current_user
     course_id = payload.get("course_id")
     status = (payload.get("status") or "").strip()
@@ -51,6 +69,15 @@ def set_tracking(payload: dict, current_user: str = Depends(require_session)):
 
 @router.post("/delete", response_model=dict)
 def delete_tracking(payload: dict, current_user: str = Depends(require_session)):
+    """Remove tracking status for a course.
+
+    Args:
+        payload: Delete payload with course_id.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Delete result.
+    """
     colleague_id = current_user
     course_id = payload.get("course_id")
 
@@ -71,6 +98,15 @@ def get_stats(
     colleague_id: Optional[str] = Query(default=None),
     current_user: str = Depends(require_session),
 ):
+    """Return tracking stats for a colleague or team totals.
+
+    Args:
+        colleague_id: Optional colleague username to query.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Stats payload.
+    """
     if colleague_id and colleague_id != current_user and not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     if colleague_id:
@@ -82,6 +118,14 @@ def get_stats(
 
 @router.get("/stats/users", response_model=list[dict])
 def get_stats_by_user(current_user: str = Depends(require_session)):
+    """Return tracking stats grouped by user (admin only).
+
+    Args:
+        current_user: Authenticated username.
+
+    Returns:
+        list[dict]: Stats by user.
+    """
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return stats_by_user()
@@ -92,6 +136,15 @@ def get_recent_activity(
     limit: int = Query(default=10),
     current_user: str = Depends(require_session),
 ):
+    """Return recent activity for the team (admin only).
+
+    Args:
+        limit: Max number of records.
+        current_user: Authenticated username.
+
+    Returns:
+        list[dict]: Recent activity records.
+    """
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return list_recent_activity(limit=limit)

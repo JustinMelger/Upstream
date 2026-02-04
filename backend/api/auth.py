@@ -23,6 +23,17 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=dict)
 def login(payload: dict):
+    """Authenticate a user and create a session.
+
+    Args:
+        payload: Login payload with username and password.
+
+    Returns:
+        dict: Session token, expiry, and user metadata.
+
+    Raises:
+        HTTPException: If credentials are missing or invalid.
+    """
     username = (payload.get("username") or "").strip()
     password = (payload.get("password") or "").strip()
     if not username or not password:
@@ -53,6 +64,14 @@ def login(payload: dict):
 
 @router.get("/me", response_model=dict)
 def me(x_session_token: str | None = Header(default=None)):
+    """Return the current authenticated user.
+
+    Args:
+        x_session_token: Session token from request headers.
+
+    Returns:
+        dict: User metadata and session expiry.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
@@ -65,6 +84,14 @@ def me(x_session_token: str | None = Header(default=None)):
 
 @router.post("/logout", response_model=dict)
 def logout(x_session_token: str | None = Header(default=None)):
+    """Revoke all sessions for the current user.
+
+    Args:
+        x_session_token: Session token from request headers.
+
+    Returns:
+        dict: Number of revoked sessions.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
@@ -74,6 +101,14 @@ def logout(x_session_token: str | None = Header(default=None)):
 
 @router.get("/role", response_model=dict)
 def get_role(x_session_token: str | None = Header(default=None)):
+    """Return the role for the current user.
+
+    Args:
+        x_session_token: Session token from request headers.
+
+    Returns:
+        dict: Role name.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
@@ -85,6 +120,15 @@ def get_role(x_session_token: str | None = Header(default=None)):
 
 @router.post("/users", response_model=dict)
 def create_user_endpoint(payload: dict, x_session_token: str | None = Header(default=None)):
+    """Create a new user account (admin only).
+
+    Args:
+        payload: User creation payload.
+        x_session_token: Session token from request headers.
+
+    Returns:
+        dict: Created user metadata.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
@@ -106,6 +150,14 @@ def create_user_endpoint(payload: dict, x_session_token: str | None = Header(def
 
 @router.get("/users", response_model=list[dict])
 def list_users_endpoint(x_session_token: str | None = Header(default=None)):
+    """List all users (admin only).
+
+    Args:
+        x_session_token: Session token from request headers.
+
+    Returns:
+        list[dict]: User list.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
@@ -116,6 +168,15 @@ def list_users_endpoint(x_session_token: str | None = Header(default=None)):
 
 @router.post("/users/reset", response_model=dict)
 def reset_password_endpoint(payload: dict, x_session_token: str | None = Header(default=None)):
+    """Reset a user's password (admin only).
+
+    Args:
+        payload: Reset payload with username and new password.
+        x_session_token: Session token from request headers.
+
+    Returns:
+        dict: Update result.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
@@ -135,6 +196,15 @@ def reset_password_endpoint(payload: dict, x_session_token: str | None = Header(
 
 @router.delete("/users/{username}", response_model=dict)
 def delete_user_endpoint(username: str, x_session_token: str | None = Header(default=None)):
+    """Delete a user account (admin only).
+
+    Args:
+        username: Username to delete.
+        x_session_token: Session token from request headers.
+
+    Returns:
+        dict: Delete result.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
@@ -149,6 +219,15 @@ def delete_user_endpoint(username: str, x_session_token: str | None = Header(def
 
 @router.post("/users/disable", response_model=dict)
 def disable_user_endpoint(payload: dict, x_session_token: str | None = Header(default=None)):
+    """Disable or enable a user (admin only).
+
+    Args:
+        payload: Disable payload with username and disabled flag.
+        x_session_token: Session token from request headers.
+
+    Returns:
+        dict: Update result.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")

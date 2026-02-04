@@ -4,6 +4,17 @@ from backend.services.auth_service import get_session
 
 
 def require_session(x_session_token: str | None = Header(default=None)) -> str:
+    """Validate session token and return the authenticated username.
+
+    Args:
+        x_session_token: Session token from request headers.
+
+    Returns:
+        str: Authenticated username.
+
+    Raises:
+        HTTPException: If the session is missing or invalid.
+    """
     session = get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")

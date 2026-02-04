@@ -10,6 +10,17 @@ def list_courses(
     category: Optional[str] = None,
     level: Optional[str] = None,
 ) -> List[Dict[str, str]]:
+    """List courses with optional filters.
+
+    Args:
+        query: Search query.
+        provider: Provider filter.
+        category: Category filter.
+        level: Level filter.
+
+    Returns:
+        list[dict]: Course list.
+    """
     sql = "SELECT id, title, provider, category, level, duration_hours, url, created_at FROM courses"
     clauses = []
     params: List[str] = []
@@ -52,6 +63,14 @@ def list_courses(
 
 
 def get_course_by_id(course_id: int) -> Optional[Dict[str, str]]:
+    """Fetch a course by ID.
+
+    Args:
+        course_id: Course ID.
+
+    Returns:
+        dict | None: Course payload or None.
+    """
     with get_conn() as conn:
         row = conn.execute(
             "SELECT id, title, provider, category, level, duration_hours, url, created_at FROM courses WHERE id = ?",
@@ -74,6 +93,14 @@ def get_course_by_id(course_id: int) -> Optional[Dict[str, str]]:
 
 
 def create_course(payload: dict) -> Dict[str, str]:
+    """Create a new course.
+
+    Args:
+        payload: Course payload.
+
+    Returns:
+        dict: Created course.
+    """
     title = (payload.get("title") or "").strip()
     if not title:
         raise ValueError("missing_title")
@@ -100,6 +127,15 @@ def create_course(payload: dict) -> Dict[str, str]:
 
 
 def update_course(course_id: int, payload: dict) -> Optional[Dict[str, str]]:
+    """Update a course by ID.
+
+    Args:
+        course_id: Course ID.
+        payload: Updates payload.
+
+    Returns:
+        dict | None: Updated course or None if missing.
+    """
     existing = get_course_by_id(course_id)
     if not existing:
         return None
@@ -128,6 +164,14 @@ def update_course(course_id: int, payload: dict) -> Optional[Dict[str, str]]:
 
 
 def delete_course(course_id: int) -> bool:
+    """Delete a course by ID.
+
+    Args:
+        course_id: Course ID.
+
+    Returns:
+        bool: True if deleted.
+    """
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM courses WHERE id = ?", (course_id,))
         conn.commit()
@@ -135,6 +179,7 @@ def delete_course(course_id: int) -> bool:
 
 
 def _parse_float(value):
+    """Parse a float value or return None."""
     try:
         return float(value) if value not in (None, "") else None
     except ValueError:

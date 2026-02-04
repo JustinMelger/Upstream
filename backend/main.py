@@ -17,10 +17,16 @@ app.include_router(auth.router)
 
 @app.get("/health", tags=["health"])
 def health():
+    """Health check endpoint.
+
+    Returns:
+        dict: Simple status payload.
+    """
     return {"status": "ok"}
 
 
 @app.on_event("startup")
 def on_startup():
+    """Initialize database and seed data on startup."""
     init_db()
     seed_courses_from_csv(Path(settings.courses_csv))
