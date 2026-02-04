@@ -1,3 +1,12 @@
+## [0.3.1](https://github.com/JustinMelger/learning-platform/compare/v0.3.0...v0.3.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* add lib ([1185daa](https://github.com/JustinMelger/learning-platform/commit/1185daa018a22efbd0a51a14edb298ba2c5ed72a))
+* add ruff pipeline ([8ef9153](https://github.com/JustinMelger/learning-platform/commit/8ef91536f52476709e02ab87b545f98d0e4d5e3a))
+* set path in ini file ([9311d52](https://github.com/JustinMelger/learning-platform/commit/9311d528ef4db173d0d47f7ebfb33688b1ab60d3))
+
 # [0.3.0](https://github.com/JustinMelger/learning-platform/compare/v0.2.0...v0.3.0) (2026-02-03)
 
 
