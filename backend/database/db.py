@@ -73,12 +73,18 @@ CREATE TABLE IF NOT EXISTS user_paths (
 
 
 def get_conn() -> sqlite3.Connection:
+    """Create a database connection.
+
+    Returns:
+        sqlite3.Connection: Connection with row factory configured.
+    """
     conn = sqlite3.connect(settings.db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_db() -> None:
+    """Initialize database schema and ensure columns/indexes exist."""
     with get_conn() as conn:
         conn.executescript(SCHEMA)
         _ensure_column(conn, "courses", "created_at", "TEXT")
@@ -104,6 +110,11 @@ def init_db() -> None:
 
 
 def seed_courses_from_csv(csv_path: Path) -> None:
+    """Seed courses from a CSV file if the table is empty.
+
+    Args:
+        csv_path: Path to the CSV seed file.
+    """
     if not csv_path.exists():
         return
 
@@ -141,12 +152,21 @@ def seed_courses_from_csv(csv_path: Path) -> None:
 
 
 def _read_csv(path: Path) -> Iterable[dict]:
+    """Read a CSV file into a list of row dicts.
+
+    Args:
+        path: CSV file path.
+
+    Returns:
+        Iterable[dict]: Parsed rows.
+    """
     with path.open("r", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         return [row for row in reader]
 
 
 def _parse_float(value):
+    """Parse a float value or return None."""
     try:
         return float(value) if value not in (None, "") else None
     except ValueError:
@@ -154,6 +174,14 @@ def _parse_float(value):
 
 
 def _ensure_column(conn: sqlite3.Connection, table: str, column: str, col_type: str) -> None:
+    """Add a column to a table if it doesn't exist.
+
+    Args:
+        conn: Database connection.
+        table: Table name.
+        column: Column name.
+        col_type: Column type.
+    """
     rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
     columns = {row["name"] for row in rows}
     if column not in columns:

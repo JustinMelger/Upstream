@@ -19,11 +19,28 @@ router = APIRouter(prefix="/paths", tags=["paths"])
 
 @router.get("", response_model=List[dict])
 def list_paths(current_user: str = Depends(require_session)):
+    """List all learning paths.
+
+    Args:
+        current_user: Authenticated username.
+
+    Returns:
+        list[dict]: Path list.
+    """
     return fetch_paths()
 
 
 @router.post("", response_model=dict)
 def add_path(payload: dict, current_user: str = Depends(require_session)):
+    """Create a learning path (admin only).
+
+    Args:
+        payload: Path payload.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Created path.
+    """
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
@@ -39,17 +56,45 @@ def add_path(payload: dict, current_user: str = Depends(require_session)):
 
 @router.post("/{path_id}/select", response_model=dict)
 def select_path(path_id: int, current_user: str = Depends(require_session)):
+    """Add a path to the current user's selections.
+
+    Args:
+        path_id: Path ID.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Selection result.
+    """
     return add_user_path(current_user, path_id)
 
 
 @router.post("/{path_id}/unselect", response_model=dict)
 def unselect_path(path_id: int, current_user: str = Depends(require_session)):
+    """Remove a path from the current user's selections.
+
+    Args:
+        path_id: Path ID.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Removal result.
+    """
     removed = remove_user_path(current_user, path_id)
     return {"removed": removed}
 
 
 @router.post("/{path_id}/status", response_model=dict)
 def set_path_status(path_id: int, payload: dict, current_user: str = Depends(require_session)):
+    """Update the status for a selected path.
+
+    Args:
+        path_id: Path ID.
+        payload: Status payload.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Update result.
+    """
     status = (payload.get("status") or "").strip()
     if not status:
         raise HTTPException(status_code=400, detail="missing_fields")
@@ -67,17 +112,43 @@ def set_path_status(path_id: int, payload: dict, current_user: str = Depends(req
 
 @router.get("/selected/list", response_model=list[dict])
 def list_selected_paths(current_user: str = Depends(require_session)):
+    """List paths selected by the current user.
+
+    Args:
+        current_user: Authenticated username.
+
+    Returns:
+        list[dict]: Selected paths.
+    """
     return list_user_paths(current_user)
 
 
 @router.get("/{path_id}", response_model=dict)
 def get_path(path_id: int, current_user: str = Depends(require_session)):
+    """Get a learning path by ID.
+
+    Args:
+        path_id: Path ID.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Path payload or not_found.
+    """
     path = fetch_path(path_id)
     return path or {"error": "not_found"}
 
 
 @router.delete("/{path_id}", response_model=dict)
 def remove_path(path_id: int, current_user: str = Depends(require_session)):
+    """Delete a learning path (admin only).
+
+    Args:
+        path_id: Path ID.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Delete result.
+    """
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
@@ -86,6 +157,16 @@ def remove_path(path_id: int, current_user: str = Depends(require_session)):
 
 @router.put("/{path_id}", response_model=dict)
 def edit_path(path_id: int, payload: dict, current_user: str = Depends(require_session)):
+    """Update a learning path (admin only).
+
+    Args:
+        path_id: Path ID.
+        payload: Path updates.
+        current_user: Authenticated username.
+
+    Returns:
+        dict: Updated path.
+    """
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 

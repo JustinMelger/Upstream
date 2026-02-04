@@ -8,6 +8,14 @@ STATUS_VALUES = {"interested", "in_progress", "completed"}
 
 
 def list_tracking(colleague_id: Optional[str] = None) -> List[Dict[str, str]]:
+    """List tracking entries, optionally filtered by colleague.
+
+    Args:
+        colleague_id: Optional colleague username.
+
+    Returns:
+        list[dict]: Tracking entries.
+    """
     sql = "SELECT colleague_id, course_id, status, updated_at FROM tracking"
     params: List[str] = []
     if colleague_id:
@@ -29,6 +37,14 @@ def list_tracking(colleague_id: Optional[str] = None) -> List[Dict[str, str]]:
 
 
 def list_recent_activity(limit: int = 10) -> List[Dict[str, str]]:
+    """List recent tracking activity.
+
+    Args:
+        limit: Max number of records.
+
+    Returns:
+        list[dict]: Recent tracking entries.
+    """
     with get_conn() as conn:
         rows = conn.execute(
             """
@@ -52,6 +68,14 @@ def list_recent_activity(limit: int = 10) -> List[Dict[str, str]]:
 
 
 def stats_for_colleague(colleague_id: str) -> Dict[str, int]:
+    """Get tracking stats for a colleague.
+
+    Args:
+        colleague_id: Colleague username.
+
+    Returns:
+        dict: Status counts.
+    """
     with get_conn() as conn:
         rows = conn.execute(
             """
@@ -67,6 +91,11 @@ def stats_for_colleague(colleague_id: str) -> Dict[str, int]:
 
 
 def stats_all() -> Dict[str, int]:
+    """Get tracking stats for all users.
+
+    Returns:
+        dict: Status counts.
+    """
     with get_conn() as conn:
         rows = conn.execute(
             """
@@ -80,6 +109,11 @@ def stats_all() -> Dict[str, int]:
 
 
 def stats_by_user() -> List[Dict[str, int | str]]:
+    """Get tracking stats grouped by user.
+
+    Returns:
+        list[dict]: Per-user status counts.
+    """
     with get_conn() as conn:
         rows = conn.execute(
             """
@@ -108,6 +142,16 @@ def stats_by_user() -> List[Dict[str, int | str]]:
 
 
 def upsert_tracking(colleague_id: str, course_id: int, status: str) -> Dict[str, str]:
+    """Insert or update a tracking status.
+
+    Args:
+        colleague_id: Colleague username.
+        course_id: Course ID.
+        status: Tracking status.
+
+    Returns:
+        dict: Tracking record.
+    """
     if status not in STATUS_VALUES:
         raise ValueError("invalid_status")
 
@@ -134,6 +178,15 @@ def upsert_tracking(colleague_id: str, course_id: int, status: str) -> Dict[str,
 
 
 def remove_tracking(colleague_id: str, course_id: int) -> int:
+    """Remove a tracking record.
+
+    Args:
+        colleague_id: Colleague username.
+        course_id: Course ID.
+
+    Returns:
+        int: Number of rows removed.
+    """
     with get_conn() as conn:
         cur = conn.execute(
             """

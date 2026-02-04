@@ -8,6 +8,15 @@ STATUS_VALUES = {"interested", "in_progress", "completed"}
 
 
 def add_user_path(colleague_id: str, path_id: int) -> Dict[str, str]:
+    """Add a path to a user's selections.
+
+    Args:
+        colleague_id: Colleague username.
+        path_id: Path ID.
+
+    Returns:
+        dict: Selection record.
+    """
     now = datetime.now(timezone.utc).isoformat()
     with get_conn() as conn:
         conn.execute(
@@ -23,6 +32,14 @@ def add_user_path(colleague_id: str, path_id: int) -> Dict[str, str]:
 
 
 def list_user_paths(colleague_id: str) -> List[Dict[str, str]]:
+    """List paths selected by a colleague.
+
+    Args:
+        colleague_id: Colleague username.
+
+    Returns:
+        list[dict]: Selected paths.
+    """
     with get_conn() as conn:
         rows = conn.execute(
             """
@@ -47,6 +64,15 @@ def list_user_paths(colleague_id: str) -> List[Dict[str, str]]:
 
 
 def remove_user_path(colleague_id: str, path_id: int) -> int:
+    """Remove a path from a user's selections.
+
+    Args:
+        colleague_id: Colleague username.
+        path_id: Path ID.
+
+    Returns:
+        int: Number of rows removed.
+    """
     with get_conn() as conn:
         cur = conn.execute(
             """
@@ -61,6 +87,16 @@ def remove_user_path(colleague_id: str, path_id: int) -> int:
 
 
 def update_user_path_status(colleague_id: str, path_id: int, status: str) -> int:
+    """Update a user's status for a selected path.
+
+    Args:
+        colleague_id: Colleague username.
+        path_id: Path ID.
+        status: Status value.
+
+    Returns:
+        int: Number of rows updated.
+    """
     if status not in STATUS_VALUES:
         raise ValueError("invalid_status")
 
