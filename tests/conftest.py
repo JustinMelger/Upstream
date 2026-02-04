@@ -1,5 +1,7 @@
 import importlib
 import os
+from pathlib import Path
+import sys
 
 from fastapi.testclient import TestClient
 import pytest
@@ -7,6 +9,9 @@ import pytest
 
 @pytest.fixture()
 def app_client(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
     db_path = tmp_path / "test.db"
     os.environ["DATABASE_PATH"] = str(db_path)
     os.environ["SESSION_DAYS"] = "30"
