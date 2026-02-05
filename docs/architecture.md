@@ -90,12 +90,37 @@ classDiagram
     +is_admin(username): bool
   }
 
+  class AuthRepository {
+    +get_user(username): dict|None
+    +has_users(): bool
+    +create_user(username, password_hash, role, now): None
+    +list_users(): list[dict]
+    +update_password(username, password_hash, now): int
+    +delete_user(username): int
+    +set_user_disabled(username, disabled, now): int
+    +create_session(colleague_id, token_hash, created_at, last_seen, expires_at): None
+    +get_session(token_hash): dict|None
+    +update_session_last_seen(token_hash, last_seen): None
+    +delete_session(token_hash): int
+    +revoke_sessions(colleague_id): int
+    +purge_expired_sessions(now): int
+    +update_last_login(username, now): None
+  }
+
+  class SQLiteAuthRepository {
+  }
+
   class SQLiteDatabase {
+    +SQLiteDatabase(db_path: str)
     +get_conn(): Connection
+    +init_db(): None
+    +seed_courses_from_csv(csv_path: Path): None
   }
 
   AuthRouter --> AuthService : request handling
-  AuthService --> SQLiteDatabase : persistence
+  AuthService --> AuthRepository : persistence
+  SQLiteAuthRepository ..|> AuthRepository
+  SQLiteAuthRepository --> SQLiteDatabase : uses connections
 ```
 
 ### Auth Data Model

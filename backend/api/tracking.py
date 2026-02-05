@@ -2,8 +2,8 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.api.deps import require_session
-from backend.services.auth_service import auth_service
+from backend.api.deps import get_auth_service, require_session
+from backend.services.auth_service import AuthService
 from backend.services.tracking_service import (
     list_recent_activity,
     list_tracking,
@@ -22,6 +22,7 @@ router = APIRouter(prefix="/tracking", tags=["tracking"])
 def get_tracking(
     colleague_id: Optional[str] = Query(default=None),
     current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
 ):
     """List tracking entries for a colleague.
 
@@ -33,7 +34,7 @@ def get_tracking(
         list[dict]: Tracking entries.
     """
     target = colleague_id or current_user
-    if target != current_user and not auth_service.is_admin(current_user):
+    if target != current_user and not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return list_tracking(colleague_id=target)
 
@@ -97,6 +98,7 @@ def delete_tracking(payload: dict, current_user: str = Depends(require_session))
 def get_stats(
     colleague_id: Optional[str] = Query(default=None),
     current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
 ):
     """Return tracking stats for a colleague or team totals.
 
@@ -107,17 +109,20 @@ def get_stats(
     Returns:
         dict: Stats payload.
     """
-    if colleague_id and colleague_id != current_user and not auth_service.is_admin(current_user):
+    if colleague_id and colleague_id != current_user and not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     if colleague_id:
         return stats_for_colleague(colleague_id)
-    if auth_service.is_admin(current_user):
+    if auth.is_admin(current_user):
         return stats_all()
     raise HTTPException(status_code=403, detail="admin_required")
 
 
 @router.get("/stats/users", response_model=list[dict])
-def get_stats_by_user(current_user: str = Depends(require_session)):
+def get_stats_by_user(
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+):
     """Return tracking stats grouped by user (admin only).
 
     Args:
@@ -126,7 +131,7 @@ def get_stats_by_user(current_user: str = Depends(require_session)):
     Returns:
         list[dict]: Stats by user.
     """
-    if not auth_service.is_admin(current_user):
+    if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return stats_by_user()
 
@@ -135,6 +140,7 @@ def get_stats_by_user(current_user: str = Depends(require_session)):
 def get_recent_activity(
     limit: int = Query(default=10),
     current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
 ):
     """Return recent activity for the team (admin only).
 
@@ -145,6 +151,6 @@ def get_recent_activity(
     Returns:
         list[dict]: Recent activity records.
     """
-    if not auth_service.is_admin(current_user):
+    if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return list_recent_activity(limit=limit)
