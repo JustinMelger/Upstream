@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-from backend.core.config import settings
 from backend.api.deps import get_auth_service
+from backend.core.config import settings
 from backend.services.auth_service import AuthService
 
 
