@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from backend.database.db import SQLiteDatabase
+from backend.database.models import SessionRecord, UserRecord
 
 
 class SQLiteAuthRepository:
@@ -14,14 +15,14 @@ class SQLiteAuthRepository:
         """
         self._db = db
 
-    def get_user(self, username: str) -> dict | None:
+    def get_user(self, username: str) -> UserRecord | None:
         """Fetch a user by username.
 
         Args:
             username: Username to fetch.
 
         Returns:
-            User payload or None if not found.
+            User record or None if not found.
         """
         with self._db.get_conn() as conn:
             row = conn.execute(
@@ -30,12 +31,12 @@ class SQLiteAuthRepository:
             ).fetchone()
         if not row:
             return None
-        return {
-            "username": row["username"],
-            "password_hash": row["password_hash"],
-            "role": row["role"],
-            "disabled": bool(row["disabled"]),
-        }
+        return UserRecord(
+            username=row["username"],
+            password_hash=row["password_hash"],
+            role=row["role"],
+            disabled=bool(row["disabled"]),
+        )
 
     def has_users(self) -> bool:
         """Check whether any users exist.
@@ -176,14 +177,14 @@ class SQLiteAuthRepository:
             )
             conn.commit()
 
-    def get_session(self, token_hash: str) -> dict | None:
+    def get_session(self, token_hash: str) -> SessionRecord | None:
         """Fetch a session by token hash.
 
         Args:
             token_hash: Hashed token.
 
         Returns:
-            Session payload or None.
+            Session record or None.
         """
         with self._db.get_conn() as conn:
             row = conn.execute(
@@ -196,7 +197,7 @@ class SQLiteAuthRepository:
             ).fetchone()
         if not row:
             return None
-        return {"colleague_id": row["colleague_id"], "expires_at": row["expires_at"]}
+        return SessionRecord(colleague_id=row["colleague_id"], expires_at=row["expires_at"])
 
     def update_session_last_seen(self, token_hash: str, last_seen: str) -> None:
         """Update last_seen for a session.

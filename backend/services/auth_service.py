@@ -10,6 +10,7 @@ from backend.core.config import settings
 from backend.database.auth_repository import SQLiteAuthRepository
 from backend.database.db import database
 from backend.database.interfaces import AuthRepository
+from backend.database.models import UserRecord
 
 
 class AuthService:
@@ -72,7 +73,7 @@ class AuthService:
         if not username:
             return False
         user = self.get_user(username)
-        return bool(user and user.get("role") == "admin")
+        return bool(user and user.role == "admin")
 
     def create_session(self, colleague_id: str) -> dict:
         """Create a new session for a user.
@@ -115,14 +116,14 @@ class AuthService:
         if not row:
             return None
         try:
-            expires_at = datetime.fromisoformat(row["expires_at"])
+            expires_at = datetime.fromisoformat(row.expires_at)
         except ValueError:
             return None
         if expires_at < now:
             self._repo.delete_session(token_hash)
             return None
         self._repo.update_session_last_seen(token_hash, now.isoformat())
-        return {"colleague_id": row["colleague_id"], "expires_at": row["expires_at"]}
+        return {"colleague_id": row.colleague_id, "expires_at": row.expires_at}
 
     def revoke_sessions(self, colleague_id: str) -> int:
         """Revoke all sessions for a user.
@@ -135,14 +136,14 @@ class AuthService:
         """
         return self._repo.revoke_sessions(colleague_id)
 
-    def get_user(self, username: str) -> dict | None:
+    def get_user(self, username: str) -> UserRecord | None:
         """Fetch a user by username.
 
         Args:
             username: Username to fetch.
 
         Returns:
-            User payload or None.
+            User record or None.
         """
         return self._repo.get_user(username)
 
@@ -216,13 +217,13 @@ class AuthService:
         user = self.get_user(username)
         if not user:
             return None
-        if user["disabled"]:
+        if user.disabled:
             return None
-        if not self._verify_password(password, user["password_hash"]):
+        if not self._verify_password(password, user.password_hash):
             return None
         now = datetime.now(timezone.utc).isoformat()
         self._repo.update_last_login(username, now)
-        return {"username": user["username"], "role": user["role"]}
+        return {"username": user.username, "role": user.role}
 
     def set_user_disabled(self, username: str, disabled: bool) -> int:
         """Disable or enable a user.

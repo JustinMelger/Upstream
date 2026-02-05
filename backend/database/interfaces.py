@@ -2,16 +2,18 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from backend.database.models import SessionRecord, UserRecord
+
 
 class AuthRepository(Protocol):
-    def get_user(self, username: str) -> dict | None:
+    def get_user(self, username: str) -> UserRecord | None:
         """Fetch a user by username.
 
         Args:
             username: Username to fetch.
 
         Returns:
-            User payload or None if not found.
+            User record or None if not found.
         """
 
     def has_users(self) -> bool:
@@ -90,14 +92,14 @@ class AuthRepository(Protocol):
             expires_at: ISO timestamp for expiry.
         """
 
-    def get_session(self, token_hash: str) -> dict | None:
+    def get_session(self, token_hash: str) -> SessionRecord | None:
         """Fetch a session by token hash.
 
         Args:
             token_hash: Hashed token.
 
         Returns:
-            Session payload or None.
+            Session record or None.
         """
 
     def update_session_last_seen(self, token_hash: str, last_seen: str) -> None:

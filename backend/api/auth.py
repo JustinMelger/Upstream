@@ -46,7 +46,12 @@ def login(payload: dict, auth: AuthService = Depends(get_auth_service)):
         raise HTTPException(status_code=401, detail="invalid_credentials")
 
     session = auth.create_session(username)
-    return {"token": session["token"], "expires_at": session["expires_at"], "username": user["username"], "role": user["role"]}
+    return {
+        "token": session["token"],
+        "expires_at": session["expires_at"],
+        "username": user["username"],
+        "role": user["role"],
+    }
 
 
 @router.get("/me", response_model=dict)
@@ -69,7 +74,7 @@ def me(
     user = auth.get_user(username)
     if not user:
         raise HTTPException(status_code=401, detail="unauthorized")
-    return {"username": user["username"], "role": user["role"], "expires_at": session["expires_at"]}
+    return {"username": user.username, "role": user.role, "expires_at": session["expires_at"]}
 
 
 @router.post("/logout", response_model=dict)
@@ -111,7 +116,7 @@ def get_role(
     user = auth.get_user(session["colleague_id"])
     if not user:
         raise HTTPException(status_code=401, detail="unauthorized")
-    return {"role": user["role"]}
+    return {"role": user.role}
 
 
 @router.post("/users", response_model=dict)
