@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/JustinMelger/learning-platform/compare/v0.3.1...v0.3.2) (2026-02-05)
+
+
+### Bug Fixes
+
+* **styling:** lint error ([b719580](https://github.com/JustinMelger/learning-platform/commit/b7195806e2e97bb7e6358b6a76aafcb35705f886))
+
 ## [0.3.1](https://github.com/JustinMelger/learning-platform/compare/v0.3.0...v0.3.1) (2026-02-04)
 
 
