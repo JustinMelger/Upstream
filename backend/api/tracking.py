@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.api.deps import require_session
-from backend.services.auth_service import is_admin
+from backend.services.auth_service import auth_service
 from backend.services.tracking_service import (
     list_recent_activity,
     list_tracking,
@@ -33,7 +33,7 @@ def get_tracking(
         list[dict]: Tracking entries.
     """
     target = colleague_id or current_user
-    if target != current_user and not is_admin(current_user):
+    if target != current_user and not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return list_tracking(colleague_id=target)
 
@@ -107,11 +107,11 @@ def get_stats(
     Returns:
         dict: Stats payload.
     """
-    if colleague_id and colleague_id != current_user and not is_admin(current_user):
+    if colleague_id and colleague_id != current_user and not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     if colleague_id:
         return stats_for_colleague(colleague_id)
-    if is_admin(current_user):
+    if auth_service.is_admin(current_user):
         return stats_all()
     raise HTTPException(status_code=403, detail="admin_required")
 
@@ -126,7 +126,7 @@ def get_stats_by_user(current_user: str = Depends(require_session)):
     Returns:
         list[dict]: Stats by user.
     """
-    if not is_admin(current_user):
+    if not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return stats_by_user()
 
@@ -145,6 +145,6 @@ def get_recent_activity(
     Returns:
         list[dict]: Recent activity records.
     """
-    if not is_admin(current_user):
+    if not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return list_recent_activity(limit=limit)

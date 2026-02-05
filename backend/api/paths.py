@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import require_session
-from backend.services.auth_service import is_admin
+from backend.services.auth_service import auth_service
 from backend.services.paths_service import (
     create_path,
     delete_path,
@@ -41,7 +41,7 @@ def add_path(payload: dict, current_user: str = Depends(require_session)):
     Returns:
         dict: Created path.
     """
-    if not is_admin(current_user):
+    if not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
     try:
@@ -149,7 +149,7 @@ def remove_path(path_id: int, current_user: str = Depends(require_session)):
     Returns:
         dict: Delete result.
     """
-    if not is_admin(current_user):
+    if not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
     return {"deleted": delete_path(path_id)}
@@ -167,7 +167,7 @@ def edit_path(path_id: int, payload: dict, current_user: str = Depends(require_s
     Returns:
         dict: Updated path.
     """
-    if not is_admin(current_user):
+    if not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
     try:

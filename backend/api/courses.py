@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.api.deps import require_session
-from backend.services.auth_service import is_admin
+from backend.services.auth_service import auth_service
 from backend.services.courses_service import (
     create_course,
     delete_course,
@@ -65,7 +65,7 @@ def add_course(payload: dict, current_user: str = Depends(require_session)):
     Returns:
         dict: Created course.
     """
-    if not is_admin(current_user):
+    if not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     try:
         return create_course(payload)
@@ -85,7 +85,7 @@ def edit_course(course_id: int, payload: dict, current_user: str = Depends(requi
     Returns:
         dict: Updated course.
     """
-    if not is_admin(current_user):
+    if not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     course = update_course(course_id, payload)
     if not course:
@@ -104,7 +104,7 @@ def remove_course(course_id: int, current_user: str = Depends(require_session)):
     Returns:
         dict: Delete result.
     """
-    if not is_admin(current_user):
+    if not auth_service.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     ok = delete_course(course_id)
     return {"deleted": ok}

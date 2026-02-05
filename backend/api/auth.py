@@ -1,21 +1,7 @@
 from fastapi import APIRouter, Header, HTTPException
 
 from backend.core.config import settings
-from backend.services.auth_service import (
-    authenticate_user,
-    create_session,
-    create_user,
-    delete_user,
-    get_session,
-    get_user,
-    has_users,
-    is_admin,
-    list_users,
-    purge_expired_sessions,
-    revoke_sessions,
-    set_user_disabled,
-    update_password,
-)
+from backend.services.auth_service import auth_service
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -39,13 +25,13 @@ def login(payload: dict):
     if not username or not password:
         raise HTTPException(status_code=400, detail="missing_fields")
 
-    purge_expired_sessions()
+    auth_service.purge_expired_sessions()
 
-    if not has_users():
+    if not auth_service.has_users():
         if username != settings.bootstrap_admin_username or password != settings.bootstrap_admin_password:
             raise HTTPException(status_code=401, detail="invalid_credentials")
-        user = create_user(username, password, "admin")
-        session = create_session(username)
+        user = auth_service.create_user(username, password, "admin")
+        session = auth_service.create_session(username)
         return {
             "token": session["token"],
             "expires_at": session["expires_at"],
@@ -54,11 +40,11 @@ def login(payload: dict):
             "bootstrap": True,
         }
 
-    user = authenticate_user(username, password)
+    user = auth_service.authenticate_user(username, password)
     if not user:
         raise HTTPException(status_code=401, detail="invalid_credentials")
 
-    session = create_session(username)
+    session = auth_service.create_session(username)
     return {"token": session["token"], "expires_at": session["expires_at"], "username": user["username"], "role": user["role"]}
 
 
@@ -72,11 +58,11 @@ def me(x_session_token: str | None = Header(default=None)):
     Returns:
         dict: User metadata and session expiry.
     """
-    session = get_session(x_session_token)
+    session = auth_service.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
     username = session["colleague_id"]
-    user = get_user(username)
+    user = auth_service.get_user(username)
     if not user:
         raise HTTPException(status_code=401, detail="unauthorized")
     return {"username": user["username"], "role": user["role"], "expires_at": session["expires_at"]}
@@ -92,10 +78,10 @@ def logout(x_session_token: str | None = Header(default=None)):
     Returns:
         dict: Number of revoked sessions.
     """
-    session = get_session(x_session_token)
+    session = auth_service.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    revoked = revoke_sessions(session["colleague_id"])
+    revoked = auth_service.revoke_sessions(session["colleague_id"])
     return {"revoked": revoked}
 
 
@@ -109,10 +95,10 @@ def get_role(x_session_token: str | None = Header(default=None)):
     Returns:
         dict: Role name.
     """
-    session = get_session(x_session_token)
+    session = auth_service.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    user = get_user(session["colleague_id"])
+    user = auth_service.get_user(session["colleague_id"])
     if not user:
         raise HTTPException(status_code=401, detail="unauthorized")
     return {"role": user["role"]}
@@ -129,10 +115,10 @@ def create_user_endpoint(payload: dict, x_session_token: str | None = Header(def
     Returns:
         dict: Created user metadata.
     """
-    session = get_session(x_session_token)
+    session = auth_service.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    if not is_admin(session["colleague_id"]):
+    if not auth_service.is_admin(session["colleague_id"]):
         raise HTTPException(status_code=403, detail="admin_required")
 
     username = (payload.get("username") or "").strip()
@@ -142,10 +128,10 @@ def create_user_endpoint(payload: dict, x_session_token: str | None = Header(def
         raise HTTPException(status_code=400, detail="missing_fields")
     if role not in {"admin", "user"}:
         raise HTTPException(status_code=400, detail="invalid_role")
-    if get_user(username):
+    if auth_service.get_user(username):
         raise HTTPException(status_code=409, detail="user_exists")
 
-    return create_user(username, password, role)
+    return auth_service.create_user(username, password, role)
 
 
 @router.get("/users", response_model=list[dict])
@@ -158,12 +144,12 @@ def list_users_endpoint(x_session_token: str | None = Header(default=None)):
     Returns:
         list[dict]: User list.
     """
-    session = get_session(x_session_token)
+    session = auth_service.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    if not is_admin(session["colleague_id"]):
+    if not auth_service.is_admin(session["colleague_id"]):
         raise HTTPException(status_code=403, detail="admin_required")
-    return list_users()
+    return auth_service.list_users()
 
 
 @router.post("/users/reset", response_model=dict)
@@ -177,10 +163,10 @@ def reset_password_endpoint(payload: dict, x_session_token: str | None = Header(
     Returns:
         dict: Update result.
     """
-    session = get_session(x_session_token)
+    session = auth_service.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    if not is_admin(session["colleague_id"]):
+    if not auth_service.is_admin(session["colleague_id"]):
         raise HTTPException(status_code=403, detail="admin_required")
 
     username = (payload.get("username") or "").strip()
@@ -188,7 +174,7 @@ def reset_password_endpoint(payload: dict, x_session_token: str | None = Header(
     if not username or not password:
         raise HTTPException(status_code=400, detail="missing_fields")
 
-    updated = update_password(username, password)
+    updated = auth_service.update_password(username, password)
     if updated == 0:
         raise HTTPException(status_code=404, detail="user_not_found")
     return {"updated": updated}
@@ -205,15 +191,15 @@ def delete_user_endpoint(username: str, x_session_token: str | None = Header(def
     Returns:
         dict: Delete result.
     """
-    session = get_session(x_session_token)
+    session = auth_service.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    if not is_admin(session["colleague_id"]):
+    if not auth_service.is_admin(session["colleague_id"]):
         raise HTTPException(status_code=403, detail="admin_required")
 
     if session["colleague_id"].lower() == username.lower():
         raise HTTPException(status_code=400, detail="cannot_delete_self")
-    removed = delete_user(username)
+    removed = auth_service.delete_user(username)
     return {"removed": removed}
 
 
@@ -228,10 +214,10 @@ def disable_user_endpoint(payload: dict, x_session_token: str | None = Header(de
     Returns:
         dict: Update result.
     """
-    session = get_session(x_session_token)
+    session = auth_service.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    if not is_admin(session["colleague_id"]):
+    if not auth_service.is_admin(session["colleague_id"]):
         raise HTTPException(status_code=403, detail="admin_required")
 
     username = (payload.get("username") or "").strip()
@@ -241,7 +227,7 @@ def disable_user_endpoint(payload: dict, x_session_token: str | None = Header(de
     if session["colleague_id"].lower() == username.lower() and disabled:
         raise HTTPException(status_code=400, detail="cannot_disable_self")
 
-    updated = set_user_disabled(username, disabled)
+    updated = auth_service.set_user_disabled(username, disabled)
     if updated == 0:
         raise HTTPException(status_code=404, detail="user_not_found")
     return {"updated": updated, "disabled": disabled}
