@@ -248,14 +248,14 @@ class AuthService:
         return self._repo.purge_expired_sessions(now)
 
 
-_auth_repo = SQLiteAuthRepository(database)
-_auth_service = AuthService(_auth_repo)
-
-
 def get_auth_service() -> AuthService:
     """Return the shared AuthService instance.
 
     Returns:
-        AuthService: Auth service singleton.
+        AuthService: Auth service instance.
     """
-    return _auth_service
+
+    return AuthService(SQLiteAuthRepository(database))
+
+
+auth_service = get_auth_service()

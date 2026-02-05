@@ -1,6 +1,6 @@
 from fastapi import Depends, Header, HTTPException
 
-from backend.services.auth_service import AuthService, get_auth_service as provide_auth_service
+from backend.services.auth_service import auth_service, AuthService
 
 
 def get_auth_service() -> AuthService:
@@ -9,7 +9,7 @@ def get_auth_service() -> AuthService:
     Returns:
         AuthService: Shared auth service instance.
     """
-    return provide_auth_service()
+    return auth_service
 
 
 def require_session(
