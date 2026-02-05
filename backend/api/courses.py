@@ -2,8 +2,8 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.api.deps import require_session
-from backend.services.auth_service import is_admin
+from backend.api.deps import get_auth_service, require_session
+from backend.services.auth_service import AuthService
 from backend.services.courses_service import (
     create_course,
     delete_course,
@@ -55,7 +55,11 @@ def get_course(course_id: int, current_user: str = Depends(require_session)):
 
 
 @router.post("", response_model=dict)
-def add_course(payload: dict, current_user: str = Depends(require_session)):
+def add_course(
+    payload: dict,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+):
     """Create a course (admin only).
 
     Args:
@@ -65,7 +69,7 @@ def add_course(payload: dict, current_user: str = Depends(require_session)):
     Returns:
         dict: Created course.
     """
-    if not is_admin(current_user):
+    if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     try:
         return create_course(payload)
@@ -74,7 +78,12 @@ def add_course(payload: dict, current_user: str = Depends(require_session)):
 
 
 @router.put("/{course_id}", response_model=dict)
-def edit_course(course_id: int, payload: dict, current_user: str = Depends(require_session)):
+def edit_course(
+    course_id: int,
+    payload: dict,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+):
     """Update a course (admin only).
 
     Args:
@@ -85,7 +94,7 @@ def edit_course(course_id: int, payload: dict, current_user: str = Depends(requi
     Returns:
         dict: Updated course.
     """
-    if not is_admin(current_user):
+    if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     course = update_course(course_id, payload)
     if not course:
@@ -94,7 +103,11 @@ def edit_course(course_id: int, payload: dict, current_user: str = Depends(requi
 
 
 @router.delete("/{course_id}", response_model=dict)
-def remove_course(course_id: int, current_user: str = Depends(require_session)):
+def remove_course(
+    course_id: int,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+):
     """Delete a course (admin only).
 
     Args:
@@ -104,7 +117,7 @@ def remove_course(course_id: int, current_user: str = Depends(require_session)):
     Returns:
         dict: Delete result.
     """
-    if not is_admin(current_user):
+    if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     ok = delete_course(course_id)
     return {"deleted": ok}

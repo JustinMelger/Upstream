@@ -1,21 +1,34 @@
-from fastapi import Header, HTTPException
+from fastapi import Depends, Header, HTTPException
 
-from backend.services.auth_service import get_session
+from backend.services.auth_service import auth_service, AuthService
 
 
-def require_session(x_session_token: str | None = Header(default=None)) -> str:
+def get_auth_service() -> AuthService:
+    """Provide the AuthService dependency.
+
+    Returns:
+        AuthService: Shared auth service instance.
+    """
+    return auth_service
+
+
+def require_session(
+    x_session_token: str | None = Header(default=None),
+    auth: AuthService = Depends(get_auth_service),
+) -> str:
     """Validate session token and return the authenticated username.
 
     Args:
         x_session_token: Session token from request headers.
+        auth: Auth service dependency.
 
     Returns:
-        str: Authenticated username.
+        Authenticated username.
 
     Raises:
         HTTPException: If the session is missing or invalid.
     """
-    session = get_session(x_session_token)
+    session = auth.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
     return session["colleague_id"]

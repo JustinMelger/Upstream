@@ -2,8 +2,8 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.api.deps import require_session
-from backend.services.auth_service import is_admin
+from backend.api.deps import get_auth_service, require_session
+from backend.services.auth_service import AuthService
 from backend.services.paths_service import (
     create_path,
     delete_path,
@@ -31,7 +31,11 @@ def list_paths(current_user: str = Depends(require_session)):
 
 
 @router.post("", response_model=dict)
-def add_path(payload: dict, current_user: str = Depends(require_session)):
+def add_path(
+    payload: dict,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+):
     """Create a learning path (admin only).
 
     Args:
@@ -41,7 +45,7 @@ def add_path(payload: dict, current_user: str = Depends(require_session)):
     Returns:
         dict: Created path.
     """
-    if not is_admin(current_user):
+    if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
     try:
@@ -139,7 +143,11 @@ def get_path(path_id: int, current_user: str = Depends(require_session)):
 
 
 @router.delete("/{path_id}", response_model=dict)
-def remove_path(path_id: int, current_user: str = Depends(require_session)):
+def remove_path(
+    path_id: int,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+):
     """Delete a learning path (admin only).
 
     Args:
@@ -149,14 +157,19 @@ def remove_path(path_id: int, current_user: str = Depends(require_session)):
     Returns:
         dict: Delete result.
     """
-    if not is_admin(current_user):
+    if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
     return {"deleted": delete_path(path_id)}
 
 
 @router.put("/{path_id}", response_model=dict)
-def edit_path(path_id: int, payload: dict, current_user: str = Depends(require_session)):
+def edit_path(
+    path_id: int,
+    payload: dict,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+):
     """Update a learning path (admin only).
 
     Args:
@@ -167,7 +180,7 @@ def edit_path(path_id: int, payload: dict, current_user: str = Depends(require_s
     Returns:
         dict: Updated path.
     """
-    if not is_admin(current_user):
+    if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
     try:
