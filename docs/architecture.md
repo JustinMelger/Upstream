@@ -73,7 +73,7 @@ classDiagram
     +POST /auth/users
     +GET /auth/users
     +POST /auth/users/reset
-    +DELETE /auth/users/username
+    +DELETE /auth/users/:username
     +POST /auth/users/disable
   }
 
@@ -177,10 +177,10 @@ sequenceDiagram
 classDiagram
   class CoursesRouter {
     +GET /courses
-    +GET /courses/{course_id}
+    +GET /courses/:course_id
     +POST /courses
-    +PUT /courses/{course_id}
-    +DELETE /courses/{course_id}
+    +PUT /courses/:course_id
+    +DELETE /courses/:course_id
   }
 
   class CoursesService {
@@ -260,13 +260,13 @@ sequenceDiagram
 classDiagram
   class PathsRouter {
     +GET /paths
-    +GET /paths/{path_id}
+    +GET /paths/:path_id
     +POST /paths
-    +PUT /paths/{path_id}
-    +DELETE /paths/{path_id}
-    +POST /paths/{path_id}/select
-    +POST /paths/{path_id}/unselect
-    +POST /paths/{path_id}/status
+    +PUT /paths/:path_id
+    +DELETE /paths/:path_id
+    +POST /paths/:path_id/select
+    +POST /paths/:path_id/unselect
+    +POST /paths/:path_id/status
     +GET /paths/selected/list
   }
 
