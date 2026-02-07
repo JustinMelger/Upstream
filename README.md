@@ -2,6 +2,7 @@
 
 ![coverage](docs/badges/coverage.svg)
 ![ci](https://github.com/JustinMelger/learning-platform/actions/workflows/ci.yml/badge.svg)
+![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
 A simple internal learning hub where colleagues can browse curated courses, track progress, and follow ordered learning paths.
 
