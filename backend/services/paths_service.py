@@ -1,148 +1,139 @@
-from typing import Dict, List, Optional
+from __future__ import annotations
 
-from backend.database.db import get_conn
-
-
-def list_paths() -> List[Dict[str, str]]:
-    """List all learning paths.
-
-    Returns:
-        list[dict]: Path list.
-    """
-    with get_conn() as conn:
-        rows = conn.execute("SELECT id, name, description FROM paths ORDER BY name ASC").fetchall()
-    return [{"id": row["id"], "name": row["name"], "description": row["description"] or ""} for row in rows]
+from backend.database.db import database
+from backend.database.interfaces import PathsRepository
+from backend.database.models import PathCourseRecord, PathRecord
+from backend.database.paths_repository import SQLitePathsRepository
 
 
-def get_path(path_id: int) -> Optional[Dict[str, str]]:
-    """Fetch a path and its courses by ID.
+class PathsService:
+    """Learning paths management service."""
 
-    Args:
-        path_id: Path ID.
+    def __init__(self, repo: PathsRepository):
+        """Initialize the service.
 
-    Returns:
-        dict | None: Path payload or None.
-    """
-    with get_conn() as conn:
-        path = conn.execute("SELECT id, name, description FROM paths WHERE id = ?", (path_id,)).fetchone()
-        if not path:
+        Args:
+            repo: Persistence repository for paths.
+        """
+        self._repo = repo
+
+    def list_paths(self) -> list[dict]:
+        """List all learning paths.
+
+        Returns:
+            Path list payloads.
+        """
+        return [self._path_payload(path) for path in self._repo.list_paths()]
+
+    def get_path(self, path_id: int) -> dict | None:
+        """Fetch a path and its courses by ID.
+
+        Args:
+            path_id: Path ID.
+
+        Returns:
+            Path payload or None if missing.
+        """
+        result = self._repo.get_path(path_id)
+        if not result:
             return None
-        courses = conn.execute(
-            """
-            SELECT c.id, c.title, c.provider, c.category, c.level, c.duration_hours, c.url, pc.position
-            FROM path_courses pc
-            JOIN courses c ON c.id = pc.course_id
-            WHERE pc.path_id = ?
-            ORDER BY COALESCE(pc.position, 9999) ASC, c.title ASC
-            """,
-            (path_id,),
-        ).fetchall()
+        path, courses = result
+        return {
+            "id": path.id,
+            "name": path.name,
+            "description": path.description or "",
+            "courses": [self._course_payload(course) for course in courses],
+        }
 
-    return {
-        "id": path["id"],
-        "name": path["name"],
-        "description": path["description"] or "",
-        "courses": [
-            {
-                "id": row["id"],
-                "title": row["title"] or "",
-                "provider": row["provider"] or "",
-                "category": row["category"] or "",
-                "level": row["level"] or "",
-                "duration_hours": row["duration_hours"],
-                "url": row["url"] or "",
-            }
-            for row in courses
-        ],
-    }
+    def create_path(self, payload: dict) -> dict:
+        """Create a learning path with ordered courses.
 
+        Args:
+            payload: Path payload with course_ids.
 
-def create_path(payload: dict) -> Dict[str, str]:
-    """Create a learning path with ordered courses.
+        Returns:
+            Created path payload.
 
-    Args:
-        payload: Path payload with course_ids.
+        Raises:
+            ValueError: If required fields are missing or the name is duplicate.
+        """
+        name = (payload.get("name") or "").strip()
+        if not name:
+            raise ValueError("missing_name")
+        description = (payload.get("description") or "").strip() or None
+        course_ids = payload.get("course_ids") or []
 
-    Returns:
-        dict: Created path.
-    """
-    name = (payload.get("name") or "").strip()
-    if not name:
-        raise ValueError("missing_name")
-    description = (payload.get("description") or "").strip() or None
-    course_ids = payload.get("course_ids") or []
-
-    with get_conn() as conn:
-        existing = conn.execute("SELECT id FROM paths WHERE lower(name) = lower(?)", (name,)).fetchone()
-        if existing:
+        if self._repo.path_name_exists(name):
             raise ValueError("duplicate_name")
 
-        cur = conn.execute(
-            "INSERT INTO paths (name, description) VALUES (?, ?)",
-            (name, description),
-        )
-        path_id = cur.lastrowid
+        path_id = self._repo.create_path(name, description)
+        self._repo.delete_path_courses(path_id)
+        self._repo.set_path_courses(path_id, [int(course_id) for course_id in course_ids])
+        return self.get_path(path_id) or {"error": "not_found"}
 
-        if course_ids:
-            conn.executemany(
-                "INSERT OR IGNORE INTO path_courses (path_id, course_id, position) VALUES (?, ?, ?)",
-                [(path_id, int(cid), idx) for idx, cid in enumerate(course_ids)],
-            )
-        conn.commit()
+    def update_path(self, path_id: int, payload: dict) -> dict:
+        """Update a learning path and its course ordering.
 
-    return get_path(path_id) or {"error": "not_found"}
+        Args:
+            path_id: Path ID.
+            payload: Path updates and course_ids order.
 
+        Returns:
+            Updated path payload.
 
-def delete_path(path_id: int) -> bool:
-    """Delete a learning path by ID.
+        Raises:
+            ValueError: If required fields are missing or the name is duplicate.
+        """
+        name = (payload.get("name") or "").strip()
+        if not name:
+            raise ValueError("missing_name")
+        description = (payload.get("description") or "").strip() or None
+        course_ids = payload.get("course_ids") or []
 
-    Args:
-        path_id: Path ID.
-
-    Returns:
-        bool: True if deleted.
-    """
-    with get_conn() as conn:
-        conn.execute("DELETE FROM path_courses WHERE path_id = ?", (path_id,))
-        cur = conn.execute("DELETE FROM paths WHERE id = ?", (path_id,))
-        conn.commit()
-    return cur.rowcount > 0
-
-
-def update_path(path_id: int, payload: dict) -> Dict[str, str]:
-    """Update a learning path and its course ordering.
-
-    Args:
-        path_id: Path ID.
-        payload: Path updates and course_ids order.
-
-    Returns:
-        dict: Updated path.
-    """
-    name = (payload.get("name") or "").strip()
-    if not name:
-        raise ValueError("missing_name")
-    description = (payload.get("description") or "").strip() or None
-    course_ids = payload.get("course_ids") or []
-
-    with get_conn() as conn:
-        existing = conn.execute(
-            "SELECT id FROM paths WHERE lower(name) = lower(?) AND id != ?",
-            (name, path_id),
-        ).fetchone()
-        if existing:
+        if self._repo.path_name_exists_for_other_id(path_id, name):
             raise ValueError("duplicate_name")
 
-        conn.execute(
-            "UPDATE paths SET name = ?, description = ? WHERE id = ?",
-            (name, description, path_id),
-        )
-        conn.execute("DELETE FROM path_courses WHERE path_id = ?", (path_id,))
-        if course_ids:
-            conn.executemany(
-                "INSERT OR IGNORE INTO path_courses (path_id, course_id, position) VALUES (?, ?, ?)",
-                [(path_id, int(cid), idx) for idx, cid in enumerate(course_ids)],
-            )
-        conn.commit()
+        self._repo.update_path(path_id, name, description)
+        self._repo.delete_path_courses(path_id)
+        self._repo.set_path_courses(path_id, [int(course_id) for course_id in course_ids])
+        return self.get_path(path_id) or {"error": "not_found"}
 
-    return get_path(path_id) or {"error": "not_found"}
+    def delete_path(self, path_id: int) -> bool:
+        """Delete a learning path by ID.
+
+        Args:
+            path_id: Path ID.
+
+        Returns:
+            True if deleted.
+        """
+        self._repo.delete_path_courses(path_id)
+        return self._repo.delete_path(path_id) > 0
+
+    @staticmethod
+    def _path_payload(path: PathRecord) -> dict:
+        return {"id": path.id, "name": path.name, "description": path.description or ""}
+
+    @staticmethod
+    def _course_payload(course: PathCourseRecord) -> dict:
+        return {
+            "id": course.id,
+            "title": course.title or "",
+            "provider": course.provider or "",
+            "category": course.category or "",
+            "level": course.level or "",
+            "duration_hours": course.duration_hours,
+            "url": course.url or "",
+        }
+
+
+paths_service = PathsService(SQLitePathsRepository(database))
+
+
+def get_paths_service() -> PathsService:
+    """Provide the PathsService dependency.
+
+    Returns:
+        PathsService: Shared paths service instance.
+    """
+    return paths_service

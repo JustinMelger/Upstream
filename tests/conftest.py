@@ -16,9 +16,13 @@ import backend.core.config as config
 import backend.database.auth_repository as auth_repository
 import backend.database.courses_repository as courses_repository
 import backend.database.db as db
+import backend.database.paths_repository as paths_repository
+import backend.database.user_paths_repository as user_paths_repository
 import backend.main as main
 import backend.services.auth_service as auth_service_module
 import backend.services.courses_service as courses_service_module
+import backend.services.paths_service as paths_service_module
+import backend.services.user_paths_service as user_paths_service_module
 
 
 @pytest.fixture()
@@ -33,8 +37,12 @@ def app_client(tmp_path):
     importlib.reload(db)
     importlib.reload(auth_repository)
     importlib.reload(courses_repository)
+    importlib.reload(paths_repository)
+    importlib.reload(user_paths_repository)
     importlib.reload(auth_service_module)
     importlib.reload(courses_service_module)
+    importlib.reload(paths_service_module)
+    importlib.reload(user_paths_service_module)
     importlib.reload(main)
 
     db.init_db()
@@ -52,4 +60,16 @@ def app_client(tmp_path):
         return courses_service_module.CoursesService(repo)
 
     app.dependency_overrides[deps.get_courses_service] = _override_courses_service
+
+    def _override_paths_service():
+        repo = paths_repository.SQLitePathsRepository(db.database)
+        return paths_service_module.PathsService(repo)
+
+    app.dependency_overrides[deps.get_paths_service] = _override_paths_service
+
+    def _override_user_paths_service():
+        repo = user_paths_repository.SQLiteUserPathsRepository(db.database)
+        return user_paths_service_module.UserPathsService(repo)
+
+    app.dependency_overrides[deps.get_user_paths_service] = _override_user_paths_service
     return TestClient(app)
