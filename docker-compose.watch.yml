@@ -45,7 +45,9 @@ services:
             - learning_hub.db
             - frontend/node_modules/
         - action: rebuild
-          path: requirements.txt
+          path: pyproject.toml
+        - action: rebuild
+          path: uv.lock
         - action: rebuild
           path: Dockerfile
 
@@ -71,7 +73,9 @@ services:
           path: .streamlit
           target: /app/.streamlit
         - action: rebuild
-          path: requirements.txt
+          path: pyproject.toml
+        - action: rebuild
+          path: uv.lock
         - action: rebuild
           path: Dockerfile
 
