@@ -8,6 +8,7 @@ from backend.database.models import (
     PathRecord,
     SelectedPathRecord,
     SessionRecord,
+    TrackingRecord,
     UserRecord,
 )
 
@@ -381,3 +382,40 @@ class UserPathsRepository(Protocol):
         Returns:
             Number of rows updated.
         """
+
+
+class TrackingRepository(Protocol):
+    def list_tracking(self, colleague_id: str | None) -> list[TrackingRecord]:
+        """List tracking entries, optionally filtered by colleague.
+
+        Args:
+            colleague_id: Optional colleague username.
+
+        Returns:
+            Tracking records.
+        """
+
+    def list_recent_activity(self, limit: int) -> list[TrackingRecord]:
+        """List recent tracking activity.
+
+        Args:
+            limit: Max number of records.
+
+        Returns:
+            Tracking records ordered by updated_at desc.
+        """
+
+    def stats_for_colleague(self, colleague_id: str) -> dict[str, int]:
+        """Get tracking stats for a colleague."""
+
+    def stats_all(self) -> dict[str, int]:
+        """Get tracking stats for all users."""
+
+    def stats_by_user(self) -> list[dict]:
+        """Get tracking stats grouped by user."""
+
+    def upsert_tracking(self, colleague_id: str, course_id: int, status: str, updated_at: str) -> None:
+        """Insert or update a tracking status."""
+
+    def remove_tracking(self, colleague_id: str, course_id: int) -> int:
+        """Remove a tracking record."""

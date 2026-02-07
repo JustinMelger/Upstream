@@ -457,18 +457,36 @@ classDiagram
     +list_recent_activity(limit): list[dict]
   }
 
+  class TrackingRepository {
+    +list_tracking(colleague_id): list[TrackingRecord]
+    +list_recent_activity(limit): list[TrackingRecord]
+    +stats_for_colleague(colleague_id): dict
+    +stats_all(): dict
+    +stats_by_user(): list[dict]
+    +upsert_tracking(colleague_id, course_id, status, updated_at): None
+    +remove_tracking(colleague_id, course_id): int
+  }
+
+  class SQLiteTrackingRepository {
+  }
+
   class AuthService {
     +get_session(token): dict|None
     +is_admin(username): bool
   }
 
   class SQLiteDatabase {
+    +SQLiteDatabase(db_path: str)
     +get_conn(): Connection
+    +init_db(): None
+    +seed_courses_from_csv(csv_path: Path): None
   }
 
   TrackingRouter --> AuthService : require_session + admin checks
   TrackingRouter --> TrackingService : query + mutate
-  TrackingService --> SQLiteDatabase : persistence
+  TrackingService --> TrackingRepository : persistence
+  SQLiteTrackingRepository ..|> TrackingRepository
+  SQLiteTrackingRepository --> SQLiteDatabase : uses connections
 ```
 
 ### Tracking Data Model

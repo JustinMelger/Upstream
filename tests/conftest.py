@@ -17,11 +17,13 @@ import backend.database.auth_repository as auth_repository
 import backend.database.courses_repository as courses_repository
 import backend.database.db as db
 import backend.database.paths_repository as paths_repository
+import backend.database.tracking_repository as tracking_repository
 import backend.database.user_paths_repository as user_paths_repository
 import backend.main as main
 import backend.services.auth_service as auth_service_module
 import backend.services.courses_service as courses_service_module
 import backend.services.paths_service as paths_service_module
+import backend.services.tracking_service as tracking_service_module
 import backend.services.user_paths_service as user_paths_service_module
 
 
@@ -38,10 +40,12 @@ def app_client(tmp_path):
     importlib.reload(auth_repository)
     importlib.reload(courses_repository)
     importlib.reload(paths_repository)
+    importlib.reload(tracking_repository)
     importlib.reload(user_paths_repository)
     importlib.reload(auth_service_module)
     importlib.reload(courses_service_module)
     importlib.reload(paths_service_module)
+    importlib.reload(tracking_service_module)
     importlib.reload(user_paths_service_module)
     importlib.reload(main)
 
@@ -72,4 +76,10 @@ def app_client(tmp_path):
         return user_paths_service_module.UserPathsService(repo)
 
     app.dependency_overrides[deps.get_user_paths_service] = _override_user_paths_service
+
+    def _override_tracking_service():
+        repo = tracking_repository.SQLiteTrackingRepository(db.database)
+        return tracking_service_module.TrackingService(repo)
+
+    app.dependency_overrides[deps.get_tracking_service] = _override_tracking_service
     return TestClient(app)
