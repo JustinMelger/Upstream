@@ -128,12 +128,3 @@ class PathsService:
 
 
 paths_service = PathsService(SQLitePathsRepository(database))
-
-
-def get_paths_service() -> PathsService:
-    """Provide the PathsService dependency.
-
-    Returns:
-        PathsService: Shared paths service instance.
-    """
-    return paths_service

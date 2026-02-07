@@ -156,12 +156,3 @@ class CoursesService:
 
 
 courses_service = CoursesService(SQLiteCoursesRepository(database))
-
-
-def get_courses_service() -> CoursesService:
-    """Provide the CoursesService dependency.
-
-    Returns:
-        CoursesService: Shared courses service instance.
-    """
-    return courses_service
