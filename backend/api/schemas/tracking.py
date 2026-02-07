@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 
+from pydantic import StrictStr
+
 from backend.api.schemas.common import APIModel
 
 
 class TrackingUpsertRequest(APIModel):
     course_id: Any | None = None
-    status: str | None = None
+    status: StrictStr | None = None
 
 
 class TrackingDeleteRequest(APIModel):

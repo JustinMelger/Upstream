@@ -58,15 +58,7 @@ def add_path(
     """
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-
-    try:
-        return paths.create_path(payload.model_dump())
-    except ValueError as exc:
-        if str(exc) == "missing_name":
-            raise HTTPException(status_code=400, detail="missing_name")
-        if str(exc) == "duplicate_name":
-            raise HTTPException(status_code=409, detail="duplicate_name")
-        raise HTTPException(status_code=400, detail="invalid_request")
+    return paths.create_path(payload.model_dump())
 
 
 @router.post("/{path_id}/select", response_model=SelectPathResponse)
@@ -127,10 +119,7 @@ def set_path_status(
     if not status:
         raise HTTPException(status_code=400, detail="missing_fields")
 
-    try:
-        updated = user_paths.update_user_path_status(current_user, path_id, status)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="invalid_status")
+    updated = user_paths.update_user_path_status(current_user, path_id, status)
 
     if updated == 0:
         raise HTTPException(status_code=404, detail="path_not_selected")
@@ -215,12 +204,4 @@ def edit_path(
     """
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-
-    try:
-        return paths.update_path(path_id, payload.model_dump())
-    except ValueError as exc:
-        if str(exc) == "missing_name":
-            raise HTTPException(status_code=400, detail="missing_name")
-        if str(exc) == "duplicate_name":
-            raise HTTPException(status_code=409, detail="duplicate_name")
-        raise HTTPException(status_code=400, detail="invalid_request")
+    return paths.update_path(path_id, payload.model_dump())

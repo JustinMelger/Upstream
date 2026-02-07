@@ -66,10 +66,7 @@ def set_tracking(
     except ValueError:
         raise HTTPException(status_code=400, detail="invalid_course_id")
 
-    try:
-        return tracking.upsert_tracking(colleague_id, course_id_int, status)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="invalid_status")
+    return tracking.upsert_tracking(colleague_id, course_id_int, status)
 
 
 @router.post("/delete", response_model=TrackingDeleteResponse)

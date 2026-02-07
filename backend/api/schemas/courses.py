@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from pydantic import StrictStr
+
 from backend.api.schemas.common import APIModel
 
 
@@ -17,21 +19,21 @@ class CoursePayload(APIModel):
 
 
 class CourseCreateRequest(APIModel):
-    title: str | None = None
-    provider: str | None = None
-    category: str | None = None
-    level: str | None = None
+    title: StrictStr | None = None
+    provider: StrictStr | None = None
+    category: StrictStr | None = None
+    level: StrictStr | None = None
     duration_hours: Any | None = None
-    url: str | None = None
+    url: StrictStr | None = None
 
 
 class CourseUpdateRequest(APIModel):
-    title: str | None = None
-    provider: str | None = None
-    category: str | None = None
-    level: str | None = None
+    title: StrictStr | None = None
+    provider: StrictStr | None = None
+    category: StrictStr | None = None
+    level: StrictStr | None = None
     duration_hours: Any | None = None
-    url: str | None = None
+    url: StrictStr | None = None
 
 
 class DeleteCourseResponse(APIModel):

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from pydantic import StrictBool, StrictStr
+
 from backend.api.schemas.common import APIModel
 
 
 class LoginRequest(APIModel):
-    username: str | None = None
-    password: str | None = None
+    username: StrictStr | None = None
+    password: StrictStr | None = None
 
 
 class LoginResponse(APIModel):
@@ -31,9 +33,9 @@ class RoleResponse(APIModel):
 
 
 class CreateUserRequest(APIModel):
-    username: str | None = None
-    password: str | None = None
-    role: str | None = None
+    username: StrictStr | None = None
+    password: StrictStr | None = None
+    role: StrictStr | None = None
 
 
 class CreateUserResponse(APIModel):
@@ -51,8 +53,8 @@ class UserListItem(APIModel):
 
 
 class ResetPasswordRequest(APIModel):
-    username: str | None = None
-    password: str | None = None
+    username: StrictStr | None = None
+    password: StrictStr | None = None
 
 
 class ResetPasswordResponse(APIModel):
@@ -64,8 +66,8 @@ class DeleteUserResponse(APIModel):
 
 
 class DisableUserRequest(APIModel):
-    username: str | None = None
-    disabled: bool = True
+    username: StrictStr | None = None
+    disabled: StrictBool = True
 
 
 class DisableUserResponse(APIModel):

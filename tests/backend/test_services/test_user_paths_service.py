@@ -1,5 +1,6 @@
 import pytest
 
+from backend.core.errors import UserPathsServiceError
 from backend.database import db as db_module
 from backend.database.user_paths_repository import SQLiteUserPathsRepository
 from backend.services.user_paths_service import UserPathsService
@@ -52,8 +53,7 @@ def test_update_user_path_status(app_client):
     updated = user_paths.update_user_path_status("user1", path_id, "completed")
     assert updated == 1
 
-    try:
+    with pytest.raises(UserPathsServiceError) as excinfo:
         user_paths.update_user_path_status("user1", path_id, "bad_status")
-        assert False, "Expected ValueError for invalid_status"
-    except ValueError as exc:
-        assert str(exc) == "invalid_status"
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_status"

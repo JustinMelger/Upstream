@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import Field
+from pydantic import Field, StrictInt, StrictStr
 
 from backend.api.schemas.common import APIModel
 
@@ -29,15 +29,15 @@ class PathDetailResponse(APIModel):
 
 
 class PathCreateRequest(APIModel):
-    name: str | None = None
-    description: str | None = None
-    course_ids: list[int] = Field(default_factory=list)
+    name: StrictStr | None = None
+    description: StrictStr | None = None
+    course_ids: list[StrictInt] = Field(default_factory=list)
 
 
 class PathUpdateRequest(APIModel):
-    name: str | None = None
-    description: str | None = None
-    course_ids: list[int] = Field(default_factory=list)
+    name: StrictStr | None = None
+    description: StrictStr | None = None
+    course_ids: list[StrictInt] = Field(default_factory=list)
 
 
 class DeletePathResponse(APIModel):
@@ -55,7 +55,7 @@ class UnselectPathResponse(APIModel):
 
 
 class PathStatusRequest(APIModel):
-    status: str | None = None
+    status: StrictStr | None = None
 
 
 class PathStatusResponse(APIModel):

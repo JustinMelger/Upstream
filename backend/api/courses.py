@@ -78,10 +78,7 @@ def add_course(
     """
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    try:
-        return courses.create_course(payload.model_dump())
-    except ValueError:
-        raise HTTPException(status_code=400, detail="missing_title")
+    return courses.create_course(payload.model_dump())
 
 
 @router.put("/{course_id}", response_model=Union[CoursePayload, ErrorResponse])

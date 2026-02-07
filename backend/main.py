@@ -1,11 +1,21 @@
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from backend.api import auth, courses, paths, tracking
 from backend.api.schemas import HealthResponse
 from backend.core.config import settings
+from backend.core.errors import (
+    AuthServiceError,
+    CoursesServiceError,
+    format_service_error,
+    PathsServiceError,
+    TrackingServiceError,
+    UserPathsServiceError,
+)
 from backend.database.db import init_db, seed_courses_from_csv
 
 
@@ -23,6 +33,31 @@ app.include_router(courses.router)
 app.include_router(paths.router)
 app.include_router(tracking.router)
 app.include_router(auth.router)
+
+
+@app.exception_handler(AuthServiceError)
+async def auth_service_exception_handler(request: Request, exc: AuthServiceError):
+    return JSONResponse(status_code=exc.status_code, content=format_service_error(exc))
+
+
+@app.exception_handler(CoursesServiceError)
+async def courses_service_exception_handler(request: Request, exc: CoursesServiceError):
+    return JSONResponse(status_code=exc.status_code, content=format_service_error(exc))
+
+
+@app.exception_handler(PathsServiceError)
+async def paths_service_exception_handler(request: Request, exc: PathsServiceError):
+    return JSONResponse(status_code=exc.status_code, content=format_service_error(exc))
+
+
+@app.exception_handler(UserPathsServiceError)
+async def user_paths_service_exception_handler(request: Request, exc: UserPathsServiceError):
+    return JSONResponse(status_code=exc.status_code, content=format_service_error(exc))
+
+
+@app.exception_handler(TrackingServiceError)
+async def tracking_service_exception_handler(request: Request, exc: TrackingServiceError):
+    return JSONResponse(status_code=exc.status_code, content=format_service_error(exc))
 
 
 @app.get("/health", tags=["health"], response_model=HealthResponse)

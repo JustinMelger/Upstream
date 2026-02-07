@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from backend.core.errors import courses_error_handler, CoursesServiceError
 from backend.database.courses_repository import SQLiteCoursesRepository
 from backend.database.db import database
 from backend.database.interfaces import CoursesRepository
@@ -19,6 +20,7 @@ class CoursesService:
         """
         self._repo = repo
 
+    @courses_error_handler()
     def list_courses(
         self,
         *,
@@ -41,6 +43,7 @@ class CoursesService:
         rows = self._repo.list_courses(query=query, provider=provider, category=category, level=level)
         return [self._to_payload(row) for row in rows]
 
+    @courses_error_handler()
     def get_course_by_id(self, course_id: int) -> dict | None:
         """Fetch a course by ID.
 
@@ -53,6 +56,7 @@ class CoursesService:
         course = self._repo.get_course_by_id(course_id)
         return self._to_payload(course) if course else None
 
+    @courses_error_handler()
     def create_course(self, payload: dict) -> dict:
         """Create a new course.
 
@@ -63,11 +67,11 @@ class CoursesService:
             Created course payload.
 
         Raises:
-            ValueError: If required fields are missing.
+            CoursesServiceError: If required fields are missing.
         """
         title = (payload.get("title") or "").strip()
         if not title:
-            raise ValueError("missing_title")
+            raise CoursesServiceError(detail="missing_title", status_code=400)
 
         provider = (payload.get("provider") or "").strip() or None
         category = (payload.get("category") or "").strip() or None
@@ -87,6 +91,7 @@ class CoursesService:
         )
         return self.get_course_by_id(course_id) or {"error": "not_found"}
 
+    @courses_error_handler()
     def update_course(self, course_id: int, payload: dict) -> dict | None:
         """Update a course by ID.
 
@@ -121,6 +126,7 @@ class CoursesService:
         )
         return self.get_course_by_id(course_id)
 
+    @courses_error_handler()
     def delete_course(self, course_id: int) -> bool:
         """Delete a course by ID.
 

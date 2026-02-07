@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from backend.core.errors import paths_error_handler, PathsServiceError
 from backend.database.db import database
 from backend.database.interfaces import PathsRepository
 from backend.database.models import PathCourseRecord, PathRecord
@@ -17,6 +18,7 @@ class PathsService:
         """
         self._repo = repo
 
+    @paths_error_handler()
     def list_paths(self) -> list[dict]:
         """List all learning paths.
 
@@ -25,6 +27,7 @@ class PathsService:
         """
         return [self._path_payload(path) for path in self._repo.list_paths()]
 
+    @paths_error_handler()
     def get_path(self, path_id: int) -> dict | None:
         """Fetch a path and its courses by ID.
 
@@ -45,6 +48,7 @@ class PathsService:
             "courses": [self._course_payload(course) for course in courses],
         }
 
+    @paths_error_handler()
     def create_path(self, payload: dict) -> dict:
         """Create a learning path with ordered courses.
 
@@ -55,22 +59,23 @@ class PathsService:
             Created path payload.
 
         Raises:
-            ValueError: If required fields are missing or the name is duplicate.
+            PathsServiceError: If required fields are missing or the name is duplicate.
         """
         name = (payload.get("name") or "").strip()
         if not name:
-            raise ValueError("missing_name")
+            raise PathsServiceError(detail="missing_name", status_code=400)
         description = (payload.get("description") or "").strip() or None
         course_ids = payload.get("course_ids") or []
 
         if self._repo.path_name_exists(name):
-            raise ValueError("duplicate_name")
+            raise PathsServiceError(detail="duplicate_name", status_code=409)
 
         path_id = self._repo.create_path(name, description)
         self._repo.delete_path_courses(path_id)
         self._repo.set_path_courses(path_id, [int(course_id) for course_id in course_ids])
         return self.get_path(path_id) or {"error": "not_found"}
 
+    @paths_error_handler()
     def update_path(self, path_id: int, payload: dict) -> dict:
         """Update a learning path and its course ordering.
 
@@ -82,22 +87,23 @@ class PathsService:
             Updated path payload.
 
         Raises:
-            ValueError: If required fields are missing or the name is duplicate.
+            PathsServiceError: If required fields are missing or the name is duplicate.
         """
         name = (payload.get("name") or "").strip()
         if not name:
-            raise ValueError("missing_name")
+            raise PathsServiceError(detail="missing_name", status_code=400)
         description = (payload.get("description") or "").strip() or None
         course_ids = payload.get("course_ids") or []
 
         if self._repo.path_name_exists_for_other_id(path_id, name):
-            raise ValueError("duplicate_name")
+            raise PathsServiceError(detail="duplicate_name", status_code=409)
 
         self._repo.update_path(path_id, name, description)
         self._repo.delete_path_courses(path_id)
         self._repo.set_path_courses(path_id, [int(course_id) for course_id in course_ids])
         return self.get_path(path_id) or {"error": "not_found"}
 
+    @paths_error_handler()
     def delete_path(self, path_id: int) -> bool:
         """Delete a learning path by ID.
 

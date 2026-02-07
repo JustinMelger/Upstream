@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from backend.core.errors import PathsServiceError
 from backend.database import db as db_module
 from backend.database.paths_repository import SQLitePathsRepository
 from backend.services.paths_service import PathsService
@@ -50,15 +51,14 @@ def test_create_path_and_get_courses(app_client):
 
 @pytest.mark.unit
 def test_create_path_duplicate_name(app_client):
-    """Creating a duplicate path name raises ValueError."""
+    """Creating a duplicate path name returns a 409-domain error."""
     _clear_paths()
     paths = _paths_service()
     paths.create_path({"name": "Duplicate", "course_ids": []})
-    try:
+    with pytest.raises(PathsServiceError) as excinfo:
         paths.create_path({"name": "Duplicate", "course_ids": []})
-        assert False, "Expected ValueError for duplicate_name"
-    except ValueError as exc:
-        assert str(exc) == "duplicate_name"
+    assert excinfo.value.status_code == 409
+    assert str(excinfo.value.detail) == "duplicate_name"
 
 
 @pytest.mark.unit
