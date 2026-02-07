@@ -84,6 +84,22 @@ class SQLitePathsRepository:
             conn.commit()
             return int(cur.lastrowid)
 
+    def create_path_with_courses(self, name: str, description: str | None, course_ids: list[int]) -> int:
+        """Create a path and set its ordered courses atomically."""
+        with self._db.transaction() as conn:
+            cur = conn.execute(
+                "INSERT INTO paths (name, description) VALUES (?, ?)",
+                (name, description),
+            )
+            path_id = int(cur.lastrowid)
+            conn.execute("DELETE FROM path_courses WHERE path_id = ?", (path_id,))
+            if course_ids:
+                conn.executemany(
+                    "INSERT OR IGNORE INTO path_courses (path_id, course_id, position) VALUES (?, ?, ?)",
+                    [(path_id, int(course_id), idx) for idx, course_id in enumerate(course_ids)],
+                )
+            return path_id
+
     def path_name_exists(self, name: str) -> bool:
         """Check if a path name exists (case-insensitive)."""
         with self._db.get_conn() as conn:
@@ -126,9 +142,31 @@ class SQLitePathsRepository:
             conn.commit()
             return cur.rowcount
 
+    def update_path_with_courses(self, path_id: int, name: str, description: str | None, course_ids: list[int]) -> int:
+        """Update a path and reset its ordered courses atomically."""
+        with self._db.transaction() as conn:
+            cur = conn.execute(
+                "UPDATE paths SET name = ?, description = ? WHERE id = ?",
+                (name, description, path_id),
+            )
+            conn.execute("DELETE FROM path_courses WHERE path_id = ?", (path_id,))
+            if course_ids:
+                conn.executemany(
+                    "INSERT OR IGNORE INTO path_courses (path_id, course_id, position) VALUES (?, ?, ?)",
+                    [(path_id, int(course_id), idx) for idx, course_id in enumerate(course_ids)],
+                )
+            return cur.rowcount
+
     def delete_path(self, path_id: int) -> int:
         """Delete a path by ID."""
         with self._db.get_conn() as conn:
             cur = conn.execute("DELETE FROM paths WHERE id = ?", (path_id,))
             conn.commit()
+            return cur.rowcount
+
+    def delete_path_with_courses(self, path_id: int) -> int:
+        """Delete a path and its course mappings atomically."""
+        with self._db.transaction() as conn:
+            conn.execute("DELETE FROM path_courses WHERE path_id = ?", (path_id,))
+            cur = conn.execute("DELETE FROM paths WHERE id = ?", (path_id,))
             return cur.rowcount

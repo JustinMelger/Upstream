@@ -70,9 +70,7 @@ class PathsService:
         if self._repo.path_name_exists(name):
             raise PathsServiceError(detail="duplicate_name", status_code=409)
 
-        path_id = self._repo.create_path(name, description)
-        self._repo.delete_path_courses(path_id)
-        self._repo.set_path_courses(path_id, [int(course_id) for course_id in course_ids])
+        path_id = self._repo.create_path_with_courses(name, description, [int(course_id) for course_id in course_ids])
         return self.get_path(path_id) or {"error": "not_found"}
 
     @paths_error_handler()
@@ -98,9 +96,7 @@ class PathsService:
         if self._repo.path_name_exists_for_other_id(path_id, name):
             raise PathsServiceError(detail="duplicate_name", status_code=409)
 
-        self._repo.update_path(path_id, name, description)
-        self._repo.delete_path_courses(path_id)
-        self._repo.set_path_courses(path_id, [int(course_id) for course_id in course_ids])
+        self._repo.update_path_with_courses(path_id, name, description, [int(course_id) for course_id in course_ids])
         return self.get_path(path_id) or {"error": "not_found"}
 
     @paths_error_handler()
@@ -113,8 +109,7 @@ class PathsService:
         Returns:
             True if deleted.
         """
-        self._repo.delete_path_courses(path_id)
-        return self._repo.delete_path(path_id) > 0
+        return self._repo.delete_path_with_courses(path_id) > 0
 
     @staticmethod
     def _path_payload(path: PathRecord) -> dict:
