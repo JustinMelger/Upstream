@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from backend.api import auth, courses, paths, tracking
+from backend.api.schemas import HealthResponse
 from backend.core.config import settings
 from backend.database.db import init_db, seed_courses_from_csv
 
@@ -24,7 +25,7 @@ app.include_router(tracking.router)
 app.include_router(auth.router)
 
 
-@app.get("/health", tags=["health"])
+@app.get("/health", tags=["health"], response_model=HealthResponse)
 def health():
     """Health check endpoint.
 
