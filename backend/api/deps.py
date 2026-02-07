@@ -3,6 +3,7 @@ from fastapi import Depends, Header, HTTPException
 from backend.services.auth_service import auth_service, AuthService
 from backend.services.courses_service import courses_service, CoursesService
 from backend.services.paths_service import paths_service, PathsService
+from backend.services.tracking_service import tracking_service, TrackingService
 from backend.services.user_paths_service import user_paths_service, UserPathsService
 
 
@@ -40,6 +41,15 @@ def get_user_paths_service() -> UserPathsService:
         UserPathsService: Shared user paths service instance.
     """
     return user_paths_service
+
+
+def get_tracking_service() -> TrackingService:
+    """Provide the TrackingService dependency.
+
+    Returns:
+        TrackingService: Shared tracking service instance.
+    """
+    return tracking_service
 
 
 def require_session(

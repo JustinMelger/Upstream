@@ -66,3 +66,13 @@ class SelectedPathRecord:
     name: str
     description: str | None
     status: str | None
+
+
+@dataclass(frozen=True)
+class TrackingRecord:
+    """Course tracking row representation."""
+
+    colleague_id: str
+    course_id: int
+    status: str
+    updated_at: str
