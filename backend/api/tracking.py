@@ -3,6 +3,13 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.api.deps import get_auth_service, get_tracking_service, require_session
+from backend.api.schemas import (
+    TrackingDeleteRequest,
+    TrackingDeleteResponse,
+    TrackingRecordPayload,
+    TrackingStatsByUserItem,
+    TrackingUpsertRequest,
+)
 from backend.services.auth_service import AuthService
 from backend.services.tracking_service import TrackingService
 
@@ -10,7 +17,7 @@ from backend.services.tracking_service import TrackingService
 router = APIRouter(prefix="/tracking", tags=["tracking"])
 
 
-@router.get("", response_model=List[dict])
+@router.get("", response_model=List[TrackingRecordPayload])
 def get_tracking(
     colleague_id: Optional[str] = Query(default=None),
     current_user: str = Depends(require_session),
@@ -32,9 +39,9 @@ def get_tracking(
     return tracking.list_tracking(colleague_id=target)
 
 
-@router.post("", response_model=dict)
+@router.post("", response_model=TrackingRecordPayload)
 def set_tracking(
-    payload: dict,
+    payload: TrackingUpsertRequest,
     current_user: str = Depends(require_session),
     tracking: TrackingService = Depends(get_tracking_service),
 ):
@@ -48,8 +55,8 @@ def set_tracking(
         dict: Tracking record.
     """
     colleague_id = current_user
-    course_id = payload.get("course_id")
-    status = (payload.get("status") or "").strip()
+    course_id = payload.course_id
+    status = (payload.status or "").strip()
 
     if not course_id or not status:
         raise HTTPException(status_code=400, detail="missing_fields")
@@ -59,15 +66,12 @@ def set_tracking(
     except ValueError:
         raise HTTPException(status_code=400, detail="invalid_course_id")
 
-    try:
-        return tracking.upsert_tracking(colleague_id, course_id_int, status)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="invalid_status")
+    return tracking.upsert_tracking(colleague_id, course_id_int, status)
 
 
-@router.post("/delete", response_model=dict)
+@router.post("/delete", response_model=TrackingDeleteResponse)
 def delete_tracking(
-    payload: dict,
+    payload: TrackingDeleteRequest,
     current_user: str = Depends(require_session),
     tracking: TrackingService = Depends(get_tracking_service),
 ):
@@ -81,7 +85,7 @@ def delete_tracking(
         dict: Delete result.
     """
     colleague_id = current_user
-    course_id = payload.get("course_id")
+    course_id = payload.course_id
 
     if not course_id:
         raise HTTPException(status_code=400, detail="missing_fields")
@@ -95,7 +99,7 @@ def delete_tracking(
     return {"removed": removed}
 
 
-@router.get("/stats", response_model=dict)
+@router.get("/stats", response_model=dict[str, int])
 def get_stats(
     colleague_id: Optional[str] = Query(default=None),
     current_user: str = Depends(require_session),
@@ -120,7 +124,7 @@ def get_stats(
     raise HTTPException(status_code=403, detail="admin_required")
 
 
-@router.get("/stats/users", response_model=list[dict])
+@router.get("/stats/users", response_model=list[TrackingStatsByUserItem])
 def get_stats_by_user(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
@@ -139,7 +143,7 @@ def get_stats_by_user(
     return tracking.stats_by_user()
 
 
-@router.get("/recent", response_model=list[dict])
+@router.get("/recent", response_model=list[TrackingRecordPayload])
 def get_recent_activity(
     limit: int = Query(default=10),
     current_user: str = Depends(require_session),

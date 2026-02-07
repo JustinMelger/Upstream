@@ -1,6 +1,21 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from backend.api.deps import get_auth_service
+from backend.api.schemas import (
+    CreateUserRequest,
+    CreateUserResponse,
+    DeleteUserResponse,
+    DisableUserRequest,
+    DisableUserResponse,
+    LoginRequest,
+    LoginResponse,
+    LogoutResponse,
+    MeResponse,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
+    RoleResponse,
+    UserListItem,
+)
 from backend.core.config import settings
 from backend.services.auth_service import AuthService
 
@@ -8,8 +23,8 @@ from backend.services.auth_service import AuthService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/login", response_model=dict)
-def login(payload: dict, auth: AuthService = Depends(get_auth_service)):
+@router.post("/login", response_model=LoginResponse)
+def login(payload: LoginRequest, auth: AuthService = Depends(get_auth_service)):
     """Authenticate a user and create a session.
 
     Args:
@@ -21,8 +36,8 @@ def login(payload: dict, auth: AuthService = Depends(get_auth_service)):
     Raises:
         HTTPException: If credentials are missing or invalid.
     """
-    username = (payload.get("username") or "").strip()
-    password = (payload.get("password") or "").strip()
+    username = (payload.username or "").strip()
+    password = (payload.password or "").strip()
     if not username or not password:
         raise HTTPException(status_code=400, detail="missing_fields")
 
@@ -54,7 +69,7 @@ def login(payload: dict, auth: AuthService = Depends(get_auth_service)):
     }
 
 
-@router.get("/me", response_model=dict)
+@router.get("/me", response_model=MeResponse)
 def me(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
@@ -77,7 +92,7 @@ def me(
     return {"username": user.username, "role": user.role, "expires_at": session["expires_at"]}
 
 
-@router.post("/logout", response_model=dict)
+@router.post("/logout", response_model=LogoutResponse)
 def logout(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
@@ -97,7 +112,7 @@ def logout(
     return {"revoked": revoked}
 
 
-@router.get("/role", response_model=dict)
+@router.get("/role", response_model=RoleResponse)
 def get_role(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
@@ -119,9 +134,9 @@ def get_role(
     return {"role": user.role}
 
 
-@router.post("/users", response_model=dict)
+@router.post("/users", response_model=CreateUserResponse)
 def create_user_endpoint(
-    payload: dict,
+    payload: CreateUserRequest,
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
 ):
@@ -140,9 +155,9 @@ def create_user_endpoint(
     if not auth.is_admin(session["colleague_id"]):
         raise HTTPException(status_code=403, detail="admin_required")
 
-    username = (payload.get("username") or "").strip()
-    password = (payload.get("password") or "").strip()
-    role = (payload.get("role") or "user").strip()
+    username = (payload.username or "").strip()
+    password = (payload.password or "").strip()
+    role = (payload.role or "user").strip()
     if not username or not password:
         raise HTTPException(status_code=400, detail="missing_fields")
     if role not in {"admin", "user"}:
@@ -153,7 +168,7 @@ def create_user_endpoint(
     return auth.create_user(username, password, role)
 
 
-@router.get("/users", response_model=list[dict])
+@router.get("/users", response_model=list[UserListItem])
 def list_users_endpoint(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
@@ -174,9 +189,9 @@ def list_users_endpoint(
     return auth.list_users()
 
 
-@router.post("/users/reset", response_model=dict)
+@router.post("/users/reset", response_model=ResetPasswordResponse)
 def reset_password_endpoint(
-    payload: dict,
+    payload: ResetPasswordRequest,
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
 ):
@@ -195,8 +210,8 @@ def reset_password_endpoint(
     if not auth.is_admin(session["colleague_id"]):
         raise HTTPException(status_code=403, detail="admin_required")
 
-    username = (payload.get("username") or "").strip()
-    password = (payload.get("password") or "").strip()
+    username = (payload.username or "").strip()
+    password = (payload.password or "").strip()
     if not username or not password:
         raise HTTPException(status_code=400, detail="missing_fields")
 
@@ -206,7 +221,7 @@ def reset_password_endpoint(
     return {"updated": updated}
 
 
-@router.delete("/users/{username}", response_model=dict)
+@router.delete("/users/{username}", response_model=DeleteUserResponse)
 def delete_user_endpoint(
     username: str,
     x_session_token: str | None = Header(default=None),
@@ -233,9 +248,9 @@ def delete_user_endpoint(
     return {"removed": removed}
 
 
-@router.post("/users/disable", response_model=dict)
+@router.post("/users/disable", response_model=DisableUserResponse)
 def disable_user_endpoint(
-    payload: dict,
+    payload: DisableUserRequest,
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
 ):
@@ -254,8 +269,8 @@ def disable_user_endpoint(
     if not auth.is_admin(session["colleague_id"]):
         raise HTTPException(status_code=403, detail="admin_required")
 
-    username = (payload.get("username") or "").strip()
-    disabled = bool(payload.get("disabled", True))
+    username = (payload.username or "").strip()
+    disabled = bool(payload.disabled)
     if not username:
         raise HTTPException(status_code=400, detail="missing_fields")
     if session["colleague_id"].lower() == username.lower() and disabled:

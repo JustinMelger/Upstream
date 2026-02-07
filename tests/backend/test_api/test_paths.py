@@ -39,7 +39,10 @@ def test_create_path_missing_name(app_client):
     token = _login_admin(app_client)
     response = app_client.post("/paths", json={"name": ""}, headers={"X-Session-Token": token})
     assert response.status_code == 400
-    assert response.json().get("detail") == "missing_name"
+    body = response.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "missing_name"
+    assert "timestamp" in body
 
 
 @pytest.mark.integration

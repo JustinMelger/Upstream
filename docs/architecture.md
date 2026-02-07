@@ -171,6 +171,24 @@ erDiagram
 - Recent activity and stats (per-user and team).
 - Admin-only team-wide stats.
 
+## API error handling
+
+Service-layer failures are represented by domain-specific `ServiceError` exceptions (for example `AuthServiceError`, `CoursesServiceError`, `PathsServiceError`, `UserPathsServiceError`, `TrackingServiceError`). The FastAPI app registers exception handlers that convert these into a standard JSON payload:
+
+```json
+{
+  "status": "error",
+  "message": "missing_title",
+  "timestamp": "2026-02-07T12:34:56.789012+00:00"
+}
+```
+
+Endpoints still use `HTTPException` directly for request/permission semantics (for example `401 unauthorized`, `403 admin_required`, `404 not_found`).
+
+## Request validation
+
+Each router defines Pydantic request and response schemas. Invalid request payloads (wrong types, missing required fields, invalid list element types) are rejected with `422 Unprocessable Entity` before service methods run.
+
 ## Courses Architecture
 
 ### Courses Sequence

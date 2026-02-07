@@ -53,7 +53,10 @@ def test_create_course_missing_title(app_client):
     token = _login_admin(app_client)
     response = app_client.post("/courses", json={"title": ""}, headers={"X-Session-Token": token})
     assert response.status_code == 400
-    assert response.json().get("detail") == "missing_title"
+    body = response.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "missing_title"
+    assert "timestamp" in body
 
 
 @pytest.mark.integration

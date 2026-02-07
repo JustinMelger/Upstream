@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from backend.core.errors import user_paths_error_handler, UserPathsServiceError
 from backend.database.db import database
 from backend.database.interfaces import UserPathsRepository
 from backend.database.models import SelectedPathRecord
@@ -22,6 +23,7 @@ class UserPathsService:
         """
         self._repo = repo
 
+    @user_paths_error_handler()
     def add_user_path(self, colleague_id: str, path_id: int) -> dict:
         """Add a path to a user's selections.
 
@@ -36,6 +38,7 @@ class UserPathsService:
         self._repo.add_user_path(colleague_id, path_id, now)
         return {"colleague_id": colleague_id, "path_id": str(path_id), "created_at": now}
 
+    @user_paths_error_handler()
     def list_user_paths(self, colleague_id: str) -> list[dict]:
         """List paths selected by a colleague.
 
@@ -47,6 +50,7 @@ class UserPathsService:
         """
         return [self._to_payload(path) for path in self._repo.list_user_paths(colleague_id)]
 
+    @user_paths_error_handler()
     def remove_user_path(self, colleague_id: str, path_id: int) -> int:
         """Remove a path from a user's selections.
 
@@ -59,6 +63,7 @@ class UserPathsService:
         """
         return self._repo.remove_user_path(colleague_id, path_id)
 
+    @user_paths_error_handler()
     def update_user_path_status(self, colleague_id: str, path_id: int, status: str) -> int:
         """Update a user's status for a selected path.
 
@@ -71,10 +76,10 @@ class UserPathsService:
             Number of rows updated.
 
         Raises:
-            ValueError: If status is invalid.
+            UserPathsServiceError: If status is invalid.
         """
         if status not in STATUS_VALUES:
-            raise ValueError("invalid_status")
+            raise UserPathsServiceError(detail="invalid_status", status_code=400)
         now = datetime.now(timezone.utc).isoformat()
         return self._repo.update_user_path_status(colleague_id, path_id, status, now)
 

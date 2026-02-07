@@ -7,6 +7,7 @@ import secrets
 import bcrypt
 
 from backend.core.config import settings
+from backend.core.errors import auth_error_handler
 from backend.database.auth_repository import SQLiteAuthRepository
 from backend.database.db import database
 from backend.database.interfaces import AuthRepository
@@ -75,6 +76,7 @@ class AuthService:
         user = self.get_user(username)
         return bool(user and user.role == "admin")
 
+    @auth_error_handler()
     def create_session(self, colleague_id: str) -> dict:
         """Create a new session for a user.
 
@@ -99,6 +101,7 @@ class AuthService:
 
         return {"token": token, "expires_at": expires_at.isoformat()}
 
+    @auth_error_handler()
     def get_session(self, token: str | None) -> dict | None:
         """Validate and load a session by token.
 
@@ -125,6 +128,7 @@ class AuthService:
         self._repo.update_session_last_seen(token_hash, now.isoformat())
         return {"colleague_id": row.colleague_id, "expires_at": row.expires_at}
 
+    @auth_error_handler()
     def revoke_sessions(self, colleague_id: str) -> int:
         """Revoke all sessions for a user.
 
@@ -136,6 +140,7 @@ class AuthService:
         """
         return self._repo.revoke_sessions(colleague_id)
 
+    @auth_error_handler()
     def get_user(self, username: str) -> UserRecord | None:
         """Fetch a user by username.
 
@@ -147,6 +152,7 @@ class AuthService:
         """
         return self._repo.get_user(username)
 
+    @auth_error_handler()
     def has_users(self) -> bool:
         """Check whether any users exist.
 
@@ -155,6 +161,7 @@ class AuthService:
         """
         return self._repo.has_users()
 
+    @auth_error_handler()
     def create_user(self, username: str, password: str, role: str) -> dict:
         """Create a new user account.
 
@@ -171,6 +178,7 @@ class AuthService:
         self._repo.create_user(username, password_hash, role, now)
         return {"username": username, "role": role}
 
+    @auth_error_handler()
     def list_users(self) -> list[dict]:
         """List all users.
 
@@ -179,6 +187,7 @@ class AuthService:
         """
         return self._repo.list_users()
 
+    @auth_error_handler()
     def update_password(self, username: str, password: str) -> int:
         """Update a user's password.
 
@@ -193,6 +202,7 @@ class AuthService:
         password_hash = self._hash_password(password)
         return self._repo.update_password(username, password_hash, now)
 
+    @auth_error_handler()
     def delete_user(self, username: str) -> int:
         """Delete a user by username.
 
@@ -204,6 +214,7 @@ class AuthService:
         """
         return self._repo.delete_user(username)
 
+    @auth_error_handler()
     def authenticate_user(self, username: str, password: str) -> dict | None:
         """Authenticate a user with username and password.
 
@@ -225,6 +236,7 @@ class AuthService:
         self._repo.update_last_login(username, now)
         return {"username": user.username, "role": user.role}
 
+    @auth_error_handler()
     def set_user_disabled(self, username: str, disabled: bool) -> int:
         """Disable or enable a user.
 
@@ -238,6 +250,7 @@ class AuthService:
         now = datetime.now(timezone.utc).isoformat()
         return self._repo.set_user_disabled(username, disabled, now)
 
+    @auth_error_handler()
     def purge_expired_sessions(self) -> int:
         """Remove expired sessions.
 

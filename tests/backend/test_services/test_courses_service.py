@@ -1,5 +1,6 @@
 import pytest
 
+from backend.core.errors import CoursesServiceError
 from backend.database import db as db_module
 from backend.database.courses_repository import SQLiteCoursesRepository
 from backend.services.courses_service import CoursesService
@@ -18,14 +19,13 @@ def _courses_service() -> CoursesService:
 
 @pytest.mark.unit
 def test_create_course_requires_title(app_client):
-    """Creating a course without a title raises a ValueError."""
+    """Creating a course without a title returns a 400-domain error."""
     _clear_courses()
     courses = _courses_service()
-    try:
+    with pytest.raises(CoursesServiceError) as excinfo:
         courses.create_course({"title": ""})
-        assert False, "Expected ValueError for missing_title"
-    except ValueError as exc:
-        assert str(exc) == "missing_title"
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "missing_title"
 
 
 @pytest.mark.unit

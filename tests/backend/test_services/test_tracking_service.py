@@ -1,5 +1,6 @@
 import pytest
 
+from backend.core.errors import TrackingServiceError
 from backend.database import db as db_module
 from backend.database.tracking_repository import SQLiteTrackingRepository
 from backend.services.tracking_service import TrackingService
@@ -29,14 +30,13 @@ def test_upsert_and_list_tracking(app_client):
 
 @pytest.mark.unit
 def test_upsert_invalid_status(app_client):
-    """Invalid tracking status raises ValueError."""
+    """Invalid tracking status returns a 400-domain error."""
     _clear_tracking()
     tracking = _tracking_service()
-    try:
+    with pytest.raises(TrackingServiceError) as excinfo:
         tracking.upsert_tracking("user1", 1, "bad_status")
-        assert False, "Expected ValueError for invalid_status"
-    except ValueError as exc:
-        assert str(exc) == "invalid_status"
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_status"
 
 
 @pytest.mark.unit

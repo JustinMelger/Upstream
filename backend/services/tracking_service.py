@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from backend.core.errors import tracking_error_handler, TrackingServiceError
 from backend.database.db import database
 from backend.database.interfaces import TrackingRepository
 from backend.database.models import TrackingRecord
@@ -22,6 +23,7 @@ class TrackingService:
         """
         self._repo = repo
 
+    @tracking_error_handler()
     def list_tracking(self, colleague_id: str | None = None) -> list[dict]:
         """List tracking entries, optionally filtered by colleague.
 
@@ -33,6 +35,7 @@ class TrackingService:
         """
         return [self._to_payload(row) for row in self._repo.list_tracking(colleague_id)]
 
+    @tracking_error_handler()
     def list_recent_activity(self, limit: int = 10) -> list[dict]:
         """List recent tracking activity.
 
@@ -44,18 +47,22 @@ class TrackingService:
         """
         return [self._to_payload(row) for row in self._repo.list_recent_activity(limit)]
 
+    @tracking_error_handler()
     def stats_for_colleague(self, colleague_id: str) -> dict[str, int]:
         """Get tracking stats for a colleague."""
         return self._repo.stats_for_colleague(colleague_id)
 
+    @tracking_error_handler()
     def stats_all(self) -> dict[str, int]:
         """Get tracking stats for all users."""
         return self._repo.stats_all()
 
+    @tracking_error_handler()
     def stats_by_user(self) -> list[dict]:
         """Get tracking stats grouped by user."""
         return self._repo.stats_by_user()
 
+    @tracking_error_handler()
     def upsert_tracking(self, colleague_id: str, course_id: int, status: str) -> dict:
         """Insert or update a tracking status.
 
@@ -68,14 +75,15 @@ class TrackingService:
             Tracking payload.
 
         Raises:
-            ValueError: If status is invalid.
+            TrackingServiceError: If status is invalid.
         """
         if status not in STATUS_VALUES:
-            raise ValueError("invalid_status")
+            raise TrackingServiceError(detail="invalid_status", status_code=400)
         now = datetime.now(timezone.utc).isoformat()
         self._repo.upsert_tracking(colleague_id, course_id, status, now)
         return {"colleague_id": colleague_id, "course_id": str(course_id), "status": status, "updated_at": now}
 
+    @tracking_error_handler()
     def remove_tracking(self, colleague_id: str, course_id: int) -> int:
         """Remove a tracking record."""
         return self._repo.remove_tracking(colleague_id, course_id)
