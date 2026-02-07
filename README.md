@@ -1,5 +1,7 @@
 # Learning Hub
 
+[![codecov](https://codecov.io/gh/JustinMelger/learning-platform/branch/main/graph/badge.svg)](https://codecov.io/gh/JustinMelger/learning-platform)
+
 A simple internal learning hub where colleagues can browse curated courses, track progress, and follow ordered learning paths.
 
 ## Docs
@@ -31,13 +33,13 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 
 ## Run locally (without Docker)
 1. Install dependencies:
-   - `uv sync`
+   - `uv sync --group dev`
 2. Start the API:
    - `uvicorn backend.main:app --reload`
 3. Start the UI (in a new terminal):
    - `streamlit run frontend/Home.py`
 4. Open the UI:
-   - `http://localhost:8501`
+    - `http://localhost:8501`
 
 ## Pages
 - Home (Dashboard): progress snapshot, path progress, recent activity, featured paths, and recently added courses.

@@ -13,7 +13,7 @@ ENV VIRTUAL_ENV=/.venv
 ENV PATH="/.venv/bin:$PATH"
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --active --no-install-project
+RUN uv sync --active --no-install-project
 
 FROM python:3.13-slim-bookworm AS build-image
 
