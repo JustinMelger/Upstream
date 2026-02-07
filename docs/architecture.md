@@ -216,18 +216,34 @@ classDiagram
     +delete_course(course_id): bool
   }
 
+  class CoursesRepository {
+    +list_courses(query, provider, category, level): list[CourseRecord]
+    +get_course_by_id(course_id): CourseRecord|None
+    +create_course(title, provider, category, level, duration_hours, url, created_at): int
+    +update_course(course_id, title, provider, category, level, duration_hours, url): int
+    +delete_course(course_id): int
+  }
+
+  class SQLiteCoursesRepository {
+  }
+
   class AuthService {
     +get_session(token): dict|None
     +is_admin(username): bool
   }
 
   class SQLiteDatabase {
+    +SQLiteDatabase(db_path: str)
     +get_conn(): Connection
+    +init_db(): None
+    +seed_courses_from_csv(csv_path: Path): None
   }
 
   CoursesRouter --> AuthService : require_session + admin checks
   CoursesRouter --> CoursesService : CRUD
-  CoursesService --> SQLiteDatabase : persistence
+  CoursesService --> CoursesRepository : persistence
+  SQLiteCoursesRepository ..|> CoursesRepository
+  SQLiteCoursesRepository --> SQLiteDatabase : uses connections
 ```
 
 ### Courses Data Model

@@ -14,9 +14,11 @@ if str(ROOT) not in sys.path:
 import backend.api.deps as deps
 import backend.core.config as config
 import backend.database.auth_repository as auth_repository
+import backend.database.courses_repository as courses_repository
 import backend.database.db as db
 import backend.main as main
 import backend.services.auth_service as auth_service_module
+import backend.services.courses_service as courses_service_module
 
 
 @pytest.fixture()
@@ -30,7 +32,9 @@ def app_client(tmp_path):
     importlib.reload(config)
     importlib.reload(db)
     importlib.reload(auth_repository)
+    importlib.reload(courses_repository)
     importlib.reload(auth_service_module)
+    importlib.reload(courses_service_module)
     importlib.reload(main)
 
     db.init_db()
@@ -42,4 +46,10 @@ def app_client(tmp_path):
         return auth_service_module.AuthService(repo)
 
     app.dependency_overrides[deps.get_auth_service] = _override_auth_service
+
+    def _override_courses_service():
+        repo = courses_repository.SQLiteCoursesRepository(db.database)
+        return courses_service_module.CoursesService(repo)
+
+    app.dependency_overrides[deps.get_courses_service] = _override_courses_service
     return TestClient(app)

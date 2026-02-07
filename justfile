@@ -1,16 +1,19 @@
 # Format imports with ruff
 fmt:
-	uv run ruff check --select I --fix
-	uv run ruff format --line-length 128
+	ruff check --select I --fix
+	ruff format --line-length 128
 
 lint:
-	uv run ruff check .
-	uv run ruff format --check .
+	ruff check .
+	ruff format --check .
 
 unit:
-	uv run pytest -m unit
+	pytest -m unit
 
 integration:
-	uv run pytest -m integration
+	pytest -m integration
 
 test: lint unit integration
+
+watch:
+	docker compose -f docker-compose.watch.yml watch

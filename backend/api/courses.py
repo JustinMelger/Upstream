@@ -2,15 +2,9 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.api.deps import get_auth_service, require_session
+from backend.api.deps import get_auth_service, get_courses_service, require_session
 from backend.services.auth_service import AuthService
-from backend.services.courses_service import (
-    create_course,
-    delete_course,
-    get_course_by_id,
-    list_courses as fetch_courses,
-    update_course,
-)
+from backend.services.courses_service import CoursesService
 
 
 router = APIRouter(prefix="/courses", tags=["courses"])
@@ -23,6 +17,7 @@ def list_courses(
     category: Optional[str] = None,
     level: Optional[str] = None,
     current_user: str = Depends(require_session),
+    courses: CoursesService = Depends(get_courses_service),
 ):
     """List courses with optional filters.
 
@@ -36,11 +31,15 @@ def list_courses(
     Returns:
         list[dict]: Course list.
     """
-    return fetch_courses(query=q, provider=provider, category=category, level=level)
+    return courses.list_courses(query=q, provider=provider, category=category, level=level)
 
 
 @router.get("/{course_id}", response_model=dict)
-def get_course(course_id: int, current_user: str = Depends(require_session)):
+def get_course(
+    course_id: int,
+    current_user: str = Depends(require_session),
+    courses: CoursesService = Depends(get_courses_service),
+):
     """Get a single course by ID.
 
     Args:
@@ -50,7 +49,7 @@ def get_course(course_id: int, current_user: str = Depends(require_session)):
     Returns:
         dict: Course payload or not_found.
     """
-    course = get_course_by_id(course_id)
+    course = courses.get_course_by_id(course_id)
     return course or {"error": "not_found"}
 
 
@@ -59,6 +58,7 @@ def add_course(
     payload: dict,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
+    courses: CoursesService = Depends(get_courses_service),
 ):
     """Create a course (admin only).
 
@@ -72,7 +72,7 @@ def add_course(
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     try:
-        return create_course(payload)
+        return courses.create_course(payload)
     except ValueError:
         raise HTTPException(status_code=400, detail="missing_title")
 
@@ -83,6 +83,7 @@ def edit_course(
     payload: dict,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
+    courses: CoursesService = Depends(get_courses_service),
 ):
     """Update a course (admin only).
 
@@ -96,7 +97,7 @@ def edit_course(
     """
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    course = update_course(course_id, payload)
+    course = courses.update_course(course_id, payload)
     if not course:
         return {"error": "not_found"}
     return course
@@ -107,6 +108,7 @@ def remove_course(
     course_id: int,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
+    courses: CoursesService = Depends(get_courses_service),
 ):
     """Delete a course (admin only).
 
@@ -119,5 +121,5 @@ def remove_course(
     """
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    ok = delete_course(course_id)
+    ok = courses.delete_course(course_id)
     return {"deleted": ok}

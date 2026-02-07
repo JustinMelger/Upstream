@@ -13,6 +13,14 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 2. Open the UI:
    - `http://localhost:8502`
 
+### Live reload (Docker Compose watch)
+1. Ensure Docker Compose supports `watch`:
+   - `docker compose version`
+2. Start services with file sync + reload:
+   - `docker compose -f docker-compose.watch.yml watch`
+3. Open the UI:
+   - `http://localhost:8502`
+
 ### Environment variables
 - `SESSION_DAYS`: session lifetime in days (API).
 - `BOOTSTRAP_ADMIN_USERNAME`: first admin username when no users exist (API).

@@ -1,0 +1,59 @@
+services:
+  api:
+    build: .
+    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - api_data:/data
+    environment:
+      - COURSES_CSV=/app/courses.csv
+      - DATABASE_PATH=/data/learning_hub.db
+      - SESSION_DAYS=30
+      - BOOTSTRAP_ADMIN_USERNAME=admin
+      - BOOTSTRAP_ADMIN_PASSWORD=admin
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - .git/
+            - .ruff_cache/
+            - .venv/
+            - __pycache__/
+            - learning_hub.db
+            - frontend/node_modules/
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: Dockerfile
+
+  ui:
+    build: .
+    working_dir: /app/frontend
+    command: ["streamlit", "run", "Home.py", "--server.port=8502", "--server.address=0.0.0.0"]
+    ports:
+      - "8502:8502"
+    depends_on:
+      - api
+    environment:
+      - API_BASE_URL=http://api:8000
+      - COOKIE_SECURE=false
+    develop:
+      watch:
+        - action: sync
+          path: frontend
+          target: /app/frontend
+          ignore:
+            - frontend/__pycache__/
+        - action: sync
+          path: .streamlit
+          target: /app/.streamlit
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: Dockerfile
+
+volumes:
+  api_data:
