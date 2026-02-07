@@ -1,17 +1,17 @@
 # Format imports with ruff
 fmt:
-	ruff check --select I --fix
-	ruff format --line-length 128
+	.venv/bin/ruff check --select I --fix
+	.venv/bin/ruff format --line-length 128
 
 lint:
-	ruff check .
-	ruff format --check .
+	.venv/bin/ruff check .
+	.venv/bin/ruff format --check .
 
 unit:
-	pytest -m unit
+	.venv/bin/python -m pytest -m unit
 
 integration:
-	pytest -m integration
+	.venv/bin/python -m pytest -m integration
 
 test: lint unit integration
 

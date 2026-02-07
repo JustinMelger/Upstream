@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import csv
 from datetime import datetime, timezone
 from pathlib import Path
@@ -69,6 +70,8 @@ CREATE TABLE IF NOT EXISTS user_paths (
   colleague_id TEXT NOT NULL,
   path_id INTEGER NOT NULL,
   created_at TEXT NOT NULL,
+  updated_at TEXT,
+  status TEXT,
   UNIQUE(colleague_id, path_id)
 );
 """
@@ -94,6 +97,26 @@ class SQLiteDatabase:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         return conn
+
+    @contextmanager
+    def transaction(self) -> Iterable[sqlite3.Connection]:
+        """Open a connection and run statements in a transaction.
+
+        This is useful for multi-table operations that must be atomic.
+
+        Yields:
+            sqlite3.Connection: An open connection inside a transaction.
+        """
+        conn = self.get_conn()
+        try:
+            conn.execute("BEGIN")
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def init_db(self) -> None:
         """Initialize database schema and ensure columns/indexes exist."""
