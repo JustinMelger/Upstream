@@ -20,3 +20,9 @@ test: lint audit unit integration
 
 watch:
 	docker compose -f docker-compose.watch.yml watch
+
+db-up:
+	docker compose up -d postgres
+
+migrate:
+	uv run alembic upgrade head
