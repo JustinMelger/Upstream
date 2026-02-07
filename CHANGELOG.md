@@ -1,3 +1,10 @@
+## [0.3.3](https://github.com/JustinMelger/learning-platform/compare/v0.3.2...v0.3.3) (2026-02-07)
+
+
+### Bug Fixes
+
+* add preset in release pipeline ([8bd6ebe](https://github.com/JustinMelger/learning-platform/commit/8bd6ebe51bcdf95982c3ee0b2efd602e0a985306))
+
 ## [0.3.2](https://github.com/JustinMelger/learning-platform/compare/v0.3.1...v0.3.2) (2026-02-05)
 
 
