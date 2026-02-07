@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.database.models import SessionRecord, UserRecord
+from backend.database.models import CourseRecord, SessionRecord, UserRecord
 
 
 class AuthRepository(Protocol):
@@ -146,4 +146,95 @@ class AuthRepository(Protocol):
         Args:
             username: Username.
             now: ISO timestamp for last login.
+        """
+
+
+class CoursesRepository(Protocol):
+    def list_courses(
+        self,
+        query: str | None,
+        provider: str | None,
+        category: str | None,
+        level: str | None,
+    ) -> list[CourseRecord]:
+        """List courses with optional filters.
+
+        Args:
+            query: Search query.
+            provider: Provider filter.
+            category: Category filter.
+            level: Level filter.
+
+        Returns:
+            List of course records.
+        """
+
+    def get_course_by_id(self, course_id: int) -> CourseRecord | None:
+        """Fetch a course by ID.
+
+        Args:
+            course_id: Course ID.
+
+        Returns:
+            Course record or None if missing.
+        """
+
+    def create_course(
+        self,
+        title: str,
+        provider: str | None,
+        category: str | None,
+        level: str | None,
+        duration_hours: float | None,
+        url: str | None,
+        created_at: str,
+    ) -> int:
+        """Create a course.
+
+        Args:
+            title: Course title.
+            provider: Provider name.
+            category: Category name.
+            level: Level value.
+            duration_hours: Duration in hours.
+            url: Course URL.
+            created_at: ISO timestamp.
+
+        Returns:
+            Created course ID.
+        """
+
+    def update_course(
+        self,
+        course_id: int,
+        title: str,
+        provider: str | None,
+        category: str | None,
+        level: str | None,
+        duration_hours: float | None,
+        url: str | None,
+    ) -> int:
+        """Update a course.
+
+        Args:
+            course_id: Course ID.
+            title: Updated title.
+            provider: Updated provider.
+            category: Updated category.
+            level: Updated level.
+            duration_hours: Updated duration.
+            url: Updated URL.
+
+        Returns:
+            Number of rows updated.
+        """
+
+    def delete_course(self, course_id: int) -> int:
+        """Delete a course by ID.
+
+        Args:
+            course_id: Course ID.
+
+        Returns:
+            Number of rows deleted.
         """

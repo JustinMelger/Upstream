@@ -1,186 +1,167 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
 
-from backend.database.db import get_conn
+from backend.database.courses_repository import SQLiteCoursesRepository
+from backend.database.db import database
+from backend.database.interfaces import CoursesRepository
+from backend.database.models import CourseRecord
 
 
-def list_courses(
-    query: Optional[str] = None,
-    provider: Optional[str] = None,
-    category: Optional[str] = None,
-    level: Optional[str] = None,
-) -> List[Dict[str, str]]:
-    """List courses with optional filters.
+class CoursesService:
+    """Course management service."""
 
-    Args:
-        query: Search query.
-        provider: Provider filter.
-        category: Category filter.
-        level: Level filter.
+    def __init__(self, repo: CoursesRepository):
+        """Initialize the service.
 
-    Returns:
-        list[dict]: Course list.
-    """
-    sql = "SELECT id, title, provider, category, level, duration_hours, url, created_at FROM courses"
-    clauses = []
-    params: List[str] = []
+        Args:
+            repo: Persistence repository for courses.
+        """
+        self._repo = repo
 
-    if query:
-        clauses.append("(lower(title) LIKE ? OR lower(provider) LIKE ? OR lower(category) LIKE ?)")
-        like = f"%{query.lower()}%"
-        params.extend([like, like, like])
-    if provider:
-        clauses.append("provider = ?")
-        params.append(provider)
-    if category:
-        clauses.append("category = ?")
-        params.append(category)
-    if level:
-        clauses.append("level = ?")
-        params.append(level)
+    def list_courses(
+        self,
+        *,
+        query: str | None = None,
+        provider: str | None = None,
+        category: str | None = None,
+        level: str | None = None,
+    ) -> list[dict]:
+        """List courses with optional filters.
 
-    if clauses:
-        sql += " WHERE " + " AND ".join(clauses)
+        Args:
+            query: Search query.
+            provider: Provider filter.
+            category: Category filter.
+            level: Level filter.
 
-    sql += " ORDER BY title ASC"
+        Returns:
+            Course list payloads.
+        """
+        rows = self._repo.list_courses(query=query, provider=provider, category=category, level=level)
+        return [self._to_payload(row) for row in rows]
 
-    with get_conn() as conn:
-        rows = conn.execute(sql, params).fetchall()
+    def get_course_by_id(self, course_id: int) -> dict | None:
+        """Fetch a course by ID.
 
-    return [
-        {
-            "id": row["id"],
-            "title": row["title"] or "",
-            "provider": row["provider"] or "",
-            "category": row["category"] or "",
-            "level": row["level"] or "",
-            "duration_hours": row["duration_hours"],
-            "url": row["url"] or "",
-            "created_at": row["created_at"],
+        Args:
+            course_id: Course ID.
+
+        Returns:
+            Course payload or None if missing.
+        """
+        course = self._repo.get_course_by_id(course_id)
+        return self._to_payload(course) if course else None
+
+    def create_course(self, payload: dict) -> dict:
+        """Create a new course.
+
+        Args:
+            payload: Course payload.
+
+        Returns:
+            Created course payload.
+
+        Raises:
+            ValueError: If required fields are missing.
+        """
+        title = (payload.get("title") or "").strip()
+        if not title:
+            raise ValueError("missing_title")
+
+        provider = (payload.get("provider") or "").strip() or None
+        category = (payload.get("category") or "").strip() or None
+        level = (payload.get("level") or "").strip() or None
+        url = (payload.get("url") or "").strip() or None
+        duration_hours = self._parse_float(payload.get("duration_hours"))
+        created_at = datetime.now(timezone.utc).isoformat()
+
+        course_id = self._repo.create_course(
+            title=title,
+            provider=provider,
+            category=category,
+            level=level,
+            duration_hours=duration_hours,
+            url=url,
+            created_at=created_at,
+        )
+        return self.get_course_by_id(course_id) or {"error": "not_found"}
+
+    def update_course(self, course_id: int, payload: dict) -> dict | None:
+        """Update a course by ID.
+
+        Args:
+            course_id: Course ID.
+            payload: Updates payload.
+
+        Returns:
+            Updated course payload or None if missing.
+        """
+        existing = self._repo.get_course_by_id(course_id)
+        if not existing:
+            return None
+
+        title = (payload.get("title") or existing.title).strip()
+        provider = (payload.get("provider") or (existing.provider or "")).strip() or None
+        category = (payload.get("category") or (existing.category or "")).strip() or None
+        level = (payload.get("level") or (existing.level or "")).strip() or None
+        url = (payload.get("url") or (existing.url or "")).strip() or None
+        duration_hours = self._parse_float(payload.get("duration_hours"))
+        if duration_hours is None:
+            duration_hours = existing.duration_hours
+
+        self._repo.update_course(
+            course_id=course_id,
+            title=title,
+            provider=provider,
+            category=category,
+            level=level,
+            duration_hours=duration_hours,
+            url=url,
+        )
+        return self.get_course_by_id(course_id)
+
+    def delete_course(self, course_id: int) -> bool:
+        """Delete a course by ID.
+
+        Args:
+            course_id: Course ID.
+
+        Returns:
+            True if deleted.
+        """
+        return self._repo.delete_course(course_id) > 0
+
+    @staticmethod
+    def _parse_float(value):
+        """Parse a float value or return None."""
+        try:
+            return float(value) if value not in (None, "") else None
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _to_payload(course: CourseRecord) -> dict:
+        """Convert a course record to an API payload."""
+        return {
+            "id": course.id,
+            "title": course.title or "",
+            "provider": course.provider or "",
+            "category": course.category or "",
+            "level": course.level or "",
+            "duration_hours": course.duration_hours,
+            "url": course.url or "",
+            "created_at": course.created_at,
         }
-        for row in rows
-    ]
 
 
-def get_course_by_id(course_id: int) -> Optional[Dict[str, str]]:
-    """Fetch a course by ID.
+courses_service = CoursesService(SQLiteCoursesRepository(database))
 
-    Args:
-        course_id: Course ID.
+
+def get_courses_service() -> CoursesService:
+    """Provide the CoursesService dependency.
 
     Returns:
-        dict | None: Course payload or None.
+        CoursesService: Shared courses service instance.
     """
-    with get_conn() as conn:
-        row = conn.execute(
-            "SELECT id, title, provider, category, level, duration_hours, url, created_at FROM courses WHERE id = ?",
-            (course_id,),
-        ).fetchone()
-
-    if not row:
-        return None
-
-    return {
-        "id": row["id"],
-        "title": row["title"] or "",
-        "provider": row["provider"] or "",
-        "category": row["category"] or "",
-        "level": row["level"] or "",
-        "duration_hours": row["duration_hours"],
-        "url": row["url"] or "",
-        "created_at": row["created_at"],
-    }
-
-
-def create_course(payload: dict) -> Dict[str, str]:
-    """Create a new course.
-
-    Args:
-        payload: Course payload.
-
-    Returns:
-        dict: Created course.
-    """
-    title = (payload.get("title") or "").strip()
-    if not title:
-        raise ValueError("missing_title")
-
-    provider = (payload.get("provider") or "").strip() or None
-    category = (payload.get("category") or "").strip() or None
-    level = (payload.get("level") or "").strip() or None
-    url = (payload.get("url") or "").strip() or None
-    duration_hours = _parse_float(payload.get("duration_hours"))
-    created_at = datetime.now(timezone.utc).isoformat()
-
-    with get_conn() as conn:
-        cur = conn.execute(
-            """
-            INSERT INTO courses (title, provider, category, level, duration_hours, url, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (title, provider, category, level, duration_hours, url, created_at),
-        )
-        conn.commit()
-        course_id = cur.lastrowid
-
-    return get_course_by_id(course_id) or {"error": "not_found"}
-
-
-def update_course(course_id: int, payload: dict) -> Optional[Dict[str, str]]:
-    """Update a course by ID.
-
-    Args:
-        course_id: Course ID.
-        payload: Updates payload.
-
-    Returns:
-        dict | None: Updated course or None if missing.
-    """
-    existing = get_course_by_id(course_id)
-    if not existing:
-        return None
-
-    title = (payload.get("title") or existing["title"]).strip()
-    provider = (payload.get("provider") or existing["provider"]).strip() or None
-    category = (payload.get("category") or existing["category"]).strip() or None
-    level = (payload.get("level") or existing["level"]).strip() or None
-    url = (payload.get("url") or existing["url"]).strip() or None
-    duration_hours = _parse_float(payload.get("duration_hours"))
-    if duration_hours is None:
-        duration_hours = existing["duration_hours"]
-
-    with get_conn() as conn:
-        conn.execute(
-            """
-            UPDATE courses
-            SET title = ?, provider = ?, category = ?, level = ?, duration_hours = ?, url = ?
-            WHERE id = ?
-            """,
-            (title, provider, category, level, duration_hours, url, course_id),
-        )
-        conn.commit()
-
-    return get_course_by_id(course_id)
-
-
-def delete_course(course_id: int) -> bool:
-    """Delete a course by ID.
-
-    Args:
-        course_id: Course ID.
-
-    Returns:
-        bool: True if deleted.
-    """
-    with get_conn() as conn:
-        cur = conn.execute("DELETE FROM courses WHERE id = ?", (course_id,))
-        conn.commit()
-    return cur.rowcount > 0
-
-
-def _parse_float(value):
-    """Parse a float value or return None."""
-    try:
-        return float(value) if value not in (None, "") else None
-    except ValueError:
-        return None
+    return courses_service

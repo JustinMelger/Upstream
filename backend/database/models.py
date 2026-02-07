@@ -19,3 +19,17 @@ class SessionRecord:
 
     colleague_id: str
     expires_at: str
+
+
+@dataclass(frozen=True)
+class CourseRecord:
+    """Course row representation."""
+
+    id: int
+    title: str
+    provider: str | None
+    category: str | None
+    level: str | None
+    duration_hours: float | None
+    url: str | None
+    created_at: str | None
