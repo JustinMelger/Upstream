@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+
+learning_hub.db
+frontend/node_modules
+
+docs
+tests
