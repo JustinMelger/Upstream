@@ -1,3 +1,11 @@
+# [0.4.0](https://github.com/JustinMelger/learning-platform/compare/v0.3.3...v0.4.0) (2026-02-07)
+
+
+### Features
+
+* **backed:** add strict pydantic validation and tests ([4b7cdbe](https://github.com/JustinMelger/learning-platform/commit/4b7cdbebafdafc1720bab13f68131aacbf79dc72))
+* **backed:** add strict pydantic validation and tests ([061c0e9](https://github.com/JustinMelger/learning-platform/commit/061c0e97600e6b504c1366c74a82d0a3bc890cf1))
+
 ## [0.3.3](https://github.com/JustinMelger/learning-platform/compare/v0.3.2...v0.3.3) (2026-02-07)
 
 
