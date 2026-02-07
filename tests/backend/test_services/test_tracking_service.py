@@ -11,6 +11,7 @@ def _clear_tracking():
         conn.execute("DELETE FROM tracking")
         conn.commit()
 
+
 def _tracking_service() -> TrackingService:
     return TrackingService(SQLiteTrackingRepository(db_module.database))
 

@@ -100,4 +100,3 @@ def get_tracking_service() -> TrackingService:
         TrackingService: Shared tracking service instance.
     """
     return tracking_service
-
