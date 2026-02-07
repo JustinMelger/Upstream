@@ -89,12 +89,3 @@ class UserPathsService:
 
 
 user_paths_service = UserPathsService(SQLiteUserPathsRepository(database))
-
-
-def get_user_paths_service() -> UserPathsService:
-    """Provide the UserPathsService dependency.
-
-    Returns:
-        UserPathsService: Shared user paths service instance.
-    """
-    return user_paths_service

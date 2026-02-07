@@ -91,12 +91,3 @@ class TrackingService:
 
 
 tracking_service = TrackingService(SQLiteTrackingRepository(database))
-
-
-def get_tracking_service() -> TrackingService:
-    """Provide the TrackingService dependency.
-
-    Returns:
-        TrackingService: Shared tracking service instance.
-    """
-    return tracking_service
