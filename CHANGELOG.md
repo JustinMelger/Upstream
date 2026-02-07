@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/JustinMelger/learning-platform/compare/v0.4.0...v0.4.1) (2026-02-07)
+
+
+### Bug Fixes
+
+* **db:** add transactions and atomic path writes + add roadmap for pg migrate ([a66afab](https://github.com/JustinMelger/learning-platform/commit/a66afab1d4f2cc8c321cd8710546d4219e847928))
+
 # [0.4.0](https://github.com/JustinMelger/learning-platform/compare/v0.3.3...v0.4.0) (2026-02-07)
 
 
