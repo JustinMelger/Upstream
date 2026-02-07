@@ -1,115 +1,100 @@
-from datetime import datetime, timezone
-from typing import Dict, List
+from __future__ import annotations
 
-from backend.database.db import get_conn
+from datetime import datetime, timezone
+
+from backend.database.db import database
+from backend.database.interfaces import UserPathsRepository
+from backend.database.models import SelectedPathRecord
+from backend.database.user_paths_repository import SQLiteUserPathsRepository
 
 
 STATUS_VALUES = {"interested", "in_progress", "completed"}
 
 
-def add_user_path(colleague_id: str, path_id: int) -> Dict[str, str]:
-    """Add a path to a user's selections.
+class UserPathsService:
+    """User learning path selection service."""
 
-    Args:
-        colleague_id: Colleague username.
-        path_id: Path ID.
+    def __init__(self, repo: UserPathsRepository):
+        """Initialize the service.
 
-    Returns:
-        dict: Selection record.
-    """
-    now = datetime.now(timezone.utc).isoformat()
-    with get_conn() as conn:
-        conn.execute(
-            """
-            INSERT OR IGNORE INTO user_paths (colleague_id, path_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?)
-            """,
-            (colleague_id, path_id, now, now),
-        )
-        conn.commit()
+        Args:
+            repo: Persistence repository for user path selections.
+        """
+        self._repo = repo
 
-    return {"colleague_id": colleague_id, "path_id": str(path_id), "created_at": now}
+    def add_user_path(self, colleague_id: str, path_id: int) -> dict:
+        """Add a path to a user's selections.
 
+        Args:
+            colleague_id: Colleague username.
+            path_id: Path ID.
 
-def list_user_paths(colleague_id: str) -> List[Dict[str, str]]:
-    """List paths selected by a colleague.
+        Returns:
+            Selection record payload.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        self._repo.add_user_path(colleague_id, path_id, now)
+        return {"colleague_id": colleague_id, "path_id": str(path_id), "created_at": now}
 
-    Args:
-        colleague_id: Colleague username.
+    def list_user_paths(self, colleague_id: str) -> list[dict]:
+        """List paths selected by a colleague.
 
-    Returns:
-        list[dict]: Selected paths.
-    """
-    with get_conn() as conn:
-        rows = conn.execute(
-            """
-            SELECT p.id, p.name, p.description, up.status
-            FROM user_paths up
-            JOIN paths p ON p.id = up.path_id
-            WHERE up.colleague_id = ?
-            ORDER BY p.name ASC
-            """,
-            (colleague_id,),
-        ).fetchall()
+        Args:
+            colleague_id: Colleague username.
 
-    return [
-        {
-            "id": row["id"],
-            "name": row["name"],
-            "description": row["description"] or "",
-            "status": row["status"] or "",
+        Returns:
+            Selected path payloads.
+        """
+        return [self._to_payload(path) for path in self._repo.list_user_paths(colleague_id)]
+
+    def remove_user_path(self, colleague_id: str, path_id: int) -> int:
+        """Remove a path from a user's selections.
+
+        Args:
+            colleague_id: Colleague username.
+            path_id: Path ID.
+
+        Returns:
+            Number of rows removed.
+        """
+        return self._repo.remove_user_path(colleague_id, path_id)
+
+    def update_user_path_status(self, colleague_id: str, path_id: int, status: str) -> int:
+        """Update a user's status for a selected path.
+
+        Args:
+            colleague_id: Colleague username.
+            path_id: Path ID.
+            status: Status value.
+
+        Returns:
+            Number of rows updated.
+
+        Raises:
+            ValueError: If status is invalid.
+        """
+        if status not in STATUS_VALUES:
+            raise ValueError("invalid_status")
+        now = datetime.now(timezone.utc).isoformat()
+        return self._repo.update_user_path_status(colleague_id, path_id, status, now)
+
+    @staticmethod
+    def _to_payload(path: SelectedPathRecord) -> dict:
+        return {
+            "id": path.id,
+            "name": path.name,
+            "description": path.description or "",
+            "status": path.status or "",
         }
-        for row in rows
-    ]
 
 
-def remove_user_path(colleague_id: str, path_id: int) -> int:
-    """Remove a path from a user's selections.
+user_paths_service = UserPathsService(SQLiteUserPathsRepository(database))
 
-    Args:
-        colleague_id: Colleague username.
-        path_id: Path ID.
+
+def get_user_paths_service() -> UserPathsService:
+    """Provide the UserPathsService dependency.
 
     Returns:
-        int: Number of rows removed.
+        UserPathsService: Shared user paths service instance.
     """
-    with get_conn() as conn:
-        cur = conn.execute(
-            """
-            DELETE FROM user_paths
-            WHERE colleague_id = ? AND path_id = ?
-            """,
-            (colleague_id, path_id),
-        )
-        conn.commit()
-
-    return cur.rowcount
-
-
-def update_user_path_status(colleague_id: str, path_id: int, status: str) -> int:
-    """Update a user's status for a selected path.
-
-    Args:
-        colleague_id: Colleague username.
-        path_id: Path ID.
-        status: Status value.
-
-    Returns:
-        int: Number of rows updated.
-    """
-    if status not in STATUS_VALUES:
-        raise ValueError("invalid_status")
-
-    now = datetime.now(timezone.utc).isoformat()
-    with get_conn() as conn:
-        cur = conn.execute(
-            """
-            UPDATE user_paths
-            SET status = ?, updated_at = ?
-            WHERE colleague_id = ? AND path_id = ?
-            """,
-            (status, now, colleague_id, path_id),
-        )
-        conn.commit()
-
-    return cur.rowcount
+    return user_paths_service

@@ -2,23 +2,20 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.api.deps import get_auth_service, require_session
+from backend.api.deps import get_auth_service, get_paths_service, get_user_paths_service, require_session
 from backend.services.auth_service import AuthService
-from backend.services.paths_service import (
-    create_path,
-    delete_path,
-    get_path as fetch_path,
-    list_paths as fetch_paths,
-    update_path,
-)
-from backend.services.user_paths_service import add_user_path, list_user_paths, remove_user_path, update_user_path_status
+from backend.services.paths_service import PathsService
+from backend.services.user_paths_service import UserPathsService
 
 
 router = APIRouter(prefix="/paths", tags=["paths"])
 
 
 @router.get("", response_model=List[dict])
-def list_paths(current_user: str = Depends(require_session)):
+def list_paths(
+    current_user: str = Depends(require_session),
+    paths: PathsService = Depends(get_paths_service),
+):
     """List all learning paths.
 
     Args:
@@ -27,7 +24,7 @@ def list_paths(current_user: str = Depends(require_session)):
     Returns:
         list[dict]: Path list.
     """
-    return fetch_paths()
+    return paths.list_paths()
 
 
 @router.post("", response_model=dict)
@@ -35,6 +32,7 @@ def add_path(
     payload: dict,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
+    paths: PathsService = Depends(get_paths_service),
 ):
     """Create a learning path (admin only).
 
@@ -49,7 +47,7 @@ def add_path(
         raise HTTPException(status_code=403, detail="admin_required")
 
     try:
-        return create_path(payload)
+        return paths.create_path(payload)
     except ValueError as exc:
         if str(exc) == "missing_name":
             raise HTTPException(status_code=400, detail="missing_name")
@@ -59,7 +57,11 @@ def add_path(
 
 
 @router.post("/{path_id}/select", response_model=dict)
-def select_path(path_id: int, current_user: str = Depends(require_session)):
+def select_path(
+    path_id: int,
+    current_user: str = Depends(require_session),
+    user_paths: UserPathsService = Depends(get_user_paths_service),
+):
     """Add a path to the current user's selections.
 
     Args:
@@ -69,11 +71,15 @@ def select_path(path_id: int, current_user: str = Depends(require_session)):
     Returns:
         dict: Selection result.
     """
-    return add_user_path(current_user, path_id)
+    return user_paths.add_user_path(current_user, path_id)
 
 
 @router.post("/{path_id}/unselect", response_model=dict)
-def unselect_path(path_id: int, current_user: str = Depends(require_session)):
+def unselect_path(
+    path_id: int,
+    current_user: str = Depends(require_session),
+    user_paths: UserPathsService = Depends(get_user_paths_service),
+):
     """Remove a path from the current user's selections.
 
     Args:
@@ -83,12 +89,17 @@ def unselect_path(path_id: int, current_user: str = Depends(require_session)):
     Returns:
         dict: Removal result.
     """
-    removed = remove_user_path(current_user, path_id)
+    removed = user_paths.remove_user_path(current_user, path_id)
     return {"removed": removed}
 
 
 @router.post("/{path_id}/status", response_model=dict)
-def set_path_status(path_id: int, payload: dict, current_user: str = Depends(require_session)):
+def set_path_status(
+    path_id: int,
+    payload: dict,
+    current_user: str = Depends(require_session),
+    user_paths: UserPathsService = Depends(get_user_paths_service),
+):
     """Update the status for a selected path.
 
     Args:
@@ -104,7 +115,7 @@ def set_path_status(path_id: int, payload: dict, current_user: str = Depends(req
         raise HTTPException(status_code=400, detail="missing_fields")
 
     try:
-        updated = update_user_path_status(current_user, path_id, status)
+        updated = user_paths.update_user_path_status(current_user, path_id, status)
     except ValueError:
         raise HTTPException(status_code=400, detail="invalid_status")
 
@@ -115,7 +126,10 @@ def set_path_status(path_id: int, payload: dict, current_user: str = Depends(req
 
 
 @router.get("/selected/list", response_model=list[dict])
-def list_selected_paths(current_user: str = Depends(require_session)):
+def list_selected_paths(
+    current_user: str = Depends(require_session),
+    user_paths: UserPathsService = Depends(get_user_paths_service),
+):
     """List paths selected by the current user.
 
     Args:
@@ -124,11 +138,15 @@ def list_selected_paths(current_user: str = Depends(require_session)):
     Returns:
         list[dict]: Selected paths.
     """
-    return list_user_paths(current_user)
+    return user_paths.list_user_paths(current_user)
 
 
 @router.get("/{path_id}", response_model=dict)
-def get_path(path_id: int, current_user: str = Depends(require_session)):
+def get_path(
+    path_id: int,
+    current_user: str = Depends(require_session),
+    paths: PathsService = Depends(get_paths_service),
+):
     """Get a learning path by ID.
 
     Args:
@@ -138,7 +156,7 @@ def get_path(path_id: int, current_user: str = Depends(require_session)):
     Returns:
         dict: Path payload or not_found.
     """
-    path = fetch_path(path_id)
+    path = paths.get_path(path_id)
     return path or {"error": "not_found"}
 
 
@@ -147,6 +165,7 @@ def remove_path(
     path_id: int,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
+    paths: PathsService = Depends(get_paths_service),
 ):
     """Delete a learning path (admin only).
 
@@ -160,7 +179,7 @@ def remove_path(
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
-    return {"deleted": delete_path(path_id)}
+    return {"deleted": paths.delete_path(path_id)}
 
 
 @router.put("/{path_id}", response_model=dict)
@@ -169,6 +188,7 @@ def edit_path(
     payload: dict,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
+    paths: PathsService = Depends(get_paths_service),
 ):
     """Update a learning path (admin only).
 
@@ -184,7 +204,7 @@ def edit_path(
         raise HTTPException(status_code=403, detail="admin_required")
 
     try:
-        return update_path(path_id, payload)
+        return paths.update_path(path_id, payload)
     except ValueError as exc:
         if str(exc) == "missing_name":
             raise HTTPException(status_code=400, detail="missing_name")

@@ -33,3 +33,36 @@ class CourseRecord:
     duration_hours: float | None
     url: str | None
     created_at: str | None
+
+
+@dataclass(frozen=True)
+class PathRecord:
+    """Learning path row representation."""
+
+    id: int
+    name: str
+    description: str | None
+
+
+@dataclass(frozen=True)
+class PathCourseRecord:
+    """Course row within a learning path (includes ordering position)."""
+
+    id: int
+    title: str
+    provider: str | None
+    category: str | None
+    level: str | None
+    duration_hours: float | None
+    url: str | None
+    position: int | None
+
+
+@dataclass(frozen=True)
+class SelectedPathRecord:
+    """A learning path selected by a user (includes status)."""
+
+    id: int
+    name: str
+    description: str | None
+    status: str | None

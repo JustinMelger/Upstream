@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.database.models import CourseRecord, SessionRecord, UserRecord
+from backend.database.models import (
+    CourseRecord,
+    PathCourseRecord,
+    PathRecord,
+    SelectedPathRecord,
+    SessionRecord,
+    UserRecord,
+)
 
 
 class AuthRepository(Protocol):
@@ -237,4 +244,140 @@ class CoursesRepository(Protocol):
 
         Returns:
             Number of rows deleted.
+        """
+
+
+class PathsRepository(Protocol):
+    def list_paths(self) -> list[PathRecord]:
+        """List all learning paths.
+
+        Returns:
+            List of path records.
+        """
+
+    def get_path(self, path_id: int) -> tuple[PathRecord, list[PathCourseRecord]] | None:
+        """Fetch a path and its courses by ID.
+
+        Args:
+            path_id: Path ID.
+
+        Returns:
+            Tuple of (path record, path course records) or None if missing.
+        """
+
+    def create_path(self, name: str, description: str | None) -> int:
+        """Create a path.
+
+        Args:
+            name: Path name.
+            description: Optional description.
+
+        Returns:
+            Created path ID.
+        """
+
+    def path_name_exists(self, name: str) -> bool:
+        """Check if a path name exists (case-insensitive).
+
+        Args:
+            name: Path name.
+
+        Returns:
+            True if a path with that name exists.
+        """
+
+    def path_name_exists_for_other_id(self, path_id: int, name: str) -> bool:
+        """Check if a path name exists for a different path.
+
+        Args:
+            path_id: Current path ID to exclude.
+            name: Path name.
+
+        Returns:
+            True if duplicate exists.
+        """
+
+    def set_path_courses(self, path_id: int, course_ids: list[int]) -> None:
+        """Replace a path's courses with an ordered list.
+
+        Args:
+            path_id: Path ID.
+            course_ids: Ordered course IDs.
+        """
+
+    def delete_path_courses(self, path_id: int) -> None:
+        """Delete all courses for a path.
+
+        Args:
+            path_id: Path ID.
+        """
+
+    def update_path(self, path_id: int, name: str, description: str | None) -> int:
+        """Update path metadata.
+
+        Args:
+            path_id: Path ID.
+            name: Updated name.
+            description: Updated description.
+
+        Returns:
+            Number of rows updated.
+        """
+
+    def delete_path(self, path_id: int) -> int:
+        """Delete a path by ID.
+
+        Args:
+            path_id: Path ID.
+
+        Returns:
+            Number of rows deleted.
+        """
+
+
+class UserPathsRepository(Protocol):
+    def add_user_path(self, colleague_id: str, path_id: int, now: str) -> int:
+        """Insert a user_path selection if missing.
+
+        Args:
+            colleague_id: Username.
+            path_id: Path ID.
+            now: ISO timestamp.
+
+        Returns:
+            Number of rows inserted (0 or 1).
+        """
+
+    def list_user_paths(self, colleague_id: str) -> list[SelectedPathRecord]:
+        """List selected paths for a user.
+
+        Args:
+            colleague_id: Username.
+
+        Returns:
+            Selected path records.
+        """
+
+    def remove_user_path(self, colleague_id: str, path_id: int) -> int:
+        """Remove a selected path.
+
+        Args:
+            colleague_id: Username.
+            path_id: Path ID.
+
+        Returns:
+            Number of rows removed.
+        """
+
+    def update_user_path_status(self, colleague_id: str, path_id: int, status: str, now: str) -> int:
+        """Update status for a selected path.
+
+        Args:
+            colleague_id: Username.
+            path_id: Path ID.
+            status: Status value.
+            now: ISO timestamp.
+
+        Returns:
+            Number of rows updated.
         """

@@ -326,20 +326,52 @@ classDiagram
     +list_user_paths(user): list[dict]
   }
 
+  class PathsRepository {
+    +list_paths(): list[PathRecord]
+    +get_path(path_id): (PathRecord, list[PathCourseRecord])|None
+    +create_path(name, description): int
+    +path_name_exists(name): bool
+    +path_name_exists_for_other_id(path_id, name): bool
+    +set_path_courses(path_id, course_ids): None
+    +delete_path_courses(path_id): None
+    +update_path(path_id, name, description): int
+    +delete_path(path_id): int
+  }
+
+  class SQLitePathsRepository {
+  }
+
+  class UserPathsRepository {
+    +add_user_path(colleague_id, path_id, now): int
+    +list_user_paths(colleague_id): list[SelectedPathRecord]
+    +remove_user_path(colleague_id, path_id): int
+    +update_user_path_status(colleague_id, path_id, status, now): int
+  }
+
+  class SQLiteUserPathsRepository {
+  }
+
   class AuthService {
     +get_session(token): dict|None
     +is_admin(username): bool
   }
 
   class SQLiteDatabase {
+    +SQLiteDatabase(db_path: str)
     +get_conn(): Connection
+    +init_db(): None
+    +seed_courses_from_csv(csv_path: Path): None
   }
 
   PathsRouter --> AuthService : require_session + admin checks
   PathsRouter --> PathsService : CRUD
   PathsRouter --> UserPathsService : selection + status
-  PathsService --> SQLiteDatabase : persistence
-  UserPathsService --> SQLiteDatabase : persistence
+  PathsService --> PathsRepository : persistence
+  SQLitePathsRepository ..|> PathsRepository
+  SQLitePathsRepository --> SQLiteDatabase : uses connections
+  UserPathsService --> UserPathsRepository : persistence
+  SQLiteUserPathsRepository ..|> UserPathsRepository
+  SQLiteUserPathsRepository --> SQLiteDatabase : uses connections
 ```
 
 ### Paths Data Model
