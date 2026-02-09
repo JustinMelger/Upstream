@@ -245,6 +245,8 @@ async def delete_user_endpoint(
     if session["colleague_id"].lower() == username.lower():
         raise HTTPException(status_code=400, detail="cannot_delete_self")
     removed = await auth.delete_user(username)
+    if removed == 0:
+        raise HTTPException(status_code=404, detail="user_not_found")
     return {"removed": removed}
 
 

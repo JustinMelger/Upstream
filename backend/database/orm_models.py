@@ -31,7 +31,7 @@ class Tracking(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     colleague_id: Mapped[str] = mapped_column(Text, nullable=False)
-    course_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -57,7 +57,7 @@ class PathCourse(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     path_id: Mapped[int] = mapped_column(ForeignKey("paths.id", ondelete="CASCADE"), nullable=False)
-    course_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     position: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     path: Mapped[Path] = relationship(back_populates="courses")
@@ -68,12 +68,13 @@ class Session(Base):
 
     __tablename__ = "sessions"
     __table_args__ = (
+        UniqueConstraint("token_hash", name="uq_sessions_token_hash"),
         Index("idx_sessions_token", "token_hash"),
         Index("idx_sessions_colleague", "colleague_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    colleague_id: Mapped[str] = mapped_column(Text, nullable=False)
+    colleague_id: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
     token_hash: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
     last_seen: Mapped[str] = mapped_column(Text, nullable=False)

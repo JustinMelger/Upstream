@@ -5,9 +5,10 @@ import hashlib
 import secrets
 
 import bcrypt
+from sqlalchemy.exc import IntegrityError
 
 from backend.core.config import settings
-from backend.core.errors import auth_error_handler
+from backend.core.errors import auth_error_handler, AuthServiceError
 from backend.database.async_repositories.auth import AuthRepository
 from backend.database.models import UserRecord
 
@@ -85,21 +86,31 @@ class AuthService:
         Returns:
             Token and expiry payload.
         """
-        token = secrets.token_urlsafe(32)
-        token_hash = self._hash_token(token)
+        user = await self.get_user(colleague_id)
+        if not user:
+            raise AuthServiceError(detail="user_not_found", status_code=404)
+
         now = datetime.now(timezone.utc)
         expires_at = now + timedelta(days=settings.session_days)
 
-        async with self._repo.session.begin():
-            await self._repo.create_session(
-                colleague_id=colleague_id,
-                token_hash=token_hash,
-                created_at=now.isoformat(),
-                last_seen=now.isoformat(),
-                expires_at=expires_at.isoformat(),
-            )
+        # Token collisions are extremely unlikely, but the database enforces uniqueness on token_hash.
+        for _ in range(3):
+            token = secrets.token_urlsafe(32)
+            token_hash = self._hash_token(token)
+            try:
+                async with self._repo.session.begin():
+                    await self._repo.create_session(
+                        colleague_id=colleague_id,
+                        token_hash=token_hash,
+                        created_at=now.isoformat(),
+                        last_seen=now.isoformat(),
+                        expires_at=expires_at.isoformat(),
+                    )
+                return {"token": token, "expires_at": expires_at.isoformat()}
+            except IntegrityError:
+                continue
 
-        return {"token": token, "expires_at": expires_at.isoformat()}
+        raise AuthServiceError(detail="session_token_collision", status_code=500)
 
     @auth_error_handler()
     async def get_session(self, token: str | None) -> dict | None:

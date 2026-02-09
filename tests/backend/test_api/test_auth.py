@@ -38,7 +38,7 @@ async def test_login_missing_fields(app_client):
     """Login requires username and password."""
     response = await app_client.post("/auth/login", json={"username": "", "password": ""})
     assert response.status_code == 400
-    assert response.json().get("detail") == "missing_fields"
+    assert response.json().get("message") == "missing_fields"
 
 
 @pytest.mark.integration
@@ -79,7 +79,7 @@ async def test_create_user_invalid_role(app_client):
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 400
-    assert response.json().get("detail") == "invalid_role"
+    assert response.json().get("message") == "invalid_role"
 
 
 @pytest.mark.integration
@@ -88,7 +88,7 @@ async def test_delete_user_cannot_delete_self(app_client):
     token = await _login_admin(app_client)
     response = await app_client.delete("/auth/users/admin", headers={"X-Session-Token": token})
     assert response.status_code == 400
-    assert response.json().get("detail") == "cannot_delete_self"
+    assert response.json().get("message") == "cannot_delete_self"
 
 
 @pytest.mark.integration
@@ -101,7 +101,7 @@ async def test_disable_user_cannot_disable_self(app_client):
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 400
-    assert response.json().get("detail") == "cannot_disable_self"
+    assert response.json().get("message") == "cannot_disable_self"
 
 
 @pytest.mark.integration
@@ -114,4 +114,4 @@ async def test_reset_password_not_found(app_client):
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 404
-    assert response.json().get("detail") == "user_not_found"
+    assert response.json().get("message") == "user_not_found"

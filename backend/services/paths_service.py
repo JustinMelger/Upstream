@@ -72,7 +72,10 @@ class PathsService:
             if await self._repo.path_name_exists(name):
                 raise PathsServiceError(detail="duplicate_name", status_code=409)
             path_id = await self._repo.create_path_with_courses(name, description, [int(course_id) for course_id in course_ids])
-        return await self.get_path(path_id) or {"error": "not_found"}
+        path = await self.get_path(path_id)
+        if not path:
+            raise PathsServiceError(detail="created_path_missing", status_code=500)
+        return path
 
     @paths_error_handler()
     async def update_path(self, path_id: int, payload: dict) -> dict:
@@ -98,7 +101,10 @@ class PathsService:
             if await self._repo.path_name_exists_for_other_id(path_id, name):
                 raise PathsServiceError(detail="duplicate_name", status_code=409)
             await self._repo.update_path_with_courses(path_id, name, description, [int(course_id) for course_id in course_ids])
-        return await self.get_path(path_id) or {"error": "not_found"}
+        path = await self.get_path(path_id)
+        if not path:
+            raise PathsServiceError(detail="path_not_found", status_code=404)
+        return path
 
     @paths_error_handler()
     async def delete_path(self, path_id: int) -> bool:

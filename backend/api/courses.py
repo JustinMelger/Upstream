@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -8,7 +8,6 @@ from backend.api.schemas import (
     CoursePayload,
     CourseUpdateRequest,
     DeleteCourseResponse,
-    ErrorResponse,
 )
 from backend.services.auth_service import AuthService
 from backend.services.courses_service import CoursesService
@@ -41,7 +40,7 @@ async def list_courses(
     return await courses.list_courses(query=q, provider=provider, category=category, level=level)
 
 
-@router.get("/{course_id}", response_model=Union[CoursePayload, ErrorResponse])
+@router.get("/{course_id}", response_model=CoursePayload)
 async def get_course(
     course_id: int,
     current_user: str = Depends(require_session),
@@ -54,10 +53,12 @@ async def get_course(
         current_user: Authenticated username.
 
     Returns:
-        dict: Course payload or not_found.
+        dict: Course payload.
     """
     course = await courses.get_course_by_id(course_id)
-    return course or {"error": "not_found"}
+    if not course:
+        raise HTTPException(status_code=404, detail="not_found")
+    return course
 
 
 @router.post("", response_model=CoursePayload)
@@ -81,7 +82,7 @@ async def add_course(
     return await courses.create_course(payload.model_dump())
 
 
-@router.put("/{course_id}", response_model=Union[CoursePayload, ErrorResponse])
+@router.put("/{course_id}", response_model=CoursePayload)
 async def edit_course(
     course_id: int,
     payload: CourseUpdateRequest,
@@ -103,7 +104,7 @@ async def edit_course(
         raise HTTPException(status_code=403, detail="admin_required")
     course = await courses.update_course(course_id, payload.model_dump())
     if not course:
-        return {"error": "not_found"}
+        raise HTTPException(status_code=404, detail="not_found")
     return course
 
 
@@ -126,4 +127,6 @@ async def remove_course(
     if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     ok = await courses.delete_course(course_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="not_found")
     return {"deleted": ok}

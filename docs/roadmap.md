@@ -36,12 +36,12 @@
 - [x] Regenerate and commit `uv.lock` after dependency changes (keep CI/Docker `uv sync --frozen` working).
 
 ## Phase 4b — Postgres Hardening
-- [ ] Add FK constraints for domain integrity (e.g. `tracking.course_id -> courses.id`, `sessions.colleague_id -> users.username`).
-- [ ] Enforce uniqueness for sessions (`sessions.token_hash UNIQUE`).
-- [ ] Standardize “not found” behavior to `404` (avoid `200` + `{"error":"not_found"}` patterns).
-- [ ] Standardize error envelopes for `HTTPException` and request validation errors (Pydantic/FastAPI) to match domain `ServiceError` responses.
-- [ ] Migrate timestamp columns from `Text` to `TIMESTAMPTZ` (or ensure strict UTC ISO-8601 with tests until then).
-- [ ] Revisit transaction boundaries: avoid opening write transactions for read-only requests unless needed.
+- [x] Add FK constraints for domain integrity (e.g. `tracking.course_id -> courses.id`, `sessions.colleague_id -> users.username`).
+- [x] Enforce uniqueness for sessions (`sessions.token_hash UNIQUE`).
+- [x] Standardize “not found” behavior to `404` (avoid `200` + `{"error":"not_found"}` patterns).
+- [x] Standardize error envelopes for `HTTPException` and request validation errors (Pydantic/FastAPI) to match domain `ServiceError` responses.
+- [x] Ensure strict UTC ISO-8601 timestamps with tests (TIMESTAMPTZ migration deferred).
+- [x] Revisit transaction boundaries: avoid opening explicit transactions for read-only operations unless needed.
 
 ## Phase 5 — UI migration to NiceGUI
 - [ ] Create NiceGUI shell app with shared navigation and layout.

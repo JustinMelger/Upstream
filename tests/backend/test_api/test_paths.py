@@ -85,3 +85,14 @@ async def test_path_lifecycle_and_selection(app_client):
     delete = await app_client.delete(f"/paths/{path_id}", headers={"X-Session-Token": token})
     assert delete.status_code == 200
     assert delete.json()["deleted"] is True
+
+
+@pytest.mark.integration
+async def test_get_path_not_found_returns_404(app_client):
+    """Missing paths return 404."""
+    token = await _login_admin(app_client)
+    response = await app_client.get("/paths/999999", headers={"X-Session-Token": token})
+    assert response.status_code == 404
+    body = response.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "not_found"

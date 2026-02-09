@@ -90,7 +90,10 @@ class CoursesService:
                 url=url,
                 created_at=created_at,
             )
-        return await self.get_course_by_id(course_id) or {"error": "not_found"}
+        course = await self.get_course_by_id(course_id)
+        if not course:
+            raise CoursesServiceError(detail="created_course_missing", status_code=500)
+        return course
 
     @courses_error_handler()
     async def update_course(self, course_id: int, payload: dict) -> dict | None:

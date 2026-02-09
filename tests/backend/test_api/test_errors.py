@@ -51,12 +51,14 @@ async def test_service_error_returns_standard_envelope_for_400_invalid_tracking_
 
 
 @pytest.mark.integration
-async def test_http_exception_is_not_wrapped_in_service_error_envelope(app_client):
-    """Auth/permission HTTPExceptions keep the default FastAPI error shape."""
+async def test_http_exception_returns_standard_envelope(app_client):
+    """HTTPExceptions return the same standard envelope as domain errors."""
     unauth = await app_client.get("/courses")
     assert unauth.status_code == 401
-    assert "detail" in unauth.json()
-    assert "status" not in unauth.json()
+    body = unauth.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "unauthorized"
+    assert "timestamp" in body
 
     admin_token = await _login_admin(app_client)
     create_user = await app_client.post(
@@ -76,8 +78,10 @@ async def test_http_exception_is_not_wrapped_in_service_error_envelope(app_clien
         headers={"X-Session-Token": user_token},
     )
     assert forbidden.status_code == 403
-    assert forbidden.json().get("detail") == "admin_required"
-    assert "status" not in forbidden.json()
+    forbidden_body = forbidden.json()
+    assert forbidden_body.get("status") == "error"
+    assert forbidden_body.get("message") == "admin_required"
+    assert "timestamp" in forbidden_body
 
 
 @pytest.mark.integration
