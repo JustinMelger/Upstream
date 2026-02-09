@@ -1,3 +1,18 @@
+## [0.4.2](https://github.com/JustinMelger/learning-platform/compare/v0.4.1...v0.4.2) (2026-02-09)
+
+
+### Bug Fixes
+
+* **ci:** alembic not creating tables in cicd db ([f0ab83e](https://github.com/JustinMelger/learning-platform/commit/f0ab83e7fa40c4dd8cda4bf693e203ca978847fc))
+* **ci:** fix db migrate import error ([339443b](https://github.com/JustinMelger/learning-platform/commit/339443becc14ee08258c7065547735798ad2c6c0))
+* **ci:** fix db migrate test in ci ([fbb4e6a](https://github.com/JustinMelger/learning-platform/commit/fbb4e6a572439b917eed89df0a214caa47b195b4))
+* **ci:** fix db migrate test in ci ([1157516](https://github.com/JustinMelger/learning-platform/commit/11575169c9ff2b861bf568653a3383eada06d513))
+* **ci:** fix db migrate test with dynamic ([124ec75](https://github.com/JustinMelger/learning-platform/commit/124ec75d3507c6afa22369397c9178d04ccb985f))
+* **ci:** fix db migrate test with dynamic ([68f3841](https://github.com/JustinMelger/learning-platform/commit/68f3841dbfa01a49a028f364f33a9bbcf34844f1))
+* **ci:** fix db migrate test with dynamic ([df0d374](https://github.com/JustinMelger/learning-platform/commit/df0d374481a5be25a6a8a097ccd910b5eb14d983))
+* **ci:** fix db migrate test with dynamic ([b4646ef](https://github.com/JustinMelger/learning-platform/commit/b4646ef46e42d01397e6aa876709699094d7546a))
+* **ci:** move badge creating to end ([63bbf0a](https://github.com/JustinMelger/learning-platform/commit/63bbf0a6121544813dc4a95dce5a0f5b829408e1))
+
 ## [0.4.1](https://github.com/JustinMelger/learning-platform/compare/v0.4.0...v0.4.1) (2026-02-07)
 
 
