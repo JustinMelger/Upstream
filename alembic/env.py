@@ -71,16 +71,27 @@ async def run_migrations_online() -> None:
     )
 
     async with connectable.connect() as connection:
+        # `AsyncConnection.execute()` implicitly opens a transaction (autobegin). If we leave that
+        # transaction open, SQLAlchemy will roll it back when the connection closes, which would
+        # also roll back all DDL from the migration. To avoid that, we explicitly commit after
+        # acquiring/releasing the advisory lock so the migration runs in its own transaction.
         await connection.execute(text("SELECT pg_advisory_lock(:lock_id)"), {"lock_id": MIGRATION_LOCK_ID})
+        if connection.in_transaction():
+            await connection.commit()
         try:
             await connection.run_sync(do_run_migrations)
         finally:
             await connection.execute(text("SELECT pg_advisory_unlock(:lock_id)"), {"lock_id": MIGRATION_LOCK_ID})
+            if connection.in_transaction():
+                await connection.commit()
 
     await connectable.dispose()
 
 
-if context.is_offline_mode():
+cmd_opts = getattr(config, "cmd_opts", None)
+sql_mode = bool(getattr(cmd_opts, "sql", False)) if cmd_opts is not None else False
+
+if sql_mode:
     run_migrations_offline()
 else:
     asyncio.run(run_migrations_online())
