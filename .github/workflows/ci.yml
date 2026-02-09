@@ -136,6 +136,7 @@ jobs:
         run: |
           uv run coverage run -m pytest -m unit
           mv .coverage .coverage.unit
+          test -f .coverage.unit
 
       - name: Upload unit coverage data
         uses: actions/upload-artifact@v4
@@ -185,6 +186,7 @@ jobs:
         run: |
           uv run coverage run -m pytest -m integration
           mv .coverage .coverage.integration
+          test -f .coverage.integration
 
       - name: Upload integration coverage data
         uses: actions/upload-artifact@v4
