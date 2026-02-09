@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Phase 1 — MVP catalog
-- [x] Stable data model for courses (CSV-based seed).
+- [x] Stable data model for courses.
 - [x] Search + filter UI.
 - [x] One-click course links.
 - [x] Basic “Add course” form for curators.
@@ -28,16 +28,26 @@
 - [x] Add Alembic (`alembic/`, `alembic.ini`) and an initial migration matching the current schema.
 - [x] Add local helpers (`just db-up`, `just migrate`) and basic docs.
 - [x] Update CI to run migrations (Postgres service + `alembic upgrade head`) before tests.
-- [ ] Migrate incrementally: `courses` first, then `paths` + `path_courses`, then `tracking`, then `auth` + `sessions`.
-- [ ] Move API integration tests to `httpx.AsyncClient` + `pytest-anyio`.
-- [ ] One-time idempotent data migration from `learning_hub.db` (and `courses.csv`) into Postgres.
-- [ ] Replace global service singletons (`*_service = ...`) with per-request construction from `AsyncSession` in `backend/api/deps.py` (and move routers to `async def`).
-- [ ] Decide Postgres seeding strategy (prefer a dedicated seed step over app startup).
-- [ ] Add operational defaults (pool sizing/timeouts) and safe migration execution (avoid concurrent migration runs).
+- [x] Migrate incrementally: `courses` first, then `paths` + `path_courses`, then `tracking`, then `auth` + `sessions`.
+- [x] Move API integration tests to `httpx.AsyncClient` + `pytest-anyio`.
+- [x] Replace global service singletons (`*_service = ...`) with per-request construction from `AsyncSession` in `backend/api/deps.py` (and move routers to `async def`).
+- [x] Decide Postgres seeding strategy: do not seed automatically (no app startup seed).
+- [x] Add operational defaults (pool sizing/timeouts) and safe migration execution (avoid concurrent migration runs).
 - [x] Regenerate and commit `uv.lock` after dependency changes (keep CI/Docker `uv sync --frozen` working).
+
+## Phase 4b — Postgres Hardening
+- [ ] Add FK constraints for domain integrity (e.g. `tracking.course_id -> courses.id`, `sessions.colleague_id -> users.username`).
+- [ ] Enforce uniqueness for sessions (`sessions.token_hash UNIQUE`).
+- [ ] Standardize “not found” behavior to `404` (avoid `200` + `{"error":"not_found"}` patterns).
+- [ ] Standardize error envelopes for `HTTPException` and request validation errors (Pydantic/FastAPI) to match domain `ServiceError` responses.
+- [ ] Migrate timestamp columns from `Text` to `TIMESTAMPTZ` (or ensure strict UTC ISO-8601 with tests until then).
+- [ ] Revisit transaction boundaries: avoid opening write transactions for read-only requests unless needed.
 
 ## Phase 5 — UI migration to NiceGUI
 - [ ] Create NiceGUI shell app with shared navigation and layout.
+- [ ] Adopt frontend architecture: pages + components + services + `ApiClient` + `SessionStore` (`docs/architecture_frontend.md`).
+- [ ] Implement `ApiClient` with `X-Session-Token` injection and standard error mapping.
+- [ ] Implement `SessionStore` for token persistence + current-user loading (`/auth/me`).
 - [ ] Port login/session flow to NiceGUI (reuse backend auth).
 - [ ] Port core pages: Home/Dashboard, Courses, My Courses.
 - [ ] Port Paths + My Paths (including ordering UI and admin edit flows).

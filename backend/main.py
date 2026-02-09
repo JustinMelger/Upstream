@@ -1,6 +1,4 @@
-from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -16,18 +14,9 @@ from backend.core.errors import (
     TrackingServiceError,
     UserPathsServiceError,
 )
-from backend.database.db import init_db, seed_courses_from_csv
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Initialize database and seed data on startup."""
-    init_db()
-    seed_courses_from_csv(Path(settings.courses_csv))
-    yield
-
-
-app = FastAPI(title=settings.api_title, version=settings.api_version, lifespan=lifespan)
+app = FastAPI(title=settings.api_title, version=settings.api_version)
 
 app.include_router(courses.router)
 app.include_router(paths.router)
@@ -71,6 +60,5 @@ def health():
 
 
 def on_startup():
-    """Backward-compatible startup hook for tests."""
-    init_db()
-    seed_courses_from_csv(Path(settings.courses_csv))
+    """Deprecated: schema work is handled by Alembic."""
+    return None

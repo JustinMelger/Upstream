@@ -9,6 +9,8 @@ class Base(DeclarativeBase):
 
 
 class Course(Base):
+    """ORM model for courses."""
+
     __tablename__ = "courses"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -22,6 +24,8 @@ class Course(Base):
 
 
 class Tracking(Base):
+    """ORM model for course tracking."""
+
     __tablename__ = "tracking"
     __table_args__ = (UniqueConstraint("colleague_id", "course_id", name="uq_tracking_colleague_course"),)
 
@@ -33,6 +37,8 @@ class Tracking(Base):
 
 
 class Path(Base):
+    """ORM model for learning paths."""
+
     __tablename__ = "paths"
     __table_args__ = (UniqueConstraint("name", name="uq_paths_name"),)
 
@@ -44,6 +50,8 @@ class Path(Base):
 
 
 class PathCourse(Base):
+    """ORM model mapping paths to ordered courses."""
+
     __tablename__ = "path_courses"
     __table_args__ = (UniqueConstraint("path_id", "course_id", name="uq_path_courses_path_course"),)
 
@@ -56,6 +64,8 @@ class PathCourse(Base):
 
 
 class Session(Base):
+    """ORM model for auth sessions."""
+
     __tablename__ = "sessions"
     __table_args__ = (
         Index("idx_sessions_token", "token_hash"),
@@ -71,6 +81,8 @@ class Session(Base):
 
 
 class User(Base):
+    """ORM model for users."""
+
     __tablename__ = "users"
     __table_args__ = (
         UniqueConstraint("username", name="uq_users_username"),
@@ -89,6 +101,8 @@ class User(Base):
 
 
 class UserPath(Base):
+    """ORM model mapping colleagues to selected paths."""
+
     __tablename__ = "user_paths"
     __table_args__ = (UniqueConstraint("colleague_id", "path_id", name="uq_user_paths_colleague_path"),)
 

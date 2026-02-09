@@ -8,6 +8,8 @@ from backend.api.schemas.common import APIModel
 
 
 class CoursePayload(APIModel):
+    """Course response payload."""
+
     id: int
     title: str
     provider: str
@@ -19,6 +21,8 @@ class CoursePayload(APIModel):
 
 
 class CourseCreateRequest(APIModel):
+    """Course create request payload."""
+
     title: StrictStr | None = None
     provider: StrictStr | None = None
     category: StrictStr | None = None
@@ -28,6 +32,8 @@ class CourseCreateRequest(APIModel):
 
 
 class CourseUpdateRequest(APIModel):
+    """Course update request payload."""
+
     title: StrictStr | None = None
     provider: StrictStr | None = None
     category: StrictStr | None = None
@@ -37,4 +43,6 @@ class CourseUpdateRequest(APIModel):
 
 
 class DeleteCourseResponse(APIModel):
+    """Course delete response payload."""
+
     deleted: bool

@@ -20,14 +20,10 @@ services:
     command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     ports:
       - "8000:8000"
-    volumes:
-      - api_data:/data
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      - COURSES_CSV=/app/courses.csv
-      - DATABASE_PATH=/data/learning_hub.db
       - DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@postgres:5432/learning_platform
       - SESSION_DAYS=30
       - BOOTSTRAP_ADMIN_USERNAME=admin
@@ -42,7 +38,6 @@ services:
             - .ruff_cache/
             - .venv/
             - __pycache__/
-            - learning_hub.db
             - frontend/node_modules/
         - action: rebuild
           path: pyproject.toml
@@ -80,5 +75,4 @@ services:
           path: Dockerfile
 
 volumes:
-  api_data:
   postgres_data:

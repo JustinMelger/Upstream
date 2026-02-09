@@ -1,74 +1,50 @@
 from fastapi import Depends, Header, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.services.auth_service import auth_service, AuthService
-from backend.services.courses_service import courses_service, CoursesService
-from backend.services.paths_service import paths_service, PathsService
-from backend.services.tracking_service import tracking_service, TrackingService
-from backend.services.user_paths_service import user_paths_service, UserPathsService
-
-
-def get_auth_service() -> AuthService:
-    """Provide the AuthService dependency.
-
-    Returns:
-        AuthService: Shared auth service instance.
-    """
-    return auth_service
+from backend.database.async_repositories.auth import AuthRepository as SQLAuthRepository
+from backend.database.async_repositories.courses import CoursesRepository as SQLCoursesRepository
+from backend.database.async_repositories.paths import PathsRepository as SQLPathsRepository
+from backend.database.async_repositories.tracking import TrackingRepository as SQLTrackingRepository
+from backend.database.async_repositories.user_paths import UserPathsRepository as SQLUserPathsRepository
+from backend.database.session import get_session
+from backend.services.auth_service import AuthService
+from backend.services.courses_service import CoursesService
+from backend.services.paths_service import PathsService
+from backend.services.tracking_service import TrackingService
+from backend.services.user_paths_service import UserPathsService
 
 
-def get_courses_service() -> CoursesService:
-    """Provide the CoursesService dependency.
-
-    Returns:
-        CoursesService: Shared courses service instance.
-    """
-    return courses_service
+async def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthService:
+    """Provide a request-scoped AuthService dependency."""
+    return AuthService(SQLAuthRepository(session))
 
 
-def get_paths_service() -> PathsService:
-    """Provide the PathsService dependency.
-
-    Returns:
-        PathsService: Shared paths service instance.
-    """
-    return paths_service
+async def get_courses_service(session: AsyncSession = Depends(get_session)) -> CoursesService:
+    """Provide a request-scoped CoursesService dependency."""
+    return CoursesService(SQLCoursesRepository(session))
 
 
-def get_user_paths_service() -> UserPathsService:
-    """Provide the UserPathsService dependency.
-
-    Returns:
-        UserPathsService: Shared user paths service instance.
-    """
-    return user_paths_service
+async def get_paths_service(session: AsyncSession = Depends(get_session)) -> PathsService:
+    """Provide a request-scoped PathsService dependency."""
+    return PathsService(SQLPathsRepository(session))
 
 
-def get_tracking_service() -> TrackingService:
-    """Provide the TrackingService dependency.
-
-    Returns:
-        TrackingService: Shared tracking service instance.
-    """
-    return tracking_service
+async def get_user_paths_service(session: AsyncSession = Depends(get_session)) -> UserPathsService:
+    """Provide a request-scoped UserPathsService dependency."""
+    return UserPathsService(SQLUserPathsRepository(session))
 
 
-def require_session(
+async def get_tracking_service(session: AsyncSession = Depends(get_session)) -> TrackingService:
+    """Provide a request-scoped TrackingService dependency."""
+    return TrackingService(SQLTrackingRepository(session))
+
+
+async def require_session(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
 ) -> str:
-    """Validate session token and return the authenticated username.
-
-    Args:
-        x_session_token: Session token from request headers.
-        auth: Auth service dependency.
-
-    Returns:
-        Authenticated username.
-
-    Raises:
-        HTTPException: If the session is missing or invalid.
-    """
-    session = auth.get_session(x_session_token)
+    """Validate session token and return the authenticated username."""
+    session = await auth.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    return session["colleague_id"]
+    return str(session["colleague_id"])

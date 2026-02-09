@@ -10,8 +10,12 @@ class APIModel(BaseModel):
 
 
 class ErrorResponse(APIModel):
+    """Generic not-found style response payload."""
+
     error: str
 
 
 class HealthResponse(APIModel):
+    """Health check response payload."""
+
     status: str

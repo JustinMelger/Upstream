@@ -18,7 +18,7 @@ router = APIRouter(prefix="/courses", tags=["courses"])
 
 
 @router.get("", response_model=List[CoursePayload])
-def list_courses(
+async def list_courses(
     q: Optional[str] = Query(default=None, description="Search query"),
     provider: Optional[str] = None,
     category: Optional[str] = None,
@@ -38,11 +38,11 @@ def list_courses(
     Returns:
         list[dict]: Course list.
     """
-    return courses.list_courses(query=q, provider=provider, category=category, level=level)
+    return await courses.list_courses(query=q, provider=provider, category=category, level=level)
 
 
 @router.get("/{course_id}", response_model=Union[CoursePayload, ErrorResponse])
-def get_course(
+async def get_course(
     course_id: int,
     current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
@@ -56,12 +56,12 @@ def get_course(
     Returns:
         dict: Course payload or not_found.
     """
-    course = courses.get_course_by_id(course_id)
+    course = await courses.get_course_by_id(course_id)
     return course or {"error": "not_found"}
 
 
 @router.post("", response_model=CoursePayload)
-def add_course(
+async def add_course(
     payload: CourseCreateRequest,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
@@ -76,13 +76,13 @@ def add_course(
     Returns:
         dict: Created course.
     """
-    if not auth.is_admin(current_user):
+    if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    return courses.create_course(payload.model_dump())
+    return await courses.create_course(payload.model_dump())
 
 
 @router.put("/{course_id}", response_model=Union[CoursePayload, ErrorResponse])
-def edit_course(
+async def edit_course(
     course_id: int,
     payload: CourseUpdateRequest,
     current_user: str = Depends(require_session),
@@ -99,16 +99,16 @@ def edit_course(
     Returns:
         dict: Updated course.
     """
-    if not auth.is_admin(current_user):
+    if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    course = courses.update_course(course_id, payload.model_dump())
+    course = await courses.update_course(course_id, payload.model_dump())
     if not course:
         return {"error": "not_found"}
     return course
 
 
 @router.delete("/{course_id}", response_model=DeleteCourseResponse)
-def remove_course(
+async def remove_course(
     course_id: int,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
@@ -123,7 +123,7 @@ def remove_course(
     Returns:
         dict: Delete result.
     """
-    if not auth.is_admin(current_user):
+    if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    ok = courses.delete_course(course_id)
+    ok = await courses.delete_course(course_id)
     return {"deleted": ok}

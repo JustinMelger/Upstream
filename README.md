@@ -35,8 +35,7 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 - `BOOTSTRAP_ADMIN_USERNAME`: first admin username when no users exist (API).
 - `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist (API).
 - `COOKIE_SECURE`: set to `true` behind HTTPS (UI).
-- `DATABASE_PATH`: SQLite file path (API).
-- `COURSES_CSV`: seed CSV path (API).
+- `DATABASE_URL`: Postgres connection string (API).
 
 ## Run locally (without Docker)
 1. Install dependencies:
@@ -124,5 +123,5 @@ Admin-only:
 - Delete paths (admin only).
 
 ## Data
-- Courses are seeded from `courses.csv` into SQLite on startup.
-- Database file: `learning_hub.db` (not intended for Git).
+- Schema is managed via Alembic migrations (`just migrate`).
+- The API starts with an empty database. Use the admin endpoints to create data.

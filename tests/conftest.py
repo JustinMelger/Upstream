@@ -1,85 +1,185 @@
-import importlib
+from __future__ import annotations
+
+import asyncio
 import os
-from pathlib import Path
-import sys
+from typing import AsyncIterator, Iterator
 
-from fastapi.testclient import TestClient
+from alembic.config import Config
+from httpx import ASGITransport, AsyncClient
 import pytest
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine, AsyncSession, create_async_engine
+
+from alembic import command
+from backend.database.session import get_session as app_get_session
 
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+DEFAULT_DATABASE_URL = "postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform"
 
-import backend.api.deps as deps
-import backend.core.config as config
-import backend.database.auth_repository as auth_repository
-import backend.database.courses_repository as courses_repository
-import backend.database.db as db
-import backend.database.paths_repository as paths_repository
-import backend.database.tracking_repository as tracking_repository
-import backend.database.user_paths_repository as user_paths_repository
-import backend.main as main
-import backend.services.auth_service as auth_service_module
-import backend.services.courses_service as courses_service_module
-import backend.services.paths_service as paths_service_module
-import backend.services.tracking_service as tracking_service_module
-import backend.services.user_paths_service as user_paths_service_module
+os.environ.setdefault("DATABASE_URL", DEFAULT_DATABASE_URL)
+os.environ.setdefault("SESSION_DAYS", "30")
+os.environ.setdefault("BOOTSTRAP_ADMIN_USERNAME", "admin")
+os.environ.setdefault("BOOTSTRAP_ADMIN_PASSWORD", "admin")
+
+
+@pytest.fixture(scope="session")
+def anyio_backend() -> str:
+    """Configure pytest-anyio to use asyncio."""
+    return "asyncio"
+
+
+@pytest.fixture(scope="session")
+def database_url() -> str:
+    """Return the Postgres database URL for tests."""
+    return (os.getenv("DATABASE_URL") or DEFAULT_DATABASE_URL).strip()
+
+
+@pytest.fixture(scope="session")
+def configure_test_env(database_url: str) -> Iterator[None]:
+    """Set required env vars for backend settings and reset cached sessionmakers."""
+    os.environ["DATABASE_URL"] = database_url
+    os.environ.setdefault("SESSION_DAYS", "30")
+    os.environ.setdefault("BOOTSTRAP_ADMIN_USERNAME", "admin")
+    os.environ.setdefault("BOOTSTRAP_ADMIN_PASSWORD", "admin")
+
+    # The backend caches its SQLAlchemy engine/sessionmaker; tests may set env vars
+    # after import, so we reset the cache here to ensure `DATABASE_URL` is honored.
+    from backend.database import session as db_session
+
+    db_session.reset_sessionmaker()
+
+    yield
+
+
+@pytest.fixture(scope="session")
+def apply_migrations(configure_test_env: None, database_url: str) -> Iterator[None]:
+    """Ensure the schema is up-to-date for the test database.
+
+    This fixture pins `DATABASE_URL` before running Alembic so migrations are
+    applied to the same database the SQLAlchemy engine will connect to.
+    """
+    os.environ["DATABASE_URL"] = database_url
+    cfg = Config("alembic.ini")
+    cfg.set_main_option("sqlalchemy.url", database_url)
+    command.upgrade(cfg, "head")
+
+    async def _verify_schema() -> None:
+        engine = create_async_engine(database_url, pool_pre_ping=True)
+        try:
+            async with engine.begin() as conn:
+                tables_result = await conn.execute(
+                    text(
+                        "SELECT table_schema, table_name "
+                        "FROM information_schema.tables "
+                        "WHERE table_type = 'BASE TABLE' "
+                        "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                        "ORDER BY table_schema, table_name"
+                    )
+                )
+                tables = {(str(r[0]), str(r[1])) for r in tables_result.all()}
+                if ("public", "courses") not in tables:
+                    # Print helpful diagnostics for CI runs before failing.
+                    db_result = await conn.execute(
+                        text("SELECT current_database(), current_schema(), current_setting('search_path')")
+                    )
+                    db_row = db_result.first()
+                    print(f"alembic verification failed: tables={sorted(tables)}", flush=True)
+                    print(f"db info: {db_row}", flush=True)
+                    raise RuntimeError("Alembic migrations did not create expected tables in public schema.")
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_verify_schema())
+    yield
 
 
 @pytest.fixture()
-def app_client(tmp_path):
-    db_path = tmp_path / "test.db"
-    os.environ["DATABASE_PATH"] = str(db_path)
-    os.environ["SESSION_DAYS"] = "30"
-    os.environ["BOOTSTRAP_ADMIN_USERNAME"] = "admin"
-    os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin"
+async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
+    """Create a per-test async engine.
 
-    importlib.reload(config)
-    importlib.reload(db)
-    importlib.reload(auth_repository)
-    importlib.reload(courses_repository)
-    importlib.reload(paths_repository)
-    importlib.reload(tracking_repository)
-    importlib.reload(user_paths_repository)
-    importlib.reload(auth_service_module)
-    importlib.reload(courses_service_module)
-    importlib.reload(paths_service_module)
-    importlib.reload(tracking_service_module)
-    importlib.reload(user_paths_service_module)
-    importlib.reload(main)
+    Async drivers (asyncpg) bind connections to an event loop. pytest-anyio runs
+    each test in its own loop by default, so we keep the engine function-scoped
+    to avoid cross-loop pooled connections.
+    """
+    engine = create_async_engine(database_url, pool_pre_ping=True)
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
 
-    db.init_db()
-    app = main.app
-    app.dependency_overrides = {}
 
-    def _override_auth_service():
-        repo = auth_repository.SQLiteAuthRepository(db.database)
-        return auth_service_module.AuthService(repo)
+@pytest.fixture()
+def sessionmaker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    """Create an AsyncSession factory for unit-level tests."""
+    return async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-    app.dependency_overrides[deps.get_auth_service] = _override_auth_service
 
-    def _override_courses_service():
-        repo = courses_repository.SQLiteCoursesRepository(db.database)
-        return courses_service_module.CoursesService(repo)
+@pytest.fixture()
+async def db_reset(
+    apply_migrations: None,
+    configure_test_env: None,
+    engine: AsyncEngine,
+) -> AsyncIterator[None]:
+    """Keep DB-backed tests isolated by truncating all tables between tests."""
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            text(
+                "SELECT table_schema, table_name "
+                "FROM information_schema.tables "
+                "WHERE table_type = 'BASE TABLE' "
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                "AND table_name != 'alembic_version' "
+                "ORDER BY table_schema, table_name"
+            )
+        )
+        tables = [(str(row[0]), str(row[1])) for row in result.all()]
+        if tables:
 
-    app.dependency_overrides[deps.get_courses_service] = _override_courses_service
+            def _qi(identifier: str) -> str:
+                return '"' + identifier.replace('"', '""') + '"'
 
-    def _override_paths_service():
-        repo = paths_repository.SQLitePathsRepository(db.database)
-        return paths_service_module.PathsService(repo)
+            qualified = ", ".join(f"{_qi(schema)}.{_qi(name)}" for schema, name in tables)
+            await conn.execute(text(f"TRUNCATE TABLE {qualified} RESTART IDENTITY CASCADE"))
+    yield
 
-    app.dependency_overrides[deps.get_paths_service] = _override_paths_service
 
-    def _override_user_paths_service():
-        repo = user_paths_repository.SQLiteUserPathsRepository(db.database)
-        return user_paths_service_module.UserPathsService(repo)
+@pytest.fixture()
+async def db_session(
+    db_reset: None,
+    sessionmaker: async_sessionmaker[AsyncSession],
+) -> AsyncIterator[AsyncSession]:
+    """Provide an AsyncSession for unit-level tests."""
+    async with sessionmaker() as session:
+        yield session
 
-    app.dependency_overrides[deps.get_user_paths_service] = _override_user_paths_service
 
-    def _override_tracking_service():
-        repo = tracking_repository.SQLiteTrackingRepository(db.database)
-        return tracking_service_module.TrackingService(repo)
+@pytest.fixture(scope="session")
+def app(configure_test_env: None):
+    """Return the FastAPI app instance."""
+    from backend.main import app as fastapi_app
 
-    app.dependency_overrides[deps.get_tracking_service] = _override_tracking_service
-    return TestClient(app)
+    return fastapi_app
+
+
+@pytest.fixture()
+async def app_client(
+    app,
+    db_reset: None,
+    sessionmaker: async_sessionmaker[AsyncSession],
+) -> AsyncIterator[AsyncClient]:
+    """Provide an httpx AsyncClient bound to the FastAPI app."""
+
+    async def _override_get_session() -> AsyncIterator[AsyncSession]:
+        async with sessionmaker() as session:
+            yield session
+
+    app.dependency_overrides[app_get_session] = _override_get_session
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Convenience for tests that need to set `dependency_overrides`.
+        client.app = app  # type: ignore[attr-defined]
+        try:
+            yield client
+        finally:
+            app.dependency_overrides.pop(app_get_session, None)
