@@ -134,7 +134,8 @@ jobs:
 
       - name: Run unit tests
         run: |
-          COVERAGE_FILE=.coverage.unit uv run pytest -m unit --cov=backend --cov-branch --cov-report=
+          uv run coverage run -m pytest -m unit
+          mv .coverage .coverage.unit
 
       - name: Upload unit coverage data
         uses: actions/upload-artifact@v4
@@ -182,7 +183,8 @@ jobs:
 
       - name: Run integration tests
         run: |
-          COVERAGE_FILE=.coverage.integration uv run pytest -m integration --cov=backend --cov-branch --cov-report=
+          uv run coverage run -m pytest -m integration
+          mv .coverage .coverage.integration
 
       - name: Upload integration coverage data
         uses: actions/upload-artifact@v4
