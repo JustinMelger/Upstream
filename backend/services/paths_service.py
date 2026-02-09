@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from backend.core.errors import paths_error_handler, PathsServiceError
-from backend.database.db import database
-from backend.database.interfaces import PathsRepository
+from backend.database.async_repositories.paths import PathsRepository
 from backend.database.models import PathCourseRecord, PathRecord
-from backend.database.paths_repository import SQLitePathsRepository
 
 
 class PathsService:
@@ -19,16 +17,18 @@ class PathsService:
         self._repo = repo
 
     @paths_error_handler()
-    def list_paths(self) -> list[dict]:
+    async def list_paths(self) -> list[dict]:
         """List all learning paths.
 
         Returns:
             Path list payloads.
         """
-        return [self._path_payload(path) for path in self._repo.list_paths()]
+        async with self._repo.session.begin():
+            rows = await self._repo.list_paths()
+        return [self._path_payload(path) for path in rows]
 
     @paths_error_handler()
-    def get_path(self, path_id: int) -> dict | None:
+    async def get_path(self, path_id: int) -> dict | None:
         """Fetch a path and its courses by ID.
 
         Args:
@@ -37,7 +37,8 @@ class PathsService:
         Returns:
             Path payload or None if missing.
         """
-        result = self._repo.get_path(path_id)
+        async with self._repo.session.begin():
+            result = await self._repo.get_path(path_id)
         if not result:
             return None
         path, courses = result
@@ -49,7 +50,7 @@ class PathsService:
         }
 
     @paths_error_handler()
-    def create_path(self, payload: dict) -> dict:
+    async def create_path(self, payload: dict) -> dict:
         """Create a learning path with ordered courses.
 
         Args:
@@ -67,14 +68,14 @@ class PathsService:
         description = (payload.get("description") or "").strip() or None
         course_ids = payload.get("course_ids") or []
 
-        if self._repo.path_name_exists(name):
-            raise PathsServiceError(detail="duplicate_name", status_code=409)
-
-        path_id = self._repo.create_path_with_courses(name, description, [int(course_id) for course_id in course_ids])
-        return self.get_path(path_id) or {"error": "not_found"}
+        async with self._repo.session.begin():
+            if await self._repo.path_name_exists(name):
+                raise PathsServiceError(detail="duplicate_name", status_code=409)
+            path_id = await self._repo.create_path_with_courses(name, description, [int(course_id) for course_id in course_ids])
+        return await self.get_path(path_id) or {"error": "not_found"}
 
     @paths_error_handler()
-    def update_path(self, path_id: int, payload: dict) -> dict:
+    async def update_path(self, path_id: int, payload: dict) -> dict:
         """Update a learning path and its course ordering.
 
         Args:
@@ -93,14 +94,14 @@ class PathsService:
         description = (payload.get("description") or "").strip() or None
         course_ids = payload.get("course_ids") or []
 
-        if self._repo.path_name_exists_for_other_id(path_id, name):
-            raise PathsServiceError(detail="duplicate_name", status_code=409)
-
-        self._repo.update_path_with_courses(path_id, name, description, [int(course_id) for course_id in course_ids])
-        return self.get_path(path_id) or {"error": "not_found"}
+        async with self._repo.session.begin():
+            if await self._repo.path_name_exists_for_other_id(path_id, name):
+                raise PathsServiceError(detail="duplicate_name", status_code=409)
+            await self._repo.update_path_with_courses(path_id, name, description, [int(course_id) for course_id in course_ids])
+        return await self.get_path(path_id) or {"error": "not_found"}
 
     @paths_error_handler()
-    def delete_path(self, path_id: int) -> bool:
+    async def delete_path(self, path_id: int) -> bool:
         """Delete a learning path by ID.
 
         Args:
@@ -109,14 +110,17 @@ class PathsService:
         Returns:
             True if deleted.
         """
-        return self._repo.delete_path_with_courses(path_id) > 0
+        async with self._repo.session.begin():
+            return (await self._repo.delete_path_with_courses(path_id)) > 0
 
     @staticmethod
     def _path_payload(path: PathRecord) -> dict:
+        """Convert a path record into an API payload."""
         return {"id": path.id, "name": path.name, "description": path.description or ""}
 
     @staticmethod
     def _course_payload(course: PathCourseRecord) -> dict:
+        """Convert a path course record into an API payload."""
         return {
             "id": course.id,
             "title": course.title or "",
@@ -126,6 +130,3 @@ class PathsService:
             "duration_hours": course.duration_hours,
             "url": course.url or "",
         }
-
-
-paths_service = PathsService(SQLitePathsRepository(database))

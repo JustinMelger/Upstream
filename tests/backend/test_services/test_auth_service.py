@@ -1,82 +1,69 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from sqlalchemy import text
 
-from backend.database import db as db_module
-from backend.database.auth_repository import SQLiteAuthRepository
+from backend.database.async_repositories.auth import AuthRepository
 from backend.services.auth_service import AuthService
 
 
-def _clear_auth_tables():
-    db_module.init_db()
-    with db_module.get_conn() as conn:
-        conn.execute("DELETE FROM sessions")
-        conn.execute("DELETE FROM users")
-        conn.commit()
-
-
-def _auth_service() -> AuthService:
-    return AuthService(SQLiteAuthRepository(db_module.database))
+pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.unit
-def test_create_and_authenticate_user(app_client):
+async def test_create_and_authenticate_user(db_session):
     """Users can be created and authenticated with valid credentials."""
-    _clear_auth_tables()
-    auth_service = _auth_service()
-    user = auth_service.create_user("alice", "pass123", "user")
+    auth_service = AuthService(AuthRepository(db_session))
+    user = await auth_service.create_user("alice", "pass123", "user")
     assert user["username"] == "alice"
-    assert auth_service.get_user("alice") is not None
+    assert await auth_service.get_user("alice") is not None
 
-    authed = auth_service.authenticate_user("alice", "pass123")
+    authed = await auth_service.authenticate_user("alice", "pass123")
     assert authed["username"] == "alice"
 
 
 @pytest.mark.unit
-def test_authentication_rejects_disabled_user(app_client):
+async def test_authentication_rejects_disabled_user(db_session):
     """Disabled users cannot authenticate."""
-    _clear_auth_tables()
-    auth_service = _auth_service()
-    auth_service.create_user("bob", "pass123", "user")
-    auth_service.set_user_disabled("bob", True)
-    assert auth_service.authenticate_user("bob", "pass123") is None
+    auth_service = AuthService(AuthRepository(db_session))
+    await auth_service.create_user("bob", "pass123", "user")
+    await auth_service.set_user_disabled("bob", True)
+    assert await auth_service.authenticate_user("bob", "pass123") is None
 
 
 @pytest.mark.unit
-def test_is_admin_checks_role(app_client):
+async def test_is_admin_checks_role(db_session):
     """Admin role is required for admin checks."""
-    _clear_auth_tables()
-    auth_service = _auth_service()
-    auth_service.create_user("admin1", "pass123", "admin")
-    auth_service.create_user("user1", "pass123", "user")
-    assert auth_service.is_admin("admin1") is True
-    assert auth_service.is_admin("user1") is False
+    auth_service = AuthService(AuthRepository(db_session))
+    await auth_service.create_user("admin1", "pass123", "admin")
+    await auth_service.create_user("user1", "pass123", "user")
+    assert await auth_service.is_admin("admin1") is True
+    assert await auth_service.is_admin("user1") is False
 
 
 @pytest.mark.unit
-def test_session_lifecycle(app_client):
+async def test_session_lifecycle(db_session):
     """Sessions can be created, retrieved, and revoked."""
-    _clear_auth_tables()
-    auth_service = _auth_service()
-    token = auth_service.create_session("carol")["token"]
-    session = auth_service.get_session(token)
+    auth_service = AuthService(AuthRepository(db_session))
+    token = (await auth_service.create_session("carol"))["token"]
+    session = await auth_service.get_session(token)
     assert session["colleague_id"] == "carol"
 
-    revoked = auth_service.revoke_sessions("carol")
+    revoked = await auth_service.revoke_sessions("carol")
     assert revoked == 1
-    assert auth_service.get_session(token) is None
+    assert await auth_service.get_session(token) is None
 
 
 @pytest.mark.unit
-def test_expired_session_is_purged(app_client):
+async def test_expired_session_is_purged(db_session):
     """Expired sessions are removed and not returned."""
-    _clear_auth_tables()
-    auth_service = _auth_service()
-    token = auth_service.create_session("dave")["token"]
+    auth_service = AuthService(AuthRepository(db_session))
+    token = (await auth_service.create_session("dave"))["token"]
 
     past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
-    with db_module.get_conn() as conn:
-        conn.execute("UPDATE sessions SET expires_at = ? WHERE colleague_id = ?", (past, "dave"))
-        conn.commit()
+    async with db_session.begin():
+        await db_session.execute(
+            text("UPDATE sessions SET expires_at = :past WHERE colleague_id = :cid"), {"past": past, "cid": "dave"}
+        )
 
-    assert auth_service.get_session(token) is None
+    assert await auth_service.get_session(token) is None

@@ -18,6 +18,12 @@ class ServiceError(HTTPException):
     """Base FastAPI exception for service-domain failures."""
 
     def __init__(self, *, detail: str, status_code: int = 500) -> None:
+        """Initialize the service error.
+
+        Args:
+            detail: Human-readable error message or error code.
+            status_code: HTTP status code.
+        """
         super().__init__(status_code=status_code, detail=detail)
 
 
@@ -25,6 +31,12 @@ class AuthServiceError(ServiceError):
     """Base FastAPI exception for auth domain failures."""
 
     def __init__(self, *, detail: str, status_code: int = 500) -> None:
+        """Initialize the auth service error.
+
+        Args:
+            detail: Human-readable error message or error code.
+            status_code: HTTP status code.
+        """
         super().__init__(status_code=status_code, detail=detail)
 
 
@@ -32,6 +44,12 @@ class CoursesServiceError(ServiceError):
     """Base FastAPI exception for courses domain failures."""
 
     def __init__(self, *, detail: str, status_code: int = 500) -> None:
+        """Initialize the courses service error.
+
+        Args:
+            detail: Human-readable error message or error code.
+            status_code: HTTP status code.
+        """
         super().__init__(status_code=status_code, detail=detail)
 
 
@@ -39,6 +57,12 @@ class PathsServiceError(ServiceError):
     """Base FastAPI exception for paths domain failures."""
 
     def __init__(self, *, detail: str, status_code: int = 500) -> None:
+        """Initialize the paths service error.
+
+        Args:
+            detail: Human-readable error message or error code.
+            status_code: HTTP status code.
+        """
         super().__init__(status_code=status_code, detail=detail)
 
 
@@ -46,6 +70,12 @@ class UserPathsServiceError(ServiceError):
     """Base FastAPI exception for user-paths domain failures."""
 
     def __init__(self, *, detail: str, status_code: int = 500) -> None:
+        """Initialize the user-paths service error.
+
+        Args:
+            detail: Human-readable error message or error code.
+            status_code: HTTP status code.
+        """
         super().__init__(status_code=status_code, detail=detail)
 
 
@@ -53,10 +83,24 @@ class TrackingServiceError(ServiceError):
     """Base FastAPI exception for tracking domain failures."""
 
     def __init__(self, *, detail: str, status_code: int = 500) -> None:
+        """Initialize the tracking service error.
+
+        Args:
+            detail: Human-readable error message or error code.
+            status_code: HTTP status code.
+        """
         super().__init__(status_code=status_code, detail=detail)
 
 
 def _error_content(message: str) -> dict[str, str]:
+    """Build a standard error envelope payload.
+
+    Args:
+        message: Error message.
+
+    Returns:
+        JSON-serializable error payload.
+    """
     return {
         "status": "error",
         "message": message,
@@ -90,10 +134,12 @@ def error_handler(
     """
 
     def decorator(func: F) -> F:
+        """Wrap a function and convert uncaught errors into a domain ServiceError."""
         if inspect.iscoroutinefunction(func):
 
             @wraps(func)
             async def wrapper(*args, **kwargs):
+                """Async wrapper that preserves HTTPException and wraps other exceptions."""
                 try:
                     return await func(*args, **kwargs)
                 except HTTPException:
@@ -106,6 +152,7 @@ def error_handler(
 
             @wraps(func)
             def wrapper(*args, **kwargs):
+                """Sync wrapper that preserves HTTPException and wraps other exceptions."""
                 try:
                     return func(*args, **kwargs)
                 except HTTPException:

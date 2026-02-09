@@ -25,7 +25,7 @@ router = APIRouter(prefix="/paths", tags=["paths"])
 
 
 @router.get("", response_model=List[PathListItem])
-def list_paths(
+async def list_paths(
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
 ):
@@ -37,11 +37,11 @@ def list_paths(
     Returns:
         list[dict]: Path list.
     """
-    return paths.list_paths()
+    return await paths.list_paths()
 
 
 @router.post("", response_model=PathDetailResponse)
-def add_path(
+async def add_path(
     payload: PathCreateRequest,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
@@ -56,13 +56,13 @@ def add_path(
     Returns:
         dict: Created path.
     """
-    if not auth.is_admin(current_user):
+    if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    return paths.create_path(payload.model_dump())
+    return await paths.create_path(payload.model_dump())
 
 
 @router.post("/{path_id}/select", response_model=SelectPathResponse)
-def select_path(
+async def select_path(
     path_id: int,
     current_user: str = Depends(require_session),
     user_paths: UserPathsService = Depends(get_user_paths_service),
@@ -76,11 +76,11 @@ def select_path(
     Returns:
         dict: Selection result.
     """
-    return user_paths.add_user_path(current_user, path_id)
+    return await user_paths.add_user_path(current_user, path_id)
 
 
 @router.post("/{path_id}/unselect", response_model=UnselectPathResponse)
-def unselect_path(
+async def unselect_path(
     path_id: int,
     current_user: str = Depends(require_session),
     user_paths: UserPathsService = Depends(get_user_paths_service),
@@ -94,12 +94,12 @@ def unselect_path(
     Returns:
         dict: Removal result.
     """
-    removed = user_paths.remove_user_path(current_user, path_id)
+    removed = await user_paths.remove_user_path(current_user, path_id)
     return {"removed": removed}
 
 
 @router.post("/{path_id}/status", response_model=PathStatusResponse)
-def set_path_status(
+async def set_path_status(
     path_id: int,
     payload: PathStatusRequest,
     current_user: str = Depends(require_session),
@@ -119,7 +119,7 @@ def set_path_status(
     if not status:
         raise HTTPException(status_code=400, detail="missing_fields")
 
-    updated = user_paths.update_user_path_status(current_user, path_id, status)
+    updated = await user_paths.update_user_path_status(current_user, path_id, status)
 
     if updated == 0:
         raise HTTPException(status_code=404, detail="path_not_selected")
@@ -128,7 +128,7 @@ def set_path_status(
 
 
 @router.get("/selected/list", response_model=list[SelectedPathItem])
-def list_selected_paths(
+async def list_selected_paths(
     current_user: str = Depends(require_session),
     user_paths: UserPathsService = Depends(get_user_paths_service),
 ):
@@ -140,11 +140,11 @@ def list_selected_paths(
     Returns:
         list[dict]: Selected paths.
     """
-    return user_paths.list_user_paths(current_user)
+    return await user_paths.list_user_paths(current_user)
 
 
 @router.get("/{path_id}", response_model=PathDetailResponse | ErrorResponse)
-def get_path(
+async def get_path(
     path_id: int,
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
@@ -158,12 +158,12 @@ def get_path(
     Returns:
         dict: Path payload or not_found.
     """
-    path = paths.get_path(path_id)
+    path = await paths.get_path(path_id)
     return path or {"error": "not_found"}
 
 
 @router.delete("/{path_id}", response_model=DeletePathResponse)
-def remove_path(
+async def remove_path(
     path_id: int,
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
@@ -178,14 +178,14 @@ def remove_path(
     Returns:
         dict: Delete result.
     """
-    if not auth.is_admin(current_user):
+    if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
-    return {"deleted": paths.delete_path(path_id)}
+    return {"deleted": await paths.delete_path(path_id)}
 
 
 @router.put("/{path_id}", response_model=PathDetailResponse)
-def edit_path(
+async def edit_path(
     path_id: int,
     payload: PathUpdateRequest,
     current_user: str = Depends(require_session),
@@ -202,6 +202,6 @@ def edit_path(
     Returns:
         dict: Updated path.
     """
-    if not auth.is_admin(current_user):
+    if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    return paths.update_path(path_id, payload.model_dump())
+    return await paths.update_path(path_id, payload.model_dump())

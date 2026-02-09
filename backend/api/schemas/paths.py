@@ -6,12 +6,16 @@ from backend.api.schemas.common import APIModel
 
 
 class PathListItem(APIModel):
+    """Path list item payload."""
+
     id: int
     name: str
     description: str
 
 
 class PathCourseItem(APIModel):
+    """Course payload as embedded within a path."""
+
     id: int
     title: str
     provider: str
@@ -22,6 +26,8 @@ class PathCourseItem(APIModel):
 
 
 class PathDetailResponse(APIModel):
+    """Path detail response payload."""
+
     id: int
     name: str
     description: str
@@ -29,40 +35,56 @@ class PathDetailResponse(APIModel):
 
 
 class PathCreateRequest(APIModel):
+    """Path create request payload."""
+
     name: StrictStr | None = None
     description: StrictStr | None = None
     course_ids: list[StrictInt] = Field(default_factory=list)
 
 
 class PathUpdateRequest(APIModel):
+    """Path update request payload."""
+
     name: StrictStr | None = None
     description: StrictStr | None = None
     course_ids: list[StrictInt] = Field(default_factory=list)
 
 
 class DeletePathResponse(APIModel):
+    """Path delete response payload."""
+
     deleted: bool
 
 
 class SelectPathResponse(APIModel):
+    """Path select response payload."""
+
     colleague_id: str
     path_id: str
     created_at: str
 
 
 class UnselectPathResponse(APIModel):
+    """Path unselect response payload."""
+
     removed: int
 
 
 class PathStatusRequest(APIModel):
+    """Path status update request payload."""
+
     status: StrictStr | None = None
 
 
 class PathStatusResponse(APIModel):
+    """Path status update response payload."""
+
     updated: int
 
 
 class SelectedPathItem(APIModel):
+    """Selected path item payload."""
+
     id: int
     name: str
     description: str

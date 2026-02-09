@@ -5,7 +5,7 @@ This project uses a simple three‑tier layout:
 
 - Streamlit UI for the colleague‑facing web experience.
 - FastAPI backend for auth, course management, learning paths, and tracking.
-- SQLite for persistence (seeded from `courses.csv` on startup).
+- Postgres for persistence (schema managed via Alembic).
 
 ## Mermaid diagram
 
@@ -25,7 +25,7 @@ flowchart LR
   UI --> Paths
   UI --> Tracking
 
-  DB[(SQLite)]
+  DB[(Postgres)]
   Auth --> DB
   Courses --> DB
   Paths --> DB
@@ -42,7 +42,7 @@ sequenceDiagram
   participant UI as Streamlit UI
   participant API as Auth Router (FastAPI)
   participant Auth as Auth Service
-  participant DB as SQLite Database
+  participant DB as Postgres Database
 
   User->>UI: Submit username + password
   UI->>API: POST /auth/login
@@ -107,20 +107,12 @@ classDiagram
     +update_last_login(username, now): None
   }
 
-  class SQLiteAuthRepository {
-  }
-
-  class SQLiteDatabase {
-    +SQLiteDatabase(db_path: str)
-    +get_conn(): Connection
-    +init_db(): None
-    +seed_courses_from_csv(csv_path: Path): None
+  class SQLAuthRepository {
   }
 
   AuthRouter --> AuthService : request handling
   AuthService --> AuthRepository : persistence
-  SQLiteAuthRepository ..|> AuthRepository
-  SQLiteAuthRepository --> SQLiteDatabase : uses connections
+  SQLAuthRepository ..|> AuthRepository
 ```
 
 ### Auth Data Model
@@ -200,7 +192,7 @@ sequenceDiagram
   participant API as Courses Router (FastAPI)
   participant Auth as Auth Service
   participant Courses as Courses Service
-  participant DB as SQLite Database
+  participant DB as Postgres Database
 
   User->>UI: Request courses list
   UI->>API: GET /courses
@@ -242,7 +234,7 @@ classDiagram
     +delete_course(course_id): int
   }
 
-  class SQLiteCoursesRepository {
+  class SQLCoursesRepository {
   }
 
   class AuthService {
@@ -250,18 +242,10 @@ classDiagram
     +is_admin(username): bool
   }
 
-  class SQLiteDatabase {
-    +SQLiteDatabase(db_path: str)
-    +get_conn(): Connection
-    +init_db(): None
-    +seed_courses_from_csv(csv_path: Path): None
-  }
-
   CoursesRouter --> AuthService : require_session + admin checks
   CoursesRouter --> CoursesService : CRUD
   CoursesService --> CoursesRepository : persistence
-  SQLiteCoursesRepository ..|> CoursesRepository
-  SQLiteCoursesRepository --> SQLiteDatabase : uses connections
+  SQLCoursesRepository ..|> CoursesRepository
 ```
 
 ### Courses Data Model
@@ -292,7 +276,7 @@ sequenceDiagram
   participant Auth as Auth Service
   participant Paths as Paths Service
   participant UserPaths as User Paths Service
-  participant DB as SQLite Database
+  participant DB as Postgres Database
 
   User->>UI: Create learning path
   UI->>API: POST /paths
@@ -356,7 +340,7 @@ classDiagram
     +delete_path(path_id): int
   }
 
-  class SQLitePathsRepository {
+  class SQLPathsRepository {
   }
 
   class UserPathsRepository {
@@ -366,7 +350,7 @@ classDiagram
     +update_user_path_status(colleague_id, path_id, status, now): int
   }
 
-  class SQLiteUserPathsRepository {
+  class SQLUserPathsRepository {
   }
 
   class AuthService {
@@ -374,22 +358,13 @@ classDiagram
     +is_admin(username): bool
   }
 
-  class SQLiteDatabase {
-    +SQLiteDatabase(db_path: str)
-    +get_conn(): Connection
-    +init_db(): None
-    +seed_courses_from_csv(csv_path: Path): None
-  }
-
   PathsRouter --> AuthService : require_session + admin checks
   PathsRouter --> PathsService : CRUD
   PathsRouter --> UserPathsService : selection + status
   PathsService --> PathsRepository : persistence
-  SQLitePathsRepository ..|> PathsRepository
-  SQLitePathsRepository --> SQLiteDatabase : uses connections
+  SQLPathsRepository ..|> PathsRepository
   UserPathsService --> UserPathsRepository : persistence
-  SQLiteUserPathsRepository ..|> UserPathsRepository
-  SQLiteUserPathsRepository --> SQLiteDatabase : uses connections
+  SQLUserPathsRepository ..|> UserPathsRepository
 ```
 
 ### Paths Data Model
@@ -429,7 +404,7 @@ sequenceDiagram
   participant API as Tracking Router (FastAPI)
   participant Auth as Auth Service
   participant Tracking as Tracking Service
-  participant DB as SQLite Database
+  participant DB as Postgres Database
 
   User->>UI: Update tracking status
   UI->>API: POST /tracking
@@ -485,7 +460,7 @@ classDiagram
     +remove_tracking(colleague_id, course_id): int
   }
 
-  class SQLiteTrackingRepository {
+  class SQLTrackingRepository {
   }
 
   class AuthService {
@@ -493,18 +468,10 @@ classDiagram
     +is_admin(username): bool
   }
 
-  class SQLiteDatabase {
-    +SQLiteDatabase(db_path: str)
-    +get_conn(): Connection
-    +init_db(): None
-    +seed_courses_from_csv(csv_path: Path): None
-  }
-
   TrackingRouter --> AuthService : require_session + admin checks
   TrackingRouter --> TrackingService : query + mutate
   TrackingService --> TrackingRepository : persistence
-  SQLiteTrackingRepository ..|> TrackingRepository
-  SQLiteTrackingRepository --> SQLiteDatabase : uses connections
+  SQLTrackingRepository ..|> TrackingRepository
 ```
 
 ### Tracking Data Model

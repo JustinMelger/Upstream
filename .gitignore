@@ -8,4 +8,3 @@ __pycache__/
 .env
 .venv/
 venv/
-learning_hub.db

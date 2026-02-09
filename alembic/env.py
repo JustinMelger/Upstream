@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import sys
 
-from sqlalchemy import pool
+from sqlalchemy import pool, text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
@@ -27,6 +27,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
+MIGRATION_LOCK_ID = 74180321
 
 
 def _database_url() -> str:
@@ -69,7 +71,11 @@ async def run_migrations_online() -> None:
     )
 
     async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+        await connection.execute(text("SELECT pg_advisory_lock(:lock_id)"), {"lock_id": MIGRATION_LOCK_ID})
+        try:
+            await connection.run_sync(do_run_migrations)
+        finally:
+            await connection.execute(text("SELECT pg_advisory_unlock(:lock_id)"), {"lock_id": MIGRATION_LOCK_ID})
 
     await connectable.dispose()
 

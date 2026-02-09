@@ -18,7 +18,7 @@ router = APIRouter(prefix="/tracking", tags=["tracking"])
 
 
 @router.get("", response_model=List[TrackingRecordPayload])
-def get_tracking(
+async def get_tracking(
     colleague_id: Optional[str] = Query(default=None),
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
@@ -34,13 +34,13 @@ def get_tracking(
         list[dict]: Tracking entries.
     """
     target = colleague_id or current_user
-    if target != current_user and not auth.is_admin(current_user):
+    if target != current_user and not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    return tracking.list_tracking(colleague_id=target)
+    return await tracking.list_tracking(colleague_id=target)
 
 
 @router.post("", response_model=TrackingRecordPayload)
-def set_tracking(
+async def set_tracking(
     payload: TrackingUpsertRequest,
     current_user: str = Depends(require_session),
     tracking: TrackingService = Depends(get_tracking_service),
@@ -66,11 +66,11 @@ def set_tracking(
     except ValueError:
         raise HTTPException(status_code=400, detail="invalid_course_id")
 
-    return tracking.upsert_tracking(colleague_id, course_id_int, status)
+    return await tracking.upsert_tracking(colleague_id, course_id_int, status)
 
 
 @router.post("/delete", response_model=TrackingDeleteResponse)
-def delete_tracking(
+async def delete_tracking(
     payload: TrackingDeleteRequest,
     current_user: str = Depends(require_session),
     tracking: TrackingService = Depends(get_tracking_service),
@@ -95,12 +95,12 @@ def delete_tracking(
     except ValueError:
         raise HTTPException(status_code=400, detail="invalid_course_id")
 
-    removed = tracking.remove_tracking(colleague_id, course_id_int)
+    removed = await tracking.remove_tracking(colleague_id, course_id_int)
     return {"removed": removed}
 
 
 @router.get("/stats", response_model=dict[str, int])
-def get_stats(
+async def get_stats(
     colleague_id: Optional[str] = Query(default=None),
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
@@ -115,17 +115,17 @@ def get_stats(
     Returns:
         dict: Stats payload.
     """
-    if colleague_id and colleague_id != current_user and not auth.is_admin(current_user):
+    if colleague_id and colleague_id != current_user and not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     if colleague_id:
-        return tracking.stats_for_colleague(colleague_id)
-    if auth.is_admin(current_user):
-        return tracking.stats_all()
+        return await tracking.stats_for_colleague(colleague_id)
+    if await auth.is_admin(current_user):
+        return await tracking.stats_all()
     raise HTTPException(status_code=403, detail="admin_required")
 
 
 @router.get("/stats/users", response_model=list[TrackingStatsByUserItem])
-def get_stats_by_user(
+async def get_stats_by_user(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
@@ -138,13 +138,13 @@ def get_stats_by_user(
     Returns:
         list[dict]: Stats by user.
     """
-    if not auth.is_admin(current_user):
+    if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    return tracking.stats_by_user()
+    return await tracking.stats_by_user()
 
 
 @router.get("/recent", response_model=list[TrackingRecordPayload])
-def get_recent_activity(
+async def get_recent_activity(
     limit: int = Query(default=10),
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
@@ -159,6 +159,6 @@ def get_recent_activity(
     Returns:
         list[dict]: Recent activity records.
     """
-    if not auth.is_admin(current_user):
+    if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
-    return tracking.list_recent_activity(limit=limit)
+    return await tracking.list_recent_activity(limit=limit)

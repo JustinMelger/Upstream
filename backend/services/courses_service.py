@@ -3,9 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from backend.core.errors import courses_error_handler, CoursesServiceError
-from backend.database.courses_repository import SQLiteCoursesRepository
-from backend.database.db import database
-from backend.database.interfaces import CoursesRepository
+from backend.database.async_repositories.courses import CoursesRepository
 from backend.database.models import CourseRecord
 
 
@@ -21,7 +19,7 @@ class CoursesService:
         self._repo = repo
 
     @courses_error_handler()
-    def list_courses(
+    async def list_courses(
         self,
         *,
         query: str | None = None,
@@ -40,11 +38,12 @@ class CoursesService:
         Returns:
             Course list payloads.
         """
-        rows = self._repo.list_courses(query=query, provider=provider, category=category, level=level)
+        async with self._repo.session.begin():
+            rows = await self._repo.list_courses(query=query, provider=provider, category=category, level=level)
         return [self._to_payload(row) for row in rows]
 
     @courses_error_handler()
-    def get_course_by_id(self, course_id: int) -> dict | None:
+    async def get_course_by_id(self, course_id: int) -> dict | None:
         """Fetch a course by ID.
 
         Args:
@@ -53,11 +52,12 @@ class CoursesService:
         Returns:
             Course payload or None if missing.
         """
-        course = self._repo.get_course_by_id(course_id)
+        async with self._repo.session.begin():
+            course = await self._repo.get_course_by_id(course_id)
         return self._to_payload(course) if course else None
 
     @courses_error_handler()
-    def create_course(self, payload: dict) -> dict:
+    async def create_course(self, payload: dict) -> dict:
         """Create a new course.
 
         Args:
@@ -80,19 +80,20 @@ class CoursesService:
         duration_hours = self._parse_float(payload.get("duration_hours"))
         created_at = datetime.now(timezone.utc).isoformat()
 
-        course_id = self._repo.create_course(
-            title=title,
-            provider=provider,
-            category=category,
-            level=level,
-            duration_hours=duration_hours,
-            url=url,
-            created_at=created_at,
-        )
-        return self.get_course_by_id(course_id) or {"error": "not_found"}
+        async with self._repo.session.begin():
+            course_id = await self._repo.create_course(
+                title=title,
+                provider=provider,
+                category=category,
+                level=level,
+                duration_hours=duration_hours,
+                url=url,
+                created_at=created_at,
+            )
+        return await self.get_course_by_id(course_id) or {"error": "not_found"}
 
     @courses_error_handler()
-    def update_course(self, course_id: int, payload: dict) -> dict | None:
+    async def update_course(self, course_id: int, payload: dict) -> dict | None:
         """Update a course by ID.
 
         Args:
@@ -102,7 +103,8 @@ class CoursesService:
         Returns:
             Updated course payload or None if missing.
         """
-        existing = self._repo.get_course_by_id(course_id)
+        async with self._repo.session.begin():
+            existing = await self._repo.get_course_by_id(course_id)
         if not existing:
             return None
 
@@ -115,19 +117,20 @@ class CoursesService:
         if duration_hours is None:
             duration_hours = existing.duration_hours
 
-        self._repo.update_course(
-            course_id=course_id,
-            title=title,
-            provider=provider,
-            category=category,
-            level=level,
-            duration_hours=duration_hours,
-            url=url,
-        )
-        return self.get_course_by_id(course_id)
+        async with self._repo.session.begin():
+            await self._repo.update_course(
+                course_id=course_id,
+                title=title,
+                provider=provider,
+                category=category,
+                level=level,
+                duration_hours=duration_hours,
+                url=url,
+            )
+        return await self.get_course_by_id(course_id)
 
     @courses_error_handler()
-    def delete_course(self, course_id: int) -> bool:
+    async def delete_course(self, course_id: int) -> bool:
         """Delete a course by ID.
 
         Args:
@@ -136,7 +139,8 @@ class CoursesService:
         Returns:
             True if deleted.
         """
-        return self._repo.delete_course(course_id) > 0
+        async with self._repo.session.begin():
+            return (await self._repo.delete_course(course_id)) > 0
 
     @staticmethod
     def _parse_float(value):
@@ -159,6 +163,3 @@ class CoursesService:
             "url": course.url or "",
             "created_at": course.created_at,
         }
-
-
-courses_service = CoursesService(SQLiteCoursesRepository(database))
