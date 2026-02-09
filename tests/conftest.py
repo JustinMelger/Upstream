@@ -94,7 +94,12 @@ async def db_reset(
     """Keep DB-backed tests isolated by truncating all tables between tests."""
     async with engine.begin() as conn:
         await conn.execute(
-            text("TRUNCATE TABLE user_paths, tracking, path_courses, paths, courses, sessions, users RESTART IDENTITY CASCADE")
+            text(
+                "TRUNCATE TABLE "
+                "public.user_paths, public.tracking, public.path_courses, public.paths, "
+                "public.courses, public.sessions, public.users "
+                "RESTART IDENTITY CASCADE"
+            )
         )
     yield
 

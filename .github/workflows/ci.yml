@@ -74,7 +74,7 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@localhost:5432/learning_platform
+      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -112,7 +112,7 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@localhost:5432/learning_platform
+      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -153,7 +153,7 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@localhost:5432/learning_platform
+      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -196,7 +196,7 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@localhost:5432/learning_platform
+      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
     steps:
       - name: Checkout
         uses: actions/checkout@v4
