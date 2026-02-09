@@ -1,6 +1,7 @@
 import pytest
 from sqlalchemy import text
 
+
 pytestmark = pytest.mark.anyio
 
 
