@@ -68,7 +68,7 @@ async def test_tracking_stats_permissions(app_client):
 
     response = await app_client.get("/tracking/stats", headers={"X-Session-Token": user_token})
     assert response.status_code == 403
-    assert response.json().get("detail") == "admin_required"
+    assert response.json().get("message") == "admin_required"
 
     admin_stats = await app_client.get("/tracking/stats", headers={"X-Session-Token": admin_token})
     assert admin_stats.status_code == 200

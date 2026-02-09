@@ -3,7 +3,6 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import get_auth_service, get_paths_service, get_user_paths_service, require_session
-from backend.api.schemas.common import ErrorResponse
 from backend.api.schemas.paths import (
     DeletePathResponse,
     PathCreateRequest,
@@ -95,6 +94,8 @@ async def unselect_path(
         dict: Removal result.
     """
     removed = await user_paths.remove_user_path(current_user, path_id)
+    if removed == 0:
+        raise HTTPException(status_code=404, detail="path_not_selected")
     return {"removed": removed}
 
 
@@ -143,7 +144,7 @@ async def list_selected_paths(
     return await user_paths.list_user_paths(current_user)
 
 
-@router.get("/{path_id}", response_model=PathDetailResponse | ErrorResponse)
+@router.get("/{path_id}", response_model=PathDetailResponse)
 async def get_path(
     path_id: int,
     current_user: str = Depends(require_session),
@@ -156,10 +157,12 @@ async def get_path(
         current_user: Authenticated username.
 
     Returns:
-        dict: Path payload or not_found.
+        dict: Path payload.
     """
     path = await paths.get_path(path_id)
-    return path or {"error": "not_found"}
+    if not path:
+        raise HTTPException(status_code=404, detail="not_found")
+    return path
 
 
 @router.delete("/{path_id}", response_model=DeletePathResponse)
@@ -181,7 +184,10 @@ async def remove_path(
     if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
 
-    return {"deleted": await paths.delete_path(path_id)}
+    deleted = await paths.delete_path(path_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="not_found")
+    return {"deleted": deleted}
 
 
 @router.put("/{path_id}", response_model=PathDetailResponse)

@@ -47,7 +47,18 @@ async def test_create_course_admin_only(app_client):
         headers={"X-Session-Token": user_token},
     )
     assert response.status_code == 403
-    assert response.json().get("detail") == "admin_required"
+    assert response.json().get("message") == "admin_required"
+
+
+@pytest.mark.integration
+async def test_get_course_not_found_returns_404(app_client):
+    """Missing courses return 404."""
+    token = await _login_admin(app_client)
+    response = await app_client.get("/courses/999999", headers={"X-Session-Token": token})
+    assert response.status_code == 404
+    body = response.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "not_found"
 
 
 @pytest.mark.integration

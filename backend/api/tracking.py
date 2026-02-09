@@ -96,6 +96,8 @@ async def delete_tracking(
         raise HTTPException(status_code=400, detail="invalid_course_id")
 
     removed = await tracking.remove_tracking(colleague_id, course_id_int)
+    if removed == 0:
+        raise HTTPException(status_code=404, detail="not_found")
     return {"removed": removed}
 
 

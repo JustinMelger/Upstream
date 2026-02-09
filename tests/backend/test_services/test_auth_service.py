@@ -45,6 +45,7 @@ async def test_is_admin_checks_role(db_session):
 async def test_session_lifecycle(db_session):
     """Sessions can be created, retrieved, and revoked."""
     auth_service = AuthService(AuthRepository(db_session))
+    await auth_service.create_user("carol", "pass123", "user")
     token = (await auth_service.create_session("carol"))["token"]
     session = await auth_service.get_session(token)
     assert session["colleague_id"] == "carol"
@@ -58,6 +59,7 @@ async def test_session_lifecycle(db_session):
 async def test_expired_session_is_purged(db_session):
     """Expired sessions are removed and not returned."""
     auth_service = AuthService(AuthRepository(db_session))
+    await auth_service.create_user("dave", "pass123", "user")
     token = (await auth_service.create_session("dave"))["token"]
 
     past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()

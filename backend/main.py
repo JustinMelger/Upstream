@@ -1,6 +1,5 @@
-from datetime import datetime, timezone
-
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from backend.api import auth, courses, paths, tracking
@@ -22,6 +21,21 @@ app.include_router(courses.router)
 app.include_router(paths.router)
 app.include_router(tracking.router)
 app.include_router(auth.router)
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Return a standard envelope for non-domain HTTP errors."""
+    return JSONResponse(status_code=exc.status_code, content=format_service_error(exc))
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Return a standard envelope for request validation errors."""
+    return JSONResponse(
+        status_code=422,
+        content=format_service_error(HTTPException(status_code=422, detail="validation_error")),
+    )
 
 
 @app.exception_handler(AuthServiceError)

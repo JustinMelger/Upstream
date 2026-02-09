@@ -9,6 +9,7 @@ async def test_auth_login_rejects_non_string_username(app_client):
     """Auth login request validation rejects invalid field types."""
     response = await app_client.post("/auth/login", json={"username": 123, "password": "admin"})
     assert response.status_code == 422
+    assert response.json().get("message") == "validation_error"
 
 
 @pytest.mark.integration
@@ -18,6 +19,7 @@ async def test_courses_create_rejects_non_string_title(app_client):
     token = login.json()["token"]
     response = await app_client.post("/courses", json={"title": 123}, headers={"X-Session-Token": token})
     assert response.status_code == 422
+    assert response.json().get("message") == "validation_error"
 
 
 @pytest.mark.integration
@@ -31,6 +33,7 @@ async def test_paths_create_rejects_non_int_course_ids(app_client):
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 422
+    assert response.json().get("message") == "validation_error"
 
 
 @pytest.mark.integration
@@ -48,3 +51,4 @@ async def test_tracking_set_rejects_non_string_status(app_client):
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 422
+    assert response.json().get("message") == "validation_error"
