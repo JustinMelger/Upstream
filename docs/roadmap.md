@@ -27,7 +27,7 @@
 - [x] Add async SQLAlchemy session-per-request scaffolding (`backend/database/session.py`).
 - [x] Add Alembic (`alembic/`, `alembic.ini`) and an initial migration matching the current schema.
 - [x] Add local helpers (`just db-up`, `just migrate`) and basic docs.
-- [ ] Update CI to run migrations (Postgres service + `alembic upgrade head`) before tests.
+- [x] Update CI to run migrations (Postgres service + `alembic upgrade head`) before tests.
 - [ ] Migrate incrementally: `courses` first, then `paths` + `path_courses`, then `tracking`, then `auth` + `sessions`.
 - [ ] Move API integration tests to `httpx.AsyncClient` + `pytest-anyio`.
 - [ ] One-time idempotent data migration from `learning_hub.db` (and `courses.csv`) into Postgres.

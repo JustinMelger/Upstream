@@ -1,13 +1,22 @@
 from __future__ import annotations
 
+import asyncio
 from logging.config import fileConfig
 import os
+from pathlib import Path
+import sys
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+
+# Ensure the repository root is on sys.path so `import backend` works when Alembic runs.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from backend.database.orm_models import Base
 
 
@@ -67,6 +76,5 @@ async def run_migrations_online() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    import asyncio
 
     asyncio.run(run_migrations_online())
