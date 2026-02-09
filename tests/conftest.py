@@ -51,9 +51,15 @@ def configure_test_env(database_url: str) -> Iterator[None]:
 
 
 @pytest.fixture(scope="session")
-def apply_migrations(database_url: str) -> Iterator[None]:
-    """Ensure the schema is up-to-date for the test database."""
+def apply_migrations(configure_test_env: None, database_url: str) -> Iterator[None]:
+    """Ensure the schema is up-to-date for the test database.
+
+    This fixture pins `DATABASE_URL` before running Alembic so migrations are
+    applied to the same database the SQLAlchemy engine will connect to.
+    """
+    os.environ["DATABASE_URL"] = database_url
     cfg = Config("alembic.ini")
+    cfg.set_main_option("sqlalchemy.url", database_url)
     command.upgrade(cfg, "head")
     yield
 
