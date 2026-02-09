@@ -105,6 +105,7 @@ async def db_reset(
         )
         tables = [(str(row[0]), str(row[1])) for row in result.all()]
         if tables:
+
             def _qi(identifier: str) -> str:
                 return '"' + identifier.replace('"', '""') + '"'
 
