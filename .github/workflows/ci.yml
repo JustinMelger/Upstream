@@ -133,7 +133,14 @@ jobs:
         run: uv run alembic upgrade head
 
       - name: Run unit tests
-        run: uv run pytest -m unit
+        run: |
+          COVERAGE_FILE=.coverage.unit uv run pytest -m unit --cov=backend --cov-branch --cov-report=
+
+      - name: Upload unit coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: .coverage.unit
 
   integration:
     runs-on: ubuntu-latest
@@ -174,29 +181,20 @@ jobs:
         run: uv run alembic upgrade head
 
       - name: Run integration tests
-        run: uv run pytest -m integration
+        run: |
+          COVERAGE_FILE=.coverage.integration uv run pytest -m integration --cov=backend --cov-branch --cov-report=
 
-  coverage:
+      - name: Upload integration coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration
+          path: .coverage.integration
+
+  coverage_report:
     runs-on: ubuntu-latest
     needs: integration
     permissions:
       contents: write
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: learning_platform
-          POSTGRES_USER: learning_platform
-          POSTGRES_PASSWORD: learning_platform
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U learning_platform -d learning_platform"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -212,11 +210,21 @@ jobs:
           pip install uv
           uv sync --no-install-project --group dev --frozen
 
-      - name: Run Alembic migrations
-        run: uv run alembic upgrade head
+      - name: Download unit coverage data
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit
+
+      - name: Download integration coverage data
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-integration
 
       - name: Run tests with coverage
-        run: uv run pytest --cov=backend --cov-branch --cov-report=xml --cov-report=term-missing
+        run: |
+          uv run coverage combine .coverage.unit .coverage.integration
+          uv run coverage xml -o coverage.xml
+          uv run coverage report --show-missing --skip-covered
 
       - name: Generate coverage badge
         run: uv run python scripts/gen_coverage_badge.py coverage.xml docs/badges/coverage.svg
@@ -259,7 +267,7 @@ jobs:
 
   coverage_badge:
     runs-on: ubuntu-latest
-    needs: [coverage, release]
+    needs: [coverage_report, release]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
@@ -273,11 +281,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage
+          path: /tmp/coverage_artifacts
+
+      - name: Sync to Latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
 
       - name: Commit coverage badge
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p docs/badges
+          cp -f /tmp/coverage_artifacts/docs/badges/coverage.svg docs/badges/coverage.svg
           git add docs/badges/coverage.svg
           if git diff --cached --quiet; then
             echo "No badge changes to commit."
