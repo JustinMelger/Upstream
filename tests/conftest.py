@@ -93,14 +93,23 @@ async def db_reset(
 ) -> AsyncIterator[None]:
     """Keep DB-backed tests isolated by truncating all tables between tests."""
     async with engine.begin() as conn:
-        await conn.execute(
+        result = await conn.execute(
             text(
-                "TRUNCATE TABLE "
-                "public.user_paths, public.tracking, public.path_courses, public.paths, "
-                "public.courses, public.sessions, public.users "
-                "RESTART IDENTITY CASCADE"
+                "SELECT table_schema, table_name "
+                "FROM information_schema.tables "
+                "WHERE table_type = 'BASE TABLE' "
+                "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                "AND table_name != 'alembic_version' "
+                "ORDER BY table_schema, table_name"
             )
         )
+        tables = [(str(row[0]), str(row[1])) for row in result.all()]
+        if tables:
+            def _qi(identifier: str) -> str:
+                return '"' + identifier.replace('"', '""') + '"'
+
+            qualified = ", ".join(f"{_qi(schema)}.{_qi(name)}" for schema, name in tables)
+            await conn.execute(text(f"TRUNCATE TABLE {qualified} RESTART IDENTITY CASCADE"))
     yield
 
 
