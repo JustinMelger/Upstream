@@ -48,8 +48,3 @@ def health():
         dict: Simple status payload.
     """
     return {"status": "ok"}
-
-
-def on_startup():
-    """Deprecated: schema work is handled by Alembic."""
-    return None
