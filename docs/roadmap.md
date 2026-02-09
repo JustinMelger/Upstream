@@ -45,6 +45,9 @@
 
 ## Phase 5 — UI migration to NiceGUI
 - [ ] Create NiceGUI shell app with shared navigation and layout.
+- [ ] Adopt frontend architecture: pages + components + services + `ApiClient` + `SessionStore` (`docs/architecture_frontend.md`).
+- [ ] Implement `ApiClient` with `X-Session-Token` injection and standard error mapping.
+- [ ] Implement `SessionStore` for token persistence + current-user loading (`/auth/me`).
 - [ ] Port login/session flow to NiceGUI (reuse backend auth).
 - [ ] Port core pages: Home/Dashboard, Courses, My Courses.
 - [ ] Port Paths + My Paths (including ordering UI and admin edit flows).
