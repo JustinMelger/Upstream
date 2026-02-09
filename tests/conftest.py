@@ -78,7 +78,9 @@ def apply_migrations(configure_test_env: None, database_url: str) -> Iterator[No
                 tables = {(str(r[0]), str(r[1])) for r in tables_result.all()}
                 if ("public", "courses") not in tables:
                     # Print helpful diagnostics for CI runs before failing.
-                    db_result = await conn.execute(text("SELECT current_database(), current_schema(), current_setting('search_path')"))
+                    db_result = await conn.execute(
+                        text("SELECT current_database(), current_schema(), current_setting('search_path')")
+                    )
                     db_row = db_result.first()
                     print(f"alembic verification failed: tables={sorted(tables)}", flush=True)
                     print(f"db info: {db_row}", flush=True)
