@@ -17,6 +17,11 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 2. Open the UI:
    - `http://localhost:8502`
 
+## Database migrations (Postgres)
+When using Postgres (Phase 4), set `DATABASE_URL` and run:
+- `just db-up`
+- `just migrate`
+
 ### Live reload (Docker Compose watch)
 1. Ensure Docker Compose supports `watch`:
    - `docker compose version`

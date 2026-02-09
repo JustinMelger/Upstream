@@ -1,0 +1,6 @@
+This directory contains Alembic migrations for the Learning Platform database.
+
+Usage:
+  - Set `DATABASE_URL` (async URL, e.g. `postgresql+asyncpg://...`)
+  - Run `uv run alembic upgrade head`
+
