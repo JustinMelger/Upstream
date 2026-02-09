@@ -61,6 +61,32 @@ def apply_migrations(configure_test_env: None, database_url: str) -> Iterator[No
     cfg = Config("alembic.ini")
     cfg.set_main_option("sqlalchemy.url", database_url)
     command.upgrade(cfg, "head")
+
+    async def _verify_schema() -> None:
+        engine = create_async_engine(database_url, pool_pre_ping=True)
+        try:
+            async with engine.begin() as conn:
+                tables_result = await conn.execute(
+                    text(
+                        "SELECT table_schema, table_name "
+                        "FROM information_schema.tables "
+                        "WHERE table_type = 'BASE TABLE' "
+                        "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                        "ORDER BY table_schema, table_name"
+                    )
+                )
+                tables = {(str(r[0]), str(r[1])) for r in tables_result.all()}
+                if ("public", "courses") not in tables:
+                    # Print helpful diagnostics for CI runs before failing.
+                    db_result = await conn.execute(text("SELECT current_database(), current_schema(), current_setting('search_path')"))
+                    db_row = db_result.first()
+                    print(f"alembic verification failed: tables={sorted(tables)}", flush=True)
+                    print(f"db info: {db_row}", flush=True)
+                    raise RuntimeError("Alembic migrations did not create expected tables in public schema.")
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_verify_schema())
     yield
 
 
