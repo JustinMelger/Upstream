@@ -1,3 +1,10 @@
+## [0.4.3](https://github.com/JustinMelger/learning-platform/compare/v0.4.2...v0.4.3) (2026-02-09)
+
+
+### Bug Fixes
+
+* **ci:** artefact creation ([2b8e637](https://github.com/JustinMelger/learning-platform/commit/2b8e637c54629d7605d15058d439170bf01d71bd))
+
 ## [0.4.2](https://github.com/JustinMelger/learning-platform/compare/v0.4.1...v0.4.2) (2026-02-09)
 
 
