@@ -82,3 +82,186 @@ Notes:
 - Pages should stay thin (UI composition + event handlers).
 - Frontend services should contain “workflow logic” (for example refresh lists after mutations).
 - `ApiClient` should be the only place that knows about HTTP and error envelopes.
+
+## Pages And Routes
+
+Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
+
+- `/login`: Authenticate and create a session.
+- `/`: Home/Dashboard (personal overview + quick links).
+- `/courses`: Browse/search courses.
+- `/courses/my`: Personal course tracking ("My Courses").
+- `/paths`: Browse learning paths.
+- `/paths/my`: Selected paths and progress ("My Paths").
+- `/admin/users`: User management (admin only).
+
+Notes:
+
+- Guard all routes except `/login` behind `SessionStore.current_user()`.
+- Admin routes additionally check `role == "admin"`.
+
+## Page Responsibilities
+
+### LoginPage (`/login`)
+Responsibilities:
+
+- Render username/password inputs.
+- Call `SessionStore.login(username, password)` and handle errors.
+- Redirect to `/` on success.
+
+Backend endpoints:
+
+- `POST /auth/login`
+- `GET /auth/me` (optional post-login verification)
+
+### HomePage (`/`)
+Responsibilities:
+
+- Render current user and role.
+- Show quick links to Courses, Paths, and Tracking.
+- Optionally show recent team activity for admins.
+
+Backend endpoints (optional):
+
+- `GET /auth/me`
+- `GET /tracking/recent` (admin)
+
+### CoursesPage (`/courses`)
+Responsibilities:
+
+- Render filters (query/provider/category/level).
+- Call `CoursesService.list_courses(...)`.
+- Admin-only create/update/delete flows.
+
+Backend endpoints:
+
+- `GET /courses`
+- `POST /courses` (admin)
+- `PUT /courses/{id}` (admin)
+- `DELETE /courses/{id}` (admin)
+
+### MyCoursesPage (`/courses/my`)
+Responsibilities:
+
+- Render personal tracking table (course + status).
+- Update a course status with inline controls.
+- Remove tracking entries.
+
+Backend endpoints:
+
+- `GET /tracking` (self)
+- `POST /tracking`
+- `POST /tracking/delete`
+
+### PathsPage (`/paths`)
+Responsibilities:
+
+- Render all paths (name, description).
+- Open path detail view (courses ordered).
+- Admin-only create/update/delete flows for paths.
+
+Backend endpoints:
+
+- `GET /paths`
+- `GET /paths/{id}`
+- `POST /paths` (admin)
+- `PUT /paths/{id}` (admin)
+- `DELETE /paths/{id}` (admin)
+
+### MyPathsPage (`/paths/my`)
+Responsibilities:
+
+- Render selected paths list.
+- Allow select/unselect.
+- Set per-path status.
+
+Backend endpoints:
+
+- `GET /paths/selected/list`
+- `POST /paths/{id}/select`
+- `POST /paths/{id}/unselect`
+- `POST /paths/{id}/status`
+
+### AdminUsersPage (`/admin/users`)
+Responsibilities:
+
+- List users.
+- Create user.
+- Reset password.
+- Disable/enable user.
+- Delete user.
+
+Backend endpoints:
+
+- `GET /auth/users`
+- `POST /auth/users`
+- `POST /auth/users/reset`
+- `POST /auth/users/disable`
+- `DELETE /auth/users/{username}`
+
+## Expanded Domain Model
+
+```mermaid
+classDiagram
+  class PathsService {
+    +list_paths(): list
+    +get_path(id:int): dict
+    +create_path(payload): dict
+    +update_path(id:int, payload): dict
+    +delete_path(id:int): bool
+  }
+
+  class UserPathsService {
+    +list_selected_paths(): list
+    +select_path(id:int): dict
+    +unselect_path(id:int): dict
+    +set_path_status(id:int, status:str): dict
+  }
+
+  class TrackingService {
+    +list_tracking(colleague_id: str|None): list
+    +upsert_tracking(course_id:int, status:str): dict
+    +delete_tracking(course_id:int): dict
+    +stats(colleague_id: str|None): dict
+    +recent(limit:int): list
+  }
+
+  class UsersAdminService {
+    +list_users(): list
+    +create_user(payload): dict
+    +reset_password(payload): dict
+    +disable_user(payload): dict
+    +delete_user(username:str): dict
+  }
+
+  class LoginPage { +render() }
+  class HomePage { +render() }
+  class PathsPage { +render() }
+  class MyPathsPage { +render() }
+  class MyCoursesPage { +render() }
+  class AdminUsersPage { +render() }
+
+  LoginPage --> SessionStore
+  HomePage --> SessionStore
+  HomePage --> TrackingService
+  PathsPage --> PathsService
+  MyPathsPage --> UserPathsService
+  MyCoursesPage --> TrackingService
+  AdminUsersPage --> UsersAdminService
+
+  PathsService --> ApiClient
+  UserPathsService --> ApiClient
+  TrackingService --> ApiClient
+  UsersAdminService --> ApiClient
+  ApiClient --> SessionStore : token
+```
+
+## Error Handling And UX
+
+Recommended approach:
+
+- `ApiClient` raises a typed exception (for example `ApiError(status_code, message, timestamp)`).
+- Pages catch `ApiError` and render a consistent toast/dialog.
+- Treat `401` as "session expired": clear token in `SessionStore` and redirect to `/login`.
+
+This keeps errors consistent across all pages.
