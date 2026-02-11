@@ -45,6 +45,15 @@ def apply_theme() -> None:
           color: var(--lp-text);
         }
 
+        html {
+          background-color: var(--lp-bg0);
+          min-height: 100%;
+        }
+
+        body {
+          min-height: 100vh;
+        }
+
         a { color: var(--lp-accent); }
         a:hover { text-decoration: underline; }
 
@@ -115,6 +124,15 @@ def apply_theme() -> None:
           background: var(--lp-surface) !important;
           border: 1px solid var(--lp-border);
           border-radius: var(--lp-radius);
+        }
+
+        /* Ensure no white "page" shows while scrolling (Quasar layout containers). */
+        body #q-app,
+        body .q-layout,
+        body .q-page-container,
+        body .q-page {
+          background: transparent !important;
+          color: var(--lp-text) !important;
         }
 
         /* Tables */
