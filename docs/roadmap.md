@@ -44,13 +44,19 @@
 - [x] Revisit transaction boundaries: avoid opening explicit transactions for read-only operations unless needed.
 
 ## Phase 5 — UI migration to NiceGUI
-- [ ] Create NiceGUI shell app with shared navigation and layout.
-- [ ] Adopt frontend architecture: pages + components + services + `ApiClient` + `SessionStore` (`docs/architecture_frontend.md`).
-- [ ] Implement `ApiClient` with `X-Session-Token` injection and standard error mapping.
-- [ ] Implement `SessionStore` for token persistence + current-user loading (`/auth/me`).
-- [ ] Port login/session flow to NiceGUI (reuse backend auth).
-- [ ] Port core pages: Home/Dashboard, Courses, My Courses.
-- [ ] Port Paths + My Paths (including ordering UI and admin edit flows).
+- [x] Create NiceGUI shell app with shared navigation and layout.
+- [x] Adopt frontend architecture: pages + components + services + `ApiClient` + `SessionStore` (`docs/architecture_frontend.md`).
+- [x] Implement `ApiClient` with `X-Session-Token` injection and standard error mapping.
+- [x] Implement `SessionStore` for token persistence + current-user loading (`/auth/me`).
+- [x] Port login/session flow to NiceGUI (reuse backend auth).
+- [x] Port core pages: Home/Dashboard, Courses, My Courses.
+- [x] Port Paths + My Paths (including ordering UI and admin edit flows).
+- [x] Enforce consistent page layout: wrap all page content (filters/actions/tables) inside `render_container()`.
+- [ ] Introduce frontend “services/use-cases” layer to keep pages thin and reduce duplicated orchestration (courses+tracking, paths+selected, dashboard aggregates).
+- [ ] Make navigation role-aware (hide admin-only routes in the shell unless `role == "admin"`).
+- [ ] Remove cross-page coupling by moving shared UI helpers (e.g. status chip helpers) into shared `components/` utilities.
+- [ ] Improve `ApiClient` runtime behavior: reuse a persistent `httpx.AsyncClient` for connection pooling.
+- [ ] Improve `ApiClient` resilience: map `httpx.RequestError` into a user-friendly `ApiError`.
 - [ ] Parity check + remove Streamlit UI once stable.
 
 ## Phase 6 — Colleague tracking + analytics
