@@ -57,6 +57,38 @@ def apply_theme() -> None:
         a { color: var(--lp-accent); }
         a:hover { text-decoration: underline; }
 
+        /* Login: dedicated background layer (page-local element). */
+        @keyframes lp-login-drift {
+          0%   { transform: translate3d(-2%, -2%, 0) scale(1.05); }
+          50%  { transform: translate3d(2%, -1%, 0) scale(1.08); }
+          100% { transform: translate3d(-1%, 2%, 0) scale(1.06); }
+        }
+
+        .lp-login-bg {
+          position: fixed;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background: linear-gradient(180deg, var(--lp-bg0), var(--lp-bg1));
+        }
+
+        .lp-login-bg::before {
+          content: "";
+          position: absolute;
+          inset: -20%;
+          background:
+            radial-gradient(900px 520px at 18% 14%, rgba(45, 212, 191, 0.24), transparent 58%),
+            radial-gradient(820px 520px at 86% 18%, rgba(56, 189, 248, 0.20), transparent 55%),
+            radial-gradient(900px 720px at 60% 96%, rgba(251, 113, 133, 0.14), transparent 58%);
+          animation: lp-login-drift 18s ease-in-out infinite;
+          opacity: 1;
+        }
+
+        .lp-brand {
+          font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+          letter-spacing: 0.2px;
+        }
+
         /* Layout */
         .lp-header {
           background: rgba(10, 16, 28, 0.55) !important;
