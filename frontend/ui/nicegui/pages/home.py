@@ -452,6 +452,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             meta
 
             if mode is not None:
+
                 async def _on_mode_change(_: Any) -> None:
                     await _load()
 

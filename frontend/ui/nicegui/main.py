@@ -13,7 +13,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.theme import apply_theme
-from frontend.ui.nicegui.pages import ai_curator, admin_users, courses, home, login, my_courses, my_paths, paths, placeholders
+from frontend.ui.nicegui.pages import admin_users, ai_curator, courses, home, login, my_courses, my_paths, paths, placeholders
 
 
 def create_app() -> None:

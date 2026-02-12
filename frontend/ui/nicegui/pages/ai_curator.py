@@ -98,10 +98,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             ui.label("Edit draft course").classes("text-xl font-semibold")
                                             t = ui.input("Title", value=str(current.get("title") or "")).classes("w-full")
                                             p = ui.input("Provider", value=str(current.get("provider") or "")).classes("w-full")
-                                            cat = ui.input("Category", value=str(current.get("category") or "")).classes("w-full")
+                                            cat = ui.input("Category", value=str(current.get("category") or "")).classes(
+                                                "w-full"
+                                            )
                                             lvl = ui.input("Level", value=str(current.get("level") or "")).classes("w-full")
                                             u = ui.input("URL", value=str(current.get("url") or "")).classes("w-full")
                                             with ui.row().classes("justify-end mt-4"):
+
                                                 def _save() -> None:
                                                     current["title"] = str(t.value or "").strip()
                                                     current["provider"] = str(p.value or "").strip()

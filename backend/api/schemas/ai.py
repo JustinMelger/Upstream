@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 """Schemas for AI curation endpoints.
 
 These endpoints return *draft* content only and must not write to the database.
@@ -40,4 +41,3 @@ class AiPlanResponse(APIModel):
     goal: str
     path: AiDraftPath
     courses: list[AiDraftCourse] = Field(default_factory=list)
-

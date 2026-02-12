@@ -50,4 +50,3 @@ async def create_plan(
             for c in draft_courses
         ],
     }
-

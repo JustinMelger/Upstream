@@ -74,6 +74,7 @@ def _show_path_details_dialog(
         ).classes("w-full")
 
         with ui.row().classes("justify-end mt-4"):
+
             async def _update() -> None:
                 await on_update_status(str(status_select.value or ""))
 
