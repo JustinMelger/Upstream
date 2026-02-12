@@ -48,3 +48,10 @@ db-init: db-up db-wait migrate
 
 ui:
 	BACKEND_URL={{BACKEND_URL}} uv run python -m frontend.ui.nicegui.main
+
+backend:
+	DATABASE_URL={{DATABASE_URL}} uv run uvicorn backend.main:app --reload --port 8000
+
+dev: db-init
+	@echo "Starting backend + UI (Ctrl+C stops the foreground process; you may need to stop the other one separately)."
+	just backend & just ui

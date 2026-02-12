@@ -67,3 +67,12 @@
 ## Phase 7 — Data durability + polish
 - [ ] Import/export tools for course data.
 - [ ] UI polish + accessibility improvements.
+
+## Phase 8 — AI Curation (optional)
+- [ ] Add an “AI Curator” backend service that turns a user goal into a proposed learning plan (draft path + ordered draft courses).
+- [ ] Implement “suggest then approve”: UI preview with edit/remove/reorder before persisting.
+- [ ] Add course discovery step (start with constrained sources) and normalize results to the course schema.
+- [ ] Add de-duplication heuristics (URL-based + provider/title similarity).
+- [ ] Add provenance fields for AI-suggested content (e.g. `source`, `source_url`, `confidence`) and surface them in UI.
+- [ ] Run discovery as a background job (avoid blocking request/response; show progress + retries).
+- [ ] Persist approved drafts via existing domain services (`CoursesService`, `PathsService`, `TrackingService`) to keep consistency.

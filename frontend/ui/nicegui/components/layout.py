@@ -24,6 +24,7 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
             # A compact menu keeps navigation usable on small screens.
             with ui.dropdown_button("Menu", icon="menu", auto_close=True).props("outline dense"):
                 ui.menu_item("Home", on_click=lambda: ui.navigate.to("/"))
+                ui.menu_item("AI Curator", on_click=lambda: ui.navigate.to("/ai"))
                 ui.menu_item("Courses", on_click=lambda: ui.navigate.to("/courses"))
                 ui.menu_item("My Courses", on_click=lambda: ui.navigate.to("/courses/my"))
                 ui.menu_item("Paths", on_click=lambda: ui.navigate.to("/paths"))
