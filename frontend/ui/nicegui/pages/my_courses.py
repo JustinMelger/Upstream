@@ -233,7 +233,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             status_filter.on("update:model-value", _refresh)
 
             with ui.row().classes("items-center justify-between w-full"):
-                refresh_btn = ui.button("Refresh", on_click=lambda: asyncio.create_task(_load())).props("outline")
+                refresh_btn = ui.button("Refresh", on_click=_load).props("outline")
 
             await _load()
             courses_list()

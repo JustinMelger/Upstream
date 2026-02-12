@@ -18,7 +18,7 @@ def test_import_nicegui_main_module() -> None:
 
 @pytest.mark.unit
 def test_pages_expose_register_callable() -> None:
-    from frontend.ui.nicegui.pages import admin_users, courses, home, login, my_courses, my_paths, paths, placeholders
+    from frontend.ui.nicegui.pages import ai_curator, admin_users, courses, home, login, my_courses, my_paths, paths, placeholders
 
-    for mod in [admin_users, courses, home, login, my_courses, my_paths, paths, placeholders]:
+    for mod in [ai_curator, admin_users, courses, home, login, my_courses, my_paths, paths, placeholders]:
         assert callable(getattr(mod, "register", None))

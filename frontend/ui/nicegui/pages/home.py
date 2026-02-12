@@ -223,19 +223,19 @@ def _render_course_list_card(*, title: str, ids: list[int], title_by_id: dict[in
             ui.label(f"• {title_by_id.get(cid) or f'Course {cid}'}").classes("text-sm")
 
 
-async def _render_selected_path_progress(
+def _render_selected_path_progress_cards(
     *,
-    api: ApiClient,
-    selected_paths: list[dict[str, Any]],
+    path_details: list[dict[str, Any]],
     tracking: dict[int, str],
 ) -> None:
-    """Render path progress cards for the user's selected paths."""
-    shown = selected_paths[:5]
-    details = await asyncio.gather(*[(_load_path_detail(api=api, path_id=int(p.get("id") or 0))) for p in shown])
+    """Render path progress cards for the user's selected paths.
 
-    for detail in details:
-        if not detail:
-            continue
+    Note:
+        This function is intentionally synchronous. NiceGUI UI elements must be
+        created within the page's active slot; do not call UI code from
+        background tasks.
+    """
+    for detail in path_details:
         courses_in_path = list(detail.get("courses") or [])
         total = len(courses_in_path)
         completed = sum(1 for c in courses_in_path if tracking.get(int(c.get("id") or 0), "") == "completed")
@@ -276,6 +276,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             courses: list[dict[str, Any]] = []
             paths: list[dict[str, Any]] = []
             selected_paths: list[dict[str, Any]] = []
+            selected_path_details: list[dict[str, Any]] = []
             tracking_rows: list[dict[str, Any]] = []
             snapshot_stats: dict[str, int] = {}
             team_recent: list[dict[str, Any]] = []
@@ -290,6 +291,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             async def _load() -> None:
                 nonlocal courses, paths, selected_paths, tracking_rows, snapshot_stats, team_recent, team_stats_by_user
+                nonlocal selected_path_details
                 nonlocal loading
                 if loading:
                     return
@@ -312,6 +314,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     team_stats_by_user = list(data["team_stats_by_user"])
                     team_recent = list(data["team_recent"])
 
+                    # Prefetch path detail for progress cards (limit to 5).
+                    tracking = _tracking_map(tracking_rows)
+                    shown = selected_paths[:5]
+                    details = await asyncio.gather(
+                        *[(_load_path_detail(api=api, path_id=int(p.get("id") or 0))) for p in shown]
+                    )
+                    selected_path_details = [d for d in details if d]
+
                     dashboard.refresh()
                     meta.text = "Updated"
                 except Exception as exc:  # ApiError already stringifies nicely, but keep this generic.
@@ -319,6 +329,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses = []
                     paths = []
                     selected_paths = []
+                    selected_path_details = []
                     tracking_rows = []
                     snapshot_stats = {}
                     team_recent = []
@@ -355,14 +366,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if not selected_paths:
                     ui.label("No paths selected yet.").classes("text-sm text-gray-600")
                 else:
-                    # Limit to 5 for UX; detail calls are per-path.
-                    ui.timer(
-                        0.0,
-                        lambda: asyncio.create_task(
-                            _render_selected_path_progress(api=api, selected_paths=selected_paths, tracking=tracking)
-                        ),
-                        once=True,
-                    )
+                    _render_selected_path_progress_cards(path_details=selected_path_details, tracking=tracking)
 
                 ui.separator()
 
@@ -443,12 +447,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ui.label(f"• {c.get('title') or ''} — {c.get('provider') or ''}{date_str}").classes("text-sm")
 
             with ui.row().classes("items-center justify-between w-full"):
-                refresh_btn = ui.button("Refresh", on_click=lambda: asyncio.create_task(_load())).props("outline")
+                refresh_btn = ui.button("Refresh", on_click=_load).props("outline")
                 ui.label(f"Signed in as {username} ({role})").classes("text-sm text-gray-600")
             meta
 
             if mode is not None:
-                mode.on("update:model-value", lambda _: asyncio.create_task(_load()))
+                async def _on_mode_change(_: Any) -> None:
+                    await _load()
+
+                mode.on("update:model-value", _on_mode_change)
 
             await _load()
             dashboard()

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -31,11 +30,6 @@ def _filter_selected_paths(selected: list[dict[str, Any]] | None, *, needle: str
 async def _load_selected_paths(api: ApiClient) -> list[dict[str, Any]]:
     """Load the current user's selected paths."""
     return list(await api.get("/paths/selected/list") or [])
-
-
-def _run(coro: Awaitable[Any]) -> None:
-    """Schedule a coroutine without awaiting it (NiceGUI event handlers)."""
-    asyncio.create_task(coro)
 
 
 def _show_path_details_dialog(
@@ -80,16 +74,16 @@ def _show_path_details_dialog(
         ).classes("w-full")
 
         with ui.row().classes("justify-end mt-4"):
-            ui.button(
-                "Update status",
-                on_click=lambda: _run(on_update_status(str(status_select.value or ""))),
-            ).props("outline")
+            async def _update() -> None:
+                await on_update_status(str(status_select.value or ""))
+
+            ui.button("Update status", on_click=_update).props("outline")
 
             async def _remove() -> None:
                 await on_unselect()
                 dialog.close()
 
-            ui.button("Unselect", on_click=lambda: _run(_remove())).props("color=negative outline")
+            ui.button("Unselect", on_click=_remove).props("color=negative outline")
             ui.button("Close", on_click=dialog.close).props("outline")
 
     dialog.open()
@@ -150,21 +144,28 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         label=None,
                                     ).props("dense")
 
+                                    async def _do_set(_pid: int = pid, _sel=status_select) -> None:
+                                        await _set_status(_pid, str(_sel.value or ""))
+
                                     ui.button(
                                         "Set",
-                                        on_click=lambda _pid=pid, _sel=status_select: _run(
-                                            _set_status(_pid, str(_sel.value or ""))
-                                        ),
+                                        on_click=_do_set,
                                     ).props("dense outline")
+
+                                    async def _do_view(_pid: int = pid) -> None:
+                                        await _open_details(_pid)
 
                                     ui.button(
                                         "View",
-                                        on_click=lambda _pid=pid: _run(_open_details(_pid)),
+                                        on_click=_do_view,
                                     ).props("dense outline")
+
+                                    async def _do_unselect(_pid: int = pid) -> None:
+                                        await _unselect(_pid)
 
                                     ui.button(
                                         "Unselect",
-                                        on_click=lambda _pid=pid: _run(_unselect(_pid)),
+                                        on_click=_do_unselect,
                                     ).props("dense color=negative outline")
 
             async def _load_selected() -> None:
@@ -215,7 +216,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             status_filter.on("update:model-value", lambda *_: paths_list.refresh())
 
             with ui.row().classes("items-center justify-between w-full"):
-                refresh_btn = ui.button("Refresh", on_click=lambda: _run(_load_selected())).props("outline")
+                refresh_btn = ui.button("Refresh", on_click=_load_selected).props("outline")
 
             await _load_selected()
             paths_list()

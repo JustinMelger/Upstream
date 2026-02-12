@@ -13,6 +13,7 @@ from backend.api.schemas.auth import (
     RoleResponse,
     UserListItem,
 )
+from backend.api.schemas.ai import AiDraftCourse, AiDraftPath, AiPlanRequest, AiPlanResponse
 from backend.api.schemas.common import APIModel, ErrorResponse, HealthResponse
 from backend.api.schemas.courses import CourseCreateRequest, CoursePayload, CourseUpdateRequest, DeleteCourseResponse
 from backend.api.schemas.paths import (
@@ -41,6 +42,10 @@ __all__ = [
     "APIModel",
     "ErrorResponse",
     "HealthResponse",
+    "AiPlanRequest",
+    "AiPlanResponse",
+    "AiDraftPath",
+    "AiDraftCourse",
     "LoginRequest",
     "LoginResponse",
     "MeResponse",

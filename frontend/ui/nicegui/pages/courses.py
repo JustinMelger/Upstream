@@ -418,7 +418,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             with ui.row().classes("items-center justify-between w-full"):
                 with ui.row().classes("items-center gap-2"):
-                    refresh_btn = ui.button("Refresh", on_click=lambda: asyncio.create_task(_load())).props("outline")
+                    refresh_btn = ui.button("Refresh", on_click=_load).props("outline")
                     if is_admin:
                         ui.button("New course", on_click=_render_create_course_dialog)
 

@@ -400,9 +400,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 ui.button("Create path", on_click=_create)
 
-            with ui.row().classes("items-center justify-between w-full mt-2"):
-                refresh_btn = ui.button("Refresh", on_click=lambda: asyncio.create_task(_load_all())).props("outline")
-
             async def _load_all() -> None:
                 """Reload all data for this page."""
                 nonlocal paths, selected_by_id, courses, course_by_id, loading
@@ -429,6 +426,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 finally:
                     loading = False
                     refresh_btn.enable()
+
+            with ui.row().classes("items-center justify-between w-full mt-2"):
+                refresh_btn = ui.button("Refresh", on_click=_load_all).props("outline")
 
             await _load_all()
             paths_list()
