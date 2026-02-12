@@ -52,11 +52,12 @@
 - [x] Port core pages: Home/Dashboard, Courses, My Courses.
 - [x] Port Paths + My Paths (including ordering UI and admin edit flows).
 - [x] Enforce consistent page layout: wrap all page content (filters/actions/tables) inside `render_container()`.
+- [x] Add minimal AI curator: `POST /ai/plan` returns “draft path + draft courses” (no DB writes) + NiceGUI review/apply page.
 - [ ] Introduce frontend “services/use-cases” layer to keep pages thin and reduce duplicated orchestration (courses+tracking, paths+selected, dashboard aggregates).
 - [ ] Make navigation role-aware (hide admin-only routes in the shell unless `role == "admin"`).
 - [ ] Remove cross-page coupling by moving shared UI helpers (e.g. status chip helpers) into shared `components/` utilities.
 - [ ] Improve `ApiClient` runtime behavior: reuse a persistent `httpx.AsyncClient` for connection pooling.
-- [ ] Improve `ApiClient` resilience: map `httpx.RequestError` into a user-friendly `ApiError`.
+- [x] Improve `ApiClient` resilience: map `httpx.RequestError` into a user-friendly `ApiError`.
 - [ ] Parity check + remove Streamlit UI once stable.
 
 ## Phase 6 — Colleague tracking + analytics
