@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, tracking_chip_class, tracking_label
 from frontend.ui.nicegui.pages import courses as courses_page, home as home_page, my_paths as my_paths_page, paths as paths_page
 
 
@@ -29,16 +30,16 @@ def test_filter_selected_paths_by_needle_and_status() -> None:
 
 @pytest.mark.unit
 def test_status_label_and_chip_class() -> None:
-    assert paths_page._status_label("interested") == "Interested"
-    assert paths_page._status_label("in_progress") == "In Progress"
-    assert paths_page._status_label("completed") == "Completed"
-    assert paths_page._status_label("") == "Not selected"
-    assert paths_page._status_label("unknown") == "Not selected"
+    assert status_label("interested") == "Interested"
+    assert status_label("in_progress") == "In Progress"
+    assert status_label("completed") == "Completed"
+    assert status_label("") == "Not selected"
+    assert status_label("unknown") == "Not selected"
 
-    assert paths_page._status_chip_class("") == "lp-chip lp-chip--muted"
-    assert paths_page._status_chip_class("interested") == "lp-chip lp-chip--sky"
-    assert paths_page._status_chip_class("in_progress") == "lp-chip lp-chip--teal"
-    assert paths_page._status_chip_class("completed") == "lp-chip lp-chip--lime"
+    assert status_chip_class("") == "lp-chip lp-chip--muted"
+    assert status_chip_class("interested") == "lp-chip lp-chip--sky"
+    assert status_chip_class("in_progress") == "lp-chip lp-chip--teal"
+    assert status_chip_class("completed") == "lp-chip lp-chip--lime"
 
 
 @pytest.mark.unit
@@ -90,9 +91,9 @@ def test_home_parse_iso_ts_accepts_z() -> None:
 
 @pytest.mark.unit
 def test_course_helpers_are_deterministic() -> None:
-    assert courses_page._tracking_label("interested") == "Interested"
-    assert courses_page._tracking_label(None) == "Not tracked"
+    assert tracking_label("interested") == "Interested"
+    assert tracking_label(None) == "Not tracked"
 
-    assert courses_page._tracking_chip_class("in_progress").startswith("lp-chip")
+    assert tracking_chip_class("in_progress").startswith("lp-chip")
     assert courses_page._parse_duration_hours("1.5") == 1.5
     assert courses_page._parse_duration_hours("bad") is None

@@ -8,17 +8,11 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-
-
-STATUS_OPTIONS = [
-    ("interested", "Interested"),
-    ("in_progress", "In Progress"),
-    ("completed", "Completed"),
-]
 
 
 def _index_rows_by_int_id(rows: list[dict[str, Any]] | None) -> dict[int, dict[str, Any]]:
@@ -97,27 +91,6 @@ async def _load_paths_page_data(
     courses = list(courses_result or [])
     course_by_id = _index_courses_by_int_id(courses)
     return paths, selected_by_id, courses, course_by_id
-
-
-def _status_label(value: str | None) -> str:
-    v = (value or "").strip()
-    for key, label in STATUS_OPTIONS:
-        if v == key:
-            return label
-    return "Not selected"
-
-
-def _status_chip_class(value: str | None) -> str:
-    v = (value or "").strip()
-    if not v:
-        return "lp-chip lp-chip--muted"
-    if v == "interested":
-        return "lp-chip lp-chip--sky"
-    if v == "in_progress":
-        return "lp-chip lp-chip--teal"
-    if v == "completed":
-        return "lp-chip lp-chip--lime"
-    return "lp-chip"
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -278,7 +251,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 selected = selected_by_id.get(int(path_id))
                 with ui.row().classes("items-center"):
-                    ui.label(f"Status: {_status_label((selected or {}).get('status'))}").classes("text-sm")
+                    ui.label(f"Status: {status_label((selected or {}).get('status'))}").classes("text-sm")
 
                     if selected:
                         status_select = ui.select(
@@ -349,8 +322,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 with ui.column().classes("gap-1"):
                                     ui.label(p.get("name") or "").classes("text-lg font-semibold")
                                     ui.label(p.get("description") or "").classes("text-sm text-gray-600")
-                                    ui.label(_status_label((selected or {}).get("status"))).classes(
-                                        _status_chip_class((selected or {}).get("status"))
+                                    ui.label(status_label((selected or {}).get("status"))).classes(
+                                        status_chip_class((selected or {}).get("status"))
                                     )
 
                                 with ui.row().classes("items-center"):

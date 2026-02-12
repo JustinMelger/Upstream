@@ -11,11 +11,11 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.courses import _tracking_label, TRACKING_STATUS_OPTIONS
 
 
 def _build_tracked_items(
@@ -205,7 +205,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
                                     ui.label(course.get("title") or "").classes("text-lg font-semibold")
-                                    ui.label(f"Status: {_tracking_label(str(tr.get('status') or ''))}").classes("text-sm")
+                                ui.label(f"Status: {tracking_label(str(tr.get('status') or ''))}").classes("text-sm")
 
                                 with ui.row().classes("items-center"):
                                     status_select = ui.select(

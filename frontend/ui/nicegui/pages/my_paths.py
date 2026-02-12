@@ -8,11 +8,11 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.paths import _status_chip_class, _status_label, STATUS_OPTIONS
 
 
 def _filter_selected_paths(selected: list[dict[str, Any]] | None, *, needle: str, status: str) -> list[dict[str, Any]]:
@@ -51,7 +51,7 @@ def _show_path_details_dialog(
         ui.label(detail.get("name") or "").classes("text-xl font-semibold")
         ui.label(detail.get("description") or "").classes("text-sm text-gray-600")
 
-        ui.label(f"Status: {_status_label(str(selected_row.get('status') or ''))}").classes("text-sm")
+        ui.label(f"Status: {status_label(str(selected_row.get('status') or ''))}").classes("text-sm")
 
         status_select = ui.select(
             options={k: v for k, v in STATUS_OPTIONS},
@@ -134,8 +134,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 with ui.column().classes("gap-1"):
                                     ui.label(p.get("name") or "").classes("text-lg font-semibold")
                                     ui.label(p.get("description") or "").classes("text-sm text-gray-600")
-                                    ui.label(_status_label(str(p.get("status") or ""))).classes(
-                                        _status_chip_class(str(p.get("status") or ""))
+                                    ui.label(status_label(str(p.get("status") or ""))).classes(
+                                        status_chip_class(str(p.get("status") or ""))
                                     )
 
                                 with ui.row().classes("items-center"):

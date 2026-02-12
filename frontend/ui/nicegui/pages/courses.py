@@ -8,38 +8,11 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-
-
-TRACKING_STATUS_OPTIONS: list[tuple[str, str]] = [
-    ("interested", "Interested"),
-    ("in_progress", "In Progress"),
-    ("completed", "Completed"),
-]
-
-
-def _tracking_label(value: str | None) -> str:
-    v = (value or "").strip()
-    for key, label in TRACKING_STATUS_OPTIONS:
-        if v == key:
-            return label
-    return "Not tracked"
-
-
-def _tracking_chip_class(value: str | None) -> str:
-    v = (value or "").strip()
-    if not v:
-        return "lp-chip lp-chip--muted"
-    if v == "interested":
-        return "lp-chip lp-chip--sky"
-    if v == "in_progress":
-        return "lp-chip lp-chip--teal"
-    if v == "completed":
-        return "lp-chip lp-chip--lime"
-    return "lp-chip"
 
 
 def _parse_duration_hours(raw: str) -> float | None:
@@ -357,8 +330,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         str(c.get("level") or "").strip(),
                                     ]
                                     ui.label(" · ".join([b for b in meta_bits if b])).classes("text-sm text-gray-600")
-                                    ui.label(_tracking_label((tracked or {}).get("status"))).classes(
-                                        _tracking_chip_class((tracked or {}).get("status"))
+                                    ui.label(tracking_label((tracked or {}).get("status"))).classes(
+                                        tracking_chip_class((tracked or {}).get("status"))
                                     )
 
                                 with ui.row().classes("items-center"):
