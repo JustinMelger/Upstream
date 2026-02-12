@@ -18,6 +18,8 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
         store: Session store.
         api: API client.
     """
+    user = store.get_user() or {}
+    is_admin = str(user.get("role") or "") == "admin"
     with ui.header().classes("lp-header items-center justify-between"):
         ui.label(title).classes("text-lg font-semibold")
         with ui.row().classes("items-center gap-2"):
@@ -29,8 +31,9 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                 ui.menu_item("My Courses", on_click=lambda: ui.navigate.to("/courses/my"))
                 ui.menu_item("Paths", on_click=lambda: ui.navigate.to("/paths"))
                 ui.menu_item("My Paths", on_click=lambda: ui.navigate.to("/paths/my"))
-                ui.separator()
-                ui.menu_item("Admin", on_click=lambda: ui.navigate.to("/admin/users"))
+                if is_admin:
+                    ui.separator()
+                    ui.menu_item("Admin", on_click=lambda: ui.navigate.to("/admin/users"))
 
             @guard_ui_action(title="Logout failed")
             async def _logout() -> None:
