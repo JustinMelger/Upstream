@@ -96,3 +96,4 @@
 - [ ] Basic de-duplication for suggested courses (URL-based + title/provider similarity).
 - [ ] Notifications v1 (optional): show “recommended to you” inbox or activity feed (no email).
 - [ ] AI-ready metadata: add/standardize course content fields (`description`, optional `learning_outcomes`, `prerequisites`, `language`) and define a derived “search document” that combines course + review text for later AI search/planning.
+- [ ] Ownership + permissions: allow any authenticated user to create courses/paths; only the creator (or admin) can edit/delete; admin can edit/delete everything.
