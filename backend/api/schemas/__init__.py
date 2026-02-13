@@ -1,3 +1,4 @@
+from backend.api.schemas.ai import AiDraftCourse, AiDraftPath, AiPlanRequest, AiPlanResponse
 from backend.api.schemas.auth import (
     CreateUserRequest,
     CreateUserResponse,
@@ -41,6 +42,10 @@ __all__ = [
     "APIModel",
     "ErrorResponse",
     "HealthResponse",
+    "AiPlanRequest",
+    "AiPlanResponse",
+    "AiDraftPath",
+    "AiDraftCourse",
     "LoginRequest",
     "LoginResponse",
     "MeResponse",

@@ -1,6 +1,8 @@
 # Format imports with ruff
 default_database_url := "postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform"
 DATABASE_URL := env_var_or_default("DATABASE_URL", default_database_url)
+default_backend_url := "http://127.0.0.1:8000"
+BACKEND_URL := env_var_or_default("BACKEND_URL", default_backend_url)
 
 fmt:
 	uv run ruff check --select I --fix
@@ -43,3 +45,13 @@ migrate: db-wait
 	DATABASE_URL={{DATABASE_URL}} uv run alembic upgrade head
 
 db-init: db-up db-wait migrate
+
+ui:
+	BACKEND_URL={{BACKEND_URL}} uv run python -m frontend.ui.nicegui.main
+
+backend:
+	DATABASE_URL={{DATABASE_URL}} uv run uvicorn backend.main:app --reload --port 8000
+
+dev: db-init
+	@echo "Starting backend + UI (Ctrl+C stops the foreground process; you may need to stop the other one separately)."
+	just backend & just ui
