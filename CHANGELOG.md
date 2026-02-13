@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/JustinMelger/learning-platform/compare/v0.4.4...v0.5.0) (2026-02-13)
+
+
+### Features
+
+* add dummy ai implementation for test + ui ([6b417d8](https://github.com/JustinMelger/learning-platform/commit/6b417d841c162b3da84b29b21083a10e3909ad8b))
+
 ## [0.4.4](https://github.com/JustinMelger/learning-platform/compare/v0.4.3...v0.4.4) (2026-02-09)
 
 
