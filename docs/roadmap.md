@@ -56,7 +56,7 @@
 - [ ] Introduce frontend “services/use-cases” layer to keep pages thin and reduce duplicated orchestration (courses+tracking, paths+selected, dashboard aggregates).
 - [x] Make navigation role-aware (hide admin-only routes in the shell unless `role == "admin"`).
 - [x] Remove cross-page coupling by moving shared UI helpers (e.g. status chip helpers) into shared `components/` utilities.
-- [ ] Improve `ApiClient` runtime behavior: reuse a persistent `httpx.AsyncClient` for connection pooling.
+- [x] Improve `ApiClient` runtime behavior: reuse a persistent `httpx.AsyncClient` for connection pooling.
 - [x] Improve `ApiClient` resilience: map `httpx.RequestError` into a user-friendly `ApiError`.
 - [ ] Parity check + remove Streamlit UI once stable.
 
@@ -86,3 +86,13 @@
 - [ ] My Paths: show per-path progress at a glance (completed/total + bar) without opening details.
 - [ ] Navigation polish: active route highlighting and optional feature flags (hide AI Curator unless enabled).
 - [ ] Debounce search inputs to reduce backend load (avoid requests per keystroke).
+- [ ] Add an “Articles” section where users can share links (title, URL, tags) and browse/search community submissions.
+
+## Phase 10 — Social Layer (By Colleagues, For Colleagues)
+- [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).
+- [ ] Add reviews for courses (rating + text) and paths (text), with basic moderation/admin removal.
+- [ ] Surface social signals in UI (Home + course/path details).
+- [ ] Add “Suggest a course/path” drafts (user-submitted) with admin approve/edit → canonical content.
+- [ ] Basic de-duplication for suggested courses (URL-based + title/provider similarity).
+- [ ] Notifications v1 (optional): show “recommended to you” inbox or activity feed (no email).
+- [ ] AI-ready metadata: add/standardize course content fields (`description`, optional `learning_outcomes`, `prerequisites`, `language`) and define a derived “search document” that combines course + review text for later AI search/planning.

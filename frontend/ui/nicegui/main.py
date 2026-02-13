@@ -7,7 +7,7 @@ This module wires together core utilities (`ApiClient`, `SessionStore`) and
 registers all `@ui.page` routes.
 """
 
-from nicegui import ui
+from nicegui import app, ui
 
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
@@ -21,6 +21,7 @@ def create_app() -> None:
     apply_theme()
     store = SessionStore()
     api = ApiClient(base_url=settings.backend_url, token_provider=store.get_token)
+    app.on_shutdown(api.aclose())
 
     login.register(store=store, api=api)
     home.register(store=store, api=api)

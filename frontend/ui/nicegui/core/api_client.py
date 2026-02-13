@@ -57,6 +57,18 @@ class ApiClient:
         self._base_url = base_url.rstrip("/")
         self._token_provider = token_provider
         self._timeout = timeout_s
+        # Keep a persistent client for connection pooling.
+        # This noticeably improves UI responsiveness vs. creating a new client per request.
+        self._client = httpx.AsyncClient(base_url=self._base_url, timeout=self._timeout)
+
+    async def aclose(self) -> None:
+        """Close the underlying HTTP client.
+
+        Note:
+            This should be hooked into NiceGUI shutdown to avoid unclosed
+            connection warnings in development.
+        """
+        await self._client.aclose()
 
     def _headers(self, *, token_override: str | None = None) -> dict[str, str]:
         """Build request headers for the current session."""
@@ -89,16 +101,14 @@ class ApiClient:
         Raises:
             ApiError: On backend error envelopes or non-2xx responses.
         """
-        url = f"{self._base_url}{path}"
         try:
-            async with httpx.AsyncClient(timeout=self._timeout) as client:
-                resp = await client.request(
-                    method,
-                    url,
-                    headers=self._headers(token_override=token_override),
-                    params=params,
-                    json=json,
-                )
+            resp = await self._client.request(
+                method,
+                path,
+                headers=self._headers(token_override=token_override),
+                params=params,
+                json=json,
+            )
         except httpx.RequestError as exc:
             # Keep network failures user-friendly; callers can display `str(ApiError)`.
             raise ApiError(status_code=503, message=f"backend_unreachable: {exc.__class__.__name__}") from exc
