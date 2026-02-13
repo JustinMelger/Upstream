@@ -92,6 +92,19 @@ class TrackingServiceError(ServiceError):
         super().__init__(status_code=status_code, detail=detail)
 
 
+class ArticlesServiceError(ServiceError):
+    """Base FastAPI exception for articles domain failures."""
+
+    def __init__(self, *, detail: str, status_code: int = 500) -> None:
+        """Initialize the articles service error.
+
+        Args:
+            detail: Human-readable error message or error code.
+            status_code: HTTP status code.
+        """
+        super().__init__(status_code=status_code, detail=detail)
+
+
 def _error_content(message: str) -> dict[str, str]:
     """Build a standard error envelope payload.
 
@@ -219,6 +232,20 @@ def user_paths_error_handler(
         message=message,
         status_code=status_code,
         log_message="User paths service error",
+    )
+
+
+def articles_error_handler(
+    message: str = "An unexpected error occurred while handling articles",
+    status_code: int = 500,
+) -> Callable[[F], F]:
+    """Wrapper around error_handler for the articles domain."""
+
+    return error_handler(
+        service_error=ArticlesServiceError,
+        message=message,
+        status_code=status_code,
+        log_message="Articles service error",
     )
 
 

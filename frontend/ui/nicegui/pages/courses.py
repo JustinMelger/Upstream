@@ -7,6 +7,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
@@ -46,10 +47,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             tracking_by_course_id: dict[int, dict[str, Any]] = {}
 
             with ui.row().classes("items-end w-full"):
-                q = ui.input("Search").props("clearable").classes("grow")
-                provider = ui.input("Provider").props("clearable")
-                category = ui.input("Category").props("clearable")
-                level = ui.input("Level").props("clearable")
+                q = ui.input("Search").props("clearable debounce=300").classes("grow")
+                provider = ui.input("Provider").props("clearable debounce=300")
+                category = ui.input("Category").props("clearable debounce=300")
+                level = ui.input("Level").props("clearable debounce=300")
                 status_filter = ui.select(
                     {"": "Any status", "not_tracked": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
                     label="My status",
@@ -66,6 +67,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 loading = True
                 refresh_btn.disable()
                 meta.text = "Loading..."
+                courses_list.refresh()
                 try:
                     params: dict[str, Any] = {}
                     if q.value:
@@ -89,6 +91,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 finally:
                     loading = False
                     refresh_btn.enable()
+                    courses_list.refresh()
 
             async def _reload_tracking_only() -> None:
                 nonlocal tracking_by_course_id
@@ -114,7 +117,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 ui.notify("Removed status", type="positive")
 
             def _render_create_course_dialog() -> None:
-                with ui.dialog() as dialog, ui.card().classes("w-[min(700px,95vw)]"):
+                with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(700px,95vw)]"):
                     ui.label("Create Course").classes("text-xl font-semibold")
 
                     title = ui.input("Title").props("clearable").classes("w-full")
@@ -153,7 +156,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 dialog.open()
 
             def _render_edit_course_dialog(course: dict[str, Any]) -> None:
-                with ui.dialog() as dialog, ui.card().classes("w-[min(700px,95vw)]"):
+                with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(700px,95vw)]"):
                     ui.label("Edit Course").classes("text-xl font-semibold")
 
                     course_id = int(course.get("id") or 0)
@@ -201,7 +204,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 dialog.open()
 
             async def _confirm_delete_course(course_id: int) -> None:
-                with ui.dialog() as dialog, ui.card():
+                with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog"):
                     ui.label("Delete this course?").classes("text-lg font-semibold")
                     ui.label("This cannot be undone.").classes("text-sm text-gray-600")
                     with ui.row().classes("justify-end mt-4"):
@@ -221,7 +224,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             async def _open_details(course_id: int) -> None:
                 course = await api.get(f"/courses/{course_id}")
 
-                with ui.dialog() as dialog, ui.card().classes("w-[min(800px,95vw)]"):
+                with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
                     ui.label(course.get("title") or "").classes("text-xl font-semibold")
                     ui.label(
                         f"{course.get('provider') or ''} · {course.get('category') or ''} · {course.get('level') or ''}"
@@ -298,8 +301,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         ]
 
                 with ui.column().classes("w-full gap-3"):
+                    if loading:
+                        render_card_skeletons(count=4)
+                        return
+
                     if not shown:
                         ui.label("No courses match your filters.").classes("text-sm text-gray-600")
+                        with ui.row().classes("items-center gap-2"):
+                            ui.button("Clear filters", on_click=lambda: _clear_filters()).props("outline")
+                            ui.button("Refresh", on_click=_load).props("outline")
 
                     for c in shown:
                         course_id = int(c.get("id") or 0)
@@ -308,12 +318,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
                                     ui.label(c.get("title") or "").classes("text-lg font-semibold")
-                                    meta_bits = [
-                                        str(c.get("provider") or "").strip(),
-                                        str(c.get("category") or "").strip(),
-                                        str(c.get("level") or "").strip(),
-                                    ]
-                                    ui.label(" · ".join([b for b in meta_bits if b])).classes("text-sm text-gray-600")
+                                    with ui.row().classes("items-center gap-2 flex-wrap"):
+                                        if str(c.get("provider") or "").strip():
+                                            ui.label(str(c.get("provider") or "")).classes("lp-meta-chip")
+                                        if str(c.get("category") or "").strip():
+                                            ui.label(str(c.get("category") or "")).classes("lp-meta-chip")
+                                        if str(c.get("level") or "").strip():
+                                            ui.label(str(c.get("level") or "")).classes("lp-meta-chip")
                                     ui.label(tracking_label((tracked or {}).get("status"))).classes(
                                         tracking_chip_class((tracked or {}).get("status"))
                                     )
@@ -325,33 +336,22 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                     ui.button("View", on_click=_view).props("outline")
 
-                                    if tracked:
-                                        status_select = ui.select(
-                                            options={k: v for k, v in TRACKING_STATUS_OPTIONS},
-                                            value=str(tracked.get("status") or "interested"),
-                                            label=None,
-                                        ).props("dense")
+                                    current_status = str((tracked or {}).get("status") or "")
+                                    status_select = ui.select(
+                                        options={"": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
+                                        value=current_status,
+                                        label=None,
+                                    ).props("dense")
 
-                                        async def _quick_set(_cid: int = course_id, _sel=status_select) -> None:
-                                            await _set_tracking(_cid, str(_sel.value or ""))
+                                    async def _on_status_change(e, _cid: int = course_id) -> None:
+                                        value = str(getattr(e, "value", "") or "")
+                                        if not value:
+                                            if int(_cid) in tracking_by_course_id:
+                                                await _clear_tracking(_cid)
+                                            return
+                                        await _set_tracking(_cid, value)
 
-                                        ui.button("Set", on_click=_quick_set).props("dense outline")
-
-                                        async def _quick_clear(_cid: int = course_id) -> None:
-                                            await _clear_tracking(_cid)
-
-                                        ui.button("Clear", on_click=_quick_clear).props("dense color=negative outline")
-                                    else:
-                                        status_select = ui.select(
-                                            options={k: v for k, v in TRACKING_STATUS_OPTIONS},
-                                            value="interested",
-                                            label=None,
-                                        ).props("dense")
-
-                                        async def _quick_track(_cid: int = course_id, _sel=status_select) -> None:
-                                            await _set_tracking(_cid, str(_sel.value or ""))
-
-                                        ui.button("Track", on_click=_quick_track).props("dense")
+                                    status_select.on("update:model-value", _on_status_change)
 
                             if is_admin:
                                 with ui.row().classes("justify-end mt-2"):
@@ -365,6 +365,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ui.button("Delete", on_click=_do_delete).props("dense color=negative outline")
 
             def _refresh_list(*_: Any) -> None:
+                courses_list.refresh()
+
+            def _clear_filters() -> None:
+                q.value = ""
+                provider.value = ""
+                category.value = ""
+                level.value = ""
+                status_filter.value = ""
                 courses_list.refresh()
 
             q.on("update:model-value", _refresh_list)

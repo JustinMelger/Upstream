@@ -8,7 +8,10 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.loading import render_card_skeletons, render_inline_spinner
+from frontend.ui.nicegui.components.status_chips import tracking_chip_class
 from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.services.dashboard_service import load_dashboard_data
@@ -76,6 +79,20 @@ def _course_title_by_id(courses: list[dict[str, Any]]) -> dict[int, str]:
             continue
         try:
             out[int(cid)] = str(c.get("title") or "")
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _course_by_id(courses: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
+    """Build a mapping of course_id -> course payload."""
+    out: dict[int, dict[str, Any]] = {}
+    for c in courses:
+        cid = c.get("id")
+        if cid is None:
+            continue
+        try:
+            out[int(cid)] = c
         except (TypeError, ValueError):
             continue
     return out
@@ -175,6 +192,34 @@ def _render_selected_path_progress_cards(
             )
 
 
+def _next_up_items(
+    *,
+    path_details: list[dict[str, Any]],
+    tracking: dict[int, str],
+) -> list[tuple[str, int]]:
+    """Return `(path_name, next_course_id)` tuples for the dashboard.
+
+    Next up is defined as the first course in the path order that is not
+    completed. If all courses are completed (or the path has none), the path is
+    omitted.
+    """
+    items: list[tuple[str, int]] = []
+    for detail in path_details:
+        name = str(detail.get("name") or "(untitled path)")
+        courses_in_path = list(detail.get("courses") or [])
+        for c in courses_in_path:
+            try:
+                cid = int(c.get("id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if not cid:
+                continue
+            if tracking.get(cid, "") != "completed":
+                items.append((name, cid))
+                break
+    return items
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/` route (dashboard).
 
@@ -209,6 +254,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             meta = ui.label("").classes("text-sm text-gray-600")
             loading = False
 
+            @guard_ui_action(title="Update status failed")
+            async def _mark_completed(course_id: int) -> None:
+                await api.post("/tracking", {"course_id": course_id, "status": "completed"})
+                ui.notify("Marked completed", type="positive")
+                await _load()
+
+            @guard_ui_action(title="Update status failed")
+            async def _mark_in_progress(course_id: int) -> None:
+                await api.post("/tracking", {"course_id": course_id, "status": "in_progress"})
+                ui.notify("Marked in progress", type="positive")
+                await _load()
+
             mode = None
             if is_admin:
                 mode = ui.radio({"mine": "My stats", "team": "Team totals"}, value="mine")
@@ -222,6 +279,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 loading = True
                 refresh_btn.disable()
                 meta.text = "Loading..."
+                dashboard.refresh()
 
                 try:
                     data = await load_dashboard_data(
@@ -256,11 +314,97 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 finally:
                     loading = False
                     refresh_btn.enable()
+                    dashboard.refresh()
 
             @ui.refreshable
             def dashboard() -> None:
+                if loading:
+                    render_inline_spinner(label="Loading dashboard…")
+                    ui.separator()
+                    render_card_skeletons(count=3)
+                    return
+
                 tracking = _tracking_map(tracking_rows)
                 title_by_id = _course_title_by_id(courses)
+                course_by_id = _course_by_id(courses)
+
+                # Continue learning
+                ui.label("Continue learning").classes("text-lg font-semibold mt-2")
+                in_progress_ids = [cid for cid, st in tracking.items() if st == "in_progress"]
+                if not in_progress_ids:
+                    ui.label("No courses in progress yet.").classes("text-sm text-gray-600")
+                    ui.button("Go to My Courses", on_click=lambda: ui.navigate.to("/courses/my")).props("outline")
+                else:
+                    with ui.column().classes("w-full gap-3"):
+                        for cid in in_progress_ids[:3]:
+                            c = dict(course_by_id.get(cid) or {})
+                            title = str(c.get("title") or f"Course {cid}")
+                            url = str(c.get("url") or "").strip()
+                            provider = str(c.get("provider") or "").strip()
+                            meta_bits = [
+                                b
+                                for b in [provider, str(c.get("category") or "").strip(), str(c.get("level") or "").strip()]
+                                if b
+                            ]
+
+                            with ui.card().classes("lp-card w-full"):
+                                with ui.row().classes("items-start justify-between w-full"):
+                                    with ui.column().classes("gap-1"):
+                                        ui.label(title).classes("text-md font-semibold")
+                                        if meta_bits:
+                                            ui.label(" · ".join(meta_bits)).classes("text-sm text-gray-600")
+                                        ui.label("In progress").classes("lp-chip lp-chip--teal")
+
+                                    with ui.row().classes("items-center gap-2"):
+                                        if url:
+                                            ui.link("Open", url).props("target=_blank").classes("text-sm")
+
+                                        async def _do_complete(_cid: int = cid) -> None:
+                                            await _mark_completed(_cid)
+
+                                        ui.button("Mark completed", on_click=_do_complete).props("outline dense")
+
+                ui.separator()
+
+                # Next up (from selected paths)
+                ui.label("Next up").classes("text-lg font-semibold")
+                next_up = _next_up_items(path_details=selected_path_details, tracking=tracking)
+                if not next_up:
+                    ui.label("Select a path to get guided next steps.").classes("text-sm text-gray-600")
+                    ui.button("Browse paths", on_click=lambda: ui.navigate.to("/paths")).props("outline")
+                else:
+                    with ui.column().classes("w-full gap-3"):
+                        for path_name, cid in next_up[:5]:
+                            c = dict(course_by_id.get(cid) or {})
+                            title = str(c.get("title") or f"Course {cid}")
+                            url = str(c.get("url") or "").strip()
+                            status = tracking.get(cid, "")
+
+                            with ui.card().classes("lp-card w-full"):
+                                with ui.row().classes("items-start justify-between w-full"):
+                                    with ui.column().classes("gap-1"):
+                                        ui.label(path_name).classes("text-sm text-gray-600")
+                                        ui.label(title).classes("text-md font-semibold")
+                                        if status:
+                                            ui.label(status.replace("_", " ").title()).classes(tracking_chip_class(status))
+                                        else:
+                                            ui.label("Not tracked").classes("lp-chip lp-chip--muted")
+
+                                    with ui.row().classes("items-center gap-2"):
+                                        if url:
+                                            ui.link("Open", url).props("target=_blank").classes("text-sm")
+
+                                        if status != "in_progress":
+
+                                            async def _do_in_progress(_cid: int = cid) -> None:
+                                                await _mark_in_progress(_cid)
+
+                                            ui.button("Mark in progress", on_click=_do_in_progress).props("outline dense")
+
+                                        async def _do_complete2(_cid: int = cid) -> None:
+                                            await _mark_completed(_cid)
+
+                                        ui.button("Mark completed", on_click=_do_complete2).props("outline dense")
 
                 # Progress snapshot
                 _render_snapshot_metrics(snapshot_stats=snapshot_stats)
@@ -282,6 +426,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 ui.label("My path progress").classes("text-lg font-semibold")
                 if not selected_paths:
                     ui.label("No paths selected yet.").classes("text-sm text-gray-600")
+                    ui.button("Browse paths", on_click=lambda: ui.navigate.to("/paths")).props("outline")
                 else:
                     _render_selected_path_progress_cards(path_details=selected_path_details, tracking=tracking)
 

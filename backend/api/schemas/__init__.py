@@ -1,4 +1,5 @@
 from backend.api.schemas.ai import AiDraftCourse, AiDraftPath, AiPlanRequest, AiPlanResponse
+from backend.api.schemas.articles import ArticleCreateRequest, ArticlePayload
 from backend.api.schemas.auth import (
     CreateUserRequest,
     CreateUserResponse,
@@ -59,6 +60,8 @@ __all__ = [
     "DeleteUserResponse",
     "DisableUserRequest",
     "DisableUserResponse",
+    "ArticlePayload",
+    "ArticleCreateRequest",
     "CoursePayload",
     "CourseCreateRequest",
     "CourseUpdateRequest",

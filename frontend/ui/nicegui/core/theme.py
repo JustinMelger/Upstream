@@ -109,6 +109,10 @@ def apply_theme() -> None:
           box-shadow: 0 12px 30px rgba(0,0,0,0.35);
         }
 
+        .lp-nav-active {
+          color: var(--lp-accent) !important;
+        }
+
         /* Chips */
         .lp-chip {
           display: inline-flex;
@@ -149,6 +153,20 @@ def apply_theme() -> None:
         .lp-chip--rose {
           border-color: rgba(251, 113, 133, 0.35);
           background: rgba(251, 113, 133, 0.10);
+        }
+
+        .lp-meta-chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 2px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          background: rgba(255, 255, 255, 0.04);
+          color: var(--lp-muted);
+          font-size: 12px;
+          line-height: 20px;
+          font-weight: 600;
+          width: fit-content;
         }
 
         /* Quasar element tweaks */
@@ -222,6 +240,19 @@ def apply_theme() -> None:
 
         .q-separator {
           background: var(--lp-border);
+        }
+
+        /* Dialogs: darker backdrop + more opaque cards for readability. */
+        body .q-dialog__backdrop {
+          background: rgba(0, 0, 0, 0.65) !important;
+          backdrop-filter: blur(3px);
+        }
+
+        body .q-card.lp-dialog,
+        body .q-dialog .q-card.lp-dialog {
+          background: rgba(10, 16, 28, 0.92) !important;
+          border: 1px solid rgba(255, 255, 255, 0.14) !important;
+          box-shadow: 0 22px 60px rgba(0,0,0,0.65) !important;
         }
 
         /* Dropdowns / menus (Quasar) */

@@ -78,15 +78,15 @@
 - [ ] Persist approved drafts via existing domain services (`CoursesService`, `PathsService`, `TrackingService`) to keep consistency.
 
 ## Phase 9 — Product UX Polish (NiceGUI)
-- [ ] Upgrade loading states: skeletons/spinners for tables/cards (avoid “Loading…” text-only).
-- [ ] Add clear empty-state CTAs (Courses/Paths/My Courses/My Paths) linking to the next action.
-- [ ] Home: “Continue learning” section (top `in_progress` courses) with quick actions (open link, mark completed).
-- [ ] Home: “Next up” section derived from selected paths (first non-completed course per path).
-- [ ] Courses/My Courses: inline tracking status updates (no modal required) + consistent metadata chips.
-- [ ] My Paths: show per-path progress at a glance (completed/total + bar) without opening details.
-- [ ] Navigation polish: active route highlighting and optional feature flags (hide AI Curator unless enabled).
-- [ ] Debounce search inputs to reduce backend load (avoid requests per keystroke).
-- [ ] Add an “Articles” section where users can share links (title, URL, tags) and browse/search community submissions.
+- [x] Upgrade loading states: skeletons/spinners for tables/cards (avoid “Loading…” text-only).
+- [x] Add clear empty-state CTAs (Courses/Paths/My Courses/My Paths) linking to the next action.
+- [x] Home: “Continue learning” section (top `in_progress` courses) with quick actions (open link, mark completed).
+- [x] Home: “Next up” section derived from selected paths (first non-completed course per path).
+- [x] Courses/My Courses: inline tracking status updates (no modal required) + consistent metadata chips.
+- [x] My Paths: show per-path progress at a glance (completed/total + bar) without opening details.
+- [x] Navigation polish: active route highlighting and optional feature flags (hide AI Curator unless enabled).
+- [x] Debounce search inputs to reduce backend load (avoid requests per keystroke).
+- [x] Add an “Articles” section where users can share links (title, URL, tags) and browse/search community submissions.
 
 ## Phase 10 — Social Layer (By Colleagues, For Colleagues)
 - [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).

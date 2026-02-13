@@ -10,7 +10,8 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
-from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.components.loading import render_card_skeletons
+from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
@@ -99,6 +100,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             loading = True
             refresh_btn.disable()
             meta.text = "Loading..."
+            courses_list.refresh()
             try:
                 courses_by_id, tracking_by_id = await _load_courses_and_tracking(api)
                 courses_list.refresh()
@@ -112,6 +114,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             finally:
                 loading = False
                 refresh_btn.enable()
+                courses_list.refresh()
 
         @guard_ui_action(title="Update status failed")
         async def _set_status(course_id: int, status: str) -> None:
@@ -169,7 +172,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             courses_list.refresh()
 
         with render_container():
-            q = ui.input("Search").props("clearable").classes("w-full")
+            q = ui.input("Search").props("clearable debounce=300").classes("w-full")
             status_filter = ui.select(
                 {"": "Any status", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
                 label="Status",
@@ -190,15 +193,29 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
                 with ui.column().classes("w-full gap-3"):
+                    if loading:
+                        render_card_skeletons(count=4)
+                        return
+
                     if not tracked_items:
                         ui.label("No tracked courses yet.").classes("text-sm text-gray-600")
+                        ui.button("Browse courses", on_click=lambda: ui.navigate.to("/courses")).props("outline")
 
                     for cid, course, tr in tracked_items:
                         with ui.card().classes("w-full"):
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
                                     ui.label(course.get("title") or "").classes("text-lg font-semibold")
-                                ui.label(f"Status: {tracking_label(str(tr.get('status') or ''))}").classes("text-sm")
+                                    with ui.row().classes("items-center gap-2 flex-wrap"):
+                                        if str(course.get("provider") or "").strip():
+                                            ui.label(str(course.get("provider") or "")).classes("lp-meta-chip")
+                                        if str(course.get("category") or "").strip():
+                                            ui.label(str(course.get("category") or "")).classes("lp-meta-chip")
+                                        if str(course.get("level") or "").strip():
+                                            ui.label(str(course.get("level") or "")).classes("lp-meta-chip")
+                                    ui.label(tracking_label(str(tr.get("status") or ""))).classes(
+                                        tracking_chip_class(str(tr.get("status") or ""))
+                                    )
 
                                 with ui.row().classes("items-center"):
                                     status_select = ui.select(
@@ -207,10 +224,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         label=None,
                                     ).props("dense")
 
-                                    async def _quick_set(_cid: int = cid, _sel=status_select) -> None:
-                                        await _set_status(_cid, str(_sel.value or ""))
+                                    async def _on_status_change(e, _cid: int = cid) -> None:
+                                        value = str(getattr(e, "value", "") or "")
+                                        if value:
+                                            await _set_status(_cid, value)
 
-                                    ui.button("Set", on_click=_quick_set).props("dense outline")
+                                    status_select.on("update:model-value", _on_status_change)
 
                                     async def _view(_cid: int = cid) -> None:
                                         await _open_details(_cid)

@@ -7,6 +7,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
@@ -264,7 +265,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             paths_list.refresh()
 
         with render_container():
-            q = ui.input("Search").props("clearable").classes("w-full")
+            q = ui.input("Search").props("clearable debounce=300").classes("w-full")
             meta = ui.label("").classes("text-sm text-gray-600")
 
             @ui.refreshable
@@ -273,8 +274,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 shown = _filter_paths(paths, needle)
 
                 with ui.column().classes("w-full gap-3"):
+                    if loading:
+                        render_card_skeletons(count=4)
+                        return
+
                     if not shown:
                         ui.label("No paths found.").classes("text-sm text-gray-600")
+                        ui.button("Browse courses", on_click=lambda: ui.navigate.to("/courses")).props("outline")
 
                     for p in shown:
                         pid = int(p.get("id") or 0)
@@ -344,6 +350,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 loading = True
                 refresh_btn.disable()
                 meta.text = "Loading..."
+                paths_list.refresh()
                 try:
                     paths, selected_by_id, courses, course_by_id = await _load_paths_page_data(api)
                     if course_ids is not None:
@@ -362,6 +369,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 finally:
                     loading = False
                     refresh_btn.enable()
+                    paths_list.refresh()
 
             with ui.row().classes("items-center justify-between w-full mt-2"):
                 refresh_btn = ui.button("Refresh", on_click=_load_all).props("outline")

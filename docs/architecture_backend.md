@@ -165,6 +165,11 @@ erDiagram
 - Recent activity and stats (per-user and team).
 - Admin-only team-wide stats.
 
+### Articles service
+- Allow colleagues to share links (title, URL, optional tags).
+- Browse/search colleague-submitted links.
+- Authenticated users can create articles.
+
 ## API Error Handling
 
 Service-layer failures are represented by domain-specific `ServiceError` exceptions (for example `AuthServiceError`, `CoursesServiceError`, `PathsServiceError`, `UserPathsServiceError`, `TrackingServiceError`). The FastAPI app registers exception handlers that convert these into a standard JSON payload:
@@ -486,5 +491,27 @@ erDiagram
     INTEGER course_id
     STRING status
     TIMESTAMP updated_at
+  }
+```
+
+## Articles Architecture
+
+### Articles Endpoints
+
+- `GET /articles`: List/search shared links.
+- `POST /articles`: Share a link (authenticated users).
+
+### Articles Data Model
+
+```mermaid
+erDiagram
+  USERS ||--o{ ARTICLES : "shares"
+  ARTICLES {
+    INTEGER id
+    STRING title
+    STRING url
+    STRING tags
+    STRING created_by
+    TIMESTAMP created_at
   }
 ```

@@ -76,3 +76,15 @@ class TrackingRecord:
     course_id: int
     status: str
     updated_at: str
+
+
+@dataclass(frozen=True)
+class ArticleRecord:
+    """Shared article/link row representation."""
+
+    id: int
+    title: str
+    url: str
+    tags: str | None
+    created_by: str
+    created_at: str

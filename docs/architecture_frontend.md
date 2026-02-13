@@ -1,4 +1,4 @@
-# Frontend Architecture (NiceGUI Target)
+# Frontend Architecture (NiceGUI)
 
 ## Overview
 The UI is built with NiceGUI.
@@ -93,12 +93,21 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 - `/courses/my`: Personal course tracking ("My Courses").
 - `/paths`: Browse learning paths.
 - `/paths/my`: Selected paths and progress ("My Paths").
+- `/articles`: Share and browse colleague-submitted links ("Articles").
 - `/admin/users`: User management (admin only).
 
 Notes:
 
 - Guard all routes except `/login` behind `SessionStore.current_user()`.
 - Admin routes additionally check `role == "admin"`.
+- Some routes may be feature-flagged via environment variables (see Feature Flags below).
+
+## Feature Flags
+
+The UI supports a small set of runtime feature flags (read from environment variables):
+
+- `FEATURE_AI_CURATOR=0|1`: Enables the AI Curator route (`/ai`) and shows/hides it in navigation.
+- `FEATURE_ARTICLES=0|1`: Enables the Articles route (`/articles`) and shows/hides it in navigation.
 
 ## Page Responsibilities
 
@@ -199,6 +208,17 @@ Backend endpoints:
 - `POST /auth/users/disable`
 - `DELETE /auth/users/{username}`
 
+### ArticlesPage (`/articles`)
+Responsibilities:
+
+- Allow colleagues to share links (title, URL, optional tags).
+- Browse/search shared links.
+
+Backend endpoints:
+
+- `GET /articles`
+- `POST /articles`
+
 ## Expanded Domain Model
 
 ```mermaid
@@ -234,11 +254,17 @@ classDiagram
     +delete_user(username:str): dict
   }
 
+  class ArticlesService {
+    +list_articles(filters): list
+    +create_article(payload): dict
+  }
+
   class LoginPage { +render() }
   class HomePage { +render() }
   class PathsPage { +render() }
   class MyPathsPage { +render() }
   class MyCoursesPage { +render() }
+  class ArticlesPage { +render() }
   class AdminUsersPage { +render() }
 
   LoginPage --> SessionStore
@@ -247,12 +273,14 @@ classDiagram
   PathsPage --> PathsService
   MyPathsPage --> UserPathsService
   MyCoursesPage --> TrackingService
+  ArticlesPage --> ArticlesService
   AdminUsersPage --> UsersAdminService
 
   PathsService --> ApiClient
   UserPathsService --> ApiClient
   TrackingService --> ApiClient
   UsersAdminService --> ApiClient
+  ArticlesService --> ApiClient
   ApiClient --> SessionStore : token
 ```
 
