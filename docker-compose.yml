@@ -32,17 +32,16 @@ services:
 
   ui:
     build: .
-    working_dir: /app/frontend
-    command: ["streamlit", "run", "Home.py", "--server.port=8502", "--server.address=0.0.0.0"]
+    command: ["python", "-m", "frontend.ui.nicegui.main"]
     ports:
-      - "8502:8502"
+      - "8080:8080"
     volumes:
       - .:/app
     depends_on:
       - api
     environment:
-      - API_BASE_URL=http://api:8000
-      - COOKIE_SECURE=false
+      - BACKEND_URL=http://api:8000
+      - NICEGUI_STORAGE_SECRET=dev-storage-secret-change-me
 
 volumes:
   postgres_data:

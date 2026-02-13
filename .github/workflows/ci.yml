@@ -127,7 +127,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install uv
-          uv sync --no-install-project --group dev --group ui --frozen
+          uv sync --no-install-project --group dev --frozen
 
       - name: Run Alembic migrations
         run: uv run alembic upgrade head
@@ -177,7 +177,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install uv
-          uv sync --no-install-project --group dev --group ui --frozen
+          uv sync --no-install-project --group dev --frozen
 
       - name: Run Alembic migrations
         run: uv run alembic upgrade head

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from nicegui import ui
@@ -13,38 +12,15 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.services.paths_service import (
+    index_courses_by_int_id,
+    index_rows_by_int_id,
+    load_paths_page_data,
+)
 
 
-def _index_rows_by_int_id(rows: list[dict[str, Any]] | None) -> dict[int, dict[str, Any]]:
-    """Index rows by their integer `id` field."""
-    out: dict[int, dict[str, Any]] = {}
-    for row in list(rows or []):
-        if not isinstance(row, dict):
-            continue
-        raw = row.get("id")
-        if raw is None:
-            continue
-        try:
-            out[int(raw)] = row
-        except (TypeError, ValueError):
-            continue
-    return out
-
-
-def _index_courses_by_int_id(rows: list[dict[str, Any]] | None) -> dict[int, dict[str, Any]]:
-    """Index course rows by integer id (accepts `id` as int or numeric string)."""
-    out: dict[int, dict[str, Any]] = {}
-    for row in list(rows or []):
-        if not isinstance(row, dict):
-            continue
-        raw = row.get("id")
-        if raw is None:
-            continue
-        try:
-            out[int(raw)] = row
-        except (TypeError, ValueError):
-            continue
-    return out
+_index_rows_by_int_id = index_rows_by_int_id
+_index_courses_by_int_id = index_courses_by_int_id
 
 
 def _course_options(courses: list[dict[str, Any]] | None) -> dict[int, str]:
@@ -76,21 +52,8 @@ async def _load_paths_page_data(
     list[dict[str, Any]],
     dict[int, dict[str, Any]],
 ]:
-    """Load the primary data needed for the Paths page.
-
-    Returns:
-        `(paths, selected_by_id, courses, course_by_id)`.
-    """
-    paths_result, selected_result, courses_result = await asyncio.gather(
-        api.get("/paths"),
-        api.get("/paths/selected/list"),
-        api.get("/courses"),
-    )
-    paths = list(paths_result or [])
-    selected_by_id = _index_rows_by_int_id(list(selected_result or []))
-    courses = list(courses_result or [])
-    course_by_id = _index_courses_by_int_id(courses)
-    return paths, selected_by_id, courses, course_by_id
+    """Compat shim: use the NiceGUI paths service layer."""
+    return await load_paths_page_data(api=api)
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:

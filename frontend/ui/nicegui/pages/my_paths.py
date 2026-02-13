@@ -13,6 +13,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.services.paths_service import load_selected_paths
 
 
 def _filter_selected_paths(selected: list[dict[str, Any]] | None, *, needle: str, status: str) -> list[dict[str, Any]]:
@@ -28,8 +29,8 @@ def _filter_selected_paths(selected: list[dict[str, Any]] | None, *, needle: str
 
 
 async def _load_selected_paths(api: ApiClient) -> list[dict[str, Any]]:
-    """Load the current user's selected paths."""
-    return list(await api.get("/paths/selected/list") or [])
+    """Compat shim: load via the NiceGUI paths service layer."""
+    return await load_selected_paths(api=api)
 
 
 def _show_path_details_dialog(

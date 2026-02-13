@@ -5,7 +5,6 @@ This page focuses on the current user's tracking list and status updates.
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from nicegui import ui
@@ -16,6 +15,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.services.courses_service import load_courses_and_tracking
 
 
 def _build_tracked_items(
@@ -61,21 +61,14 @@ async def _load_courses_and_tracking(api: ApiClient) -> tuple[dict[int, dict[str
     Raises:
         ApiError: If the backend requests fail.
     """
-    courses_result, tracking_result = await asyncio.gather(api.get("/courses"), api.get("/tracking"))
+    courses, tracking_by_course_id = await load_courses_and_tracking(api=api, course_params=None)
 
     courses_by_id: dict[int, dict[str, Any]] = {}
-    for c in list(courses_result or []):
+    for c in list(courses or []):
         if isinstance(c, dict) and "id" in c:
             courses_by_id[int(c["id"])] = c
 
-    tracking_by_id: dict[int, dict[str, Any]] = {}
-    for r in list(tracking_result or []):
-        if not isinstance(r, dict):
-            continue
-        raw = str(r.get("course_id") or "")
-        if not raw.isdigit():
-            continue
-        tracking_by_id[int(raw)] = r
+    tracking_by_id = dict(tracking_by_course_id)
 
     return courses_by_id, tracking_by_id
 

@@ -3,7 +3,7 @@
 ## Overview
 This project uses a simple three‑tier layout:
 
-- UI (Streamlit today; NiceGUI target).
+- UI (NiceGUI).
 - FastAPI backend for auth, course management, learning paths, and tracking.
 - Postgres for persistence (schema managed via Alembic).
 

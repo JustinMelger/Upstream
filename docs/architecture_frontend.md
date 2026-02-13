@@ -1,8 +1,8 @@
 # Frontend Architecture (NiceGUI Target)
 
 ## Overview
-The current UI is built with Streamlit.
-If/when the UI migrates to NiceGUI, a class-based structure fits well because NiceGUI is event-driven and component-oriented.
+The UI is built with NiceGUI.
+NiceGUI is event-driven and component-oriented, so a class-based or function-based structure with a dedicated “use-cases/services” layer fits well.
 
 Recommended separation:
 

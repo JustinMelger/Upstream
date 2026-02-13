@@ -15,7 +15,7 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 1. Build and start services:
    - `docker compose up --build`
 2. Open the UI:
-   - `http://localhost:8502`
+   - `http://localhost:8080`
 
 ## Database migrations (Postgres)
 When using Postgres (Phase 4), set `DATABASE_URL` and run:
@@ -28,24 +28,24 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 2. Start services with file sync + reload:
    - `docker compose -f docker-compose.watch.yml watch`
 3. Open the UI:
-   - `http://localhost:8502`
+   - `http://localhost:8080`
 
 ### Environment variables
 - `SESSION_DAYS`: session lifetime in days (API).
 - `BOOTSTRAP_ADMIN_USERNAME`: first admin username when no users exist (API).
 - `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist (API).
-- `COOKIE_SECURE`: set to `true` behind HTTPS (UI).
+- `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage (UI).
 - `DATABASE_URL`: Postgres connection string (API).
 
 ## Run locally (without Docker)
 1. Install dependencies:
    - `uv sync --group dev`
 2. Start the API:
-   - `uvicorn backend.main:app --reload`
+   - `just backend`
 3. Start the UI (in a new terminal):
-   - `streamlit run frontend/Home.py`
+   - `just ui`
 4. Open the UI:
-    - `http://localhost:8501`
+    - `http://localhost:8080`
 
 ## Pages
 - Home (Dashboard): progress snapshot, path progress, recent activity, featured paths, and recently added courses.

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime
 from typing import Any
 
@@ -12,6 +11,7 @@ from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.services.dashboard_service import load_dashboard_data
 
 
 def _format_time(ts: str | None) -> str:
@@ -121,82 +121,6 @@ def _recent_courses(courses: list[dict[str, Any]], *, limit: int) -> list[dict[s
     return sorted(courses, key=_key, reverse=True)[:limit]
 
 
-async def _load_dashboard_data(
-    *,
-    api: ApiClient,
-    username: str,
-    is_admin: bool,
-    mode_value: str,
-) -> dict[str, Any]:
-    """Load all dashboard data required for the page.
-
-    Args:
-        api: API client.
-        username: Current username.
-        is_admin: Whether the current user is an admin.
-        mode_value: Either "mine" or "team".
-
-    Returns:
-        A dict containing the datasets needed by the dashboard.
-    """
-    tasks: list[asyncio.Future[Any] | asyncio.Task[Any]] = [
-        asyncio.create_task(api.get("/courses")),
-        asyncio.create_task(api.get("/paths")),
-        asyncio.create_task(api.get("/paths/selected/list")),
-        asyncio.create_task(api.get("/tracking")),
-    ]
-
-    # Stats snapshot
-    if is_admin and mode_value == "team":
-        tasks.append(asyncio.create_task(api.get("/tracking/stats")))
-    else:
-        tasks.append(asyncio.create_task(api.get("/tracking/stats", params={"colleague_id": username})))
-
-    # Admin-only panels
-    if is_admin:
-        tasks.append(asyncio.create_task(api.get("/tracking/stats/users")))
-        tasks.append(asyncio.create_task(api.get("/tracking/recent", params={"limit": 5})))
-
-    results = await asyncio.gather(*tasks)
-    idx = 0
-    courses = list(results[idx] or [])
-    idx += 1
-    paths = list(results[idx] or [])
-    idx += 1
-    selected_paths = list(results[idx] or [])
-    idx += 1
-    tracking_rows = list(results[idx] or [])
-    idx += 1
-    snapshot_stats = dict(results[idx] or {})
-    idx += 1
-
-    team_stats_by_user: list[dict[str, Any]] = []
-    team_recent: list[dict[str, Any]] = []
-    if is_admin:
-        team_stats_by_user = list(results[idx] or [])
-        idx += 1
-        team_recent = list(results[idx] or [])
-        idx += 1
-
-    return {
-        "courses": courses,
-        "paths": paths,
-        "selected_paths": selected_paths,
-        "tracking_rows": tracking_rows,
-        "snapshot_stats": snapshot_stats,
-        "team_stats_by_user": team_stats_by_user,
-        "team_recent": team_recent,
-    }
-
-
-async def _load_path_detail(*, api: ApiClient, path_id: int) -> dict[str, Any] | None:
-    """Load a single path including its courses."""
-    try:
-        return await api.get(f"/paths/{path_id}")
-    except Exception:
-        return None
-
-
 def _render_snapshot_metrics(*, snapshot_stats: dict[str, int]) -> None:
     """Render the three dashboard snapshot metric cards."""
 
@@ -300,27 +224,20 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 meta.text = "Loading..."
 
                 try:
-                    data = await _load_dashboard_data(
+                    data = await load_dashboard_data(
                         api=api,
                         username=username,
                         is_admin=is_admin,
                         mode_value=str(mode.value) if mode is not None else "mine",
                     )
-                    courses = list(data["courses"])
-                    paths = list(data["paths"])
-                    selected_paths = list(data["selected_paths"])
-                    tracking_rows = list(data["tracking_rows"])
-                    snapshot_stats = dict(data["snapshot_stats"])
-                    team_stats_by_user = list(data["team_stats_by_user"])
-                    team_recent = list(data["team_recent"])
-
-                    # Prefetch path detail for progress cards (limit to 5).
-                    tracking = _tracking_map(tracking_rows)
-                    shown = selected_paths[:5]
-                    details = await asyncio.gather(
-                        *[(_load_path_detail(api=api, path_id=int(p.get("id") or 0))) for p in shown]
-                    )
-                    selected_path_details = [d for d in details if d]
+                    courses = list(data.courses)
+                    paths = list(data.paths)
+                    selected_paths = list(data.selected_paths)
+                    tracking_rows = list(data.tracking_rows)
+                    snapshot_stats = dict(data.snapshot_stats)
+                    team_stats_by_user = list(data.team_stats_by_user)
+                    team_recent = list(data.team_recent)
+                    selected_path_details = list(data.selected_path_details)
 
                     dashboard.refresh()
                     meta.text = "Updated"

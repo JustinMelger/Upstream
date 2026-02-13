@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from nicegui import ui
@@ -13,6 +12,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.services.courses_service import load_courses_and_tracking, load_tracking_map
 
 
 def _parse_duration_hours(raw: str) -> float | None:
@@ -77,17 +77,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     if level.value:
                         params["level"] = str(level.value)
 
-                    courses_result, tracking_result = await asyncio.gather(
-                        api.get("/courses", params=params or None),
-                        api.get("/tracking"),
-                    )
-                    courses = list(courses_result or [])
-                    tracking_rows = list(tracking_result or [])
-                    tracking_by_course_id = {
-                        int(r["course_id"]): r
-                        for r in tracking_rows
-                        if isinstance(r, dict) and str(r.get("course_id") or "").isdigit()
-                    }
+                    courses, tracking_by_course_id = await load_courses_and_tracking(api=api, course_params=params or None)
                     courses_list.refresh()
                     meta.text = f"{len(courses)} courses"
                 except ApiError as exc:
@@ -103,18 +93,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             async def _reload_tracking_only() -> None:
                 nonlocal tracking_by_course_id
                 try:
-                    tracking_result = await api.get("/tracking")
+                    tracking_by_course_id = await load_tracking_map(api=api)
                 except ApiError as exc:
                     ui.notify(str(exc), type="negative")
                     tracking_by_course_id = {}
                     courses_list.refresh()
                     return
-                tracking_rows = list(tracking_result or [])
-                tracking_by_course_id = {
-                    int(r["course_id"]): r
-                    for r in tracking_rows
-                    if isinstance(r, dict) and str(r.get("course_id") or "").isdigit()
-                }
                 courses_list.refresh()
 
             @guard_ui_action(title="Update status failed")

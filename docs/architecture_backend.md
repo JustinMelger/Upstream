@@ -41,7 +41,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
   participant User as User
-  participant UI as Streamlit UI
+  participant UI as NiceGUI UI
   participant API as Auth Router (FastAPI)
   participant Auth as Auth Service
   participant DB as Postgres Database
@@ -190,7 +190,7 @@ Each router defines Pydantic request and response schemas. Invalid request paylo
 ```mermaid
 sequenceDiagram
   participant User as User
-  participant UI as Streamlit UI
+  participant UI as NiceGUI UI
   participant API as Courses Router (FastAPI)
   participant Auth as Auth Service
   participant Courses as Courses Service
@@ -273,7 +273,7 @@ erDiagram
 ```mermaid
 sequenceDiagram
   participant User as User
-  participant UI as Streamlit UI
+  participant UI as NiceGUI UI
   participant API as Paths Router (FastAPI)
   participant Auth as Auth Service
   participant Paths as Paths Service
@@ -402,7 +402,7 @@ erDiagram
 ```mermaid
 sequenceDiagram
   participant User as User
-  participant UI as Streamlit UI
+  participant UI as NiceGUI UI
   participant API as Tracking Router (FastAPI)
   participant Auth as Auth Service
   participant Tracking as Tracking Service
