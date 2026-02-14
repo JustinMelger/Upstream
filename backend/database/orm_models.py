@@ -129,3 +129,21 @@ class Article(Base):
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class CourseReview(Base):
+    """ORM model for course reviews."""
+
+    __tablename__ = "course_reviews"
+    __table_args__ = (
+        UniqueConstraint("course_id", "created_by", name="uq_course_reviews_course_created_by"),
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_course_reviews_rating"),
+        Index("idx_course_reviews_course_id", "course_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)

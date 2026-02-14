@@ -17,6 +17,23 @@ from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.services.paths_service import load_my_paths_page_data
 
 
+def _format_review_summary(row: dict[str, Any] | None) -> str:
+    """Format a review summary row into a compact label."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("review_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    try:
+        avg = float(row.get("avg_rating") or 0.0)
+    except (TypeError, ValueError):
+        avg = 0.0
+    return f"{avg:.1f}/5 ({count})"
+
+
 def _filter_selected_paths(selected: list[dict[str, Any]] | None, *, needle: str, status: str) -> list[dict[str, Any]]:
     """Filter selected paths by name substring and optional status."""
     shown = list(selected or [])
@@ -66,16 +83,22 @@ def _show_path_details_dialog(
                 {"name": "provider", "label": "Provider", "field": "provider"},
                 {"name": "category", "label": "Category", "field": "category"},
                 {"name": "level", "label": "Level", "field": "level"},
+                {"name": "reviews", "label": "Reviews", "field": "reviews"},
             ],
             rows=courses_rows,
         ).classes("w-full")
 
         with ui.row().classes("justify-end mt-4"):
+            update_btn = ui.button("Update status").props("outline")
 
             async def _update() -> None:
-                await on_update_status(str(status_select.value or ""))
+                update_btn.disable()
+                try:
+                    await on_update_status(str(status_select.value or ""))
+                finally:
+                    update_btn.enable()
 
-            ui.button("Update status", on_click=_update).props("outline")
+            update_btn.on_click(_update)
 
             async def _remove() -> None:
                 await on_unselect()
@@ -170,10 +193,37 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         label=None,
                                     ).props("dense")
 
-                                    async def _on_status_change(e, _pid: int = pid) -> None:
-                                        value = str(getattr(e, "value", "") or "")
-                                        if value:
-                                            await _set_status(_pid, value)
+                                    async def _on_status_change(e, _pid: int = pid, _select=status_select) -> None:
+                                        _select.disable()
+                                        try:
+                                            options_map = {k: v for k, v in STATUS_OPTIONS}
+                                            raw = e
+                                            if not isinstance(e, (str, int, float, bool, dict)) and e is not None:
+                                                raw = getattr(e, "value", None)
+                                                if raw is None:
+                                                    raw = getattr(e, "args", None)
+
+                                            if isinstance(raw, dict):
+                                                if raw.get("value") in options_map:
+                                                    value = str(raw.get("value") or "")
+                                                elif "label" in raw:
+                                                    label = str(raw.get("label") or "").strip().lower()
+                                                    value = ""
+                                                    for key, opt_label in options_map.items():
+                                                        if label and label == str(opt_label).strip().lower():
+                                                            value = str(key)
+                                                            break
+                                                else:
+                                                    value = ""
+                                            else:
+                                                value = str(raw or _select.value or "")
+
+                                            if value:
+                                                _select.value = value
+                                                _select.update()
+                                                await _set_status(_pid, value)
+                                        finally:
+                                            _select.enable()
 
                                     status_select.on("update:model-value", _on_status_change)
 
@@ -234,8 +284,50 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 detail = details_by_path_id.get(int(path_id)) or await api.get(f"/paths/{path_id}")
 
                 row = next((p for p in selected if int(p.get("id") or 0) == int(path_id)), None) or {}
+                courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
+                course_ids: list[int] = []
+                for c in courses_rows:
+                    if not isinstance(c, dict):
+                        continue
+                    try:
+                        cid = int(c.get("id") or 0)
+                    except (TypeError, ValueError):
+                        continue
+                    if cid > 0:
+                        course_ids.append(cid)
+
+                review_summary_by_course_id: dict[int, dict[str, Any]] = {}
+                if course_ids:
+                    try:
+                        rows = await api.get("/courses/reviews/summary", params={"course_ids": course_ids})
+                        for r in list(rows or []):
+                            if not isinstance(r, dict):
+                                continue
+                            try:
+                                cid = int(r.get("course_id") or 0)
+                            except (TypeError, ValueError):
+                                continue
+                            if cid > 0:
+                                review_summary_by_course_id[cid] = r
+                    except ApiError:
+                        review_summary_by_course_id = {}
+
+                enriched_courses: list[dict[str, Any]] = []
+                for c in courses_rows:
+                    if not isinstance(c, dict):
+                        continue
+                    try:
+                        cid = int(c.get("id") or 0)
+                    except (TypeError, ValueError):
+                        cid = 0
+                    enriched = dict(c)
+                    enriched["reviews"] = _format_review_summary(review_summary_by_course_id.get(cid))
+                    enriched_courses.append(enriched)
+
+                enriched_detail = dict(detail or {})
+                enriched_detail["courses"] = enriched_courses
                 _show_path_details_dialog(
-                    detail=dict(detail or {}),
+                    detail=enriched_detail,
                     selected_row=dict(row),
                     on_update_status=lambda s: _set_status(int(path_id), s),
                     on_unselect=lambda: _unselect(int(path_id)),

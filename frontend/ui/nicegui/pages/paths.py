@@ -216,6 +216,52 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             """Open a detail dialog for a path."""
             detail = await api.get(f"/paths/{path_id}")
 
+            courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
+            course_ids_in_path: list[int] = []
+            for c in courses_rows:
+                if not isinstance(c, dict):
+                    continue
+                try:
+                    cid = int(c.get("id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if cid > 0:
+                    course_ids_in_path.append(cid)
+
+            review_summary_by_course_id: dict[int, dict[str, Any]] = {}
+            if course_ids_in_path:
+                try:
+                    rows = await api.get("/courses/reviews/summary", params={"course_ids": course_ids_in_path})
+                    for r in list(rows or []):
+                        if not isinstance(r, dict):
+                            continue
+                        try:
+                            cid = int(r.get("course_id") or 0)
+                        except (TypeError, ValueError):
+                            continue
+                        if cid > 0:
+                            review_summary_by_course_id[cid] = r
+                except ApiError:
+                    review_summary_by_course_id = {}
+
+            def _summary_label(cid: int) -> str:
+                row = review_summary_by_course_id.get(int(cid))
+                if not isinstance(row, dict):
+                    return ""
+                try:
+                    count = int(row.get("review_count") or 0)
+                except (TypeError, ValueError):
+                    count = 0
+                if count <= 0:
+                    return ""
+                try:
+                    avg = float(row.get("avg_rating") or 0.0)
+                except (TypeError, ValueError):
+                    avg = 0.0
+                return f"{avg:.1f}/5 ({count})"
+
+            courses_rows = [dict(c, reviews=_summary_label(int(c.get("id") or 0))) for c in courses_rows if isinstance(c, dict)]
+
             with ui.dialog() as dialog, ui.card().classes("w-[min(900px,95vw)]"):
                 ui.label(detail.get("name") or "").classes("text-xl font-semibold")
                 ui.label(detail.get("description") or "").classes("text-sm text-gray-600")
@@ -235,7 +281,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                         ui.button("Update status", on_click=_update_status).props("outline")
 
-                courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
                 ui.label("Courses").classes("text-lg font-semibold mt-4")
                 ui.table(
                     columns=[
@@ -244,6 +289,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         {"name": "provider", "label": "Provider", "field": "provider"},
                         {"name": "category", "label": "Category", "field": "category"},
                         {"name": "level", "label": "Level", "field": "level"},
+                        {"name": "reviews", "label": "Reviews", "field": "reviews"},
                     ],
                     rows=courses_rows,
                 ).classes("w-full")
@@ -300,6 +346,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 with ui.column().classes("gap-1"):
                                     ui.label(p.get("name") or "").classes("text-lg font-semibold")
                                     ui.label(p.get("description") or "").classes("text-sm text-gray-600")
+                                    shared_by = str(p.get("created_by") or "").strip()
+                                    if shared_by:
+                                        ui.label(f"Shared by {shared_by}").classes("text-xs text-gray-600")
                                     ui.label(status_label((selected or {}).get("status"))).classes(
                                         status_chip_class((selected or {}).get("status"))
                                     )

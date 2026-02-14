@@ -16,7 +16,24 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.services.courses_service import load_courses_and_tracking
+from frontend.ui.nicegui.services.courses_service import load_courses_and_tracking, load_review_summaries
+
+
+def _format_review_summary(row: dict[str, Any] | None) -> str:
+    """Format a review summary row into a compact label."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("review_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    try:
+        avg = float(row.get("avg_rating") or 0.0)
+    except (TypeError, ValueError):
+        avg = 0.0
+    return f"{avg:.1f}/5 ({count})"
 
 
 def _build_tracked_items(
@@ -90,11 +107,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         render_shell(title="My Courses", store=store, api=api)
         courses_by_id: dict[int, dict[str, Any]] = {}
         tracking_by_id: dict[int, dict[str, Any]] = {}
+        review_summary_by_course_id: dict[int, dict[str, Any]] = {}
         loading = False
 
         async def _load() -> None:
             """Fetch the latest data and refresh the rendered list."""
-            nonlocal courses_by_id, tracking_by_id, loading
+            nonlocal courses_by_id, tracking_by_id, review_summary_by_course_id, loading
             if loading:
                 return
             loading = True
@@ -103,12 +121,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             courses_list.refresh()
             try:
                 courses_by_id, tracking_by_id = await _load_courses_and_tracking(api)
+                review_summary_by_course_id = await load_review_summaries(
+                    api=api,
+                    course_ids=[int(cid) for cid in tracking_by_id.keys() if int(cid) > 0],
+                )
                 courses_list.refresh()
                 meta.text = f"{len(tracking_by_id)} tracked"
             except ApiError as exc:
                 ui.notify(str(exc), type="negative")
                 courses_by_id = {}
                 tracking_by_id = {}
+                review_summary_by_course_id = {}
                 courses_list.refresh()
                 meta.text = "Failed to load"
             finally:
@@ -209,6 +232,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     if str(course.get("description") or "").strip():
                                         ui.label(str(course.get("description") or "")).classes("text-sm text-gray-600")
                                     with ui.row().classes("items-center gap-2 flex-wrap"):
+                                        summary_chip = _format_review_summary(review_summary_by_course_id.get(int(cid)))
+                                        ui.label(summary_chip or "No reviews").classes("lp-meta-chip")
                                         if str(course.get("provider") or "").strip():
                                             ui.label(str(course.get("provider") or "")).classes("lp-meta-chip")
                                         if str(course.get("category") or "").strip():
@@ -226,10 +251,36 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         label=None,
                                     ).props("dense")
 
-                                    async def _on_status_change(e, _cid: int = cid) -> None:
-                                        value = str(getattr(e, "value", "") or "")
-                                        if value:
-                                            await _set_status(_cid, value)
+                                    async def _on_status_change(e, _cid: int = cid, _select=status_select) -> None:
+                                        _select.disable()
+                                        try:
+                                            options_map = {k: v for k, v in TRACKING_STATUS_OPTIONS}
+                                            raw = e
+                                            if not isinstance(e, (str, int, float, bool, dict)) and e is not None:
+                                                raw = getattr(e, "value", None)
+                                                if raw is None:
+                                                    raw = getattr(e, "args", None)
+
+                                            if isinstance(raw, dict):
+                                                if raw.get("value") in options_map:
+                                                    value = str(raw.get("value") or "")
+                                                elif "label" in raw:
+                                                    label = str(raw.get("label") or "").strip().lower()
+                                                    value = ""
+                                                    for key, opt_label in options_map.items():
+                                                        if label and label == str(opt_label).strip().lower():
+                                                            value = str(key)
+                                                            break
+                                                else:
+                                                    value = ""
+                                            else:
+                                                value = str(raw or _select.value or "")
+                                            if value:
+                                                _select.value = value
+                                                _select.update()
+                                                await _set_status(_cid, value)
+                                        finally:
+                                            _select.enable()
 
                                     status_select.on("update:model-value", _on_status_change)
 

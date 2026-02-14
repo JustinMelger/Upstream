@@ -35,6 +35,23 @@ def _format_time(ts: str | None) -> str:
         return ts
 
 
+def _format_review_summary(row: dict[str, Any] | None) -> str:
+    """Format a review summary row into a compact label."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("review_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    try:
+        avg = float(row.get("avg_rating") or 0.0)
+    except (TypeError, ValueError):
+        avg = 0.0
+    return f"{avg:.1f}/5 ({count})"
+
+
 def _format_date(ts: str | None) -> str:
     """Format an ISO-8601 timestamp into a short date string.
 
@@ -250,6 +267,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             snapshot_stats: dict[str, int] = {}
             team_recent: list[dict[str, Any]] = []
             team_stats_by_user: list[dict[str, Any]] = []
+            review_summary_by_course_id: dict[int, dict[str, Any]] = {}
 
             meta = ui.label("").classes("text-sm text-gray-600")
             loading = False
@@ -273,6 +291,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             async def _load() -> None:
                 nonlocal courses, paths, selected_paths, tracking_rows, snapshot_stats, team_recent, team_stats_by_user
                 nonlocal selected_path_details
+                nonlocal review_summary_by_course_id
                 nonlocal loading
                 if loading:
                     return
@@ -296,6 +315,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     team_stats_by_user = list(data.team_stats_by_user)
                     team_recent = list(data.team_recent)
                     selected_path_details = list(data.selected_path_details)
+                    review_summary_by_course_id = dict(data.review_summary_by_course_id or {})
 
                     dashboard.refresh()
                     meta.text = "Updated"
@@ -309,6 +329,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     snapshot_stats = {}
                     team_recent = []
                     team_stats_by_user = []
+                    review_summary_by_course_id = {}
                     dashboard.refresh()
                     meta.text = "Failed to load"
                 finally:
@@ -353,6 +374,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         ui.label(title).classes("text-md font-semibold")
                                         if meta_bits:
                                             ui.label(" · ".join(meta_bits)).classes("text-sm text-gray-600")
+                                        summary_chip = _format_review_summary(review_summary_by_course_id.get(int(cid)))
+                                        if summary_chip:
+                                            ui.label(summary_chip).classes("lp-meta-chip")
                                         ui.label("In progress").classes("lp-chip lp-chip--teal")
 
                                     with ui.row().classes("items-center gap-2"):
@@ -389,6 +413,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             ui.label(status.replace("_", " ").title()).classes(tracking_chip_class(status))
                                         else:
                                             ui.label("Not tracked").classes("lp-chip lp-chip--muted")
+                                        summary_chip = _format_review_summary(review_summary_by_course_id.get(int(cid)))
+                                        if summary_chip:
+                                            ui.label(summary_chip).classes("lp-meta-chip")
 
                                     with ui.row().classes("items-center gap-2"):
                                         if url:

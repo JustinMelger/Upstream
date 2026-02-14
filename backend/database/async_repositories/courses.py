@@ -43,8 +43,11 @@ class CoursesRepository:
             like = f"%{query.lower()}%"
             stmt = stmt.where(
                 func.lower(CourseModel.title).like(like)
+                | func.lower(func.coalesce(CourseModel.description, "")).like(like)
                 | func.lower(func.coalesce(CourseModel.provider, "")).like(like)
                 | func.lower(func.coalesce(CourseModel.category, "")).like(like)
+                | func.lower(func.coalesce(CourseModel.level, "")).like(like)
+                | func.lower(func.coalesce(CourseModel.url, "")).like(like)
             )
         if provider:
             stmt = stmt.where(CourseModel.provider == provider)

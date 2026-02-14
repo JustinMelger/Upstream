@@ -40,3 +40,22 @@ async def load_tracking_map(*, api: ApiClient) -> dict[int, dict[str, Any]]:
     """Load only tracking rows and index them by course id."""
     tracking_result = await api.get("/tracking")
     return index_tracking_by_course_id(list(tracking_result or []))
+
+
+async def load_review_summaries(*, api: ApiClient, course_ids: list[int]) -> dict[int, dict[str, Any]]:
+    """Load review summary items for the given course ids and index them by course id."""
+    if not course_ids:
+        return {}
+    result = await api.get("/courses/reviews/summary", params={"course_ids": [int(i) for i in course_ids if int(i) > 0]})
+    out: dict[int, dict[str, Any]] = {}
+    for row in list(result or []):
+        if not isinstance(row, dict):
+            continue
+        try:
+            cid = int(row.get("course_id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if cid <= 0:
+            continue
+        out[cid] = row
+    return out

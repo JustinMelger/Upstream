@@ -17,7 +17,7 @@ async def test_courses_create_rejects_non_string_title(app_client):
     """Course create validation rejects invalid field types."""
     login = await app_client.post("/auth/login", json={"username": "admin", "password": "admin"})
     token = login.json()["token"]
-    response = await app_client.post("/courses", json={"title": 123}, headers={"X-Session-Token": token})
+    response = await app_client.post("/courses", json={"title": 123, "description": "desc"}, headers={"X-Session-Token": token})
     assert response.status_code == 422
     assert response.json().get("message") == "validation_error"
 

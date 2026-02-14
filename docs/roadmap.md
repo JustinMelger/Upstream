@@ -90,8 +90,10 @@
 
 ## Phase 10 — Social Layer (By Colleagues, For Colleagues)
 - [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).
-- [ ] Add reviews for courses (rating + text) and paths (text), with basic moderation/admin removal.
-- [ ] Surface social signals in UI (Home + course/path details).
+- [x] Add reviews for courses (rating + text) with basic moderation/admin removal.
+- [ ] Add reviews for paths (text) with basic moderation/admin removal.
+- [x] Surface social signals in UI (Home + course/path details).
+- [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 - [ ] Add “Suggest a course/path” drafts (user-submitted) with admin approve/edit → canonical content.
 - [ ] Basic de-duplication for suggested courses (URL-based + title/provider similarity).
 - [ ] Notifications v1 (optional): show “recommended to you” inbox or activity feed (no email).

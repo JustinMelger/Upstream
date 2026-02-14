@@ -91,3 +91,15 @@ class ArticleRecord:
     tags: str | None
     created_by: str
     created_at: str
+
+
+@dataclass(frozen=True)
+class CourseReviewRecord:
+    """Course review row representation."""
+
+    id: int
+    course_id: int
+    rating: int
+    text: str | None
+    created_by: str
+    created_at: str
