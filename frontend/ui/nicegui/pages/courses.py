@@ -40,6 +40,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         if user is None:
             return
         render_shell(title="Courses", store=store, api=api)
+        username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
 
         with render_container():
@@ -50,12 +51,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 q = ui.input("Search").props("clearable debounce=300").classes("grow")
                 provider = ui.input("Provider").props("clearable debounce=300")
                 category = ui.input("Category").props("clearable debounce=300")
-                level = ui.input("Level").props("clearable debounce=300")
                 status_filter = ui.select(
                     {"": "Any status", "not_tracked": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
                     label="My status",
                     value="",
                 )
+
+            with ui.expansion("More filters").props("dense"):
+                with ui.row().classes("items-end w-full"):
+                    level = ui.input("Level").props("clearable debounce=300")
 
             meta = ui.label("").classes("text-sm text-gray-600")
             loading = False
@@ -121,6 +125,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ui.label("Create Course").classes("text-xl font-semibold")
 
                     title = ui.input("Title").props("clearable").classes("w-full")
+                    description = ui.textarea("Description").props("autogrow").classes("w-full")
                     provider_new = ui.input("Provider").props("clearable").classes("w-full")
                     category_new = ui.input("Category").props("clearable").classes("w-full")
                     level_new = ui.input("Level").props("clearable").classes("w-full")
@@ -136,9 +141,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             if dh_raw.strip() and dh is None:
                                 ui.notify("Duration hours must be a number", type="negative")
                                 return
+                            if not str(description.value or "").strip():
+                                ui.notify("Description is required", type="negative")
+                                return
 
                             payload = {
                                 "title": str(title.value or ""),
+                                "description": str(description.value or "").strip(),
                                 "provider": str(provider_new.value or ""),
                                 "category": str(category_new.value or ""),
                                 "level": str(level_new.value or ""),
@@ -161,6 +170,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                     course_id = int(course.get("id") or 0)
                     title = ui.input("Title", value=str(course.get("title") or "")).props("clearable").classes("w-full")
+                    description = (
+                        ui.textarea("Description", value=str(course.get("description") or ""))
+                        .props("autogrow")
+                        .classes("w-full")
+                    )
                     provider_new = (
                         ui.input("Provider", value=str(course.get("provider") or "")).props("clearable").classes("w-full")
                     )
@@ -184,9 +198,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             if dh_raw.strip() and dh is None:
                                 ui.notify("Duration hours must be a number", type="negative")
                                 return
+                            if not str(description.value or "").strip():
+                                ui.notify("Description is required", type="negative")
+                                return
 
                             payload = {
                                 "title": str(title.value or ""),
+                                "description": str(description.value or "").strip(),
                                 "provider": str(provider_new.value or ""),
                                 "category": str(category_new.value or ""),
                                 "level": str(level_new.value or ""),
@@ -226,6 +244,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
                     ui.label(course.get("title") or "").classes("text-xl font-semibold")
+                    if str(course.get("description") or "").strip():
+                        ui.label(str(course.get("description") or "")).classes("text-sm text-gray-600")
                     ui.label(
                         f"{course.get('provider') or ''} · {course.get('category') or ''} · {course.get('level') or ''}"
                     ).classes("text-sm text-gray-600")
@@ -260,7 +280,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ui.button("Clear", on_click=_do_clear).props("color=negative outline")
                         ui.button("Close", on_click=dialog.close).props("outline")
 
-                    if is_admin:
+                    can_edit = is_admin or (str(course.get("created_by") or "") == username)
+                    if can_edit:
                         ui.separator()
                         with ui.row().classes("justify-end"):
                             ui.button("Edit", on_click=lambda c=course: _render_edit_course_dialog(c)).props("outline")
@@ -314,10 +335,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     for c in shown:
                         course_id = int(c.get("id") or 0)
                         tracked = tracking_by_course_id.get(course_id)
+                        can_edit = is_admin or (str(c.get("created_by") or "") == username)
                         with ui.card().classes("w-full"):
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
                                     ui.label(c.get("title") or "").classes("text-lg font-semibold")
+                                    if str(c.get("description") or "").strip():
+                                        ui.label(str(c.get("description") or "")).classes("text-sm text-gray-600")
                                     with ui.row().classes("items-center gap-2 flex-wrap"):
                                         if str(c.get("provider") or "").strip():
                                             ui.label(str(c.get("provider") or "")).classes("lp-meta-chip")
@@ -353,7 +377,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                     status_select.on("update:model-value", _on_status_change)
 
-                            if is_admin:
+                            if can_edit:
                                 with ui.row().classes("justify-end mt-2"):
                                     ui.button("Edit", on_click=lambda course=c: _render_edit_course_dialog(course)).props(
                                         "dense outline"
@@ -384,8 +408,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             with ui.row().classes("items-center justify-between w-full"):
                 with ui.row().classes("items-center gap-2"):
                     refresh_btn = ui.button("Refresh", on_click=_load).props("outline")
-                    if is_admin:
-                        ui.button("New course", on_click=_render_create_course_dialog)
+                    ui.button("New course", on_click=_render_create_course_dialog)
 
             await _load()
             courses_list()

@@ -46,6 +46,7 @@ class PathsService:
             "id": path.id,
             "name": path.name,
             "description": path.description or "",
+            "created_by": path.created_by,
             "courses": [self._course_payload(course) for course in courses],
         }
 
@@ -67,11 +68,17 @@ class PathsService:
             raise PathsServiceError(detail="missing_name", status_code=400)
         description = (payload.get("description") or "").strip() or None
         course_ids = payload.get("course_ids") or []
+        created_by = (payload.get("created_by") or "").strip() or None
 
         async with self._repo.session.begin():
             if await self._repo.path_name_exists(name):
                 raise PathsServiceError(detail="duplicate_name", status_code=409)
-            path_id = await self._repo.create_path_with_courses(name, description, [int(course_id) for course_id in course_ids])
+            path_id = await self._repo.create_path_with_courses(
+                name,
+                description,
+                [int(course_id) for course_id in course_ids],
+                created_by,
+            )
         path = await self.get_path(path_id)
         if not path:
             raise PathsServiceError(detail="created_path_missing", status_code=500)
@@ -122,7 +129,7 @@ class PathsService:
     @staticmethod
     def _path_payload(path: PathRecord) -> dict:
         """Convert a path record into an API payload."""
-        return {"id": path.id, "name": path.name, "description": path.description or ""}
+        return {"id": path.id, "name": path.name, "description": path.description or "", "created_by": path.created_by}
 
     @staticmethod
     def _course_payload(course: PathCourseRecord) -> dict:

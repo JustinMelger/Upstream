@@ -153,12 +153,12 @@ erDiagram
 ### Course service
 - CRUD for courses (title, provider, category, level, duration, url).
 - Search and filter by query/provider/category/level.
-- Admin-only create/update/delete.
+- Any authenticated user can create courses; only the creator (or admin) can edit/delete.
 
 ### Path service
 - CRUD for learning paths with ordered course lists.
 - User path selection, unselection, and status updates.
-- Admin-only create/update/delete for paths.
+- Any authenticated user can create paths; only the creator (or admin) can edit/delete.
 
 ### Tracking service
 - Track per-user course progress (interested / in_progress / completed).

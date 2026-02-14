@@ -65,10 +65,9 @@ async def get_course(
 async def add_course(
     payload: CourseCreateRequest,
     current_user: str = Depends(require_session),
-    auth: AuthService = Depends(get_auth_service),
     courses: CoursesService = Depends(get_courses_service),
 ):
-    """Create a course (admin only).
+    """Create a course (any authenticated user).
 
     Args:
         payload: Course payload.
@@ -77,9 +76,9 @@ async def add_course(
     Returns:
         dict: Created course.
     """
-    if not await auth.is_admin(current_user):
-        raise HTTPException(status_code=403, detail="admin_required")
-    return await courses.create_course(payload.model_dump())
+    data = payload.model_dump()
+    data["created_by"] = current_user
+    return await courses.create_course(data)
 
 
 @router.put("/{course_id}", response_model=CoursePayload)
@@ -90,7 +89,7 @@ async def edit_course(
     auth: AuthService = Depends(get_auth_service),
     courses: CoursesService = Depends(get_courses_service),
 ):
-    """Update a course (admin only).
+    """Update a course (owner/admin only).
 
     Args:
         course_id: Course ID.
@@ -101,7 +100,11 @@ async def edit_course(
         dict: Updated course.
     """
     if not await auth.is_admin(current_user):
-        raise HTTPException(status_code=403, detail="admin_required")
+        existing = await courses.get_course_by_id(course_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="not_found")
+        if str(existing.get("created_by") or "") != str(current_user):
+            raise HTTPException(status_code=403, detail="forbidden")
     course = await courses.update_course(course_id, payload.model_dump())
     if not course:
         raise HTTPException(status_code=404, detail="not_found")
@@ -115,7 +118,7 @@ async def remove_course(
     auth: AuthService = Depends(get_auth_service),
     courses: CoursesService = Depends(get_courses_service),
 ):
-    """Delete a course (admin only).
+    """Delete a course (owner/admin only).
 
     Args:
         course_id: Course ID.
@@ -125,7 +128,11 @@ async def remove_course(
         dict: Delete result.
     """
     if not await auth.is_admin(current_user):
-        raise HTTPException(status_code=403, detail="admin_required")
+        existing = await courses.get_course_by_id(course_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="not_found")
+        if str(existing.get("created_by") or "") != str(current_user):
+            raise HTTPException(status_code=403, detail="forbidden")
     ok = await courses.delete_course(course_id)
     if not ok:
         raise HTTPException(status_code=404, detail="not_found")

@@ -26,7 +26,7 @@ class PathsRepository:
         """
         result = await self.session.execute(select(PathModel).order_by(PathModel.name.asc()))
         rows = result.scalars().all()
-        return [PathRecord(id=row.id, name=row.name, description=row.description) for row in rows]
+        return [PathRecord(id=row.id, name=row.name, description=row.description, created_by=row.created_by) for row in rows]
 
     async def get_path(self, path_id: int) -> tuple[PathRecord, list[PathCourseRecord]] | None:
         """Fetch a path and its course list.
@@ -59,7 +59,7 @@ class PathsRepository:
         )
         courses = courses_result.all()
         return (
-            PathRecord(id=path.id, name=path.name, description=path.description),
+            PathRecord(id=path.id, name=path.name, description=path.description, created_by=path.created_by),
             [
                 PathCourseRecord(
                     id=row.id,
@@ -102,7 +102,9 @@ class PathsRepository:
         )
         return result.first() is not None
 
-    async def create_path_with_courses(self, name: str, description: str | None, course_ids: list[int]) -> int:
+    async def create_path_with_courses(
+        self, name: str, description: str | None, course_ids: list[int], created_by: str | None
+    ) -> int:
         """Create a path and its ordered course links.
 
         Args:
@@ -113,7 +115,7 @@ class PathsRepository:
         Returns:
             New path ID.
         """
-        path = PathModel(name=name, description=description)
+        path = PathModel(name=name, description=description, created_by=created_by)
         self.session.add(path)
         await self.session.flush()
 

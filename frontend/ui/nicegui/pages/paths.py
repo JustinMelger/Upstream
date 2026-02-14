@@ -72,6 +72,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             return
 
         render_shell(title="Paths", store=store, api=api)
+        username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
 
         paths: list[dict[str, Any]] = []
@@ -109,13 +110,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await _reload_selected()
             paths_list.refresh()
 
+        @guard_ui_action(title="Delete path failed")
+        async def _delete_path(path_id: int) -> None:
+            await api.delete(f"/paths/{path_id}")
+            await _load_all()
+            ui.notify("Path deleted", type="positive")
+
         async def _open_edit(*, path_id: int, detail: dict[str, Any], detail_dialog: ui.dialog) -> None:
-            """Open an admin-only edit dialog for a path."""
+            """Open an edit dialog for a path (owner/admin only, enforced by backend)."""
             ordered_course_ids: list[int] = [
                 int(c.get("id")) for c in (detail.get("courses") or []) if isinstance(c, dict) and c.get("id") is not None
             ]
 
-            with ui.dialog() as edit_dialog, ui.card().classes("w-[min(900px,95vw)]"):
+            with ui.dialog() as edit_dialog, ui.card().classes("lp-card lp-dialog w-[min(900px,95vw)]"):
                 ui.label("Edit Path").classes("text-xl font-semibold")
 
                 name = ui.input("Name", value=str(detail.get("name") or "")).props("clearable").classes("w-full")
@@ -242,7 +249,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 ).classes("w-full")
 
                 with ui.row().classes("justify-end mt-4"):
-                    if is_admin:
+                    can_edit = is_admin or (str(detail.get("created_by") or "") == username)
+                    if can_edit:
 
                         async def _edit() -> None:
                             await _open_edit(path_id=int(path_id), detail=detail, detail_dialog=dialog)
@@ -285,6 +293,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     for p in shown:
                         pid = int(p.get("id") or 0)
                         selected = selected_by_id.get(pid)
+                        can_edit = is_admin or (str(p.get("created_by") or "") == username)
 
                         with ui.card().classes("w-full"):
                             with ui.row().classes("items-start justify-between w-full"):
@@ -315,32 +324,37 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                         ui.button("Select", on_click=_do_select)
 
+                                    if can_edit:
+
+                                        async def _do_delete(_pid: int = pid) -> None:
+                                            await _delete_path(_pid)
+
+                                        ui.button("Delete", on_click=_do_delete).props("color=negative outline")
+
             q.on("update:model-value", _refresh_list)
 
-            course_ids: ui.select | None = None
-            if is_admin:
-                ui.separator()
-                ui.label("Create Path (Admin)").classes("text-lg font-semibold")
+            ui.separator()
+            ui.label("Create Path").classes("text-lg font-semibold")
 
-                name = ui.input("Name").props("clearable").classes("w-full")
-                description = ui.textarea("Description").props("autogrow").classes("w-full")
-                course_ids = ui.select({}, label="Courses (ordered)", multiple=True).classes("w-full")
+            name = ui.input("Name").props("clearable").classes("w-full")
+            description = ui.textarea("Description").props("autogrow").classes("w-full")
+            course_ids = ui.select({}, label="Courses (ordered)", multiple=True).classes("w-full")
 
-                @guard_ui_action(title="Create path failed")
-                async def _create() -> None:
-                    payload = {
-                        "name": str(name.value or ""),
-                        "description": str(description.value or ""),
-                        "course_ids": list(course_ids.value or []),
-                    }
-                    await api.post("/paths", payload)
-                    name.value = ""
-                    description.value = ""
-                    course_ids.value = []
-                    await _load_all()
-                    ui.notify("Path created", type="positive")
+            @guard_ui_action(title="Create path failed")
+            async def _create() -> None:
+                payload = {
+                    "name": str(name.value or ""),
+                    "description": str(description.value or ""),
+                    "course_ids": list(course_ids.value or []),
+                }
+                await api.post("/paths", payload)
+                name.value = ""
+                description.value = ""
+                course_ids.value = []
+                await _load_all()
+                ui.notify("Path created", type="positive")
 
-                ui.button("Create path", on_click=_create)
+            ui.button("Create path", on_click=_create)
 
             async def _load_all() -> None:
                 """Reload all data for this page."""
@@ -353,9 +367,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 paths_list.refresh()
                 try:
                     paths, selected_by_id, courses, course_by_id = await _load_paths_page_data(api)
-                    if course_ids is not None:
-                        course_ids.options = _course_options(courses)
-                        course_ids.update()
+                    course_ids.options = _course_options(courses)
+                    course_ids.update()
                     paths_list.refresh()
                     meta.text = f"{len(paths)} paths"
                 except ApiError as exc:

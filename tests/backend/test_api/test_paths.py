@@ -13,11 +13,19 @@ async def _login_admin(app_client):
 async def _create_course(app_client, token, title):
     response = await app_client.post(
         "/courses",
-        json={"title": title},
+        json={"title": title, "description": f"desc: {title}"},
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 200
     return response.json()["id"]
+
+
+async def _create_user(app_client, token, username, role="user"):
+    return await app_client.post(
+        "/auth/users",
+        json={"username": username, "password": "pass123", "role": role},
+        headers={"X-Session-Token": token},
+    )
 
 
 @pytest.mark.integration
@@ -50,13 +58,16 @@ async def test_create_path_missing_name(app_client):
 
 @pytest.mark.integration
 async def test_path_lifecycle_and_selection(app_client):
-    """Admins can manage paths, and users can select/unselect them."""
+    """Users can create paths, and users can select/unselect them."""
     token = await _login_admin(app_client)
+    await _create_user(app_client, token, "alice", role="user")
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    alice_token = alice_login.json()["token"]
     course_id = await _create_course(app_client, token, "Path Course 1")
     create = await app_client.post(
         "/paths",
         json={"name": "Data Path", "description": "Learn data", "course_ids": [course_id]},
-        headers={"X-Session-Token": token},
+        headers={"X-Session-Token": alice_token},
     )
     assert create.status_code == 200
     path_id = create.json()["id"]
@@ -82,9 +93,46 @@ async def test_path_lifecycle_and_selection(app_client):
     assert unselect.status_code == 200
     assert unselect.json()["removed"] == 1
 
-    delete = await app_client.delete(f"/paths/{path_id}", headers={"X-Session-Token": token})
+    delete = await app_client.delete(f"/paths/{path_id}", headers={"X-Session-Token": alice_token})
     assert delete.status_code == 200
     assert delete.json()["deleted"] is True
+
+
+@pytest.mark.integration
+async def test_path_update_requires_owner_or_admin(app_client):
+    """Non-admin users can only update paths they created."""
+    admin_token = await _login_admin(app_client)
+    await _create_user(app_client, admin_token, "alice", role="user")
+    await _create_user(app_client, admin_token, "bob", role="user")
+
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_token = alice_login.json()["token"]
+    bob_token = bob_login.json()["token"]
+
+    course_id = await _create_course(app_client, admin_token, "P1")
+    created = await app_client.post(
+        "/paths",
+        json={"name": "Owned Path", "description": "", "course_ids": [course_id]},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert created.status_code == 200
+    path_id = created.json()["id"]
+
+    forbidden = await app_client.put(
+        f"/paths/{path_id}",
+        json={"name": "Owned Path", "description": "changed", "course_ids": [course_id]},
+        headers={"X-Session-Token": bob_token},
+    )
+    assert forbidden.status_code == 403
+
+    ok = await app_client.put(
+        f"/paths/{path_id}",
+        json={"name": "Owned Path", "description": "changed", "course_ids": [course_id]},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert ok.status_code == 200
+    assert ok.json()["description"] == "changed"
 
 
 @pytest.mark.integration

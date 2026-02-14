@@ -140,14 +140,15 @@ Responsibilities:
 
 - Render filters (query/provider/category/level).
 - Call `CoursesService.list_courses(...)`.
-- Admin-only create/update/delete flows.
+- Create courses (any authenticated user).
+- Edit/delete courses only when the current user is the creator (or an admin).
 
 Backend endpoints:
 
 - `GET /courses`
-- `POST /courses` (admin)
-- `PUT /courses/{id}` (admin)
-- `DELETE /courses/{id}` (admin)
+- `POST /courses`
+- `PUT /courses/{id}` (owner/admin)
+- `DELETE /courses/{id}` (owner/admin)
 
 ### MyCoursesPage (`/courses/my`)
 Responsibilities:
@@ -167,15 +168,16 @@ Responsibilities:
 
 - Render all paths (name, description).
 - Open path detail view (courses ordered).
-- Admin-only create/update/delete flows for paths.
+- Create paths (any authenticated user).
+- Edit/delete paths only when the current user is the creator (or an admin).
 
 Backend endpoints:
 
 - `GET /paths`
 - `GET /paths/{id}`
-- `POST /paths` (admin)
-- `PUT /paths/{id}` (admin)
-- `DELETE /paths/{id}` (admin)
+- `POST /paths`
+- `PUT /paths/{id}` (owner/admin)
+- `DELETE /paths/{id}` (owner/admin)
 
 ### MyPathsPage (`/paths/my`)
 Responsibilities:

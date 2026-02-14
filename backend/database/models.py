@@ -27,12 +27,14 @@ class CourseRecord:
 
     id: int
     title: str
+    description: str
     provider: str | None
     category: str | None
     level: str | None
     duration_hours: float | None
     url: str | None
     created_at: str | None
+    created_by: str | None
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,7 @@ class PathRecord:
     id: int
     name: str
     description: str | None
+    created_by: str | None
 
 
 @dataclass(frozen=True)

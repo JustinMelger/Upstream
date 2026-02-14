@@ -92,6 +92,8 @@ Examples:
 - `GET /tracking/stats?colleague_id=...`
 - `POST /paths/{id}/select`
 - `POST /paths/{id}/unselect`
+- `GET /articles`
+- `POST /articles`
 
 Admin-only:
 - `POST /auth/users`
@@ -99,28 +101,28 @@ Admin-only:
 - `POST /auth/users/reset`
 - `POST /auth/users/disable`
 - `DELETE /auth/users/{username}`
-- `POST /courses`
-- `PUT /courses/{id}`
-- `DELETE /courses/{id}`
-- `POST /paths`
-- `PUT /paths/{id}`
-- `DELETE /paths/{id}`
 - `GET /tracking/stats` (team stats)
 - `GET /tracking/stats/users` (team stats by user)
 
+Owner/admin-only (creator or admin):
+- `PUT /courses/{id}`
+- `DELETE /courses/{id}`
+- `PUT /paths/{id}`
+- `DELETE /paths/{id}`
+
 ## Roles
-- Admins can add/edit/delete courses and manage paths.
-- Users can browse courses, manage My Courses, and manage My Paths.
+- Admins can create/edit/delete any courses and paths, and manage users.
+- Users can create courses and paths; they can edit/delete only the ones they created.
 
 ## Tracking
 - Set status per course: `interested`, `in_progress`, or `completed` (My Courses or My Paths).
 - Remove a tracked course from My Courses if needed.
 
 ## Paths
-- Create learning paths by selecting courses and ordering them (admin only).
+- Create learning paths by selecting courses and ordering them.
 - Add a path to My Paths from the Paths page.
 - Update per-course status inside My Paths.
-- Delete paths (admin only).
+- Delete paths you created (admins can delete any).
 
 ## Data
 - Schema is managed via Alembic migrations (`just migrate`).

@@ -60,6 +60,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                     for idx, c in enumerate(list(draft_courses)):
                         title = str(c.get("title") or "")
+                        description = str(c.get("description") or "")
                         provider = str(c.get("provider") or "")
                         category = str(c.get("category") or "")
                         level = str(c.get("level") or "")
@@ -69,6 +70,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
                                     ui.label(f"{idx + 1}. {title}").classes("text-lg font-semibold")
+                                    if description:
+                                        ui.label(description).classes("text-sm text-gray-600")
                                     ui.label(f"{provider} · {category} · {level}").classes("text-sm text-gray-600")
                                     if url:
                                         ui.link("Open resource", url).props("target=_blank").classes("text-sm")
@@ -94,9 +97,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                     def _edit(i: int = idx) -> None:
                                         current = draft_courses[i]
-                                        with ui.dialog() as dialog, ui.card().classes("w-[min(700px,95vw)]"):
+                                        with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(700px,95vw)]"):
                                             ui.label("Edit draft course").classes("text-xl font-semibold")
                                             t = ui.input("Title", value=str(current.get("title") or "")).classes("w-full")
+                                            d = (
+                                                ui.textarea(
+                                                    "Description",
+                                                    value=str(current.get("description") or ""),
+                                                )
+                                                .props("autogrow")
+                                                .classes("w-full")
+                                            )
                                             p = ui.input("Provider", value=str(current.get("provider") or "")).classes("w-full")
                                             cat = ui.input("Category", value=str(current.get("category") or "")).classes(
                                                 "w-full"
@@ -107,6 +118,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                                 def _save() -> None:
                                                     current["title"] = str(t.value or "").strip()
+                                                    current["description"] = str(d.value or "").strip()
                                                     current["provider"] = str(p.value or "").strip()
                                                     current["category"] = str(cat.value or "").strip()
                                                     current["level"] = str(lvl.value or "").strip()
@@ -168,6 +180,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     for c in draft_courses:
                         payload = {
                             "title": str(c.get("title") or "").strip(),
+                            "description": str(c.get("description") or "").strip(),
                             "provider": str(c.get("provider") or "").strip(),
                             "category": str(c.get("category") or "").strip(),
                             "level": str(c.get("level") or "").strip(),

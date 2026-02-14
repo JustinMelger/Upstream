@@ -206,6 +206,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
                                     ui.label(course.get("title") or "").classes("text-lg font-semibold")
+                                    if str(course.get("description") or "").strip():
+                                        ui.label(str(course.get("description") or "")).classes("text-sm text-gray-600")
                                     with ui.row().classes("items-center gap-2 flex-wrap"):
                                         if str(course.get("provider") or "").strip():
                                             ui.label(str(course.get("provider") or "")).classes("lp-meta-chip")

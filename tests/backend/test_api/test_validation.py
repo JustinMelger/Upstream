@@ -42,7 +42,11 @@ async def test_tracking_set_rejects_non_string_status(app_client):
     login = await app_client.post("/auth/login", json={"username": "admin", "password": "admin"})
     token = login.json()["token"]
 
-    create_course = await app_client.post("/courses", json={"title": "T1"}, headers={"X-Session-Token": token})
+    create_course = await app_client.post(
+        "/courses",
+        json={"title": "T1", "description": "desc"},
+        headers={"X-Session-Token": token},
+    )
     course_id = create_course.json()["id"]
 
     response = await app_client.post(
