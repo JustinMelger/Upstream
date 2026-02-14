@@ -13,7 +13,7 @@ async def _login_admin(app_client):
 async def _create_course(app_client, token, title):
     response = await app_client.post(
         "/courses",
-        json={"title": title},
+        json={"title": title, "description": f"desc: {title}"},
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 200

@@ -43,8 +43,11 @@ class CoursesRepository:
             like = f"%{query.lower()}%"
             stmt = stmt.where(
                 func.lower(CourseModel.title).like(like)
+                | func.lower(func.coalesce(CourseModel.description, "")).like(like)
                 | func.lower(func.coalesce(CourseModel.provider, "")).like(like)
                 | func.lower(func.coalesce(CourseModel.category, "")).like(like)
+                | func.lower(func.coalesce(CourseModel.level, "")).like(like)
+                | func.lower(func.coalesce(CourseModel.url, "")).like(like)
             )
         if provider:
             stmt = stmt.where(CourseModel.provider == provider)
@@ -59,12 +62,14 @@ class CoursesRepository:
             CourseRecord(
                 id=row.id,
                 title=row.title or "",
+                description=row.description or "",
                 provider=row.provider,
                 category=row.category,
                 level=row.level,
                 duration_hours=row.duration_hours,
                 url=row.url,
                 created_at=row.created_at,
+                created_by=row.created_by,
             )
             for row in rows
         ]
@@ -85,24 +90,28 @@ class CoursesRepository:
         return CourseRecord(
             id=row.id,
             title=row.title or "",
+            description=row.description or "",
             provider=row.provider,
             category=row.category,
             level=row.level,
             duration_hours=row.duration_hours,
             url=row.url,
             created_at=row.created_at,
+            created_by=row.created_by,
         )
 
     async def create_course(
         self,
         *,
         title: str,
+        description: str,
         provider: str | None,
         category: str | None,
         level: str | None,
         duration_hours: float | None,
         url: str | None,
         created_at: str,
+        created_by: str | None,
     ) -> int:
         """Create a course.
 
@@ -120,12 +129,14 @@ class CoursesRepository:
         """
         row = CourseModel(
             title=title,
+            description=description,
             provider=provider,
             category=category,
             level=level,
             duration_hours=duration_hours,
             url=url,
             created_at=created_at,
+            created_by=created_by,
         )
         self.session.add(row)
         await self.session.flush()
@@ -136,6 +147,7 @@ class CoursesRepository:
         *,
         course_id: int,
         title: str,
+        description: str,
         provider: str | None,
         category: str | None,
         level: str | None,
@@ -161,6 +173,7 @@ class CoursesRepository:
             .where(CourseModel.id == course_id)
             .values(
                 title=title,
+                description=description,
                 provider=provider,
                 category=category,
                 level=level,

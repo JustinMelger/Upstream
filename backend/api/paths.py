@@ -43,10 +43,9 @@ async def list_paths(
 async def add_path(
     payload: PathCreateRequest,
     current_user: str = Depends(require_session),
-    auth: AuthService = Depends(get_auth_service),
     paths: PathsService = Depends(get_paths_service),
 ):
-    """Create a learning path (admin only).
+    """Create a learning path (any authenticated user).
 
     Args:
         payload: Path payload.
@@ -55,9 +54,9 @@ async def add_path(
     Returns:
         dict: Created path.
     """
-    if not await auth.is_admin(current_user):
-        raise HTTPException(status_code=403, detail="admin_required")
-    return await paths.create_path(payload.model_dump())
+    data = payload.model_dump()
+    data["created_by"] = current_user
+    return await paths.create_path(data)
 
 
 @router.post("/{path_id}/select", response_model=SelectPathResponse)
@@ -172,7 +171,7 @@ async def remove_path(
     auth: AuthService = Depends(get_auth_service),
     paths: PathsService = Depends(get_paths_service),
 ):
-    """Delete a learning path (admin only).
+    """Delete a learning path (owner/admin only).
 
     Args:
         path_id: Path ID.
@@ -182,7 +181,11 @@ async def remove_path(
         dict: Delete result.
     """
     if not await auth.is_admin(current_user):
-        raise HTTPException(status_code=403, detail="admin_required")
+        existing = await paths.get_path(path_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="not_found")
+        if str(existing.get("created_by") or "") != str(current_user):
+            raise HTTPException(status_code=403, detail="forbidden")
 
     deleted = await paths.delete_path(path_id)
     if not deleted:
@@ -198,7 +201,7 @@ async def edit_path(
     auth: AuthService = Depends(get_auth_service),
     paths: PathsService = Depends(get_paths_service),
 ):
-    """Update a learning path (admin only).
+    """Update a learning path (owner/admin only).
 
     Args:
         path_id: Path ID.
@@ -209,5 +212,9 @@ async def edit_path(
         dict: Updated path.
     """
     if not await auth.is_admin(current_user):
-        raise HTTPException(status_code=403, detail="admin_required")
+        existing = await paths.get_path(path_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="not_found")
+        if str(existing.get("created_by") or "") != str(current_user):
+            raise HTTPException(status_code=403, detail="forbidden")
     return await paths.update_path(path_id, payload.model_dump())

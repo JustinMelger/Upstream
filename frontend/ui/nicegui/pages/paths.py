@@ -7,6 +7,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
@@ -71,6 +72,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             return
 
         render_shell(title="Paths", store=store, api=api)
+        username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
 
         paths: list[dict[str, Any]] = []
@@ -108,13 +110,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await _reload_selected()
             paths_list.refresh()
 
+        @guard_ui_action(title="Delete path failed")
+        async def _delete_path(path_id: int) -> None:
+            await api.delete(f"/paths/{path_id}")
+            await _load_all()
+            ui.notify("Path deleted", type="positive")
+
         async def _open_edit(*, path_id: int, detail: dict[str, Any], detail_dialog: ui.dialog) -> None:
-            """Open an admin-only edit dialog for a path."""
+            """Open an edit dialog for a path (owner/admin only, enforced by backend)."""
             ordered_course_ids: list[int] = [
                 int(c.get("id")) for c in (detail.get("courses") or []) if isinstance(c, dict) and c.get("id") is not None
             ]
 
-            with ui.dialog() as edit_dialog, ui.card().classes("w-[min(900px,95vw)]"):
+            with ui.dialog() as edit_dialog, ui.card().classes("lp-card lp-dialog w-[min(900px,95vw)]"):
                 ui.label("Edit Path").classes("text-xl font-semibold")
 
                 name = ui.input("Name", value=str(detail.get("name") or "")).props("clearable").classes("w-full")
@@ -208,6 +216,52 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             """Open a detail dialog for a path."""
             detail = await api.get(f"/paths/{path_id}")
 
+            courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
+            course_ids_in_path: list[int] = []
+            for c in courses_rows:
+                if not isinstance(c, dict):
+                    continue
+                try:
+                    cid = int(c.get("id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if cid > 0:
+                    course_ids_in_path.append(cid)
+
+            review_summary_by_course_id: dict[int, dict[str, Any]] = {}
+            if course_ids_in_path:
+                try:
+                    rows = await api.get("/courses/reviews/summary", params={"course_ids": course_ids_in_path})
+                    for r in list(rows or []):
+                        if not isinstance(r, dict):
+                            continue
+                        try:
+                            cid = int(r.get("course_id") or 0)
+                        except (TypeError, ValueError):
+                            continue
+                        if cid > 0:
+                            review_summary_by_course_id[cid] = r
+                except ApiError:
+                    review_summary_by_course_id = {}
+
+            def _summary_label(cid: int) -> str:
+                row = review_summary_by_course_id.get(int(cid))
+                if not isinstance(row, dict):
+                    return ""
+                try:
+                    count = int(row.get("review_count") or 0)
+                except (TypeError, ValueError):
+                    count = 0
+                if count <= 0:
+                    return ""
+                try:
+                    avg = float(row.get("avg_rating") or 0.0)
+                except (TypeError, ValueError):
+                    avg = 0.0
+                return f"{avg:.1f}/5 ({count})"
+
+            courses_rows = [dict(c, reviews=_summary_label(int(c.get("id") or 0))) for c in courses_rows if isinstance(c, dict)]
+
             with ui.dialog() as dialog, ui.card().classes("w-[min(900px,95vw)]"):
                 ui.label(detail.get("name") or "").classes("text-xl font-semibold")
                 ui.label(detail.get("description") or "").classes("text-sm text-gray-600")
@@ -227,7 +281,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                         ui.button("Update status", on_click=_update_status).props("outline")
 
-                courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
                 ui.label("Courses").classes("text-lg font-semibold mt-4")
                 ui.table(
                     columns=[
@@ -236,12 +289,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         {"name": "provider", "label": "Provider", "field": "provider"},
                         {"name": "category", "label": "Category", "field": "category"},
                         {"name": "level", "label": "Level", "field": "level"},
+                        {"name": "reviews", "label": "Reviews", "field": "reviews"},
                     ],
                     rows=courses_rows,
                 ).classes("w-full")
 
                 with ui.row().classes("justify-end mt-4"):
-                    if is_admin:
+                    can_edit = is_admin or (str(detail.get("created_by") or "") == username)
+                    if can_edit:
 
                         async def _edit() -> None:
                             await _open_edit(path_id=int(path_id), detail=detail, detail_dialog=dialog)
@@ -264,7 +319,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             paths_list.refresh()
 
         with render_container():
-            q = ui.input("Search").props("clearable").classes("w-full")
+            q = ui.input("Search").props("clearable debounce=300").classes("w-full")
             meta = ui.label("").classes("text-sm text-gray-600")
 
             @ui.refreshable
@@ -273,18 +328,27 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 shown = _filter_paths(paths, needle)
 
                 with ui.column().classes("w-full gap-3"):
+                    if loading:
+                        render_card_skeletons(count=4)
+                        return
+
                     if not shown:
                         ui.label("No paths found.").classes("text-sm text-gray-600")
+                        ui.button("Browse courses", on_click=lambda: ui.navigate.to("/courses")).props("outline")
 
                     for p in shown:
                         pid = int(p.get("id") or 0)
                         selected = selected_by_id.get(pid)
+                        can_edit = is_admin or (str(p.get("created_by") or "") == username)
 
                         with ui.card().classes("w-full"):
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
                                     ui.label(p.get("name") or "").classes("text-lg font-semibold")
                                     ui.label(p.get("description") or "").classes("text-sm text-gray-600")
+                                    shared_by = str(p.get("created_by") or "").strip()
+                                    if shared_by:
+                                        ui.label(f"Shared by {shared_by}").classes("text-xs text-gray-600")
                                     ui.label(status_label((selected or {}).get("status"))).classes(
                                         status_chip_class((selected or {}).get("status"))
                                     )
@@ -309,32 +373,37 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                         ui.button("Select", on_click=_do_select)
 
+                                    if can_edit:
+
+                                        async def _do_delete(_pid: int = pid) -> None:
+                                            await _delete_path(_pid)
+
+                                        ui.button("Delete", on_click=_do_delete).props("color=negative outline")
+
             q.on("update:model-value", _refresh_list)
 
-            course_ids: ui.select | None = None
-            if is_admin:
-                ui.separator()
-                ui.label("Create Path (Admin)").classes("text-lg font-semibold")
+            ui.separator()
+            ui.label("Create Path").classes("text-lg font-semibold")
 
-                name = ui.input("Name").props("clearable").classes("w-full")
-                description = ui.textarea("Description").props("autogrow").classes("w-full")
-                course_ids = ui.select({}, label="Courses (ordered)", multiple=True).classes("w-full")
+            name = ui.input("Name").props("clearable").classes("w-full")
+            description = ui.textarea("Description").props("autogrow").classes("w-full")
+            course_ids = ui.select({}, label="Courses (ordered)", multiple=True).classes("w-full")
 
-                @guard_ui_action(title="Create path failed")
-                async def _create() -> None:
-                    payload = {
-                        "name": str(name.value or ""),
-                        "description": str(description.value or ""),
-                        "course_ids": list(course_ids.value or []),
-                    }
-                    await api.post("/paths", payload)
-                    name.value = ""
-                    description.value = ""
-                    course_ids.value = []
-                    await _load_all()
-                    ui.notify("Path created", type="positive")
+            @guard_ui_action(title="Create path failed")
+            async def _create() -> None:
+                payload = {
+                    "name": str(name.value or ""),
+                    "description": str(description.value or ""),
+                    "course_ids": list(course_ids.value or []),
+                }
+                await api.post("/paths", payload)
+                name.value = ""
+                description.value = ""
+                course_ids.value = []
+                await _load_all()
+                ui.notify("Path created", type="positive")
 
-                ui.button("Create path", on_click=_create)
+            ui.button("Create path", on_click=_create)
 
             async def _load_all() -> None:
                 """Reload all data for this page."""
@@ -344,11 +413,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 loading = True
                 refresh_btn.disable()
                 meta.text = "Loading..."
+                paths_list.refresh()
                 try:
                     paths, selected_by_id, courses, course_by_id = await _load_paths_page_data(api)
-                    if course_ids is not None:
-                        course_ids.options = _course_options(courses)
-                        course_ids.update()
+                    course_ids.options = _course_options(courses)
+                    course_ids.update()
                     paths_list.refresh()
                     meta.text = f"{len(paths)} paths"
                 except ApiError as exc:
@@ -362,6 +431,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 finally:
                     loading = False
                     refresh_btn.enable()
+                    paths_list.refresh()
 
             with ui.row().classes("items-center justify-between w-full mt-2"):
                 refresh_btn = ui.button("Refresh", on_click=_load_all).props("outline")

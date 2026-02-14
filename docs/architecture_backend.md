@@ -153,17 +153,22 @@ erDiagram
 ### Course service
 - CRUD for courses (title, provider, category, level, duration, url).
 - Search and filter by query/provider/category/level.
-- Admin-only create/update/delete.
+- Any authenticated user can create courses; only the creator (or admin) can edit/delete.
 
 ### Path service
 - CRUD for learning paths with ordered course lists.
 - User path selection, unselection, and status updates.
-- Admin-only create/update/delete for paths.
+- Any authenticated user can create paths; only the creator (or admin) can edit/delete.
 
 ### Tracking service
 - Track per-user course progress (interested / in_progress / completed).
 - Recent activity and stats (per-user and team).
 - Admin-only team-wide stats.
+
+### Articles service
+- Allow colleagues to share links (title, URL, optional tags).
+- Browse/search colleague-submitted links.
+- Authenticated users can create articles.
 
 ## API Error Handling
 
@@ -486,5 +491,27 @@ erDiagram
     INTEGER course_id
     STRING status
     TIMESTAMP updated_at
+  }
+```
+
+## Articles Architecture
+
+### Articles Endpoints
+
+- `GET /articles`: List/search shared links.
+- `POST /articles`: Share a link (authenticated users).
+
+### Articles Data Model
+
+```mermaid
+erDiagram
+  USERS ||--o{ ARTICLES : "shares"
+  ARTICLES {
+    INTEGER id
+    STRING title
+    STRING url
+    STRING tags
+    STRING created_by
+    TIMESTAMP created_at
   }
 ```

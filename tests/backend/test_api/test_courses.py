@@ -36,18 +36,54 @@ async def test_list_courses_empty(app_client):
 
 @pytest.mark.integration
 async def test_create_course_admin_only(app_client):
-    """Non-admin users cannot create courses."""
+    """Any authenticated user can create courses."""
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "student1", role="user")
     user_login = await app_client.post("/auth/login", json={"username": "student1", "password": "pass123"})
     user_token = user_login.json()["token"]
     response = await app_client.post(
         "/courses",
-        json={"title": "Intro to Python"},
+        json={"title": "Intro to Python", "description": "Learn Python"},
         headers={"X-Session-Token": user_token},
     )
-    assert response.status_code == 403
-    assert response.json().get("message") == "admin_required"
+    assert response.status_code == 200
+    assert response.json().get("title") == "Intro to Python"
+
+
+@pytest.mark.integration
+async def test_course_update_requires_owner_or_admin(app_client):
+    """Non-admin users can only update courses they created."""
+    admin_token = await _login_admin(app_client)
+    await _create_user(app_client, admin_token, "alice", role="user")
+    await _create_user(app_client, admin_token, "bob", role="user")
+
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_token = alice_login.json()["token"]
+    bob_token = bob_login.json()["token"]
+
+    created = await app_client.post(
+        "/courses",
+        json={"title": "Owned", "description": "Owned desc"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert created.status_code == 200
+    course_id = created.json()["id"]
+
+    forbidden = await app_client.put(
+        f"/courses/{course_id}",
+        json={"title": "Hacked", "description": "Hacked desc"},
+        headers={"X-Session-Token": bob_token},
+    )
+    assert forbidden.status_code == 403
+
+    ok = await app_client.put(
+        f"/courses/{course_id}",
+        json={"title": "Updated", "description": "Updated desc"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert ok.status_code == 200
+    assert ok.json()["title"] == "Updated"
 
 
 @pytest.mark.integration
@@ -74,12 +110,34 @@ async def test_create_course_missing_title(app_client):
 
 
 @pytest.mark.integration
+async def test_create_course_missing_description(app_client):
+    """Creating a course without a description returns 400."""
+    token = await _login_admin(app_client)
+    response = await app_client.post(
+        "/courses",
+        json={"title": "No desc", "description": ""},
+        headers={"X-Session-Token": token},
+    )
+    assert response.status_code == 400
+    body = response.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "missing_description"
+    assert "timestamp" in body
+
+
+@pytest.mark.integration
 async def test_course_lifecycle(app_client):
     """Admins can create, update, fetch, and delete courses."""
     token = await _login_admin(app_client)
     create = await app_client.post(
         "/courses",
-        json={"title": "Data Fundamentals", "provider": "ACME", "category": "Data", "level": "Beginner"},
+        json={
+            "title": "Data Fundamentals",
+            "description": "Data intro",
+            "provider": "ACME",
+            "category": "Data",
+            "level": "Beginner",
+        },
         headers={"X-Session-Token": token},
     )
     assert create.status_code == 200
@@ -92,7 +150,7 @@ async def test_course_lifecycle(app_client):
 
     update = await app_client.put(
         f"/courses/{course_id}",
-        json={"title": "Data Fundamentals 2"},
+        json={"title": "Data Fundamentals 2", "description": "Data intro updated"},
         headers={"X-Session-Token": token},
     )
     assert update.status_code == 200

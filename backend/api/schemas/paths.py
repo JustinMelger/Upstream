@@ -11,6 +11,7 @@ class PathListItem(APIModel):
     id: int
     name: str
     description: str
+    created_by: str | None
 
 
 class PathCourseItem(APIModel):
@@ -31,6 +32,7 @@ class PathDetailResponse(APIModel):
     id: int
     name: str
     description: str
+    created_by: str | None
     courses: list[PathCourseItem]
 
 

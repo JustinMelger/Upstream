@@ -41,6 +41,7 @@ async def create_plan(
         "courses": [
             {
                 "title": c.title,
+                "description": c.description,
                 "provider": c.provider,
                 "category": c.category,
                 "level": c.level,

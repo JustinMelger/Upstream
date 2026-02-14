@@ -13,7 +13,18 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.theme import apply_theme
-from frontend.ui.nicegui.pages import admin_users, ai_curator, courses, home, login, my_courses, my_paths, paths, placeholders
+from frontend.ui.nicegui.pages import (
+    admin_users,
+    ai_curator,
+    articles,
+    courses,
+    home,
+    login,
+    my_courses,
+    my_paths,
+    paths,
+    placeholders,
+)
 
 
 def create_app() -> None:
@@ -25,11 +36,14 @@ def create_app() -> None:
 
     login.register(store=store, api=api)
     home.register(store=store, api=api)
-    ai_curator.register(store=store, api=api)
+    if settings.feature_ai_curator:
+        ai_curator.register(store=store, api=api)
     courses.register(store=store, api=api)
     paths.register(store=store, api=api)
     my_paths.register(store=store, api=api)
     my_courses.register(store=store, api=api)
+    if settings.feature_articles:
+        articles.register(store=store, api=api)
     admin_users.register(store=store, api=api)
     placeholders.register(store=store, api=api)
 

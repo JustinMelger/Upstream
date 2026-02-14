@@ -73,22 +73,29 @@ class CoursesService:
         if not title:
             raise CoursesServiceError(detail="missing_title", status_code=400)
 
+        description = (payload.get("description") or "").strip()
+        if not description:
+            raise CoursesServiceError(detail="missing_description", status_code=400)
+
         provider = (payload.get("provider") or "").strip() or None
         category = (payload.get("category") or "").strip() or None
         level = (payload.get("level") or "").strip() or None
         url = (payload.get("url") or "").strip() or None
         duration_hours = self._parse_float(payload.get("duration_hours"))
         created_at = datetime.now(timezone.utc).isoformat()
+        created_by = (payload.get("created_by") or "").strip() or None
 
         async with self._repo.session.begin():
             course_id = await self._repo.create_course(
                 title=title,
+                description=description,
                 provider=provider,
                 category=category,
                 level=level,
                 duration_hours=duration_hours,
                 url=url,
                 created_at=created_at,
+                created_by=created_by,
             )
         course = await self.get_course_by_id(course_id)
         if not course:
@@ -112,6 +119,9 @@ class CoursesService:
             return None
 
         title = (payload.get("title") or existing.title).strip()
+        description = (payload.get("description") or existing.description).strip()
+        if not description:
+            raise CoursesServiceError(detail="missing_description", status_code=400)
         provider = (payload.get("provider") or (existing.provider or "")).strip() or None
         category = (payload.get("category") or (existing.category or "")).strip() or None
         level = (payload.get("level") or (existing.level or "")).strip() or None
@@ -124,6 +134,7 @@ class CoursesService:
             await self._repo.update_course(
                 course_id=course_id,
                 title=title,
+                description=description,
                 provider=provider,
                 category=category,
                 level=level,
@@ -159,10 +170,12 @@ class CoursesService:
         return {
             "id": course.id,
             "title": course.title or "",
+            "description": course.description or "",
             "provider": course.provider or "",
             "category": course.category or "",
             "level": course.level or "",
             "duration_hours": course.duration_hours,
             "url": course.url or "",
             "created_at": course.created_at,
+            "created_by": course.created_by,
         }

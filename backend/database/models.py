@@ -27,12 +27,14 @@ class CourseRecord:
 
     id: int
     title: str
+    description: str
     provider: str | None
     category: str | None
     level: str | None
     duration_hours: float | None
     url: str | None
     created_at: str | None
+    created_by: str | None
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,7 @@ class PathRecord:
     id: int
     name: str
     description: str | None
+    created_by: str | None
 
 
 @dataclass(frozen=True)
@@ -76,3 +79,27 @@ class TrackingRecord:
     course_id: int
     status: str
     updated_at: str
+
+
+@dataclass(frozen=True)
+class ArticleRecord:
+    """Shared article/link row representation."""
+
+    id: int
+    title: str
+    url: str
+    tags: str | None
+    created_by: str
+    created_at: str
+
+
+@dataclass(frozen=True)
+class CourseReviewRecord:
+    """Course review row representation."""
+
+    id: int
+    course_id: int
+    rating: int
+    text: str | None
+    created_by: str
+    created_at: str

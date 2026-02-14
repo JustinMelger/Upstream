@@ -13,6 +13,8 @@ class UiSettings:
 
     backend_url: str = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
     storage_secret: str = os.getenv("NICEGUI_STORAGE_SECRET", "dev-storage-secret-change-me")
+    feature_ai_curator: bool = os.getenv("FEATURE_AI_CURATOR", "1") == "1"
+    feature_articles: bool = os.getenv("FEATURE_ARTICLES", "1") == "1"
 
 
 settings = UiSettings()

@@ -8,12 +8,30 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.services.paths_service import load_selected_paths
+from frontend.ui.nicegui.services.paths_service import load_my_paths_page_data
+
+
+def _format_review_summary(row: dict[str, Any] | None) -> str:
+    """Format a review summary row into a compact label."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("review_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    try:
+        avg = float(row.get("avg_rating") or 0.0)
+    except (TypeError, ValueError):
+        avg = 0.0
+    return f"{avg:.1f}/5 ({count})"
 
 
 def _filter_selected_paths(selected: list[dict[str, Any]] | None, *, needle: str, status: str) -> list[dict[str, Any]]:
@@ -26,11 +44,6 @@ def _filter_selected_paths(selected: list[dict[str, Any]] | None, *, needle: str
     if status:
         shown = [p for p in shown if str(p.get("status") or "") == status]
     return shown
-
-
-async def _load_selected_paths(api: ApiClient) -> list[dict[str, Any]]:
-    """Compat shim: load via the NiceGUI paths service layer."""
-    return await load_selected_paths(api=api)
 
 
 def _show_path_details_dialog(
@@ -70,16 +83,22 @@ def _show_path_details_dialog(
                 {"name": "provider", "label": "Provider", "field": "provider"},
                 {"name": "category", "label": "Category", "field": "category"},
                 {"name": "level", "label": "Level", "field": "level"},
+                {"name": "reviews", "label": "Reviews", "field": "reviews"},
             ],
             rows=courses_rows,
         ).classes("w-full")
 
         with ui.row().classes("justify-end mt-4"):
+            update_btn = ui.button("Update status").props("outline")
 
             async def _update() -> None:
-                await on_update_status(str(status_select.value or ""))
+                update_btn.disable()
+                try:
+                    await on_update_status(str(status_select.value or ""))
+                finally:
+                    update_btn.enable()
 
-            ui.button("Update status", on_click=_update).props("outline")
+            update_btn.on_click(_update)
 
             async def _remove() -> None:
                 await on_unselect()
@@ -106,10 +125,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         render_shell(title="My Paths", store=store, api=api)
         selected: list[dict[str, Any]] = []
+        details_by_path_id: dict[int, dict[str, Any]] = {}
+        tracking_by_course_id: dict[int, dict[str, Any]] = {}
         loading = False
 
         with render_container():
-            q = ui.input("Search").props("clearable").classes("w-full")
+            q = ui.input("Search").props("clearable debounce=300").classes("w-full")
             status_filter = ui.select(
                 {"": "Any status", **{k: v for k, v in STATUS_OPTIONS}},
                 label="Status",
@@ -125,11 +146,34 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 shown = _filter_selected_paths(selected, needle=needle, status=status_v)
 
                 with ui.column().classes("w-full gap-3"):
+                    if loading:
+                        render_card_skeletons(count=3)
+                        return
+
                     if not shown:
                         ui.label("No selected paths.").classes("text-sm text-gray-600")
+                        ui.button("Browse paths", on_click=lambda: ui.navigate.to("/paths")).props("outline")
 
                     for p in shown:
                         pid = int(p.get("id") or 0)
+                        detail = details_by_path_id.get(pid) or {}
+                        detail_courses = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
+                        total_courses = len(detail_courses)
+                        completed = 0
+                        for c in detail_courses:
+                            if not isinstance(c, dict):
+                                continue
+                            raw_cid = c.get("id")
+                            if raw_cid is None:
+                                continue
+                            try:
+                                cid = int(raw_cid)
+                            except (TypeError, ValueError):
+                                continue
+                            if str((tracking_by_course_id.get(cid) or {}).get("status") or "") == "completed":
+                                completed += 1
+                        progress = (completed / total_courses) if total_courses else 0.0
+
                         with ui.card().classes("w-full"):
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
@@ -138,6 +182,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ui.label(status_label(str(p.get("status") or ""))).classes(
                                         status_chip_class(str(p.get("status") or ""))
                                     )
+                                    if total_courses:
+                                        ui.label(f"{completed}/{total_courses} completed").classes("text-sm text-gray-600")
+                                        ui.linear_progress(progress, show_value=False).classes("w-full")
 
                                 with ui.row().classes("items-center"):
                                     status_select = ui.select(
@@ -146,13 +193,39 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         label=None,
                                     ).props("dense")
 
-                                    async def _do_set(_pid: int = pid, _sel=status_select) -> None:
-                                        await _set_status(_pid, str(_sel.value or ""))
+                                    async def _on_status_change(e, _pid: int = pid, _select=status_select) -> None:
+                                        _select.disable()
+                                        try:
+                                            options_map = {k: v for k, v in STATUS_OPTIONS}
+                                            raw = e
+                                            if not isinstance(e, (str, int, float, bool, dict)) and e is not None:
+                                                raw = getattr(e, "value", None)
+                                                if raw is None:
+                                                    raw = getattr(e, "args", None)
 
-                                    ui.button(
-                                        "Set",
-                                        on_click=_do_set,
-                                    ).props("dense outline")
+                                            if isinstance(raw, dict):
+                                                if raw.get("value") in options_map:
+                                                    value = str(raw.get("value") or "")
+                                                elif "label" in raw:
+                                                    label = str(raw.get("label") or "").strip().lower()
+                                                    value = ""
+                                                    for key, opt_label in options_map.items():
+                                                        if label and label == str(opt_label).strip().lower():
+                                                            value = str(key)
+                                                            break
+                                                else:
+                                                    value = ""
+                                            else:
+                                                value = str(raw or _select.value or "")
+
+                                            if value:
+                                                _select.value = value
+                                                _select.update()
+                                                await _set_status(_pid, value)
+                                        finally:
+                                            _select.enable()
+
+                                    status_select.on("update:model-value", _on_status_change)
 
                                     async def _do_view(_pid: int = pid) -> None:
                                         await _open_details(_pid)
@@ -171,24 +244,28 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ).props("dense color=negative outline")
 
             async def _load_selected() -> None:
-                nonlocal selected, loading
+                nonlocal selected, details_by_path_id, tracking_by_course_id, loading
                 if loading:
                     return
                 loading = True
                 refresh_btn.disable()
                 meta.text = "Loading..."
+                paths_list.refresh()
                 try:
-                    selected = await _load_selected_paths(api)
+                    selected, details_by_path_id, tracking_by_course_id = await load_my_paths_page_data(api=api)
                     paths_list.refresh()
                     meta.text = f"{len(selected)} selected"
                 except ApiError as exc:
                     ui.notify(str(exc), type="negative")
                     selected = []
+                    details_by_path_id = {}
+                    tracking_by_course_id = {}
                     paths_list.refresh()
                     meta.text = "Failed to load"
                 finally:
                     loading = False
                     refresh_btn.enable()
+                    paths_list.refresh()
 
             @guard_ui_action(title="Unselect failed")
             async def _unselect(path_id: int) -> None:
@@ -204,11 +281,53 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @guard_ui_action(title="Load path details failed")
             async def _open_details(path_id: int) -> None:
-                detail = await api.get(f"/paths/{path_id}")
+                detail = details_by_path_id.get(int(path_id)) or await api.get(f"/paths/{path_id}")
 
                 row = next((p for p in selected if int(p.get("id") or 0) == int(path_id)), None) or {}
+                courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
+                course_ids: list[int] = []
+                for c in courses_rows:
+                    if not isinstance(c, dict):
+                        continue
+                    try:
+                        cid = int(c.get("id") or 0)
+                    except (TypeError, ValueError):
+                        continue
+                    if cid > 0:
+                        course_ids.append(cid)
+
+                review_summary_by_course_id: dict[int, dict[str, Any]] = {}
+                if course_ids:
+                    try:
+                        rows = await api.get("/courses/reviews/summary", params={"course_ids": course_ids})
+                        for r in list(rows or []):
+                            if not isinstance(r, dict):
+                                continue
+                            try:
+                                cid = int(r.get("course_id") or 0)
+                            except (TypeError, ValueError):
+                                continue
+                            if cid > 0:
+                                review_summary_by_course_id[cid] = r
+                    except ApiError:
+                        review_summary_by_course_id = {}
+
+                enriched_courses: list[dict[str, Any]] = []
+                for c in courses_rows:
+                    if not isinstance(c, dict):
+                        continue
+                    try:
+                        cid = int(c.get("id") or 0)
+                    except (TypeError, ValueError):
+                        cid = 0
+                    enriched = dict(c)
+                    enriched["reviews"] = _format_review_summary(review_summary_by_course_id.get(cid))
+                    enriched_courses.append(enriched)
+
+                enriched_detail = dict(detail or {})
+                enriched_detail["courses"] = enriched_courses
                 _show_path_details_dialog(
-                    detail=dict(detail or {}),
+                    detail=enriched_detail,
                     selected_row=dict(row),
                     on_update_status=lambda s: _set_status(int(path_id), s),
                     on_unselect=lambda: _unselect(int(path_id)),

@@ -28,7 +28,7 @@ async def test_session_and_tracking_timestamps_are_utc_iso8601(db_session):
     _assert_iso_utc(session["expires_at"])
 
     courses = CoursesService(CoursesRepository(db_session))
-    course_id = (await courses.create_course({"title": "Timestamps"}))["id"]
+    course_id = (await courses.create_course({"title": "Timestamps", "description": "Timestamps course"}))["id"]
 
     tracking = TrackingService(TrackingRepository(db_session))
     item = await tracking.upsert_tracking("alice", course_id, "interested")

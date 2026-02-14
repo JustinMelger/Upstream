@@ -18,6 +18,7 @@ class DraftCourse:
 
     Attributes:
         title: Course title.
+        description: Short description for search and curation.
         provider: Provider/source label.
         category: Category label.
         level: Difficulty level label.
@@ -26,6 +27,7 @@ class DraftCourse:
     """
 
     title: str
+    description: str
     provider: str
     category: str
     level: str
@@ -72,6 +74,7 @@ class AiCuratorService:
                 [
                     DraftCourse(
                         title="HTTP overview (requests, responses, status codes)",
+                        description="Fundamentals of HTTP: methods, headers, status codes, and how clients/servers communicate.",
                         provider="MDN",
                         category="Web",
                         level="Beginner",
@@ -80,6 +83,7 @@ class AiCuratorService:
                     ),
                     DraftCourse(
                         title="REST API design basics",
+                        description="Core REST concepts and practical API design guidelines for resources, errors, and versioning.",
                         provider="Microsoft Learn",
                         category="Architecture",
                         level="Beginner",
@@ -88,6 +92,7 @@ class AiCuratorService:
                     ),
                     DraftCourse(
                         title="FastAPI tutorial",
+                        description="Build a production-ready API with FastAPI: routing, dependencies, models, and async endpoints.",
                         provider="FastAPI Docs",
                         category="Backend",
                         level="Intermediate",
@@ -96,6 +101,7 @@ class AiCuratorService:
                     ),
                     DraftCourse(
                         title="SQLAlchemy 2.0 tutorial (ORM basics)",
+                        description="Learn SQLAlchemy 2.0 ORM fundamentals: sessions, models, queries, and transactions.",
                         provider="SQLAlchemy Docs",
                         category="Database",
                         level="Intermediate",
@@ -104,6 +110,7 @@ class AiCuratorService:
                     ),
                     DraftCourse(
                         title="Testing FastAPI apps",
+                        description="Test FastAPI applications with pytest and httpx; cover dependencies and async endpoints.",
                         provider="FastAPI Docs",
                         category="Testing",
                         level="Intermediate",
@@ -122,6 +129,7 @@ class AiCuratorService:
             [
                 DraftCourse(
                     title="Define requirements and success criteria",
+                    description="Turn your goal into concrete requirements, milestones, and acceptance criteria.",
                     provider="Learning Hub",
                     category="Planning",
                     level="Beginner",
@@ -130,6 +138,7 @@ class AiCuratorService:
                 ),
                 DraftCourse(
                     title="Pick an implementation stack and build a small prototype",
+                    description="Choose tools and frameworks, then validate them by building a small end-to-end prototype.",
                     provider="Learning Hub",
                     category="Planning",
                     level="Beginner",

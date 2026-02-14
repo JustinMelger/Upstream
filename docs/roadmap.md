@@ -78,22 +78,26 @@
 - [ ] Persist approved drafts via existing domain services (`CoursesService`, `PathsService`, `TrackingService`) to keep consistency.
 
 ## Phase 9 — Product UX Polish (NiceGUI)
-- [ ] Upgrade loading states: skeletons/spinners for tables/cards (avoid “Loading…” text-only).
-- [ ] Add clear empty-state CTAs (Courses/Paths/My Courses/My Paths) linking to the next action.
-- [ ] Home: “Continue learning” section (top `in_progress` courses) with quick actions (open link, mark completed).
-- [ ] Home: “Next up” section derived from selected paths (first non-completed course per path).
-- [ ] Courses/My Courses: inline tracking status updates (no modal required) + consistent metadata chips.
-- [ ] My Paths: show per-path progress at a glance (completed/total + bar) without opening details.
-- [ ] Navigation polish: active route highlighting and optional feature flags (hide AI Curator unless enabled).
-- [ ] Debounce search inputs to reduce backend load (avoid requests per keystroke).
-- [ ] Add an “Articles” section where users can share links (title, URL, tags) and browse/search community submissions.
+- [x] Upgrade loading states: skeletons/spinners for tables/cards (avoid “Loading…” text-only).
+- [x] Add clear empty-state CTAs (Courses/Paths/My Courses/My Paths) linking to the next action.
+- [x] Home: “Continue learning” section (top `in_progress` courses) with quick actions (open link, mark completed).
+- [x] Home: “Next up” section derived from selected paths (first non-completed course per path).
+- [x] Courses/My Courses: inline tracking status updates (no modal required) + consistent metadata chips.
+- [x] My Paths: show per-path progress at a glance (completed/total + bar) without opening details.
+- [x] Navigation polish: active route highlighting and optional feature flags (hide AI Curator unless enabled).
+- [x] Debounce search inputs to reduce backend load (avoid requests per keystroke).
+- [x] Add an “Articles” section where users can share links (title, URL, tags) and browse/search community submissions.
 
 ## Phase 10 — Social Layer (By Colleagues, For Colleagues)
 - [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).
-- [ ] Add reviews for courses (rating + text) and paths (text), with basic moderation/admin removal.
-- [ ] Surface social signals in UI (Home + course/path details).
+- [x] Add reviews for courses (rating + text) with basic moderation/admin removal.
+- [ ] Add reviews for paths (text) with basic moderation/admin removal.
+- [x] Surface social signals in UI (Home + course/path details).
+- [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 - [ ] Add “Suggest a course/path” drafts (user-submitted) with admin approve/edit → canonical content.
 - [ ] Basic de-duplication for suggested courses (URL-based + title/provider similarity).
 - [ ] Notifications v1 (optional): show “recommended to you” inbox or activity feed (no email).
+- [ ] Course content description: add `courses.description` (short summary) and surface it across UI; keep `level` optional and de-emphasize (hide behind “more filters”) before deciding to drop it.
 - [ ] AI-ready metadata: add/standardize course content fields (`description`, optional `learning_outcomes`, `prerequisites`, `language`) and define a derived “search document” that combines course + review text for later AI search/planning.
-- [ ] Ownership + permissions: allow any authenticated user to create courses/paths; only the creator (or admin) can edit/delete; admin can edit/delete everything.
+- [x] Ownership + permissions: allow any authenticated user to create courses/paths; only the creator (or admin) can edit/delete; admin can edit/delete everything.
+- [ ] Copy/wording shift: change UI labels from admin CRUD (“New course/path”) to social contribution (“Share course/path”) once ownership/permissions is live.

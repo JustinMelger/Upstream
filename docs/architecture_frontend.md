@@ -1,4 +1,4 @@
-# Frontend Architecture (NiceGUI Target)
+# Frontend Architecture (NiceGUI)
 
 ## Overview
 The UI is built with NiceGUI.
@@ -93,12 +93,21 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 - `/courses/my`: Personal course tracking ("My Courses").
 - `/paths`: Browse learning paths.
 - `/paths/my`: Selected paths and progress ("My Paths").
+- `/articles`: Share and browse colleague-submitted links ("Articles").
 - `/admin/users`: User management (admin only).
 
 Notes:
 
 - Guard all routes except `/login` behind `SessionStore.current_user()`.
 - Admin routes additionally check `role == "admin"`.
+- Some routes may be feature-flagged via environment variables (see Feature Flags below).
+
+## Feature Flags
+
+The UI supports a small set of runtime feature flags (read from environment variables):
+
+- `FEATURE_AI_CURATOR=0|1`: Enables the AI Curator route (`/ai`) and shows/hides it in navigation.
+- `FEATURE_ARTICLES=0|1`: Enables the Articles route (`/articles`) and shows/hides it in navigation.
 
 ## Page Responsibilities
 
@@ -131,14 +140,15 @@ Responsibilities:
 
 - Render filters (query/provider/category/level).
 - Call `CoursesService.list_courses(...)`.
-- Admin-only create/update/delete flows.
+- Create courses (any authenticated user).
+- Edit/delete courses only when the current user is the creator (or an admin).
 
 Backend endpoints:
 
 - `GET /courses`
-- `POST /courses` (admin)
-- `PUT /courses/{id}` (admin)
-- `DELETE /courses/{id}` (admin)
+- `POST /courses`
+- `PUT /courses/{id}` (owner/admin)
+- `DELETE /courses/{id}` (owner/admin)
 
 ### MyCoursesPage (`/courses/my`)
 Responsibilities:
@@ -158,15 +168,16 @@ Responsibilities:
 
 - Render all paths (name, description).
 - Open path detail view (courses ordered).
-- Admin-only create/update/delete flows for paths.
+- Create paths (any authenticated user).
+- Edit/delete paths only when the current user is the creator (or an admin).
 
 Backend endpoints:
 
 - `GET /paths`
 - `GET /paths/{id}`
-- `POST /paths` (admin)
-- `PUT /paths/{id}` (admin)
-- `DELETE /paths/{id}` (admin)
+- `POST /paths`
+- `PUT /paths/{id}` (owner/admin)
+- `DELETE /paths/{id}` (owner/admin)
 
 ### MyPathsPage (`/paths/my`)
 Responsibilities:
@@ -198,6 +209,17 @@ Backend endpoints:
 - `POST /auth/users/reset`
 - `POST /auth/users/disable`
 - `DELETE /auth/users/{username}`
+
+### ArticlesPage (`/articles`)
+Responsibilities:
+
+- Allow colleagues to share links (title, URL, optional tags).
+- Browse/search shared links.
+
+Backend endpoints:
+
+- `GET /articles`
+- `POST /articles`
 
 ## Expanded Domain Model
 
@@ -234,11 +256,17 @@ classDiagram
     +delete_user(username:str): dict
   }
 
+  class ArticlesService {
+    +list_articles(filters): list
+    +create_article(payload): dict
+  }
+
   class LoginPage { +render() }
   class HomePage { +render() }
   class PathsPage { +render() }
   class MyPathsPage { +render() }
   class MyCoursesPage { +render() }
+  class ArticlesPage { +render() }
   class AdminUsersPage { +render() }
 
   LoginPage --> SessionStore
@@ -247,12 +275,14 @@ classDiagram
   PathsPage --> PathsService
   MyPathsPage --> UserPathsService
   MyCoursesPage --> TrackingService
+  ArticlesPage --> ArticlesService
   AdminUsersPage --> UsersAdminService
 
   PathsService --> ApiClient
   UserPathsService --> ApiClient
   TrackingService --> ApiClient
   UsersAdminService --> ApiClient
+  ArticlesService --> ApiClient
   ApiClient --> SessionStore : token
 ```
 

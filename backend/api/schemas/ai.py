@@ -21,6 +21,7 @@ class AiDraftCourse(APIModel):
     """Draft course payload (no database id)."""
 
     title: str
+    description: str
     provider: str
     category: str
     level: str

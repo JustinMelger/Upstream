@@ -15,8 +15,8 @@ async def test_create_path_and_get_courses(db_session):
     """Paths include ordered course lists."""
     courses = CoursesService(CoursesRepository(db_session))
     paths = PathsService(PathsRepository(db_session))
-    course_a = (await courses.create_course({"title": "Course A"}))["id"]
-    course_b = (await courses.create_course({"title": "Course B"}))["id"]
+    course_a = (await courses.create_course({"title": "Course A", "description": "A"}))["id"]
+    course_b = (await courses.create_course({"title": "Course B", "description": "B"}))["id"]
 
     path = await paths.create_path({"name": "Data Path", "description": "Desc", "course_ids": [course_b, course_a]})
     fetched = await paths.get_path(path["id"])
@@ -40,7 +40,7 @@ async def test_update_and_delete_path(db_session):
     """Paths can be updated and deleted."""
     courses = CoursesService(CoursesRepository(db_session))
     paths = PathsService(PathsRepository(db_session))
-    course_id = (await courses.create_course({"title": "Course C"}))["id"]
+    course_id = (await courses.create_course({"title": "Course C", "description": "C"}))["id"]
     path = await paths.create_path({"name": "Initial", "description": "", "course_ids": [course_id]})
 
     updated = await paths.update_path(path["id"], {"name": "Updated", "description": "New", "course_ids": []})

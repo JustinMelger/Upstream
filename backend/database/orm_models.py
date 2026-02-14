@@ -15,12 +15,14 @@ class Course(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     provider: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str | None] = mapped_column(Text, nullable=True)
     level: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
     url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(ForeignKey("users.username", ondelete="SET NULL"), nullable=True)
 
 
 class Tracking(Base):
@@ -45,6 +47,7 @@ class Path(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(ForeignKey("users.username", ondelete="SET NULL"), nullable=True)
 
     courses: Mapped[list["PathCourse"]] = relationship(back_populates="path", cascade="all, delete-orphan")
 
@@ -113,3 +116,34 @@ class UserPath(Base):
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class Article(Base):
+    """ORM model for shared articles/links."""
+
+    __tablename__ = "articles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    tags: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class CourseReview(Base):
+    """ORM model for course reviews."""
+
+    __tablename__ = "course_reviews"
+    __table_args__ = (
+        UniqueConstraint("course_id", "created_by", name="uq_course_reviews_course_created_by"),
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_course_reviews_rating"),
+        Index("idx_course_reviews_course_id", "course_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)

@@ -34,7 +34,11 @@ async def test_service_error_returns_standard_envelope_for_400_invalid_tracking_
     """Invalid tracking statuses return a 400 domain error envelope."""
     token = await _login_admin(app_client)
 
-    create_course = await app_client.post("/courses", json={"title": "Tracking Course"}, headers={"X-Session-Token": token})
+    create_course = await app_client.post(
+        "/courses",
+        json={"title": "Tracking Course", "description": "desc"},
+        headers={"X-Session-Token": token},
+    )
     assert create_course.status_code == 200
     course_id = create_course.json()["id"]
 
@@ -72,15 +76,32 @@ async def test_http_exception_returns_standard_envelope(app_client):
     assert user_login.status_code == 200
     user_token = user_login.json()["token"]
 
-    forbidden = await app_client.post(
+    create_other = await app_client.post(
+        "/auth/users",
+        json={"username": "student3", "password": "pass123", "role": "user"},
+        headers={"X-Session-Token": admin_token},
+    )
+    assert create_other.status_code in (200, 409)
+    other_login = await app_client.post("/auth/login", json={"username": "student3", "password": "pass123"})
+    other_token = other_login.json()["token"]
+
+    owned = await app_client.post(
         "/courses",
-        json={"title": "Intro"},
+        json={"title": "Intro", "description": "desc"},
         headers={"X-Session-Token": user_token},
+    )
+    assert owned.status_code == 200
+    course_id = owned.json()["id"]
+
+    forbidden = await app_client.put(
+        f"/courses/{course_id}",
+        json={"title": "Hacked", "description": "desc"},
+        headers={"X-Session-Token": other_token},
     )
     assert forbidden.status_code == 403
     forbidden_body = forbidden.json()
     assert forbidden_body.get("status") == "error"
-    assert forbidden_body.get("message") == "admin_required"
+    assert forbidden_body.get("message") == "forbidden"
     assert "timestamp" in forbidden_body
 
 

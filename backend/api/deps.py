@@ -1,13 +1,17 @@
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.articles import ArticlesRepository as SQLArticlesRepository
 from backend.database.async_repositories.auth import AuthRepository as SQLAuthRepository
+from backend.database.async_repositories.course_reviews import CourseReviewsRepository as SQLCourseReviewsRepository
 from backend.database.async_repositories.courses import CoursesRepository as SQLCoursesRepository
 from backend.database.async_repositories.paths import PathsRepository as SQLPathsRepository
 from backend.database.async_repositories.tracking import TrackingRepository as SQLTrackingRepository
 from backend.database.async_repositories.user_paths import UserPathsRepository as SQLUserPathsRepository
 from backend.database.session import get_session
+from backend.services.articles_service import ArticlesService
 from backend.services.auth_service import AuthService
+from backend.services.course_reviews_service import CourseReviewsService
 from backend.services.courses_service import CoursesService
 from backend.services.paths_service import PathsService
 from backend.services.tracking_service import TrackingService
@@ -37,6 +41,16 @@ async def get_user_paths_service(session: AsyncSession = Depends(get_session)) -
 async def get_tracking_service(session: AsyncSession = Depends(get_session)) -> TrackingService:
     """Provide a request-scoped TrackingService dependency."""
     return TrackingService(SQLTrackingRepository(session))
+
+
+async def get_articles_service(session: AsyncSession = Depends(get_session)) -> ArticlesService:
+    """Provide a request-scoped ArticlesService dependency."""
+    return ArticlesService(SQLArticlesRepository(session))
+
+
+async def get_course_reviews_service(session: AsyncSession = Depends(get_session)) -> CourseReviewsService:
+    """Provide a request-scoped CourseReviewsService dependency."""
+    return CourseReviewsService(SQLCourseReviewsRepository(session))
 
 
 async def require_session(

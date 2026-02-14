@@ -25,3 +25,5 @@ async def test_migrations_create_courses_table(db_session):
     columns = {row[0] for row in rows.all()}
     assert "id" in columns
     assert "title" in columns
+    assert "created_by" in columns
+    assert "description" in columns
