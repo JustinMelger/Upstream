@@ -1,3 +1,12 @@
+# [0.6.0](https://github.com/JustinMelger/learning-platform/compare/v0.5.0...v0.6.0) (2026-02-14)
+
+
+### Features
+
+* add description, rm level ([40de07b](https://github.com/JustinMelger/learning-platform/commit/40de07b6e8e58ee2d0df402463c07ad24d71b8bf))
+* article sharing, ux improvements ([5a81a88](https://github.com/JustinMelger/learning-platform/commit/5a81a883a5f93990f14b0d37961ad802ed9abfa4))
+* perfomance improvements ([68ef980](https://github.com/JustinMelger/learning-platform/commit/68ef98068fede34f0feeb4ce0705faac85b98820))
+
 # [0.5.0](https://github.com/JustinMelger/learning-platform/compare/v0.4.4...v0.5.0) (2026-02-13)
 
 
