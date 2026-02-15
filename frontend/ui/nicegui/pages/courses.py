@@ -44,6 +44,23 @@ def _format_review_summary(row: dict[str, Any] | None) -> str:
     return f"{avg:.1f}/5 ({count})"
 
 
+def _format_rating_badge(row: dict[str, Any] | None) -> str:
+    """Format a compact rating badge for course cards (e.g., "★ 4.2 (12)")."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("review_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    try:
+        avg = float(row.get("avg_rating") or 0.0)
+    except (TypeError, ValueError):
+        avg = 0.0
+    return f"★ {avg:.1f} ({count})"
+
+
 def _status_for_card(tracked: dict[str, Any] | None) -> str:
     """Return a stable tracking status string for card styling."""
     v = str((tracked or {}).get("status") or "").strip()
@@ -333,73 +350,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     if course.get("url"):
                         ui.link("Open link", str(course.get("url"))).props("target=_blank").classes("text-sm")
 
-                    tracked = tracking_by_course_id.get(int(course_id))
-                    ui.separator()
-                    ui.label("My status").classes("text-lg font-semibold")
-
-                    options_map = {"": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}}
-                    status_select = ui.select(
-                        options=options_map,
-                        value=str((tracked or {}).get("status") or ""),
-                        label="Status",
-                    ).props("dense")
-
-                    def _normalize_status(raw: Any) -> str:
-                        """Normalize UI select output into a backend tracking status key."""
-                        if isinstance(raw, dict):
-                            if raw.get("value") in options_map:
-                                return str(raw.get("value") or "")
-                            if "label" in raw:
-                                raw = raw.get("label")
-                        v = str(raw or "").strip()
-                        if v in options_map:
-                            return v
-                        for key, label in options_map.items():
-                            if v.lower() == str(label).lower():
-                                return str(key)
-                        return v
-
-                    async def _on_status_change(e: Any, _cid: int = int(course_id), _select=status_select) -> None:
-                        _select.disable()
-                        try:
-                            raw = e
-                            if not isinstance(e, (str, int, float, bool, dict)) and e is not None:
-                                raw = getattr(e, "value", None)
-                                if raw is None:
-                                    raw = getattr(e, "args", None)
-                            value = _normalize_status(raw) or _normalize_status(_select.value)
-
-                            if not value:
-                                _select.value = ""
-                                _select.update()
-                                if _cid in tracking_by_course_id:
-                                    await _clear_tracking(_cid)
-                                return
-                            if value not in {"interested", "in_progress", "completed"}:
-                                ui.notify(f"Invalid status: {value}", type="negative")
-                                return
-                            _select.value = value
-                            _select.update()
-                            await _set_tracking(_cid, value)
-                        finally:
-                            _select.enable()
-
-                    status_select.on("update:model-value", _on_status_change)
-
-                    with ui.row().classes("justify-end mt-4"):
-                        ui.button("Close", on_click=dialog.close).props("outline")
-
-                    can_edit = is_admin or (str(course.get("created_by") or "") == username)
-                    if can_edit:
-                        ui.separator()
-                        with ui.row().classes("justify-end"):
-                            ui.button("Edit", on_click=lambda c=course: _render_edit_course_dialog(c)).props("outline")
-
-                            async def _do_delete() -> None:
-                                await _confirm_delete_course(int(course_id))
-
-                            ui.button("Delete", on_click=_do_delete).props("color=negative outline")
-
                     ui.separator()
                     reviews_anchor_id = f"course-reviews-{int(course_id)}"
                     ui.html(f'<div id="{reviews_anchor_id}"></div>')
@@ -528,6 +478,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     with ui.row().classes("justify-end mt-2"):
                         ui.button("Save review", on_click=_submit_review).props("outline")
 
+                    with ui.row().classes("justify-end mt-4"):
+                        ui.button("Close", on_click=dialog.close).props("outline")
+
                 dialog.open()
                 if focus_reviews:
                     # Allow the dialog to render before scrolling.
@@ -591,31 +544,38 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         with ui.card().classes(f"w-full lp-course-card lp-card--hover{st_cls}"):
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
-                                    ui.label(c.get("title") or "").classes("text-lg font-semibold")
+                                    title = str(c.get("title") or "")
+                                    rating_badge = _format_rating_badge(review_summary_by_course_id.get(course_id))
+                                    with ui.row().classes("items-baseline justify-between w-full"):
+                                        ui.label(title).classes("text-lg font-semibold")
+                                        if rating_badge:
+                                            ui.label(rating_badge).classes("lp-meta-chip")
                                     if str(c.get("description") or "").strip():
                                         ui.label(str(c.get("description") or "")).classes("text-sm text-gray-600")
-                                    shared_by = str(c.get("created_by") or "").strip()
-                                    if shared_by:
-                                        ui.label(f"Shared by {shared_by}").classes("text-xs text-gray-600")
                                     with ui.row().classes("items-center gap-2 flex-wrap"):
+                                        shared_by = str(c.get("created_by") or "").strip()
+                                        if shared_by:
+                                            ui.label(f"Shared by {shared_by}").classes("text-xs").style(
+                                                "color: var(--lp-muted)"
+                                            )
+
+                                        chips: list[str] = []
                                         if str(c.get("provider") or "").strip():
-                                            ui.label(str(c.get("provider") or "")).classes("lp-meta-chip")
+                                            chips.append(str(c.get("provider") or "").strip())
                                         if str(c.get("category") or "").strip():
-                                            ui.label(str(c.get("category") or "")).classes("lp-meta-chip")
-                                        if str(c.get("level") or "").strip():
-                                            ui.label(str(c.get("level") or "")).classes("lp-meta-chip")
-                                        summary_chip = _format_review_summary(review_summary_by_course_id.get(course_id))
-                                        if summary_chip:
-                                            ui.label(summary_chip).classes("lp-meta-chip")
-                                    ui.label(tracking_label((tracked or {}).get("status"))).classes(
-                                        tracking_chip_class((tracked or {}).get("status"))
-                                    )
+                                            chips.append(str(c.get("category") or "").strip())
+
+                                        max_chips = 3
+                                        for chip in chips[:max_chips]:
+                                            ui.label(chip).classes("lp-meta-chip")
+                                        if len(chips) > max_chips:
+                                            ui.label(f"+{len(chips) - max_chips}").classes("lp-meta-chip")
+
+                                        ui.label(tracking_label((tracked or {}).get("status"))).classes(
+                                            tracking_chip_class((tracked or {}).get("status"))
+                                        )
 
                                 with ui.column().classes("items-end gap-2"):
-                                    summary_chip = _format_review_summary(review_summary_by_course_id.get(course_id))
-                                    if summary_chip:
-                                        ui.label(f"Avg review: {summary_chip}").classes("text-xs text-gray-600")
-
                                     with ui.row().classes("items-center"):
 
                                         async def _view(_cid: int = course_id) -> None:
