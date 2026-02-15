@@ -96,10 +96,119 @@ def apply_theme() -> None:
           backdrop-filter: blur(10px);
         }
 
+        .lp-header-inner {
+          width: min(1100px, calc(100vw - 32px));
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 0;
+          gap: 12px;
+        }
+
         .lp-container {
           width: min(1100px, calc(100vw - 32px));
           margin: 20px auto 64px;
           gap: 14px;
+        }
+
+        .lp-topbar {
+          width: 100%;
+          display: flex;
+          align-items: flex-end;
+          gap: 18px;
+        }
+
+        .lp-topbar-meta {
+          margin-left: auto;
+          color: var(--lp-muted);
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.2px;
+          white-space: nowrap;
+        }
+
+        /* Split layouts: rail + main column (used by Courses, reusable elsewhere). */
+        .lp-split {
+          display: flex;
+          gap: 24px;
+          align-items: flex-start;
+          width: 100%;
+        }
+
+        .lp-rail {
+          width: 300px;
+          flex: 0 0 300px;
+          position: sticky;
+          top: 92px; /* header height + breathing room */
+          background: rgba(10, 16, 28, 0.55);
+          border: 1px solid var(--lp-border);
+          border-radius: var(--lp-radius);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+        }
+
+        .lp-rail-content {
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        /* Sidebar rail variant: reads like a persistent bar (like the header),
+           rather than another content card. */
+        .lp-rail--bar {
+          border: none;
+          border-right: 1px solid var(--lp-border);
+          border-radius: 0;
+          box-shadow: none;
+          background: rgba(10, 16, 28, 0.55);
+          position: sticky;
+          height: calc(100vh - 92px);
+          overflow: auto;
+        }
+
+        /* Let the bar "bleed" to the left edge of the viewport while keeping
+           its content aligned with the centered container. */
+        .lp-rail--bar::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: -100vw;
+          width: 100vw;
+          background: rgba(10, 16, 28, 0.55);
+          border-right: 1px solid var(--lp-border);
+          backdrop-filter: blur(10px);
+          pointer-events: none;
+        }
+
+        .lp-main {
+          flex: 1;
+          min-width: 0;
+          max-width: 820px;
+        }
+
+        @media (max-width: 900px) {
+          .lp-split {
+            flex-direction: column;
+          }
+          .lp-rail {
+            width: 100%;
+            position: static;
+            top: auto;
+          }
+          .lp-rail--bar {
+            border: 1px solid var(--lp-border);
+            border-radius: var(--lp-radius);
+            height: auto;
+          }
+          .lp-rail--bar::before {
+            display: none;
+          }
+          .lp-main {
+            max-width: 100%;
+          }
         }
 
         .lp-card {
@@ -107,6 +216,74 @@ def apply_theme() -> None:
           border: 1px solid var(--lp-border);
           border-radius: var(--lp-radius);
           box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+        }
+
+        /* Interactive lift for content cards (subtle). */
+        .lp-card--hover {
+          transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+        }
+        .lp-card--hover:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 18px 42px rgba(0,0,0,0.45);
+          border-color: rgba(255, 255, 255, 0.16);
+        }
+
+        /* Course accent strip: improves scanability without adding UI clutter. */
+        .lp-course-card {
+          position: relative;
+          overflow: hidden;
+        }
+        .lp-course-card::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 3px;
+          background: rgba(255,255,255,0.10);
+        }
+        .lp-course-card--interested::before {
+          background: linear-gradient(180deg, rgba(56,189,248,0.85), rgba(56,189,248,0.10));
+        }
+        .lp-course-card--in_progress::before {
+          background: linear-gradient(180deg, rgba(45,212,191,0.85), rgba(45,212,191,0.10));
+        }
+        .lp-course-card--completed::before {
+          background: linear-gradient(180deg, rgba(132,204,22,0.85), rgba(132,204,22,0.10));
+        }
+
+        .lp-filter-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 4px 10px;
+          border-radius: 999px;
+          border: 1px solid var(--lp-border);
+          background: rgba(255, 255, 255, 0.05);
+          color: var(--lp-text);
+          font-size: 12px;
+          line-height: 20px;
+          width: fit-content;
+        }
+
+        /* Panels: UI controls (filters, sidebars) should feel lighter than content cards. */
+        .lp-panel {
+          background: rgba(255, 255, 255, 0.045) !important;
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          border-radius: 14px;
+          box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        }
+
+        .lp-panel .q-field__control,
+        .lp-panel .q-field__native,
+        .lp-panel .q-field__label,
+        .lp-panel .q-field__marginal {
+          color: var(--lp-text) !important;
+        }
+
+        .lp-panel .q-field--outlined .q-field__control:before,
+        .lp-panel .q-field--outlined .q-field__control:after {
+          border-color: rgba(255, 255, 255, 0.10) !important;
         }
 
         .lp-nav-active {

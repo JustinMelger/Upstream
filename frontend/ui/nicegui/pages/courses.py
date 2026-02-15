@@ -7,7 +7,7 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
@@ -44,6 +44,14 @@ def _format_review_summary(row: dict[str, Any] | None) -> str:
     return f"{avg:.1f}/5 ({count})"
 
 
+def _status_for_card(tracked: dict[str, Any] | None) -> str:
+    """Return a stable tracking status string for card styling."""
+    v = str((tracked or {}).get("status") or "").strip()
+    if v in {"interested", "in_progress", "completed"}:
+        return v
+    return ""
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/courses` route.
 
@@ -66,22 +74,41 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             tracking_by_course_id: dict[int, dict[str, Any]] = {}
             review_summary_by_course_id: dict[int, dict[str, Any]] = {}
 
-            with ui.row().classes("items-end w-full"):
-                q = ui.input("Search").props("clearable debounce=300").classes("grow")
-                provider = ui.input("Provider").props("clearable debounce=300")
-                category = ui.input("Category").props("clearable debounce=300")
-                status_filter = ui.select(
-                    {"": "Any status", "not_tracked": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
-                    label="My status",
-                    value="",
-                )
+            with ui.row().classes("lp-topbar"):
+                q = ui.input("Search courses").props("clearable debounce=300").style("flex: 1")
+                meta = ui.label("").classes("lp-topbar-meta")
 
-            with ui.expansion("More filters").props("dense"):
-                with ui.row().classes("items-end w-full"):
-                    level = ui.input("Level").props("clearable debounce=300")
-
-            meta = ui.label("").classes("text-sm text-gray-600")
             loading = False
+
+            provider_filter: Any = None
+            category_filter: Any = None
+            level_filter: Any = None
+            status_filter: Any = None
+            refresh_btn: Any = None
+
+            def _update_facet_options() -> None:
+                providers = sorted(
+                    {str(c.get("provider") or "").strip() for c in courses if str(c.get("provider") or "").strip()}
+                )
+                categories = sorted(
+                    {str(c.get("category") or "").strip() for c in courses if str(c.get("category") or "").strip()}
+                )
+                levels = sorted({str(c.get("level") or "").strip() for c in courses if str(c.get("level") or "").strip()})
+
+                provider_filter.options = {"": "Any provider", **{p: p for p in providers}}
+                category_filter.options = {"": "Any category", **{c: c for c in categories}}
+                level_filter.options = {"": "Any level", **{l: l for l in levels}}
+
+                if provider_filter.value and provider_filter.value not in provider_filter.options:
+                    provider_filter.value = ""
+                if category_filter.value and category_filter.value not in category_filter.options:
+                    category_filter.value = ""
+                if level_filter.value and level_filter.value not in level_filter.options:
+                    level_filter.value = ""
+
+                provider_filter.update()
+                category_filter.update()
+                level_filter.update()
 
             async def _load() -> None:
                 nonlocal courses, tracking_by_course_id, review_summary_by_course_id, loading
@@ -95,18 +122,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     params: dict[str, Any] = {}
                     if q.value:
                         params["q"] = str(q.value)
-                    if provider.value:
-                        params["provider"] = str(provider.value)
-                    if category.value:
-                        params["category"] = str(category.value)
-                    if level.value:
-                        params["level"] = str(level.value)
+                    if provider_filter.value:
+                        params["provider"] = str(provider_filter.value)
+                    if category_filter.value:
+                        params["category"] = str(category_filter.value)
+                    if level_filter.value:
+                        params["level"] = str(level_filter.value)
 
                     courses, tracking_by_course_id = await load_courses_and_tracking(api=api, course_params=params or None)
                     review_summary_by_course_id = await load_review_summaries(
                         api=api,
                         course_ids=[int(c.get("id") or 0) for c in courses if int(c.get("id") or 0) > 0],
                     )
+                    _update_facet_options()
                     courses_list.refresh()
                     meta.text = f"{len(courses)} courses"
                 except ApiError as exc:
@@ -114,6 +142,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses = []
                     tracking_by_course_id = {}
                     review_summary_by_course_id = {}
+                    _update_facet_options()
                     courses_list.refresh()
                     meta.text = "0 courses"
                 finally:
@@ -513,20 +542,24 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             @ui.refreshable
             def courses_list() -> None:
                 needle = str(q.value or "").strip().lower()
-                provider_v = str(provider.value or "").strip().lower()
-                category_v = str(category.value or "").strip().lower()
-                level_v = str(level.value or "").strip().lower()
+                provider_v = str(provider_filter.value or "").strip().lower()
+                category_v = str(category_filter.value or "").strip().lower()
+                level_v = str(level_filter.value or "").strip().lower()
                 status_v = str(status_filter.value or "")
 
                 shown = courses
                 if needle:
-                    shown = [c for c in shown if needle in str(c.get("title") or "").lower()]
+                    shown = [
+                        c
+                        for c in shown
+                        if needle in str(c.get("title") or "").lower() or needle in str(c.get("description") or "").lower()
+                    ]
                 if provider_v:
-                    shown = [c for c in shown if provider_v in str(c.get("provider") or "").lower()]
+                    shown = [c for c in shown if provider_v == str(c.get("provider") or "").strip().lower()]
                 if category_v:
-                    shown = [c for c in shown if category_v in str(c.get("category") or "").lower()]
+                    shown = [c for c in shown if category_v == str(c.get("category") or "").strip().lower()]
                 if level_v:
-                    shown = [c for c in shown if level_v in str(c.get("level") or "").lower()]
+                    shown = [c for c in shown if level_v == str(c.get("level") or "").strip().lower()]
 
                 if status_v:
                     if status_v == "not_tracked":
@@ -553,7 +586,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         course_id = int(c.get("id") or 0)
                         tracked = tracking_by_course_id.get(course_id)
                         can_edit = is_admin or (str(c.get("created_by") or "") == username)
-                        with ui.card().classes("w-full"):
+                        st = _status_for_card(tracked)
+                        st_cls = f" lp-course-card--{st}" if st else ""
+                        with ui.card().classes(f"w-full lp-course-card lp-card--hover{st_cls}"):
                             with ui.row().classes("items-start justify-between w-full"):
                                 with ui.column().classes("gap-1"):
                                     ui.label(c.get("title") or "").classes("text-lg font-semibold")
@@ -663,26 +698,128 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ui.button("Delete", on_click=_do_delete).props("dense color=negative outline")
 
             def _refresh_list(*_: Any) -> None:
+                active_filters.refresh()
                 courses_list.refresh()
 
             def _clear_filters() -> None:
                 q.value = ""
-                provider.value = ""
-                category.value = ""
-                level.value = ""
+                provider_filter.value = ""
+                category_filter.value = ""
+                level_filter.value = ""
                 status_filter.value = ""
+                provider_filter.update()
+                category_filter.update()
+                level_filter.update()
+                status_filter.update()
                 courses_list.refresh()
 
             q.on("update:model-value", _refresh_list)
-            provider.on("update:model-value", _refresh_list)
-            category.on("update:model-value", _refresh_list)
-            level.on("update:model-value", _refresh_list)
-            status_filter.on("update:model-value", _refresh_list)
 
-            with ui.row().classes("items-center justify-between w-full"):
-                with ui.row().classes("items-center gap-2"):
-                    refresh_btn = ui.button("Refresh", on_click=_load).props("outline")
-                    ui.button("New course", on_click=_open_create_dialog)
+            @ui.refreshable
+            def active_filters() -> None:
+                """Render removable filter chips above the results list."""
+
+                def _chip(label: str, on_clear: Any) -> None:
+                    with ui.row().classes("items-center"):
+                        with ui.element("div").classes("lp-filter-chip"):
+                            ui.label(label)
+                            ui.button("×", on_click=on_clear).props("dense flat")
+
+                any_chip = False
+                with ui.row().classes("items-center gap-2 w-full"):
+                    if str(q.value or "").strip():
+                        any_chip = True
+
+                        def _clear_q() -> None:
+                            q.value = ""
+                            q.update()
+                            active_filters.refresh()
+                            courses_list.refresh()
+
+                        _chip(f"Search: {str(q.value or '').strip()}", _clear_q)
+
+                    if str(provider_filter.value or "").strip():
+                        any_chip = True
+
+                        def _clear_provider() -> None:
+                            provider_filter.value = ""
+                            provider_filter.update()
+                            active_filters.refresh()
+                            courses_list.refresh()
+
+                        _chip(f"Provider: {provider_filter.value}", _clear_provider)
+
+                    if str(category_filter.value or "").strip():
+                        any_chip = True
+
+                        def _clear_category() -> None:
+                            category_filter.value = ""
+                            category_filter.update()
+                            active_filters.refresh()
+                            courses_list.refresh()
+
+                        _chip(f"Category: {category_filter.value}", _clear_category)
+
+                    if str(level_filter.value or "").strip():
+                        any_chip = True
+
+                        def _clear_level() -> None:
+                            level_filter.value = ""
+                            level_filter.update()
+                            active_filters.refresh()
+                            courses_list.refresh()
+
+                        _chip(f"Level: {level_filter.value}", _clear_level)
+
+                    if str(status_filter.value or "").strip():
+                        any_chip = True
+                        label = str(status_filter.options.get(status_filter.value) or status_filter.value)
+
+                        def _clear_status() -> None:
+                            status_filter.value = ""
+                            status_filter.update()
+                            active_filters.refresh()
+                            courses_list.refresh()
+
+                        _chip(f"Status: {label}", _clear_status)
+
+                if not any_chip:
+                    return
+
+            def _render_rail() -> None:
+                nonlocal provider_filter, category_filter, level_filter, status_filter, refresh_btn
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label("Filters").classes("text-md font-semibold")
+                    with ui.row().classes("items-center gap-2"):
+                        refresh_btn = ui.button("Refresh", on_click=_load).props("outline dense")
+                        ui.button("Share", on_click=_open_create_dialog).props("dense")
+
+                ui.label("Tip: use filters to narrow results.").classes("text-xs").style("color: var(--lp-muted)")
+
+                provider_filter = ui.select({"": "Any provider"}, label="Provider", value="").props("dense").classes("w-full")
+                category_filter = ui.select({"": "Any category"}, label="Category", value="").props("dense").classes("w-full")
+                level_filter = ui.select({"": "Any level"}, label="Level", value="").props("dense").classes("w-full")
+                status_filter = (
+                    ui.select(
+                        {"": "Any status", "not_tracked": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
+                        label="My status",
+                        value="",
+                    )
+                    .props("dense")
+                    .classes("w-full")
+                )
+                provider_filter.on("update:model-value", _refresh_list)
+                category_filter.on("update:model-value", _refresh_list)
+                level_filter.on("update:model-value", _refresh_list)
+                status_filter.on("update:model-value", _refresh_list)
+                # Push the reset action to the bottom so it feels anchored.
+                ui.element("div").style("flex: 1")
+                ui.button("Clear", on_click=_clear_filters).props("outline dense").classes("w-full")
+
+            def _render_main() -> None:
+                active_filters()
+                courses_list()
+
+            render_split_layout(rail=_render_rail, main=_render_main, rail_classes="lp-rail--bar")
 
             await _load()
-            courses_list()
