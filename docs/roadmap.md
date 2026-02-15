@@ -87,11 +87,20 @@
 - [x] Navigation polish: active route highlighting and optional feature flags (hide AI Curator unless enabled).
 - [x] Debounce search inputs to reduce backend load (avoid requests per keystroke).
 - [x] Add an “Articles” section where users can share links (title, URL, tags) and browse/search community submissions.
+- [x] Courses UX: add sort control with sensible defaults (Recommended/Top rated/Most reviewed/Newest/A–Z).
+- [ ] Courses UX: paginate or add “Load more”/infinite scroll for large catalogs.
+- [x] Courses UX: enhance empty states (show active filters + single “Reset all” CTA; “Share the first course” for empty catalog).
+- [ ] Courses UX: add facet counts for provider/category/status options.
+- [x] Courses UX: paginate or add “Load more”/infinite scroll for large catalogs.
+- [ ] Courses UX: polish card actions (status as clearer control; optional “Copy link” quick action).
+- [ ] Courses UX: highlight “new/updated” courses and add a “Recently added” sort.
+
 
 ## Phase 10 — Social Layer (By Colleagues, For Colleagues)
 - [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).
 - [x] Add reviews for courses (rating + text) with basic moderation/admin removal.
 - [ ] Add reviews for paths (text) with basic moderation/admin removal.
+- [ ] Add reviews for articles (rating + text) with basic moderation/admin removal.
 - [x] Surface social signals in UI (Home + course/path details).
 - [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 - [ ] Add “Suggest a course/path” drafts (user-submitted) with admin approve/edit → canonical content.

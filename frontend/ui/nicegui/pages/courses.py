@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from nicegui import ui
@@ -69,6 +70,30 @@ def _status_for_card(tracked: dict[str, Any] | None) -> str:
     return ""
 
 
+def _parse_iso_datetime(value: Any) -> datetime | None:
+    """Parse an ISO-8601 timestamp into an aware datetime (UTC when possible)."""
+    s = str(value or "").strip()
+    if not s:
+        return None
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _is_recent(dt: datetime | None, *, days: int = 7) -> bool:
+    """Return True when dt is within the last N days."""
+    if dt is None:
+        return False
+    now = datetime.now(timezone.utc)
+    return dt >= (now - timedelta(days=int(days)))
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/courses` route.
 
@@ -90,12 +115,34 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             courses: list[dict[str, Any]] = []
             tracking_by_course_id: dict[int, dict[str, Any]] = {}
             review_summary_by_course_id: dict[int, dict[str, Any]] = {}
+            page_size = 10
+            visible_count = page_size
 
             with ui.row().classes("lp-topbar"):
                 q = ui.input("Search courses").props("clearable debounce=300").style("flex: 1")
-                meta = ui.label("").classes("lp-topbar-meta")
+                with ui.row().classes("items-center gap-2").style("margin-left: auto"):
+                    ui.button("Share", on_click=lambda: _open_create_dialog()).props("dense")
+                    sort_filter = (
+                        ui.select(
+                            {
+                                "": "Recommended",
+                                "top_rated": "Top rated",
+                                "most_reviewed": "Most reviewed",
+                                "newest": "Recently added",
+                                "title_az": "Title A–Z",
+                            },
+                            value="",
+                            label=None,
+                        )
+                        .props("dense")
+                        .style("min-width: 180px")
+                    )
+                    # Late-bind to avoid "defined later" ordering issues.
+                    sort_filter.on("update:model-value", lambda *_: _refresh_list())
+                    meta = ui.label("").classes("lp-topbar-meta")
 
             loading = False
+            loaded_once = False
 
             provider_filter: Any = None
             category_filter: Any = None
@@ -128,10 +175,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 level_filter.update()
 
             async def _load() -> None:
-                nonlocal courses, tracking_by_course_id, review_summary_by_course_id, loading
+                nonlocal courses, tracking_by_course_id, review_summary_by_course_id, loading, loaded_once, visible_count
                 if loading:
                     return
                 loading = True
+                visible_count = page_size
                 refresh_btn.disable()
                 meta.text = "Loading..."
                 courses_list.refresh()
@@ -164,6 +212,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     meta.text = "0 courses"
                 finally:
                     loading = False
+                    loaded_once = True
                     refresh_btn.enable()
                     courses_list.refresh()
 
@@ -494,11 +543,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @ui.refreshable
             def courses_list() -> None:
+                nonlocal visible_count
                 needle = str(q.value or "").strip().lower()
                 provider_v = str(provider_filter.value or "").strip().lower()
                 category_v = str(category_filter.value or "").strip().lower()
                 level_v = str(level_filter.value or "").strip().lower()
                 status_v = str(status_filter.value or "")
+                sort_v = str(sort_filter.value or "")
 
                 shown = courses
                 if needle:
@@ -524,18 +575,92 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             if str((tracking_by_course_id.get(int(c.get("id") or 0)) or {}).get("status") or "") == status_v
                         ]
 
+                if sort_v:
+                    if sort_v == "title_az":
+                        shown = sorted(shown, key=lambda c: str(c.get("title") or "").strip().lower())
+                    elif sort_v == "newest":
+
+                        def _created_key(c: dict[str, Any]) -> tuple[datetime, int]:
+                            # Prefer parsed timestamps; fall back to id for stability.
+                            dt = _parse_iso_datetime(c.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc)
+                            return (dt, int(c.get("id") or 0))
+
+                        shown = sorted(shown, key=_created_key, reverse=True)
+                    elif sort_v == "top_rated":
+
+                        def _rating_key(c: dict[str, Any]) -> tuple[float, int, str]:
+                            cid = int(c.get("id") or 0)
+                            s = review_summary_by_course_id.get(cid) or {}
+                            try:
+                                avg = float(s.get("avg_rating") or 0.0)
+                            except (TypeError, ValueError):
+                                avg = 0.0
+                            try:
+                                cnt = int(s.get("review_count") or 0)
+                            except (TypeError, ValueError):
+                                cnt = 0
+                            title = str(c.get("title") or "").strip().lower()
+                            return (avg, cnt, title)
+
+                        shown = sorted(shown, key=_rating_key, reverse=True)
+                    elif sort_v == "most_reviewed":
+
+                        def _count_key(c: dict[str, Any]) -> tuple[int, float, str]:
+                            cid = int(c.get("id") or 0)
+                            s = review_summary_by_course_id.get(cid) or {}
+                            try:
+                                cnt = int(s.get("review_count") or 0)
+                            except (TypeError, ValueError):
+                                cnt = 0
+                            try:
+                                avg = float(s.get("avg_rating") or 0.0)
+                            except (TypeError, ValueError):
+                                avg = 0.0
+                            title = str(c.get("title") or "").strip().lower()
+                            return (cnt, avg, title)
+
+                        shown = sorted(shown, key=_count_key, reverse=True)
+
                 with ui.column().classes("w-full gap-3"):
-                    if loading:
+                    if loading or not loaded_once:
                         render_card_skeletons(count=4)
                         return
 
                     if not shown:
-                        ui.label("No courses match your filters.").classes("text-sm text-gray-600")
-                        with ui.row().classes("items-center gap-2"):
-                            ui.button("Clear filters", on_click=lambda: _clear_filters()).props("outline")
-                            ui.button("Refresh", on_click=_load).props("outline")
+                        any_filters = any(
+                            [
+                                str(q.value or "").strip(),
+                                str(provider_filter.value or "").strip(),
+                                str(category_filter.value or "").strip(),
+                                str(level_filter.value or "").strip(),
+                                str(status_filter.value or "").strip(),
+                            ]
+                        )
 
-                    for c in shown:
+                        if not courses and not any_filters:
+                            ui.label("No courses yet.").classes("text-sm").style("color: var(--lp-muted)")
+                            ui.label("Share the first course to get started.").classes("text-sm").style(
+                                "color: var(--lp-muted)"
+                            )
+                            with ui.row().classes("items-center gap-2"):
+                                ui.button("Share a course", on_click=lambda: _open_create_dialog()).props("outline")
+                                ui.button("Refresh", on_click=_load).props("outline")
+                            return
+
+                        ui.label("No courses match your filters.").classes("text-sm").style("color: var(--lp-muted)")
+                        if any_filters:
+                            ui.label("Try resetting filters to broaden results.").classes("text-xs").style(
+                                "color: var(--lp-muted)"
+                            )
+                        with ui.row().classes("items-center gap-2"):
+                            ui.button("Reset all", on_click=_reset_all).props("outline")
+                            ui.button("Refresh", on_click=_load).props("outline")
+                        return
+
+                    shown_total = len(shown)
+                    shown_page = shown[: max(0, int(visible_count))]
+
+                    for c in shown_page:
                         course_id = int(c.get("id") or 0)
                         tracked = tracking_by_course_id.get(course_id)
                         can_edit = is_admin or (str(c.get("created_by") or "") == username)
@@ -546,10 +671,35 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 with ui.column().classes("gap-1"):
                                     title = str(c.get("title") or "")
                                     rating_badge = _format_rating_badge(review_summary_by_course_id.get(course_id))
-                                    with ui.row().classes("items-baseline justify-between w-full"):
-                                        ui.label(title).classes("text-lg font-semibold")
+                                    created_at = _parse_iso_datetime(c.get("created_at"))
+                                    updated_at = _parse_iso_datetime(c.get("updated_at"))
+                                    is_updated = (
+                                        _is_recent(updated_at)
+                                        and created_at is not None
+                                        and updated_at is not None
+                                        and updated_at > created_at
+                                    )
+                                    is_new = (not is_updated) and _is_recent(created_at)
+                                    with ui.element("div").classes("lp-card-topright"):
+                                        if is_new:
+                                            ui.label("New").classes("lp-chip lp-chip--sky")
+                                        elif is_updated:
+                                            ui.label("Updated").classes("lp-chip lp-chip--teal")
                                         if rating_badge:
                                             ui.label(rating_badge).classes("lp-meta-chip")
+                                        if can_edit:
+                                            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                                                ui.menu_item(
+                                                    "Edit",
+                                                    on_click=lambda course=c: _render_edit_course_dialog(course),
+                                                )
+
+                                                async def _do_delete(_cid: int = course_id) -> None:
+                                                    await _confirm_delete_course(_cid)
+
+                                                ui.menu_item("Delete", on_click=_do_delete)
+
+                                    ui.label(title).classes("text-lg font-semibold")
                                     if str(c.get("description") or "").strip():
                                         ui.label(str(c.get("description") or "")).classes("text-sm text-gray-600")
                                     with ui.row().classes("items-center gap-2 flex-wrap"):
@@ -646,32 +796,45 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                         status_select.on("update:model-value", _on_status_change)
 
-                            if can_edit:
-                                with ui.row().classes("justify-end mt-2"):
-                                    ui.button("Edit", on_click=lambda course=c: _render_edit_course_dialog(course)).props(
-                                        "dense outline"
-                                    )
+                    if shown_total > len(shown_page):
+                        with ui.row().classes("items-center justify-center mt-2"):
 
-                                    async def _do_delete(_cid: int = course_id) -> None:
-                                        await _confirm_delete_course(_cid)
+                            def _load_more() -> None:
+                                nonlocal visible_count
+                                visible_count = min(shown_total, int(visible_count) + page_size)
+                                courses_list.refresh()
 
-                                    ui.button("Delete", on_click=_do_delete).props("dense color=negative outline")
+                            ui.button(
+                                f"Load more ({len(shown_page)}/{shown_total})",
+                                on_click=_load_more,
+                            ).props("outline")
 
             def _refresh_list(*_: Any) -> None:
+                nonlocal visible_count
+                visible_count = page_size
                 active_filters.refresh()
                 courses_list.refresh()
 
-            def _clear_filters() -> None:
+            def _clear_filter_values() -> None:
                 q.value = ""
                 provider_filter.value = ""
                 category_filter.value = ""
                 level_filter.value = ""
                 status_filter.value = ""
+                sort_filter.value = ""
+                q.update()
                 provider_filter.update()
                 category_filter.update()
                 level_filter.update()
                 status_filter.update()
+                sort_filter.update()
+                active_filters.refresh()
                 courses_list.refresh()
+
+            @guard_ui_action(title="Reset filters failed")
+            async def _reset_all() -> None:
+                _clear_filter_values()
+                await _load()
 
             q.on("update:model-value", _refresh_list)
 
@@ -752,7 +915,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ui.label("Filters").classes("text-md font-semibold")
                     with ui.row().classes("items-center gap-2"):
                         refresh_btn = ui.button("Refresh", on_click=_load).props("outline dense")
-                        ui.button("Share", on_click=_open_create_dialog).props("dense")
 
                 ui.label("Tip: use filters to narrow results.").classes("text-xs").style("color: var(--lp-muted)")
 
@@ -774,7 +936,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 status_filter.on("update:model-value", _refresh_list)
                 # Push the reset action to the bottom so it feels anchored.
                 ui.element("div").style("flex: 1")
-                ui.button("Clear", on_click=_clear_filters).props("outline dense").classes("w-full")
+                ui.button("Clear", on_click=_reset_all).props("outline dense").classes("w-full")
 
             def _render_main() -> None:
                 active_filters()

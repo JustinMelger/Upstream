@@ -120,7 +120,6 @@ def apply_theme() -> None:
         }
 
         .lp-topbar-meta {
-          margin-left: auto;
           color: var(--lp-muted);
           font-size: 12px;
           font-weight: 600;
@@ -250,6 +249,25 @@ def apply_theme() -> None:
         }
         .lp-course-card--completed::before {
           background: linear-gradient(180deg, rgba(132,204,22,0.85), rgba(132,204,22,0.10));
+        }
+
+        /* Top-right slot for card badges + overflow actions (aligns across cards). */
+        .lp-card-topright {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          z-index: 3;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        /* Absolute badge slot for "New"/"Updated" so it aligns across cards. */
+        .lp-card-badge {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          z-index: 2;
         }
 
         .lp-filter-chip {
