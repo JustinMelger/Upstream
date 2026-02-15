@@ -94,6 +94,14 @@ def _is_recent(dt: datetime | None, *, days: int = 7) -> bool:
     return dt >= (now - timedelta(days=int(days)))
 
 
+def _format_short_date(value: Any) -> str:
+    """Format an ISO datetime into a compact human-readable date (e.g., 'Feb 13, 2026')."""
+    dt = _parse_iso_datetime(value)
+    if dt is None:
+        return str(value or "").strip()
+    return dt.astimezone(timezone.utc).strftime("%b %d, %Y")
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/courses` route.
 
@@ -150,18 +158,108 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             status_filter: Any = None
             refresh_btn: Any = None
 
-            def _update_facet_options() -> None:
-                providers = sorted(
-                    {str(c.get("provider") or "").strip() for c in courses if str(c.get("provider") or "").strip()}
-                )
-                categories = sorted(
-                    {str(c.get("category") or "").strip() for c in courses if str(c.get("category") or "").strip()}
-                )
-                levels = sorted({str(c.get("level") or "").strip() for c in courses if str(c.get("level") or "").strip()})
+            def _recompute_facet_options() -> None:
+                """Recompute facet dropdown options with counts based on the current local filters.
 
-                provider_filter.options = {"": "Any provider", **{p: p for p in providers}}
-                category_filter.options = {"": "Any category", **{c: c for c in categories}}
-                level_filter.options = {"": "Any level", **{l: l for l in levels}}
+                Counts are computed "excluding the facet itself" (standard faceting), so users can see
+                the impact of picking a different value before clicking it.
+                """
+
+                needle = str(q.value or "").strip().lower()
+
+                def _matches_needle(course: dict[str, Any]) -> bool:
+                    if not needle:
+                        return True
+                    return needle in str(course.get("title") or "").lower() or needle in str(course.get("description") or "").lower()
+
+                def _status_key(course_id: int) -> str:
+                    tracked = tracking_by_course_id.get(int(course_id))
+                    v = str((tracked or {}).get("status") or "").strip()
+                    if v in {"interested", "in_progress", "completed"}:
+                        return v
+                    return "not_tracked"
+
+                def _passes(course: dict[str, Any], *, ignore: str) -> bool:
+                    if ignore != "needle" and not _matches_needle(course):
+                        return False
+
+                    if ignore != "provider":
+                        provider_v = str(provider_filter.value or "").strip().lower()
+                        if provider_v and provider_v != str(course.get("provider") or "").strip().lower():
+                            return False
+
+                    if ignore != "category":
+                        category_v = str(category_filter.value or "").strip().lower()
+                        if category_v and category_v != str(course.get("category") or "").strip().lower():
+                            return False
+
+                    if ignore != "level":
+                        level_v = str(level_filter.value or "").strip().lower()
+                        if level_v and level_v != str(course.get("level") or "").strip().lower():
+                            return False
+
+                    if ignore != "status":
+                        status_v = str(status_filter.value or "").strip()
+                        if status_v:
+                            cid = int(course.get("id") or 0)
+                            if status_v == "not_tracked":
+                                if cid in tracking_by_course_id:
+                                    return False
+                            else:
+                                if _status_key(cid) != status_v:
+                                    return False
+
+                    return True
+
+                def _count_values(*, ignore: str, field: str) -> dict[str, int]:
+                    counts: dict[str, int] = {}
+                    for c in courses:
+                        if not _passes(c, ignore=ignore):
+                            continue
+                        v = str(c.get(field) or "").strip()
+                        if not v:
+                            continue
+                        counts[v] = int(counts.get(v, 0)) + 1
+                    return counts
+
+                provider_counts = _count_values(ignore="provider", field="provider")
+                category_counts = _count_values(ignore="category", field="category")
+                level_counts = _count_values(ignore="level", field="level")
+
+                # Preserve current selections even if they have a 0-count after other filters.
+                selected_provider = str(provider_filter.value or "").strip()
+                if selected_provider and selected_provider not in provider_counts:
+                    provider_counts[selected_provider] = 0
+                selected_category = str(category_filter.value or "").strip()
+                if selected_category and selected_category not in category_counts:
+                    category_counts[selected_category] = 0
+                selected_level = str(level_filter.value or "").strip()
+                if selected_level and selected_level not in level_counts:
+                    level_counts[selected_level] = 0
+
+                def _sorted_items(counts: dict[str, int]) -> list[tuple[str, int]]:
+                    return sorted(counts.items(), key=lambda kv: (-int(kv[1]), str(kv[0]).lower()))
+
+                provider_filter.options = {"": "Any provider", **{k: f"{k} ({n})" for k, n in _sorted_items(provider_counts)}}
+                category_filter.options = {"": "Any category", **{k: f"{k} ({n})" for k, n in _sorted_items(category_counts)}}
+                level_filter.options = {"": "Any level", **{k: f"{k} ({n})" for k, n in _sorted_items(level_counts)}}
+
+                # Status counts (computed ignoring status itself).
+                status_counts: dict[str, int] = {"not_tracked": 0, "interested": 0, "in_progress": 0, "completed": 0}
+                for c in courses:
+                    if not _passes(c, ignore="status"):
+                        continue
+                    cid = int(c.get("id") or 0)
+                    key = _status_key(cid)
+                    status_counts[key] = int(status_counts.get(key, 0)) + 1
+
+                status_filter.options = {
+                    "": "Any status",
+                    "not_tracked": f"Not tracked ({status_counts.get('not_tracked', 0)})",
+                    "interested": f"Interested ({status_counts.get('interested', 0)})",
+                    "in_progress": f"In progress ({status_counts.get('in_progress', 0)})",
+                    "completed": f"Completed ({status_counts.get('completed', 0)})",
+                }
 
                 if provider_filter.value and provider_filter.value not in provider_filter.options:
                     provider_filter.value = ""
@@ -169,10 +267,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     category_filter.value = ""
                 if level_filter.value and level_filter.value not in level_filter.options:
                     level_filter.value = ""
+                if status_filter.value and status_filter.value not in status_filter.options:
+                    status_filter.value = ""
 
                 provider_filter.update()
                 category_filter.update()
                 level_filter.update()
+                status_filter.update()
 
             async def _load() -> None:
                 nonlocal courses, tracking_by_course_id, review_summary_by_course_id, loading, loaded_once, visible_count
@@ -199,7 +300,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         api=api,
                         course_ids=[int(c.get("id") or 0) for c in courses if int(c.get("id") or 0) > 0],
                     )
-                    _update_facet_options()
+                    _recompute_facet_options()
                     courses_list.refresh()
                     meta.text = f"{len(courses)} courses"
                 except ApiError as exc:
@@ -207,7 +308,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses = []
                     tracking_by_course_id = {}
                     review_summary_by_course_id = {}
-                    _update_facet_options()
+                    _recompute_facet_options()
                     courses_list.refresh()
                     meta.text = "0 courses"
                 finally:
@@ -225,6 +326,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     tracking_by_course_id = {}
                     courses_list.refresh()
                     return
+                _recompute_facet_options()
                 courses_list.refresh()
 
             @guard_ui_action(title="Update status failed")
@@ -386,18 +488,25 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ui.label(course.get("title") or "").classes("text-xl font-semibold")
                     if str(course.get("description") or "").strip():
                         ui.label(str(course.get("description") or "")).classes("text-sm text-gray-600")
-                    summary_el = ui.label("").classes("text-xs text-gray-600")
                     summary_label = _format_review_summary(review_summary_by_course_id.get(int(course_id)))
-                    summary_el.text = f"Reviews: {summary_label}" if summary_label else ""
-                    ui.label(
-                        f"{course.get('provider') or ''} · {course.get('category') or ''} · {course.get('level') or ''}"
-                    ).classes("text-sm text-gray-600")
+                    provider = str(course.get("provider") or "").strip()
+                    category = str(course.get("category") or "").strip()
+                    shared_by = str(course.get("created_by") or "").strip()
 
-                    if course.get("duration_hours") is not None:
-                        ui.label(f"Duration: {course.get('duration_hours')}h").classes("text-sm")
-
-                    if course.get("url"):
-                        ui.link("Open link", str(course.get("url"))).props("target=_blank").classes("text-sm")
+                    with ui.row().classes("items-center justify-between w-full mt-2"):
+                        with ui.row().classes("items-center gap-2 flex-wrap"):
+                            if provider:
+                                ui.label(provider).classes("lp-meta-chip")
+                            if category:
+                                ui.label(category).classes("lp-meta-chip")
+                            if shared_by:
+                                ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
+                            if summary_label:
+                                ui.label(f"★ {summary_label}").classes("lp-meta-chip")
+                        if course.get("url"):
+                            ui.button("Open link", icon="open_in_new", on_click=lambda u=str(course.get("url")): ui.open(u)).props(
+                                "outline dense"
+                            )
 
                     ui.separator()
                     reviews_anchor_id = f"course-reviews-{int(course_id)}"
@@ -461,7 +570,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 except (TypeError, ValueError):
                                     rating = 0
                                 who = str(r.get("created_by") or "").strip()
-                                when = str(r.get("created_at") or "").strip()
+                                when = _format_short_date(r.get("created_at"))
                                 text = str(r.get("text") or "").strip()
                                 with ui.card().classes("lp-card w-full"):
                                     with ui.row().classes("items-start justify-between w-full"):
@@ -474,7 +583,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                             ui.button("Delete", on_click=_do_delete).props("dense color=negative outline")
                                     if when:
-                                        ui.label(when).classes("text-xs text-gray-600")
+                                        ui.label(when).classes("text-xs").style("color: var(--lp-muted)")
                                     if text:
                                         ui.label(text).classes("text-sm text-gray-600")
 
@@ -532,7 +641,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 dialog.open()
                 if focus_reviews:
-                    # Allow the dialog to render before scrolling.
+                    # Keep behavior simple: open review dialog at the reviews section.
                     ui.timer(
                         0.05,
                         lambda _id=reviews_anchor_id: ui.run_javascript(
@@ -731,12 +840,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         async def _view(_cid: int = course_id) -> None:
                                             await _open_details(_cid)
 
-                                        ui.button("View", on_click=_view).props("outline")
+                                        ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip(
+                                            "View"
+                                        )
 
                                         async def _review(_cid: int = course_id) -> None:
                                             await _open_details(_cid, focus_reviews=True)
 
-                                        ui.button("Review", on_click=_review).props("outline")
+                                        ui.button("", icon="rate_review", on_click=_review).props("outline dense").tooltip(
+                                            "Reviews"
+                                        )
 
                                         current_status = str((tracked or {}).get("status") or "")
                                         options_map = {
@@ -748,6 +861,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             value=current_status,
                                             label=None,
                                         ).props("dense")
+                                        status_select.props("use-input hide-selected fill-input")
+                                        status_select.tooltip("Status")
 
                                         async def _on_status_change(
                                             e: Any, _cid: int = course_id, _select=status_select
@@ -812,6 +927,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             def _refresh_list(*_: Any) -> None:
                 nonlocal visible_count
                 visible_count = page_size
+                _recompute_facet_options()
                 active_filters.refresh()
                 courses_list.refresh()
 

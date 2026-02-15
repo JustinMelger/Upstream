@@ -88,9 +88,8 @@
 - [x] Debounce search inputs to reduce backend load (avoid requests per keystroke).
 - [x] Add an “Articles” section where users can share links (title, URL, tags) and browse/search community submissions.
 - [x] Courses UX: add sort control with sensible defaults (Recommended/Top rated/Most reviewed/Newest/A–Z).
-- [ ] Courses UX: paginate or add “Load more”/infinite scroll for large catalogs.
 - [x] Courses UX: enhance empty states (show active filters + single “Reset all” CTA; “Share the first course” for empty catalog).
-- [ ] Courses UX: add facet counts for provider/category/status options.
+- [x] Courses UX: add facet counts for provider/category/status options.
 - [x] Courses UX: paginate or add “Load more”/infinite scroll for large catalogs.
 - [ ] Courses UX: polish card actions (status as clearer control; optional “Copy link” quick action).
 - [ ] Courses UX: highlight “new/updated” courses and add a “Recently added” sort.
