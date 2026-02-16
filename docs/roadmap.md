@@ -91,8 +91,8 @@
 - [x] Courses UX: enhance empty states (show active filters + single “Reset all” CTA; “Share the first course” for empty catalog).
 - [x] Courses UX: add facet counts for provider/category/status options.
 - [x] Courses UX: paginate or add “Load more”/infinite scroll for large catalogs.
-- [ ] Courses UX: polish card actions (status as clearer control; optional “Copy link” quick action).
-- [ ] Courses UX: highlight “new/updated” courses and add a “Recently added” sort.
+- [x] Courses UX: polish card actions (status as clearer control; optional “Copy link” quick action).
+- [x] Courses UX: highlight “new/updated” courses and add a “Recently added” sort.
 
 
 ## Phase 10 — Social Layer (By Colleagues, For Colleagues)
@@ -101,6 +101,9 @@
 - [ ] Add reviews for paths (text) with basic moderation/admin removal.
 - [ ] Add reviews for articles (rating + text) with basic moderation/admin removal.
 - [x] Surface social signals in UI (Home + course/path details).
+- [x] Navigation/IA: merge "My Courses" into `Courses` with `All/Tracked` toggle and redirect `/courses/my` → `/courses?tab=tracked`.
+- [x] Navigation/IA: merge "My Paths" into `Paths` with `All/Selected` toggle and redirect `/paths/my` → `/paths?tab=selected`.
+- [x] Navigation/IA: add a "My learning" page with tabs `Learning` (tracked/selected/saved) and `Shared` (content you created) across Courses/Paths/Articles.
 - [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 - [ ] Add “Suggest a course/path” drafts (user-submitted) with admin approve/edit → canonical content.
 - [ ] Basic de-duplication for suggested courses (URL-based + title/provider similarity).

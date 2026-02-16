@@ -94,6 +94,7 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 - `/paths`: Browse learning paths.
 - `/paths/my`: Selected paths and progress ("My Paths").
 - `/articles`: Share and browse colleague-submitted links ("Articles").
+- `/me`: Personal overview across domains ("My learning").
 - `/admin/users`: User management (admin only).
 
 Notes:
@@ -221,6 +222,30 @@ Backend endpoints:
 - `GET /articles`
 - `POST /articles`
 
+### MyLearningPage (`/me`)
+Responsibilities:
+
+- Provide a single personal overview split into two intents:
+- `Learning`: what the user plans to learn (tracked courses + selected paths; optionally saved articles later).
+- `Shared`: what the user contributed (courses created by the user, paths created by the user, articles shared by the user).
+- Keep this page thin by delegating orchestration to a dedicated service layer.
+
+Backend endpoints (current + likely additions):
+
+- `GET /auth/me` (to identify the current user).
+- `GET /tracking` or `GET /tracking/list` (self tracking).
+- `GET /paths/selected/list` (self selected paths).
+- `GET /courses` (filter by `created_by` in the client for now).
+- `GET /paths` (filter by `created_by` in the client for now).
+- `GET /articles` (filter by `created_by` in the client for now).
+
+Notes:
+
+- For scale/performance, prefer adding server-side filters:
+- `GET /courses?created_by=alice`
+- `GET /paths?created_by=alice`
+- `GET /articles?created_by=alice`
+
 ## Expanded Domain Model
 
 ```mermaid
@@ -261,12 +286,18 @@ classDiagram
     +create_article(payload): dict
   }
 
+  class MyLearningService {
+    +load_learning(): dict
+    +load_shared(username:str): dict
+  }
+
   class LoginPage { +render() }
   class HomePage { +render() }
   class PathsPage { +render() }
   class MyPathsPage { +render() }
   class MyCoursesPage { +render() }
   class ArticlesPage { +render() }
+  class MyLearningPage { +render() }
   class AdminUsersPage { +render() }
 
   LoginPage --> SessionStore
@@ -276,6 +307,7 @@ classDiagram
   MyPathsPage --> UserPathsService
   MyCoursesPage --> TrackingService
   ArticlesPage --> ArticlesService
+  MyLearningPage --> MyLearningService
   AdminUsersPage --> UsersAdminService
 
   PathsService --> ApiClient
@@ -283,6 +315,7 @@ classDiagram
   TrackingService --> ApiClient
   UsersAdminService --> ApiClient
   ArticlesService --> ApiClient
+  MyLearningService --> ApiClient
   ApiClient --> SessionStore : token
 ```
 
