@@ -8,8 +8,10 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
+from frontend.ui.nicegui.components.owner_menu import render_owner_menu
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.components.status_chips import (
     tracking_chip_class,
@@ -876,18 +878,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 elif is_updated:
                                     ui.label("Updated").classes("lp-chip lp-chip--teal")
                                 if can_edit:
-                                    with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                                    async def _do_edit(_pid: int = pid) -> None:
+                                        detail = await api.get(f"/paths/{_pid}")
+                                        await _open_edit(path_id=_pid, detail=detail, detail_dialog=None)
 
-                                        async def _do_edit(_pid: int = pid) -> None:
-                                            detail = await api.get(f"/paths/{_pid}")
-                                            await _open_edit(path_id=_pid, detail=detail, detail_dialog=None)
+                                    async def _do_delete(_pid: int = pid) -> None:
+                                        await _delete_path(_pid)
 
-                                        ui.menu_item("Edit", on_click=_do_edit)
-
-                                        async def _do_delete(_pid: int = pid) -> None:
-                                            await _delete_path(_pid)
-
-                                        ui.menu_item("Delete", on_click=_do_delete)
+                                    render_owner_menu(
+                                        on_edit=_do_edit,
+                                        on_delete=_do_delete,
+                                    )
 
                             ui.label(p.get("name") or "").classes("text-lg font-semibold")
                             if str(p.get("description") or "").strip():
@@ -911,12 +912,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 async def _view(_pid: int = pid) -> None:
                                     await _open_details(_pid, view_mode="full")
 
-                                ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip("View")
-
                                 async def _review(_pid: int = pid) -> None:
                                     await _open_details(_pid, view_mode="reviews")
 
-                                ui.button("", icon="rate_review", on_click=_review).props("outline dense").tooltip("Review")
+                                render_view_review_actions(
+                                    on_view=_view,
+                                    on_review=_review,
+                                )
 
                                 if selected:
 

@@ -9,8 +9,10 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
+from frontend.ui.nicegui.components.owner_menu import render_owner_menu
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
@@ -736,16 +738,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         if rating_badge:
                                             ui.label(rating_badge).classes("lp-meta-chip")
                                         if can_edit:
-                                            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
-                                                ui.menu_item(
-                                                    "Edit",
-                                                    on_click=lambda course=c: _render_edit_course_dialog(course),
-                                                )
+                                            async def _do_delete(_cid: int = course_id) -> None:
+                                                await _confirm_delete_course(_cid)
 
-                                                async def _do_delete(_cid: int = course_id) -> None:
-                                                    await _confirm_delete_course(_cid)
-
-                                                ui.menu_item("Delete", on_click=_do_delete)
+                                            render_owner_menu(
+                                                on_edit=lambda course=c: _render_edit_course_dialog(course),
+                                                on_delete=_do_delete,
+                                            )
 
                                     ui.label(title).classes("text-lg font-semibold")
                                     if str(c.get("description") or "").strip():
@@ -779,25 +778,25 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         async def _view(_cid: int = course_id) -> None:
                                             await _open_details(_cid)
 
-                                        ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip("View")
-
                                         async def _review(_cid: int = course_id) -> None:
                                             await _open_details(_cid, focus_reviews=True)
 
-                                        ui.button("", icon="rate_review", on_click=_review).props("outline dense").tooltip(
-                                            "Reviews"
-                                        )
-
                                         url = str(c.get("url") or "").strip()
+                                        on_copy = None
                                         if url:
 
                                             def _copy_link(*, _url: str = url) -> None:
                                                 ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(_url)});")
                                                 ui.notify("Link copied", type="positive")
 
-                                            ui.button("", icon="content_copy", on_click=_copy_link).props(
-                                                "outline dense"
-                                            ).tooltip("Copy link")
+                                            on_copy = _copy_link
+
+                                        render_view_review_actions(
+                                            on_view=_view,
+                                            on_review=_review,
+                                            review_tooltip="Reviews",
+                                            on_copy=on_copy,
+                                        )
 
                                         current_status = str((tracked or {}).get("status") or "")
                                         options_map = {
