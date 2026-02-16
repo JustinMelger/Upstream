@@ -738,6 +738,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         if rating_badge:
                                             ui.label(rating_badge).classes("lp-meta-chip")
                                         if can_edit:
+
                                             async def _do_delete(_cid: int = course_id) -> None:
                                                 await _confirm_delete_course(_cid)
 

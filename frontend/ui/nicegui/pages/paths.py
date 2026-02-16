@@ -878,6 +878,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 elif is_updated:
                                     ui.label("Updated").classes("lp-chip lp-chip--teal")
                                 if can_edit:
+
                                     async def _do_edit(_pid: int = pid) -> None:
                                         detail = await api.get(f"/paths/{_pid}")
                                         await _open_edit(path_id=_pid, detail=detail, detail_dialog=None)
