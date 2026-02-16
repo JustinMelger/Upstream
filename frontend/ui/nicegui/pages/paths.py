@@ -10,6 +10,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
+from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.components.status_chips import (
     tracking_chip_class,
     tracking_label,
@@ -502,73 +503,51 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         )
 
                 ui.separator().classes("my-2")
-                ui.label("Path reviews").classes("text-lg font-semibold")
+                def _sync_path_summary(current_reviews: list[dict[str, Any]]) -> None:
+                    ratings: list[int] = []
+                    for r in list(current_reviews or []):
+                        try:
+                            ratings.append(int(r.get("rating") or 0))
+                        except (TypeError, ValueError):
+                            continue
+                    if not ratings:
+                        path_review_summary_by_id[int(path_id)] = {
+                            "path_id": int(path_id),
+                            "avg_rating": 0.0,
+                            "review_count": 0,
+                        }
+                    else:
+                        avg = float(sum(ratings)) / float(len(ratings))
+                        path_review_summary_by_id[int(path_id)] = {
+                            "path_id": int(path_id),
+                            "avg_rating": float(avg),
+                            "review_count": int(len(ratings)),
+                        }
+                    paths_list.refresh()
 
-                my_review: dict[str, Any] | None = None
-                for review in path_reviews:
-                    if str(review.get("created_by") or "") == username:
-                        my_review = review
-                        break
-
-                with ui.row().classes("items-start gap-2 w-full"):
-                    rating = (
-                        ui.select(
-                            {1: "1", 2: "2", 3: "3", 4: "4", 5: "5"},
-                            label="Rating",
-                            value=int(my_review.get("rating") or 5) if isinstance(my_review, dict) else 5,
-                        )
-                        .props("dense")
-                        .style("min-width: 120px")
-                    )
-                    text_value = str(my_review.get("text") or "") if isinstance(my_review, dict) else ""
-                    review_text = ui.textarea("Review", value=text_value).props("autogrow").classes("w-full")
-
-                @guard_ui_action(title="Save review failed")
-                async def _save_review() -> None:
-                    await api.post(
+                async def _save_path_review(rating: int, text: str) -> dict[str, Any]:
+                    return await api.post(
                         f"/paths/{path_id}/reviews",
                         {
-                            "rating": int(rating.value or 0),
-                            "text": str(review_text.value or ""),
+                            "rating": int(rating),
+                            "text": str(text or ""),
                         },
                     )
-                    await _load_all()
-                    paths_list.refresh()
-                    dialog.close()
-                    await _open_details(path_id, view_mode=view_mode)
 
-                with ui.row().classes("items-center gap-2"):
-                    ui.button("Save review", on_click=_save_review).props("outline")
+                async def _delete_path_review(review_id: int) -> bool:
+                    await api.delete(f"/paths/{path_id}/reviews/{int(review_id)}")
+                    return True
 
-                if path_reviews:
-                    with ui.column().classes("w-full gap-2 mt-2"):
-                        for review in path_reviews:
-                            with ui.card().classes("w-full lp-card"):
-                                with ui.row().classes("items-center justify-between"):
-                                    ui.label(
-                                        f"Rating: {int(review.get('rating') or 0)}/5 · {str(review.get('created_by') or '')}"
-                                    ).classes("font-medium")
-                                    can_delete_review = is_admin or str(review.get("created_by") or "") == username
-                                    if can_delete_review:
-
-                                        @guard_ui_action(title="Delete review failed")
-                                        async def _delete_review(_review_id: int = int(review.get("id") or 0)) -> None:
-                                            await api.delete(f"/paths/{path_id}/reviews/{_review_id}")
-                                            await _load_all()
-                                            paths_list.refresh()
-                                            dialog.close()
-                                            await _open_details(path_id, view_mode=view_mode)
-
-                                        ui.button("Delete", on_click=_delete_review).props("dense color=negative outline")
-
-                                created_at = str(review.get("created_at") or "").strip()
-                                if created_at:
-                                    ui.label(created_at).classes("text-xs").style("color: var(--lp-muted)")
-                                text_body = str(review.get("text") or "").strip()
-                                if text_body:
-                                    ui.label(text_body).classes("text-sm")
-                else:
-                    ui.label("No path reviews yet.").classes("text-sm").style("color: var(--lp-muted)")
+                render_reviews_panel(
+                    username=username,
+                    is_admin=is_admin,
+                    reviews=path_reviews,
+                    section_title="Path reviews",
+                    empty_text="No path reviews yet.",
+                    on_save=_save_path_review,
+                    on_delete=_delete_path_review,
+                    on_changed=_sync_path_summary,
+                )
 
                 with ui.row().classes("justify-end mt-4"):
                     ui.button("Close", on_click=dialog.close).props("outline")

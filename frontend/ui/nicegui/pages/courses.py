@@ -11,6 +11,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
+from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
@@ -516,22 +517,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ).props("outline dense")
 
                         ui.separator()
-                    reviews_anchor_id = f"course-reviews-{int(course_id)}"
-                    ui.html(f'<div id="{reviews_anchor_id}"></div>')
-                    ui.label("Reviews").classes("text-lg font-semibold")
-
-                    def _find_my_review() -> dict[str, Any] | None:
-                        for r in reviews:
-                            if str(r.get("created_by") or "") == username:
-                                return dict(r)
-                        return None
-
-                    my_review = _find_my_review()
-
-                    def _update_summary_from_reviews() -> None:
-                        """Update the course-level summary cache from the current reviews list."""
+                    def _sync_summary_from_reviews(current_reviews: list[dict[str, Any]]) -> None:
                         ratings: list[int] = []
-                        for r in list(reviews or []):
+                        for r in list(current_reviews or []):
                             try:
                                 ratings.append(int(r.get("rating") or 0))
                             except (TypeError, ValueError):
@@ -542,106 +530,35 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 "avg_rating": 0.0,
                                 "review_count": 0,
                             }
-                            summary_el.text = ""
-                            return
-                        avg = float(sum(ratings)) / float(len(ratings))
-                        review_summary_by_course_id[int(course_id)] = {
-                            "course_id": int(course_id),
-                            "avg_rating": float(avg),
-                            "review_count": int(len(ratings)),
-                        }
-                        summary_el.text = f"Reviews: {_format_review_summary(review_summary_by_course_id.get(int(course_id)))}"
+                        else:
+                            avg = float(sum(ratings)) / float(len(ratings))
+                            review_summary_by_course_id[int(course_id)] = {
+                                "course_id": int(course_id),
+                                "avg_rating": float(avg),
+                                "review_count": int(len(ratings)),
+                            }
 
-                    @guard_ui_action(title="Delete review failed")
-                    async def _delete_review(review_id: int) -> None:
-                        nonlocal reviews, my_review
-                        await api.delete(f"/courses/{course_id}/reviews/{int(review_id)}")
-                        reviews = [r for r in reviews if int(r.get("id") or 0) != int(review_id)]
-                        my_review = _find_my_review()
-                        _update_summary_from_reviews()
-                        if my_review is None:
-                            rating_in.value = 5
-                            text_in.value = ""
-                            my_review_label.text = "Add a review"
-                        reviews_list.refresh()
-                        ui.notify("Review deleted", type="positive")
-
-                    @ui.refreshable
-                    def reviews_list() -> None:
-                        with ui.column().classes("w-full gap-2"):
-                            if not reviews:
-                                ui.label("No reviews yet.").classes("text-sm text-gray-600")
-                            for r in reviews[:10]:
-                                try:
-                                    rating = int(r.get("rating") or 0)
-                                except (TypeError, ValueError):
-                                    rating = 0
-                                who = str(r.get("created_by") or "").strip()
-                                when = _format_short_date(r.get("created_at"))
-                                text = str(r.get("text") or "").strip()
-                                with ui.card().classes("lp-card w-full"):
-                                    with ui.row().classes("items-start justify-between w-full"):
-                                        ui.label(f"Rating: {max(1, min(5, rating))}/5 · {who}").classes("text-sm font-semibold")
-                                        can_delete = is_admin or (who == username)
-                                        if can_delete:
-
-                                            async def _do_delete(_rid: int = int(r.get("id") or 0)) -> None:
-                                                await _delete_review(_rid)
-
-                                            ui.button("Delete", on_click=_do_delete).props("dense color=negative outline")
-                                    if when:
-                                        ui.label(when).classes("text-xs").style("color: var(--lp-muted)")
-                                    if text:
-                                        ui.label(text).classes("text-sm text-gray-600")
-
-                    reviews_list()
-
-                    my_review_label = ui.label("Your review" if my_review else "Add a review").classes(
-                        "text-md font-semibold mt-2"
-                    )
-                    rating_in = ui.select(
-                        {1: "1", 2: "2", 3: "3", 4: "4", 5: "5"},
-                        value=int((my_review or {}).get("rating") or 5),
-                        label="Rating",
-                    ).props("dense")
-                    text_in = (
-                        ui.textarea("Comment (optional)", value=str((my_review or {}).get("text") or ""))
-                        .props("autogrow")
-                        .classes("w-full")
-                    )
-
-                    @guard_ui_action(title="Review submit failed")
-                    async def _submit_review() -> None:
-                        saved = await api.post(
+                    async def _save_review(rating: int, text: str) -> dict[str, Any]:
+                        return await api.post(
                             f"/courses/{course_id}/reviews",
-                            {"rating": int(rating_in.value or 0), "text": str(text_in.value or "")},
+                            {"rating": int(rating), "text": str(text or "")},
                         )
-                        ui.notify("Review saved", type="positive")
-                        # Update the in-memory list so we don't have to reload the full courses list.
-                        try:
-                            saved_id = int((saved or {}).get("id") or 0)
-                        except (TypeError, ValueError):
-                            saved_id = 0
-                        new_reviews: list[dict[str, Any]] = []
-                        for r in reviews:
-                            if str(r.get("created_by") or "") == username:
-                                continue
-                            if saved_id:
-                                try:
-                                    if int(r.get("id") or 0) == saved_id:
-                                        continue
-                                except (TypeError, ValueError):
-                                    pass
-                            new_reviews.append(dict(r))
-                        if isinstance(saved, dict):
-                            new_reviews.insert(0, dict(saved))
-                        reviews[:] = new_reviews
-                        _update_summary_from_reviews()
-                        my_review_label.text = "Your review" if _find_my_review() else "Add a review"
-                        reviews_list.refresh()
 
-                    with ui.row().classes("justify-end mt-2"):
-                        ui.button("Save review", on_click=_submit_review).props("outline")
+                    async def _delete_review(review_id: int) -> bool:
+                        await api.delete(f"/courses/{course_id}/reviews/{int(review_id)}")
+                        return True
+
+                    render_reviews_panel(
+                        username=username,
+                        is_admin=is_admin,
+                        reviews=reviews,
+                        section_title="Reviews",
+                        empty_text="No reviews yet.",
+                        on_save=_save_review,
+                        on_delete=_delete_review,
+                        format_date=_format_short_date,
+                        on_changed=_sync_summary_from_reviews,
+                    )
 
                     with ui.row().classes("justify-end mt-4"):
                         ui.button("Close", on_click=dialog.close).props("outline")
