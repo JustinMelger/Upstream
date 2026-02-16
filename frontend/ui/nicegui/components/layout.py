@@ -40,6 +40,10 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                     if _is_active("/"):
                         home_item.classes("lp-nav-active")
 
+                    learning_item = ui.menu_item("My learning", on_click=lambda: ui.navigate.to("/learning"))
+                    if _is_active("/learning"):
+                        learning_item.classes("lp-nav-active")
+
                     if settings.feature_ai_curator:
                         ai_item = ui.menu_item("AI Curator", on_click=lambda: ui.navigate.to("/ai"))
                         if _is_active("/ai"):
@@ -49,17 +53,9 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                     if _is_active("/courses"):
                         courses_item.classes("lp-nav-active")
 
-                    my_courses_item = ui.menu_item("My Courses", on_click=lambda: ui.navigate.to("/courses/my"))
-                    if _is_active("/courses/my"):
-                        my_courses_item.classes("lp-nav-active")
-
                     paths_item = ui.menu_item("Paths", on_click=lambda: ui.navigate.to("/paths"))
                     if _is_active("/paths"):
                         paths_item.classes("lp-nav-active")
-
-                    my_paths_item = ui.menu_item("My Paths", on_click=lambda: ui.navigate.to("/paths/my"))
-                    if _is_active("/paths/my"):
-                        my_paths_item.classes("lp-nav-active")
 
                     if settings.feature_articles:
                         articles_item = ui.menu_item("Articles", on_click=lambda: ui.navigate.to("/articles"))

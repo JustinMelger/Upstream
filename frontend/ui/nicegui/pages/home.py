@@ -11,28 +11,14 @@ from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons, render_inline_spinner
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class
 from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.datetime_utils import format_date, format_time, parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.services.dashboard_service import load_dashboard_data
 
 
-def _format_time(ts: str | None) -> str:
-    """Format an ISO-8601 timestamp into a short date-time string.
-
-    Args:
-        ts: ISO-8601 timestamp string.
-
-    Returns:
-        A human-friendly local-time string, or the original string if parsing fails.
-    """
-    if not ts:
-        return ""
-    try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        return dt.strftime("%b %d, %Y %H:%M")
-    except ValueError:
-        return ts
+_format_time = format_time
 
 
 def _format_review_summary(row: dict[str, Any] | None) -> str:
@@ -52,22 +38,7 @@ def _format_review_summary(row: dict[str, Any] | None) -> str:
     return f"{avg:.1f}/5 ({count})"
 
 
-def _format_date(ts: str | None) -> str:
-    """Format an ISO-8601 timestamp into a short date string.
-
-    Args:
-        ts: ISO-8601 timestamp string.
-
-    Returns:
-        A human-friendly local-date string, or the original string if parsing fails.
-    """
-    if not ts:
-        return ""
-    try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        return dt.strftime("%b %d, %Y")
-    except ValueError:
-        return ts
+_format_date = format_date
 
 
 def _parse_iso_ts(ts: str | None) -> datetime | None:
@@ -79,12 +50,7 @@ def _parse_iso_ts(ts: str | None) -> datetime | None:
     Returns:
         Parsed datetime, or None if parsing fails.
     """
-    if not ts:
-        return None
-    try:
-        return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
-    except ValueError:
-        return None
+    return parse_iso_datetime(ts)
 
 
 def _course_title_by_id(courses: list[dict[str, Any]]) -> dict[int, str]:
@@ -354,7 +320,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 in_progress_ids = [cid for cid, st in tracking.items() if st == "in_progress"]
                 if not in_progress_ids:
                     ui.label("No courses in progress yet.").classes("text-sm text-gray-600")
-                    ui.button("Go to My Courses", on_click=lambda: ui.navigate.to("/courses/my")).props("outline")
+                    ui.button("Browse courses", on_click=lambda: ui.navigate.to("/courses?tab=tracked")).props("outline")
                 else:
                     with ui.column().classes("w-full gap-3"):
                         for cid in in_progress_ids[:3]:

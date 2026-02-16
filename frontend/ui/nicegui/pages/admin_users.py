@@ -2,26 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+from frontend.ui.nicegui.core.datetime_utils import format_time
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
 
 
-def _format_time(ts: str | None) -> str:
-    if not ts:
-        return ""
-    try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        return dt.strftime("%b %d, %Y %H:%M")
-    except ValueError:
-        return ts
+_format_time = format_time
 
 
 def _user_row(u: dict[str, Any]) -> dict[str, Any]:

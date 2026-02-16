@@ -6,39 +6,51 @@ import asyncio
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.services._indexing import index_by_int_id
 from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
 
 
 def index_rows_by_int_id(rows: list[dict[str, Any]] | None) -> dict[int, dict[str, Any]]:
     """Index rows by their integer `id` field."""
-    out: dict[int, dict[str, Any]] = {}
-    for row in list(rows or []):
-        if not isinstance(row, dict):
-            continue
-        raw = row.get("id")
-        if raw is None:
-            continue
-        try:
-            out[int(raw)] = row
-        except (TypeError, ValueError):
-            continue
-    return out
+    return index_by_int_id(rows, key="id")
 
 
 def index_courses_by_int_id(rows: list[dict[str, Any]] | None) -> dict[int, dict[str, Any]]:
     """Index course rows by integer id (accepts `id` as int or numeric string)."""
-    out: dict[int, dict[str, Any]] = {}
-    for row in list(rows or []):
-        if not isinstance(row, dict):
+    return index_by_int_id(rows, key="id")
+
+
+def compute_path_progress(
+    *,
+    detail: dict[str, Any],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+) -> tuple[int, int, float]:
+    """Compute progress for a path detail payload.
+
+    Args:
+        detail: Path detail payload including `courses`.
+        tracking_by_course_id: Tracking map keyed by course id.
+
+    Returns:
+        Tuple of `(completed, total, ratio)`.
+    """
+    courses = list(detail.get("courses") or []) if isinstance(detail, dict) else []
+    total = len(courses)
+    completed = 0
+    for c in courses:
+        if not isinstance(c, dict):
             continue
-        raw = row.get("id")
+        raw = c.get("id")
         if raw is None:
             continue
         try:
-            out[int(raw)] = row
+            cid = int(raw)
         except (TypeError, ValueError):
             continue
-    return out
+        if str((tracking_by_course_id.get(cid) or {}).get("status") or "") == "completed":
+            completed += 1
+    ratio = (completed / total) if total else 0.0
+    return completed, total, ratio
 
 
 async def load_paths_page_data(

@@ -11,8 +11,9 @@ from datetime import datetime, timezone
 
 import pytest
 
+from frontend.ui.nicegui.components.filters import filter_selected_paths
 from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, tracking_chip_class, tracking_label
-from frontend.ui.nicegui.pages import courses as courses_page, home as home_page, my_paths as my_paths_page, paths as paths_page
+from frontend.ui.nicegui.pages import courses as courses_page, home as home_page, paths as paths_page
 
 
 @pytest.mark.unit
@@ -23,9 +24,9 @@ def test_filter_selected_paths_by_needle_and_status() -> None:
         {"id": 3, "name": "Data Track", "status": "completed"},
     ]
 
-    assert [p["id"] for p in my_paths_page._filter_selected_paths(selected, needle="ad", status="")] == [2]
-    assert [p["id"] for p in my_paths_page._filter_selected_paths(selected, needle="", status="completed")] == [3]
-    assert my_paths_page._filter_selected_paths(selected, needle="missing", status="") == []
+    assert [p["id"] for p in filter_selected_paths(selected, needle="ad", status="")] == [2]
+    assert [p["id"] for p in filter_selected_paths(selected, needle="", status="completed")] == [3]
+    assert filter_selected_paths(selected, needle="missing", status="") == []
 
 
 @pytest.mark.unit

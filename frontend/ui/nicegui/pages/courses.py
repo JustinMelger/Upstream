@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
+import json
 from typing import Any
 
 from nicegui import ui
@@ -12,6 +13,7 @@ from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -70,28 +72,8 @@ def _status_for_card(tracked: dict[str, Any] | None) -> str:
     return ""
 
 
-def _parse_iso_datetime(value: Any) -> datetime | None:
-    """Parse an ISO-8601 timestamp into an aware datetime (UTC when possible)."""
-    s = str(value or "").strip()
-    if not s:
-        return None
-    if s.endswith("Z"):
-        s = s[:-1] + "+00:00"
-    try:
-        dt = datetime.fromisoformat(s)
-    except ValueError:
-        return None
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
-def _is_recent(dt: datetime | None, *, days: int = 7) -> bool:
-    """Return True when dt is within the last N days."""
-    if dt is None:
-        return False
-    now = datetime.now(timezone.utc)
-    return dt >= (now - timedelta(days=int(days)))
+_parse_iso_datetime = parse_iso_datetime
+_is_recent = is_recent
 
 
 def _format_short_date(value: Any) -> str:
@@ -126,10 +108,23 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             page_size = 10
             visible_count = page_size
 
+            request = getattr(ui.context.client, "request", None)
+            query_params = getattr(request, "query_params", {}) if request is not None else {}
+            initial_tab = str(getattr(query_params, "get", lambda _k, _d=None: _d)("tab", "") or "").strip().lower()
+            initial_scope = "tracked" if initial_tab == "tracked" else "all"
+
             with ui.row().classes("lp-topbar"):
                 q = ui.input("Search courses").props("clearable debounce=300").style("flex: 1")
                 with ui.row().classes("items-center gap-2").style("margin-left: auto"):
                     ui.button("Share", on_click=lambda: _open_create_dialog()).props("dense")
+                    scope_filter = (
+                        ui.radio(
+                            {"all": "All", "tracked": "Tracked"},
+                            value=initial_scope,
+                        )
+                        .props("inline dense")
+                        .classes("text-sm")
+                    )
                     sort_filter = (
                         ui.select(
                             {
@@ -147,6 +142,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     )
                     # Late-bind to avoid "defined later" ordering issues.
                     sort_filter.on("update:model-value", lambda *_: _refresh_list())
+                    scope_filter.on("update:model-value", lambda *_: _refresh_list())
                     meta = ui.label("").classes("lp-topbar-meta")
 
             loading = False
@@ -166,11 +162,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 """
 
                 needle = str(q.value or "").strip().lower()
+                scope_v = str(scope_filter.value or "all")
 
                 def _matches_needle(course: dict[str, Any]) -> bool:
                     if not needle:
                         return True
-                    return needle in str(course.get("title") or "").lower() or needle in str(course.get("description") or "").lower()
+                    return (
+                        needle in str(course.get("title") or "").lower()
+                        or needle in str(course.get("description") or "").lower()
+                    )
 
                 def _status_key(course_id: int) -> str:
                     tracked = tracking_by_course_id.get(int(course_id))
@@ -180,6 +180,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     return "not_tracked"
 
                 def _passes(course: dict[str, Any], *, ignore: str) -> bool:
+                    if ignore != "scope" and scope_v == "tracked":
+                        cid = int(course.get("id") or 0)
+                        if cid <= 0 or cid not in tracking_by_course_id:
+                            return False
                     if ignore != "needle" and not _matches_needle(course):
                         return False
 
@@ -488,27 +492,30 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ui.label(course.get("title") or "").classes("text-xl font-semibold")
                     if str(course.get("description") or "").strip():
                         ui.label(str(course.get("description") or "")).classes("text-sm text-gray-600")
-                    summary_label = _format_review_summary(review_summary_by_course_id.get(int(course_id)))
-                    provider = str(course.get("provider") or "").strip()
-                    category = str(course.get("category") or "").strip()
-                    shared_by = str(course.get("created_by") or "").strip()
+                    if not focus_reviews:
+                        summary_label = _format_review_summary(review_summary_by_course_id.get(int(course_id)))
+                        provider = str(course.get("provider") or "").strip()
+                        category = str(course.get("category") or "").strip()
+                        shared_by = str(course.get("created_by") or "").strip()
 
-                    with ui.row().classes("items-center justify-between w-full mt-2"):
-                        with ui.row().classes("items-center gap-2 flex-wrap"):
-                            if provider:
-                                ui.label(provider).classes("lp-meta-chip")
-                            if category:
-                                ui.label(category).classes("lp-meta-chip")
-                            if shared_by:
-                                ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
-                            if summary_label:
-                                ui.label(f"★ {summary_label}").classes("lp-meta-chip")
-                        if course.get("url"):
-                            ui.button("Open link", icon="open_in_new", on_click=lambda u=str(course.get("url")): ui.open(u)).props(
-                                "outline dense"
-                            )
+                        with ui.row().classes("items-center justify-between w-full mt-2"):
+                            with ui.row().classes("items-center gap-2 flex-wrap"):
+                                if provider:
+                                    ui.label(provider).classes("lp-meta-chip")
+                                if category:
+                                    ui.label(category).classes("lp-meta-chip")
+                                if shared_by:
+                                    ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
+                                if summary_label:
+                                    ui.label(f"★ {summary_label}").classes("lp-meta-chip")
+                            if course.get("url"):
+                                ui.button(
+                                    "Open link",
+                                    icon="open_in_new",
+                                    on_click=lambda u=str(course.get("url")): ui.navigate.to(u, new_tab=True),
+                                ).props("outline dense")
 
-                    ui.separator()
+                        ui.separator()
                     reviews_anchor_id = f"course-reviews-{int(course_id)}"
                     ui.html(f'<div id="{reviews_anchor_id}"></div>')
                     ui.label("Reviews").classes("text-lg font-semibold")
@@ -640,15 +647,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         ui.button("Close", on_click=dialog.close).props("outline")
 
                 dialog.open()
-                if focus_reviews:
-                    # Keep behavior simple: open review dialog at the reviews section.
-                    ui.timer(
-                        0.05,
-                        lambda _id=reviews_anchor_id: ui.run_javascript(
-                            f"document.getElementById('{_id}')?.scrollIntoView({{behavior: 'smooth', block: 'start'}});"
-                        ),
-                        once=True,
-                    )
 
             @ui.refreshable
             def courses_list() -> None:
@@ -659,6 +657,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 level_v = str(level_filter.value or "").strip().lower()
                 status_v = str(status_filter.value or "")
                 sort_v = str(sort_filter.value or "")
+                scope_v = str(scope_filter.value or "all")
 
                 shown = courses
                 if needle:
@@ -683,6 +682,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             for c in shown
                             if str((tracking_by_course_id.get(int(c.get("id") or 0)) or {}).get("status") or "") == status_v
                         ]
+
+                if scope_v == "tracked":
+                    shown = [c for c in shown if int(c.get("id") or 0) in tracking_by_course_id]
 
                 if sort_v:
                     if sort_v == "title_az":
@@ -745,6 +747,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 str(status_filter.value or "").strip(),
                             ]
                         )
+
+                        if scope_v == "tracked" and any_filters is False:
+                            ui.label("No tracked courses yet.").classes("text-sm").style("color: var(--lp-muted)")
+                            ui.label("Browse courses and set a status to start tracking.").classes("text-sm").style(
+                                "color: var(--lp-muted)"
+                            )
+                            with ui.row().classes("items-center gap-2"):
+                                ui.button(
+                                    "Browse all courses",
+                                    on_click=lambda: setattr(scope_filter, "value", "all") or _refresh_list(),
+                                ).props("outline")
+                                ui.button("Refresh", on_click=_load).props("outline")
+                            return
 
                         if not courses and not any_filters:
                             ui.label("No courses yet.").classes("text-sm").style("color: var(--lp-muted)")
@@ -840,9 +855,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         async def _view(_cid: int = course_id) -> None:
                                             await _open_details(_cid)
 
-                                        ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip(
-                                            "View"
-                                        )
+                                        ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip("View")
 
                                         async def _review(_cid: int = course_id) -> None:
                                             await _open_details(_cid, focus_reviews=True)
@@ -850,6 +863,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         ui.button("", icon="rate_review", on_click=_review).props("outline dense").tooltip(
                                             "Reviews"
                                         )
+
+                                        url = str(c.get("url") or "").strip()
+                                        if url:
+
+                                            def _copy_link(*, _url: str = url) -> None:
+                                                ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(_url)});")
+                                                ui.notify("Link copied", type="positive")
+
+                                            ui.button("", icon="content_copy", on_click=_copy_link).props(
+                                                "outline dense"
+                                            ).tooltip("Copy link")
 
                                         current_status = str((tracked or {}).get("status") or "")
                                         options_map = {
@@ -966,6 +990,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 any_chip = False
                 with ui.row().classes("items-center gap-2 w-full"):
+                    if str(scope_filter.value or "") == "tracked":
+                        any_chip = True
+
+                        def _clear_scope() -> None:
+                            scope_filter.value = "all"
+                            scope_filter.update()
+                            active_filters.refresh()
+                            courses_list.refresh()
+
+                        _chip("View: Tracked", _clear_scope)
+
                     if str(q.value or "").strip():
                         any_chip = True
 

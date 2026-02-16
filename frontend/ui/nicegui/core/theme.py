@@ -251,6 +251,33 @@ def apply_theme() -> None:
           background: linear-gradient(180deg, rgba(132,204,22,0.85), rgba(132,204,22,0.10));
         }
 
+        /* Generic accent strip (non-course pages can reuse this pattern). */
+        .lp-accent-card {
+          position: relative;
+          overflow: hidden;
+        }
+        .lp-accent-card::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 3px;
+          background: rgba(255,255,255,0.10);
+        }
+        .lp-accent-card--not_selected::before {
+          background: linear-gradient(180deg, rgba(148,163,184,0.55), rgba(148,163,184,0.08));
+        }
+        .lp-accent-card--interested::before {
+          background: linear-gradient(180deg, rgba(56,189,248,0.85), rgba(56,189,248,0.10));
+        }
+        .lp-accent-card--in_progress::before {
+          background: linear-gradient(180deg, rgba(45,212,191,0.85), rgba(45,212,191,0.10));
+        }
+        .lp-accent-card--completed::before {
+          background: linear-gradient(180deg, rgba(132,204,22,0.85), rgba(132,204,22,0.10));
+        }
+
         /* Top-right slot for card badges + overflow actions (aligns across cards). */
         .lp-card-topright {
           position: absolute;

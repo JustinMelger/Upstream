@@ -1,7 +1,6 @@
 """Shared status label + chip-class helpers for NiceGUI pages.
 
-This module exists to avoid cross-page imports like:
-`pages/my_paths.py` importing helpers from `pages/paths.py`.
+This module exists to avoid cross-page imports between page modules.
 
 The backend uses a small set of tracking/status values:
 - `interested`
