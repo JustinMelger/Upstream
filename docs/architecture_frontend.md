@@ -169,6 +169,8 @@ Responsibilities:
 
 - Render all paths (name, description).
 - Open path detail view (courses ordered).
+- Track/untrack paths (binary state only).
+- On track: auto-seed untracked path courses as `interested`.
 - Create paths (any authenticated user).
 - Edit/delete paths only when the current user is the creator (or an admin).
 
@@ -179,20 +181,18 @@ Backend endpoints:
 - `POST /paths`
 - `PUT /paths/{id}` (owner/admin)
 - `DELETE /paths/{id}` (owner/admin)
+- `POST /paths/{id}/select`
+- `POST /paths/{id}/unselect`
+- `POST /tracking` (for auto-seeding path courses)
 
 ### MyPathsPage (`/paths/my`)
 Responsibilities:
 
-- Render selected paths list.
-- Allow select/unselect.
-- Set per-path status.
+- Deprecated: merged into `/paths` + `My learning`.
 
 Backend endpoints:
 
-- `GET /paths/selected/list`
-- `POST /paths/{id}/select`
-- `POST /paths/{id}/unselect`
-- `POST /paths/{id}/status`
+- Deprecated for direct page usage.
 
 ### AdminUsersPage (`/admin/users`)
 Responsibilities:
