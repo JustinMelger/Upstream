@@ -1,8 +1,20 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.api.deps import get_auth_service, get_paths_service, get_user_paths_service, require_session
+from backend.api.deps import (
+    get_auth_service,
+    get_path_reviews_service,
+    get_paths_service,
+    get_user_paths_service,
+    require_session,
+)
+from backend.api.schemas.path_reviews import (
+    DeletePathReviewResponse,
+    PathReviewCreateRequest,
+    PathReviewPayload,
+    PathReviewSummaryItem,
+)
 from backend.api.schemas.paths import (
     DeletePathResponse,
     PathCreateRequest,
@@ -16,6 +28,7 @@ from backend.api.schemas.paths import (
     UnselectPathResponse,
 )
 from backend.services.auth_service import AuthService
+from backend.services.path_reviews_service import PathReviewsService
 from backend.services.paths_service import PathsService
 from backend.services.user_paths_service import UserPathsService
 
@@ -37,6 +50,16 @@ async def list_paths(
         list[dict]: Path list.
     """
     return await paths.list_paths()
+
+
+@router.get("/reviews/summary", response_model=list[PathReviewSummaryItem])
+async def path_review_summaries(
+    path_ids: List[int] = Query(default=[], description="Path IDs to summarize"),
+    current_user: str = Depends(require_session),
+    reviews: PathReviewsService = Depends(get_path_reviews_service),
+):
+    """Return average rating + count for each path id."""
+    return await reviews.summaries(path_ids=list(path_ids or []))
 
 
 @router.post("", response_model=PathDetailResponse)
@@ -162,6 +185,55 @@ async def get_path(
     if not path:
         raise HTTPException(status_code=404, detail="not_found")
     return path
+
+
+@router.get("/{path_id}/reviews", response_model=list[PathReviewPayload])
+async def list_path_reviews(
+    path_id: int,
+    current_user: str = Depends(require_session),
+    paths: PathsService = Depends(get_paths_service),
+    reviews: PathReviewsService = Depends(get_path_reviews_service),
+):
+    """List reviews for a path."""
+    existing = await paths.get_path(path_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="not_found")
+    return await reviews.list_reviews(path_id=path_id)
+
+
+@router.post("/{path_id}/reviews", response_model=PathReviewPayload)
+async def create_path_review(
+    path_id: int,
+    payload: PathReviewCreateRequest,
+    current_user: str = Depends(require_session),
+    paths: PathsService = Depends(get_paths_service),
+    reviews: PathReviewsService = Depends(get_path_reviews_service),
+):
+    """Create a review for a path (any authenticated user)."""
+    existing = await paths.get_path(path_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="not_found")
+    return await reviews.create_review(path_id=path_id, payload=payload.model_dump(), created_by=current_user)
+
+
+@router.delete("/{path_id}/reviews/{review_id}", response_model=DeletePathReviewResponse)
+async def delete_path_review(
+    path_id: int,
+    review_id: int,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+    reviews: PathReviewsService = Depends(get_path_reviews_service),
+):
+    """Delete a path review (owner/admin only)."""
+    review = await reviews.get_review_by_id(review_id=int(review_id))
+    if not review:
+        raise HTTPException(status_code=404, detail="not_found")
+    if int(review.get("path_id") or 0) != int(path_id):
+        raise HTTPException(status_code=404, detail="not_found")
+    if not await auth.is_admin(current_user) and str(review.get("created_by") or "") != str(current_user):
+        raise HTTPException(status_code=403, detail="forbidden")
+    deleted = await reviews.delete_review(review_id=int(review_id))
+    return {"deleted": bool(deleted)}
 
 
 @router.delete("/{path_id}", response_model=DeletePathResponse)
