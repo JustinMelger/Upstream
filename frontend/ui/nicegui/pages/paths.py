@@ -26,6 +26,7 @@ from frontend.ui.nicegui.services.paths_service import (
     index_courses_by_int_id,
     index_rows_by_int_id,
     load_paths_page_data,
+    select_path_and_seed_tracking,
 )
 
 
@@ -105,6 +106,24 @@ def _path_tracking_label(is_tracked: bool) -> str:
 def _path_tracking_chip_class(is_tracked: bool) -> str:
     """Return chip class for path tracking state."""
     return "lp-chip lp-chip--sky" if is_tracked else "lp-chip lp-chip--muted"
+
+
+def _normalize_path_view_mode(view_mode: str | None) -> str:
+    """Normalize dialog mode to `full` or `reviews`."""
+    return "reviews" if str(view_mode or "").strip().lower() == "reviews" else "full"
+
+
+def _path_matches_state(path_id: int, selected_by_id: dict[int, dict[str, Any]], state_filter: str) -> bool:
+    """Return whether a path id matches a tracked-state filter."""
+    key = str(state_filter or "").strip()
+    is_tracked = int(path_id) in selected_by_id
+    if not key:
+        return True
+    if key == "tracked":
+        return is_tracked
+    if key == "not_tracked":
+        return not is_tracked
+    return True
 
 
 async def _load_paths_page_data(
@@ -196,51 +215,22 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             if isinstance(detail, dict):
                 selected_detail_by_path_id[int(path_id)] = detail
 
-        async def _seed_tracking_for_path(path_id: int) -> int:
-            """Create default tracking entries for path courses not tracked yet.
-
-            Returns:
-                Number of course tracking rows created.
-            """
-            detail = selected_detail_by_path_id.get(int(path_id))
-            if not isinstance(detail, dict):
-                try:
-                    detail = await api.get(f"/paths/{int(path_id)}")
-                except ApiError:
-                    return 0
-
-            course_ids: list[int] = []
-            for c in list(detail.get("courses") or []):
-                if not isinstance(c, dict):
-                    continue
-                try:
-                    cid = int(c.get("id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if cid > 0 and cid not in tracking_by_course_id:
-                    course_ids.append(cid)
-
-            if not course_ids:
-                return 0
-
-            results = await asyncio.gather(
-                *(api.post("/tracking", {"course_id": int(cid), "status": "interested"}) for cid in course_ids),
-                return_exceptions=True,
-            )
-            created = 0
-            for row in results:
-                if not isinstance(row, Exception):
-                    created += 1
-            if created > 0:
-                await _reload_tracking()
-            return created
-
         @guard_ui_action(title="Select failed")
         async def _select(path_id: int) -> None:
-            await api.post(f"/paths/{path_id}/select", {})
+            cached_detail = selected_detail_by_path_id.get(int(path_id))
+            seeded, detail = await select_path_and_seed_tracking(
+                api=api,
+                path_id=int(path_id),
+                tracking_by_course_id=tracking_by_course_id,
+                cached_detail=cached_detail if isinstance(cached_detail, dict) else None,
+            )
             await _reload_selected()
-            await _ensure_selected_detail(path_id)
-            seeded = await _seed_tracking_for_path(path_id)
+            if isinstance(detail, dict):
+                selected_detail_by_path_id[int(path_id)] = detail
+            else:
+                await _ensure_selected_detail(path_id)
+            if seeded > 0:
+                await _reload_tracking()
             if scope_filter is not None:
                 scope_filter.value = "selected"
                 scope_filter.update()
@@ -369,6 +359,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 view_mode: Either "full" or "reviews".
             """
             detail = await api.get(f"/paths/{path_id}")
+            normalized_view_mode = _normalize_path_view_mode(view_mode)
             path_reviews: list[dict[str, Any]] = []
             try:
                 reviews_result = await api.get(f"/paths/{path_id}/reviews")
@@ -453,7 +444,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 summary = _format_review_summary(path_review_summary_by_id.get(int(path_id)))
                 if summary:
                     ui.label(f"Reviews: {summary}").classes("text-sm").style("color: var(--lp-muted)")
-                if view_mode != "reviews":
+                if normalized_view_mode != "reviews":
                     if total_courses > 0:
                         ui.label(f"Progress: {completed}/{total_courses} completed").classes("text-sm").style(
                             "color: var(--lp-muted)"
@@ -651,14 +642,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             return False
                     if ignore != "status":
                         status_v = str(status_filter.value or "").strip()
-                        if status_v:
-                            pid = int(p.get("id") or 0)
-                            if status_v == "not_tracked":
-                                if pid in selected_by_id:
-                                    return False
-                            else:
-                                if _status_key(pid) != status_v:
-                                    return False
+                        if status_v and not _path_matches_state(int(p.get("id") or 0), selected_by_id, status_v):
+                            return False
                     return True
 
                 counts: dict[str, int] = {"not_tracked": 0, "tracked": 0}
@@ -782,10 +767,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     shown = [p for p in shown if int(p.get("id") or 0) in selected_by_id]
 
                 if status_v:
-                    if status_v == "not_tracked":
-                        shown = [p for p in shown if int(p.get("id") or 0) not in selected_by_id]
-                    else:
-                        shown = [p for p in shown if _status_key(int(p.get("id") or 0)) == status_v]
+                    shown = [p for p in shown if _path_matches_state(int(p.get("id") or 0), selected_by_id, status_v)]
 
                 if sort_v:
                     if sort_v == "name_az":

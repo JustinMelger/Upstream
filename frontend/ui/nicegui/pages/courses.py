@@ -85,6 +85,11 @@ def _format_short_date(value: Any) -> str:
     return dt.astimezone(timezone.utc).strftime("%b %d, %Y")
 
 
+def _normalize_course_view_mode(focus_reviews: bool) -> str:
+    """Map bool focus flag to stable view mode string."""
+    return "reviews" if bool(focus_reviews) else "full"
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/courses` route.
 
@@ -488,12 +493,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     api.get(f"/courses/{course_id}/reviews"),
                 )
                 reviews = list(reviews_payload or [])
+                view_mode = _normalize_course_view_mode(focus_reviews)
 
                 with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
                     ui.label(course.get("title") or "").classes("text-xl font-semibold")
                     if str(course.get("description") or "").strip():
                         ui.label(str(course.get("description") or "")).classes("text-sm text-gray-600")
-                    if not focus_reviews:
+                    if view_mode != "reviews":
                         summary_label = _format_review_summary(review_summary_by_course_id.get(int(course_id)))
                         provider = str(course.get("provider") or "").strip()
                         category = str(course.get("category") or "").strip()
