@@ -517,6 +517,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ).props("outline dense")
 
                         ui.separator()
+
                     def _sync_summary_from_reviews(current_reviews: list[dict[str, Any]]) -> None:
                         ratings: list[int] = []
                         for r in list(current_reviews or []):

@@ -95,8 +95,8 @@ def render_reviews_panel(
         value=int((my_review or {}).get("rating") or 5),
         label="Rating",
     ).props("dense")
-    text_in = ui.textarea("Comment (optional)", value=str((my_review or {}).get("text") or "")).props("autogrow").classes(
-        "w-full"
+    text_in = (
+        ui.textarea("Comment (optional)", value=str((my_review or {}).get("text") or "")).props("autogrow").classes("w-full")
     )
 
     @guard_ui_action(title=save_error_title)

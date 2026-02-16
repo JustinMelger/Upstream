@@ -503,6 +503,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         )
 
                 ui.separator().classes("my-2")
+
                 def _sync_path_summary(current_reviews: list[dict[str, Any]]) -> None:
                     ratings: list[int] = []
                     for r in list(current_reviews or []):
