@@ -36,8 +36,8 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
             with ui.row().classes("items-center gap-2"):
                 # A compact menu keeps navigation usable on small screens.
                 with ui.dropdown_button("Menu", icon="menu", auto_close=True).props("outline dense"):
-                    home_item = ui.menu_item("Home", on_click=lambda: ui.navigate.to("/"))
-                    if _is_active("/"):
+                    home_item = ui.menu_item("Insights", on_click=lambda: ui.navigate.to("/insights"))
+                    if _is_active("/insights"):
                         home_item.classes("lp-nav-active")
 
                     learning_item = ui.menu_item("My learning", on_click=lambda: ui.navigate.to("/learning"))

@@ -23,7 +23,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         # If the user is already authenticated, don't force a logout just by
         # visiting /login (e.g., via back button or a copied link).
         if store.get_token():
-            ui.navigate.to("/")
+            ui.navigate.to("/learning")
             return
 
         with render_container():
@@ -54,7 +54,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         login_btn.disable()
                         try:
                             await store.login(api, username=u, password=p)
-                            ui.navigate.to("/")
+                            ui.navigate.to("/learning")
                         finally:
                             loading = False
                             login_btn.enable()

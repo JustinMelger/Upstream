@@ -7,19 +7,21 @@ This page provides an overview of:
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
-from nicegui import ui
+from nicegui import app, ui
 
 from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label
+from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.datetime_utils import format_date
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.navigation_intents import set_course_intent, set_path_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.services.learning_service import load_my_learning_data
 from frontend.ui.nicegui.services.paths_service import compute_path_progress
@@ -52,6 +54,16 @@ def _review_summary_label(row: dict[str, Any] | None) -> str:
     return f"★ {avg:.1f} ({count})"
 
 
+def _build_course_navigation_url(*, course_id: int, view: str) -> str:
+    """Build stable course details navigation URL."""
+    return f"/courses?tab=tracked&course_id={int(course_id)}&view={str(view or 'full')}"
+
+
+def _build_path_navigation_url(*, path_id: int, view: str) -> str:
+    """Build stable path details navigation URL."""
+    return f"/paths?tab=selected&path_id={int(path_id)}&view={str(view or 'full')}"
+
+
 def _next_uncompleted_course_from_selected_paths(
     *,
     selected_paths: list[dict[str, Any]],
@@ -80,6 +92,33 @@ def _next_uncompleted_course_from_selected_paths(
     return None
 
 
+def _next_from_tracked_courses(
+    *,
+    tracked_courses: list[dict[str, Any]],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Pick next course from tracked courses when no selected-path next step exists."""
+    in_progress: list[dict[str, Any]] = []
+    interested: list[dict[str, Any]] = []
+    for row in tracked_courses:
+        try:
+            cid = int(row.get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if cid <= 0:
+            continue
+        status = str((tracking_by_course_id.get(cid) or {}).get("status") or "")
+        if status == "in_progress":
+            in_progress.append(row)
+        elif status == "interested":
+            interested.append(row)
+    if in_progress:
+        return in_progress[0]
+    if interested:
+        return interested[0]
+    return None
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/learning` route."""
 
@@ -94,6 +133,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         data: dict[str, Any] = {}
         loading = False
+        page_size = 12
+        tracked_visible = page_size
+        selected_visible = page_size
 
         request = getattr(ui.context.client, "request", None)
         query_params = getattr(request, "query_params", {}) if request is not None else {}
@@ -102,10 +144,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         @guard_ui_action(title="Load failed")
         async def _load() -> None:
-            nonlocal data, loading
+            nonlocal data, loading, tracked_visible, selected_visible
             if loading:
                 return
             loading = True
+            tracked_visible = page_size
+            selected_visible = page_size
             meta.text = "Loading..."
             content.refresh()
             try:
@@ -132,6 +176,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             finally:
                 loading = False
                 content.refresh()
+
+        @guard_ui_action(title="Update tracking failed")
+        async def _set_tracking_status(course_id: int, status: str) -> None:
+            await api.post("/tracking", {"course_id": int(course_id), "status": str(status)})
+            await _load()
+
+        @guard_ui_action(title="Update tracking failed")
+        async def _clear_tracking_status(course_id: int) -> None:
+            await api.post("/tracking/delete", {"course_id": int(course_id)})
+            await _load()
 
         with render_container():
             with ui.row().classes("lp-topbar"):
@@ -174,10 +228,28 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         for c in shared_courses[:12]:
                             with ui.row().classes("items-center justify-between w-full"):
                                 ui.label(str(c.get("title") or "")).classes("text-sm")
-                                ui.button(
-                                    "Open",
-                                    on_click=lambda: ui.navigate.to("/courses"),
-                                ).props("dense outline")
+                                cid = int(c.get("id") or 0)
+                                with ui.row().classes("items-center gap-2"):
+
+                                    async def _view_course(_cid: int = cid) -> None:
+                                        set_course_intent(username=username, course_id=int(_cid), view="full")
+                                        app.storage.user["courses_open_intent"] = {
+                                            "course_id": int(_cid),
+                                            "view": "full",
+                                        }
+                                        url = _build_course_navigation_url(course_id=int(_cid), view="full")
+                                        ui.run_javascript(f"window.location.href={json.dumps(url)};")
+
+                                    async def _review_course(_cid: int = cid) -> None:
+                                        set_course_intent(username=username, course_id=int(_cid), view="reviews")
+                                        app.storage.user["courses_open_intent"] = {
+                                            "course_id": int(_cid),
+                                            "view": "reviews",
+                                        }
+                                        url = _build_course_navigation_url(course_id=int(_cid), view="reviews")
+                                        ui.run_javascript(f"window.location.href={json.dumps(url)};")
+
+                                    render_view_review_actions(on_view=_view_course, on_review=_review_course)
 
                     with ui.card().classes("lp-card w-full"):
                         ui.label("Paths").classes("text-md font-semibold")
@@ -186,10 +258,28 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         for p in shared_paths[:12]:
                             with ui.row().classes("items-center justify-between w-full"):
                                 ui.label(str(p.get("name") or "")).classes("text-sm")
-                                ui.button(
-                                    "Open",
-                                    on_click=lambda: ui.navigate.to("/paths"),
-                                ).props("dense outline")
+                                pid = int(p.get("id") or 0)
+                                with ui.row().classes("items-center gap-2"):
+
+                                    async def _view_path(_pid: int = pid) -> None:
+                                        set_path_intent(username=username, path_id=int(_pid), view="full")
+                                        app.storage.user["paths_open_intent"] = {
+                                            "path_id": int(_pid),
+                                            "view": "full",
+                                        }
+                                        url = _build_path_navigation_url(path_id=int(_pid), view="full")
+                                        ui.run_javascript(f"window.location.href={json.dumps(url)};")
+
+                                    async def _review_path(_pid: int = pid) -> None:
+                                        set_path_intent(username=username, path_id=int(_pid), view="reviews")
+                                        app.storage.user["paths_open_intent"] = {
+                                            "path_id": int(_pid),
+                                            "view": "reviews",
+                                        }
+                                        url = _build_path_navigation_url(path_id=int(_pid), view="reviews")
+                                        ui.run_javascript(f"window.location.href={json.dumps(url)};")
+
+                                    render_view_review_actions(on_view=_view_path, on_review=_review_path)
 
                     if settings.feature_articles:
                         with ui.card().classes("lp-card w-full"):
@@ -215,8 +305,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 path_details_by_id: dict[int, dict[str, Any]] = dict(data.get("path_details_by_id") or {})
                 course_review_summary_by_id: dict[int, dict[str, Any]] = dict(data.get("course_review_summary_by_id") or {})
                 path_review_summary_by_id: dict[int, dict[str, Any]] = dict(data.get("path_review_summary_by_id") or {})
-                pending_course_review_ids = {int(i) for i in list(data.get("pending_course_review_ids") or [])}
-                pending_path_review_ids = {int(i) for i in list(data.get("pending_path_review_ids") or [])}
+                pending_course_review_ids = sorted({int(i) for i in list(data.get("pending_course_review_ids") or [])})
+                pending_path_review_ids = sorted({int(i) for i in list(data.get("pending_path_review_ids") or [])})
 
                 ui.label("Learning").classes("text-lg font-semibold mt-2")
 
@@ -225,6 +315,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     path_details_by_id=path_details_by_id,
                     tracking_by_course_id=tracking_by_course_id,
                 )
+                if next_course is None:
+                    fallback = _next_from_tracked_courses(
+                        tracked_courses=tracked_courses,
+                        tracking_by_course_id=tracking_by_course_id,
+                    )
+                    if fallback is not None:
+                        next_course = {"path_id": 0, "path_name": "", "course": fallback}
                 if next_course is not None:
                     nxt = dict(next_course.get("course") or {})
                     with ui.card().classes("lp-card w-full"):
@@ -250,21 +347,39 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     else:
                         if pending_course_review_ids:
                             ui.label(f"{len(pending_course_review_ids)} tracked course(s) need your review.").classes("text-sm")
-                            ui.button("Review courses", on_click=lambda: ui.navigate.to("/courses?tab=tracked")).props(
-                                "dense outline"
-                            )
+                            first_course_id = int(pending_course_review_ids[0])
+
+                            async def _open_first_course_review(_cid: int = first_course_id) -> None:
+                                set_course_intent(username=username, course_id=int(_cid), view="reviews")
+                                app.storage.user["courses_open_intent"] = {
+                                    "course_id": int(_cid),
+                                    "view": "reviews",
+                                }
+                                url = _build_course_navigation_url(course_id=int(_cid), view="reviews")
+                                ui.run_javascript(f"window.location.href={json.dumps(url)};")
+
+                            ui.button("Review courses", on_click=_open_first_course_review).props("dense outline")
                         if pending_path_review_ids:
                             ui.label(f"{len(pending_path_review_ids)} selected path(s) need your review.").classes("text-sm")
-                            ui.button("Review paths", on_click=lambda: ui.navigate.to("/paths?tab=selected")).props(
-                                "dense outline"
-                            )
+                            first_path_id = int(pending_path_review_ids[0])
+
+                            async def _open_first_path_review(_pid: int = first_path_id) -> None:
+                                set_path_intent(username=username, path_id=int(_pid), view="reviews")
+                                app.storage.user["paths_open_intent"] = {
+                                    "path_id": int(_pid),
+                                    "view": "reviews",
+                                }
+                                url = _build_path_navigation_url(path_id=int(_pid), view="reviews")
+                                ui.run_javascript(f"window.location.href={json.dumps(url)};")
+
+                            ui.button("Review paths", on_click=_open_first_path_review).props("dense outline")
 
                 with ui.card().classes("lp-card w-full"):
                     ui.label("Tracked courses").classes("text-md font-semibold")
                     if not tracked_courses:
                         ui.label("Track a course to see it here.").classes("text-sm").style("color: var(--lp-muted)")
                         ui.button("Browse courses", on_click=lambda: ui.navigate.to("/courses")).props("dense outline")
-                    for c in tracked_courses[:12]:
+                    for c in tracked_courses[:tracked_visible]:
                         cid = int(c.get("id") or 0)
                         tr = tracking_by_course_id.get(cid) or {}
                         with ui.row().classes("items-center justify-between w-full"):
@@ -282,19 +397,91 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ui.label(tracking_label(tr.get("status"))).classes(tracking_chip_class(tr.get("status")))
 
                                 async def _view_course(_cid: int = cid) -> None:
-                                    ui.navigate.to("/courses?tab=tracked")
+                                    set_course_intent(username=username, course_id=int(_cid), view="full")
+                                    app.storage.user["courses_open_intent"] = {
+                                        "course_id": int(_cid),
+                                        "view": "full",
+                                    }
+                                    url = _build_course_navigation_url(course_id=int(_cid), view="full")
+                                    ui.run_javascript(f"window.location.href={json.dumps(url)};")
 
                                 async def _review_course(_cid: int = cid) -> None:
-                                    ui.navigate.to("/courses?tab=tracked")
+                                    set_course_intent(username=username, course_id=int(_cid), view="reviews")
+                                    app.storage.user["courses_open_intent"] = {
+                                        "course_id": int(_cid),
+                                        "view": "reviews",
+                                    }
+                                    url = _build_course_navigation_url(course_id=int(_cid), view="reviews")
+                                    ui.run_javascript(f"window.location.href={json.dumps(url)};")
 
                                 render_view_review_actions(on_view=_view_course, on_review=_review_course)
+
+                                options_map = {
+                                    "": "Not tracked",
+                                    **{k: v for k, v in TRACKING_STATUS_OPTIONS},
+                                }
+                                current_status = str(tr.get("status") or "")
+                                status_select = ui.select(
+                                    options=options_map,
+                                    value=current_status,
+                                    label=None,
+                                ).props("dense")
+                                status_select.props("use-input hide-selected fill-input")
+                                status_select.tooltip("Status")
+
+                                async def _on_status_change(e: Any, _cid: int = cid, _select=status_select) -> None:
+                                    _select.disable()
+                                    try:
+                                        raw = e
+                                        if not isinstance(e, (str, int, float, bool, dict)) and e is not None:
+                                            raw = getattr(e, "value", None)
+                                            if raw is None:
+                                                raw = getattr(e, "args", None)
+                                        if isinstance(raw, dict):
+                                            if raw.get("value") in options_map:
+                                                value = str(raw.get("value") or "")
+                                            elif "label" in raw:
+                                                label = str(raw.get("label") or "").strip().lower()
+                                                value = ""
+                                                for key, opt_label in options_map.items():
+                                                    if label and label == str(opt_label).strip().lower():
+                                                        value = str(key)
+                                                        break
+                                            else:
+                                                value = ""
+                                        else:
+                                            value = str(raw or _select.value or "")
+
+                                        _select.value = value
+                                        _select.update()
+                                        if not value:
+                                            await _clear_tracking_status(_cid)
+                                            return
+                                        if value not in {"interested", "in_progress", "completed"}:
+                                            ui.notify(f"Invalid status: {value}", type="negative")
+                                            return
+                                        await _set_tracking_status(_cid, value)
+                                    finally:
+                                        _select.enable()
+
+                                status_select.on("update:model-value", _on_status_change)
+                    if len(tracked_courses) > tracked_visible:
+
+                        def _more_tracked() -> None:
+                            nonlocal tracked_visible
+                            tracked_visible = min(len(tracked_courses), int(tracked_visible) + page_size)
+                            content.refresh()
+
+                        ui.button(f"Load more ({tracked_visible}/{len(tracked_courses)})", on_click=_more_tracked).props(
+                            "outline dense"
+                        )
 
                 with ui.card().classes("lp-card w-full"):
                     ui.label("Selected paths").classes("text-md font-semibold")
                     if not selected_paths:
                         ui.label("Select a path to track progress.").classes("text-sm").style("color: var(--lp-muted)")
                         ui.button("Browse paths", on_click=lambda: ui.navigate.to("/paths")).props("dense outline")
-                    for row in selected_paths[:12]:
+                    for row in selected_paths[:selected_visible]:
                         pid = int(row.get("id") or 0)
                         detail = path_details_by_id.get(pid) or {}
                         completed, total, ratio = _progress_for_path_detail(
@@ -312,12 +499,35 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             with ui.row().classes("items-center gap-2"):
 
                                 async def _view_path(_pid: int = pid) -> None:
-                                    ui.navigate.to("/paths?tab=selected")
+                                    set_path_intent(username=username, path_id=int(_pid), view="full")
+                                    app.storage.user["paths_open_intent"] = {
+                                        "path_id": int(_pid),
+                                        "view": "full",
+                                    }
+                                    url = _build_path_navigation_url(path_id=int(_pid), view="full")
+                                    ui.run_javascript(f"window.location.href={json.dumps(url)};")
 
                                 async def _review_path(_pid: int = pid) -> None:
-                                    ui.navigate.to("/paths?tab=selected")
+                                    set_path_intent(username=username, path_id=int(_pid), view="reviews")
+                                    app.storage.user["paths_open_intent"] = {
+                                        "path_id": int(_pid),
+                                        "view": "reviews",
+                                    }
+                                    url = _build_path_navigation_url(path_id=int(_pid), view="reviews")
+                                    ui.run_javascript(f"window.location.href={json.dumps(url)};")
 
                                 render_view_review_actions(on_view=_view_path, on_review=_review_path)
+                    if len(selected_paths) > selected_visible:
+
+                        def _more_selected() -> None:
+                            nonlocal selected_visible
+                            selected_visible = min(len(selected_paths), int(selected_visible) + page_size)
+                            content.refresh()
+
+                        ui.button(
+                            f"Load more ({selected_visible}/{len(selected_paths)})",
+                            on_click=_more_selected,
+                        ).props("outline dense")
 
             await _load()
             content()

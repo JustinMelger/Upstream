@@ -1,4 +1,4 @@
-"""Dashboard (home) page for the NiceGUI frontend."""
+"""Insights page for the NiceGUI frontend."""
 
 from __future__ import annotations
 
@@ -204,7 +204,7 @@ def _next_up_items(
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
-    """Register the `/` route (dashboard).
+    """Register the insights routes.
 
     Args:
         store: Session store.
@@ -212,6 +212,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
     """
 
     @ui.page("/")
+    async def root_page() -> None:
+        """Default app landing route: redirect to My learning."""
+        ui.navigate.to("/learning")
+
+    @ui.page("/insights")
     async def home_page() -> None:
         user = await require_user(store, api)
         if user is None:
@@ -220,7 +225,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         role = str(user.get("role") or "user")
         is_admin = role == "admin"
 
-        render_shell(title="Dashboard", store=store, api=api)
+        render_shell(title="Insights", store=store, api=api)
         with render_container():
             ui.label("Your learning overview and recent activity.").classes("text-sm text-gray-600")
 
@@ -313,117 +318,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 tracking = _tracking_map(tracking_rows)
                 title_by_id = _course_title_by_id(courses)
-                course_by_id = _course_by_id(courses)
-
-                # Continue learning
-                ui.label("Continue learning").classes("text-lg font-semibold mt-2")
-                in_progress_ids = [cid for cid, st in tracking.items() if st == "in_progress"]
-                if not in_progress_ids:
-                    ui.label("No courses in progress yet.").classes("text-sm text-gray-600")
-                    ui.button("Browse courses", on_click=lambda: ui.navigate.to("/courses?tab=tracked")).props("outline")
-                else:
-                    with ui.column().classes("w-full gap-3"):
-                        for cid in in_progress_ids[:3]:
-                            c = dict(course_by_id.get(cid) or {})
-                            title = str(c.get("title") or f"Course {cid}")
-                            url = str(c.get("url") or "").strip()
-                            provider = str(c.get("provider") or "").strip()
-                            meta_bits = [
-                                b
-                                for b in [provider, str(c.get("category") or "").strip(), str(c.get("level") or "").strip()]
-                                if b
-                            ]
-
-                            with ui.card().classes("lp-card w-full"):
-                                with ui.row().classes("items-start justify-between w-full"):
-                                    with ui.column().classes("gap-1"):
-                                        ui.label(title).classes("text-md font-semibold")
-                                        if meta_bits:
-                                            ui.label(" · ".join(meta_bits)).classes("text-sm text-gray-600")
-                                        summary_chip = _format_review_summary(review_summary_by_course_id.get(int(cid)))
-                                        if summary_chip:
-                                            ui.label(summary_chip).classes("lp-meta-chip")
-                                        ui.label("In progress").classes("lp-chip lp-chip--teal")
-
-                                    with ui.row().classes("items-center gap-2"):
-                                        if url:
-                                            ui.link("Open", url).props("target=_blank").classes("text-sm")
-
-                                        async def _do_complete(_cid: int = cid) -> None:
-                                            await _mark_completed(_cid)
-
-                                        ui.button("Mark completed", on_click=_do_complete).props("outline dense")
-
-                ui.separator()
-
-                # Next up (from selected paths)
-                ui.label("Next up").classes("text-lg font-semibold")
-                next_up = _next_up_items(path_details=selected_path_details, tracking=tracking)
-                if not next_up:
-                    ui.label("Select a path to get guided next steps.").classes("text-sm text-gray-600")
-                    ui.button("Browse paths", on_click=lambda: ui.navigate.to("/paths")).props("outline")
-                else:
-                    with ui.column().classes("w-full gap-3"):
-                        for path_name, cid in next_up[:5]:
-                            c = dict(course_by_id.get(cid) or {})
-                            title = str(c.get("title") or f"Course {cid}")
-                            url = str(c.get("url") or "").strip()
-                            status = tracking.get(cid, "")
-
-                            with ui.card().classes("lp-card w-full"):
-                                with ui.row().classes("items-start justify-between w-full"):
-                                    with ui.column().classes("gap-1"):
-                                        ui.label(path_name).classes("text-sm text-gray-600")
-                                        ui.label(title).classes("text-md font-semibold")
-                                        if status:
-                                            ui.label(status.replace("_", " ").title()).classes(tracking_chip_class(status))
-                                        else:
-                                            ui.label("Not tracked").classes("lp-chip lp-chip--muted")
-                                        summary_chip = _format_review_summary(review_summary_by_course_id.get(int(cid)))
-                                        if summary_chip:
-                                            ui.label(summary_chip).classes("lp-meta-chip")
-
-                                    with ui.row().classes("items-center gap-2"):
-                                        if url:
-                                            ui.link("Open", url).props("target=_blank").classes("text-sm")
-
-                                        if status != "in_progress":
-
-                                            async def _do_in_progress(_cid: int = cid) -> None:
-                                                await _mark_in_progress(_cid)
-
-                                            ui.button("Mark in progress", on_click=_do_in_progress).props("outline dense")
-
-                                        async def _do_complete2(_cid: int = cid) -> None:
-                                            await _mark_completed(_cid)
-
-                                        ui.button("Mark completed", on_click=_do_complete2).props("outline dense")
-
-                # Progress snapshot
-                _render_snapshot_metrics(snapshot_stats=snapshot_stats)
-
-                ui.separator()
-
-                # Course lists by status
-                ui.label("My courses by status").classes("text-lg font-semibold")
-                interested_ids, in_progress_ids, completed_ids = _ids_by_status(tracking)
-
-                with ui.row().classes("w-full gap-3"):
-                    _render_course_list_card(title="Interested", ids=interested_ids, title_by_id=title_by_id)
-                    _render_course_list_card(title="In progress", ids=in_progress_ids, title_by_id=title_by_id)
-                    _render_course_list_card(title="Completed", ids=completed_ids, title_by_id=title_by_id)
-
-                ui.separator()
-
-                # My path progress
-                ui.label("My path progress").classes("text-lg font-semibold")
-                if not selected_paths:
-                    ui.label("No paths selected yet.").classes("text-sm text-gray-600")
-                    ui.button("Browse paths", on_click=lambda: ui.navigate.to("/paths")).props("outline")
-                else:
-                    _render_selected_path_progress_cards(path_details=selected_path_details, tracking=tracking)
-
-                ui.separator()
 
                 # Recent activity (user-local: sort tracking rows)
                 ui.label("Recent activity").classes("text-lg font-semibold")

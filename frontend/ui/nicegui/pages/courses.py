@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import json
 from typing import Any
 
-from nicegui import ui
+from nicegui import app, ui
 
 from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
@@ -19,6 +19,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.navigation_intents import get_course_intent, pop_course_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.services.courses_service import load_courses_and_tracking, load_review_summaries, load_tracking_map
 
@@ -120,6 +121,31 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             query_params = getattr(request, "query_params", {}) if request is not None else {}
             initial_tab = str(getattr(query_params, "get", lambda _k, _d=None: _d)("tab", "") or "").strip().lower()
             initial_scope = "tracked" if initial_tab == "tracked" else "all"
+            initial_course_id_raw = str(getattr(query_params, "get", lambda _k, _d=None: _d)("course_id", "") or "").strip()
+            try:
+                initial_course_id = int(initial_course_id_raw) if initial_course_id_raw else 0
+            except (TypeError, ValueError):
+                initial_course_id = 0
+            initial_view_mode = str(getattr(query_params, "get", lambda _k, _d=None: _d)("view", "") or "").strip().lower()
+            initial_focus_reviews = initial_view_mode == "reviews"
+            intent = app.storage.user.get("courses_open_intent")
+            nav_intent = get_course_intent(username=username)
+            if isinstance(intent, dict):
+                if initial_course_id <= 0:
+                    try:
+                        initial_course_id = int(intent.get("course_id") or 0)
+                    except (TypeError, ValueError):
+                        initial_course_id = 0
+                if initial_view_mode not in {"full", "reviews"}:
+                    initial_focus_reviews = str(intent.get("view") or "").strip().lower() == "reviews"
+            if isinstance(nav_intent, dict):
+                if initial_course_id <= 0:
+                    try:
+                        initial_course_id = int(nav_intent.get("course_id") or 0)
+                    except (TypeError, ValueError):
+                        initial_course_id = 0
+                if initial_view_mode not in {"full", "reviews"}:
+                    initial_focus_reviews = str(nav_intent.get("view") or "").strip().lower() == "reviews"
 
             with ui.row().classes("lp-topbar"):
                 q = ui.input("Search courses").props("clearable debounce=300").style("flex: 1")
@@ -1020,3 +1046,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             render_split_layout(rail=_render_rail, main=_render_main, rail_classes="lp-rail--bar")
 
             await _load()
+            if initial_course_id > 0:
+                await _open_details(initial_course_id, focus_reviews=initial_focus_reviews)
+                if isinstance(intent, dict):
+                    try:
+                        if int(intent.get("course_id") or 0) == int(initial_course_id):
+                            app.storage.user.pop("courses_open_intent", None)
+                    except (TypeError, ValueError):
+                        pass
+                if isinstance(nav_intent, dict):
+                    try:
+                        if int(nav_intent.get("course_id") or 0) == int(initial_course_id):
+                            pop_course_intent(username=username)
+                    except (TypeError, ValueError):
+                        pass

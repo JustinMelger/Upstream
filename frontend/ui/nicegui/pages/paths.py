@@ -6,7 +6,7 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
-from nicegui import ui
+from nicegui import app, ui
 
 from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
@@ -21,6 +21,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.navigation_intents import get_path_intent, pop_path_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
 from frontend.ui.nicegui.services.paths_service import (
@@ -591,6 +592,31 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             query_params = getattr(request, "query_params", {}) if request is not None else {}
             initial_tab = str(getattr(query_params, "get", lambda _k, _d=None: _d)("tab", "") or "").strip().lower()
             initial_scope = "selected" if initial_tab == "selected" else "all"
+            initial_path_id_raw = str(getattr(query_params, "get", lambda _k, _d=None: _d)("path_id", "") or "").strip()
+            try:
+                initial_path_id = int(initial_path_id_raw) if initial_path_id_raw else 0
+            except (TypeError, ValueError):
+                initial_path_id = 0
+            initial_view_mode = str(getattr(query_params, "get", lambda _k, _d=None: _d)("view", "") or "").strip().lower()
+            initial_dialog_mode = _normalize_path_view_mode(initial_view_mode)
+            intent = app.storage.user.get("paths_open_intent")
+            nav_intent = get_path_intent(username=username)
+            if isinstance(intent, dict):
+                if initial_path_id <= 0:
+                    try:
+                        initial_path_id = int(intent.get("path_id") or 0)
+                    except (TypeError, ValueError):
+                        initial_path_id = 0
+                if initial_view_mode not in {"full", "reviews"}:
+                    initial_dialog_mode = _normalize_path_view_mode(intent.get("view"))
+            if isinstance(nav_intent, dict):
+                if initial_path_id <= 0:
+                    try:
+                        initial_path_id = int(nav_intent.get("path_id") or 0)
+                    except (TypeError, ValueError):
+                        initial_path_id = 0
+                if initial_view_mode not in {"full", "reviews"}:
+                    initial_dialog_mode = _normalize_path_view_mode(nav_intent.get("view"))
 
             with ui.row().classes("lp-topbar"):
                 q = ui.input("Search paths").props("clearable debounce=300").style("flex: 1")
@@ -1035,3 +1061,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             render_split_layout(rail=_render_rail, main=_render_main, rail_classes="lp-rail--bar")
 
             await _load_all()
+            if initial_path_id > 0:
+                await _open_details(initial_path_id, view_mode=initial_dialog_mode)
+                if isinstance(intent, dict):
+                    try:
+                        if int(intent.get("path_id") or 0) == int(initial_path_id):
+                            app.storage.user.pop("paths_open_intent", None)
+                    except (TypeError, ValueError):
+                        pass
+                if isinstance(nav_intent, dict):
+                    try:
+                        if int(nav_intent.get("path_id") or 0) == int(initial_path_id):
+                            pop_path_intent(username=username)
+                    except (TypeError, ValueError):
+                        pass
