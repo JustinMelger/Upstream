@@ -249,9 +249,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         ui.label("You're up to date on reviews.").classes("text-sm").style("color: var(--lp-muted)")
                     else:
                         if pending_course_review_ids:
-                            ui.label(f"{len(pending_course_review_ids)} tracked course(s) need your review.").classes(
-                                "text-sm"
-                            )
+                            ui.label(f"{len(pending_course_review_ids)} tracked course(s) need your review.").classes("text-sm")
                             ui.button("Review courses", on_click=lambda: ui.navigate.to("/courses?tab=tracked")).props(
                                 "dense outline"
                             )
@@ -312,6 +310,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ui.label(f"{completed}/{total} completed").classes("text-xs").style("color: var(--lp-muted)")
                                 ui.linear_progress(ratio, show_value=False).classes("w-full")
                             with ui.row().classes("items-center gap-2"):
+
                                 async def _view_path(_pid: int = pid) -> None:
                                     ui.navigate.to("/paths?tab=selected")
 
