@@ -60,23 +60,6 @@
 - [x] Improve `ApiClient` resilience: map `httpx.RequestError` into a user-friendly `ApiError`.
 - [x] Parity check + remove Streamlit UI once stable.
 
-## Phase 6 — Colleague tracking + analytics
-- [ ] Colleague profiles with interest/completion tracking.
-- [ ] Basic analytics (popular courses, completion rates).
-
-## Phase 7 — Data durability + polish
-- [ ] Import/export tools for course data.
-- [ ] UI polish + accessibility improvements.
-
-## Phase 8 — AI Curation (optional)
-- [ ] Add an “AI Curator” backend service that turns a user goal into a proposed learning plan (draft path + ordered draft courses).
-- [ ] Implement “suggest then approve”: UI preview with edit/remove/reorder before persisting.
-- [ ] Add course discovery step (start with constrained sources) and normalize results to the course schema.
-- [ ] Add de-duplication heuristics (URL-based + provider/title similarity).
-- [ ] Add provenance fields for AI-suggested content (e.g. `source`, `source_url`, `confidence`) and surface them in UI.
-- [ ] Run discovery as a background job (avoid blocking request/response; show progress + retries).
-- [ ] Persist approved drafts via existing domain services (`CoursesService`, `PathsService`, `TrackingService`) to keep consistency.
-
 ## Phase 9 — Product UX Polish (NiceGUI)
 - [x] Upgrade loading states: skeletons/spinners for tables/cards (avoid “Loading…” text-only).
 - [x] Add clear empty-state CTAs (Courses/Paths/My Courses/My Paths) linking to the next action.
@@ -87,17 +70,76 @@
 - [x] Navigation polish: active route highlighting and optional feature flags (hide AI Curator unless enabled).
 - [x] Debounce search inputs to reduce backend load (avoid requests per keystroke).
 - [x] Add an “Articles” section where users can share links (title, URL, tags) and browse/search community submissions.
+- [x] Courses UX: add sort control with sensible defaults (Recommended/Top rated/Most reviewed/Newest/A–Z).
+- [x] Courses UX: enhance empty states (show active filters + single “Reset all” CTA; “Share the first course” for empty catalog).
+- [x] Courses UX: add facet counts for provider/category/status options.
+- [x] Courses UX: paginate or add “Load more”/infinite scroll for large catalogs.
+- [x] Courses UX: polish card actions (status as clearer control; optional “Copy link” quick action).
+- [x] Courses UX: highlight “new/updated” courses and add a “Recently added” sort.
+
 
 ## Phase 10 — Social Layer (By Colleagues, For Colleagues)
-- [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).
+
+### Phase 10A — P0 Foundation (Highest Priority)
+- [x] Ownership + permissions: allow any authenticated user to create courses/paths; only the creator (or admin) can edit/delete; admin can edit/delete everything.
 - [x] Add reviews for courses (rating + text) with basic moderation/admin removal.
-- [ ] Add reviews for paths (text) with basic moderation/admin removal.
-- [x] Surface social signals in UI (Home + course/path details).
-- [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
+- [x] Add reviews for paths (text) with basic moderation/admin removal.
+- [x] Add reviews for articles (rating + text) with basic moderation/admin removal.
+- [x] Navigation/IA: merge "My Courses" into `Courses` with `All/Tracked` toggle and redirect `/courses/my` → `/courses?tab=tracked`.
+- [x] Navigation/IA: merge "My Paths" into `Paths` with `All/Selected` toggle and redirect `/paths/my` → `/paths?tab=selected`.
+- [x] Navigation/IA: add a "My learning" page with tabs `Learning` (tracked/selected/saved) and `Shared` (content you created) across Courses/Paths/Articles.
+- [x] Product UX: make `My learning` the default post-login landing page and prioritize “Continue next” + “Needs your review”.
+- [x] Product UX/IA: rename `Home` to `Insights` and trim overlap with `My learning` (personal execution vs team insights split).
+
+### Phase 10B — P1 Social Product Loop
+- [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).
+- [ ] Product UX: add “Recommended for you” on `My learning` with save/dismiss actions and “why this was recommended” explanation.
+- [ ] Product UX: strengthen social trust signals on cards/details (shared by, avg rating + count, recent activity, endorsements).
+- [ ] Product UX: improve contribution loop (quick-share flow with optional note + feedback on teammate engagement).
+- [ ] Product UX: improve path outcomes UX (milestones + next actionable step + completion impact).
+- [ ] Product UX: add team visibility dashboard (popular content, completion trends, top contributors).
 - [ ] Add “Suggest a course/path” drafts (user-submitted) with admin approve/edit → canonical content.
 - [ ] Basic de-duplication for suggested courses (URL-based + title/provider similarity).
 - [ ] Notifications v1 (optional): show “recommended to you” inbox or activity feed (no email).
+
+### Phase 10C — P2 Content + AI Readiness
 - [ ] Course content description: add `courses.description` (short summary) and surface it across UI; keep `level` optional and de-emphasize (hide behind “more filters”) before deciding to drop it.
 - [ ] AI-ready metadata: add/standardize course content fields (`description`, optional `learning_outcomes`, `prerequisites`, `language`) and define a derived “search document” that combines course + review text for later AI search/planning.
-- [x] Ownership + permissions: allow any authenticated user to create courses/paths; only the creator (or admin) can edit/delete; admin can edit/delete everything.
 - [ ] Copy/wording shift: change UI labels from admin CRUD (“New course/path”) to social contribution (“Share course/path”) once ownership/permissions is live.
+
+### Phase 10D — P2 Frontend Architecture/Clean Code
+- [ ] Frontend architecture alignment: move My Learning tracking mutations (`set/clear`) into service/use-case layer so page stays UI-only.
+- [ ] Frontend architecture alignment: extract remaining Paths orchestration (select/unselect + selected detail/tracking refresh flow) into `paths_service.py` use-cases.
+- [ ] Frontend architecture alignment: remove temporary page-level service shims (e.g., `_load_paths_page_data` compat wrapper) and call service layer directly.
+- [ ] Frontend architecture alignment: add `admin_users_service.py` and `ai_curator_service.py` to keep page modules focused on UI composition/event binding.
+- [ ] Frontend clean code: enforce page boundary (pages = UI composition/event binding; move API orchestration to services/use-cases).
+- [ ] Frontend clean code: introduce typed page state/view-model objects to reduce large closure state (`nonlocal`) usage.
+- [ ] Frontend clean code: extract large nested handlers into domain action modules (`learning_actions`, `courses_actions`, `paths_actions`).
+- [ ] Frontend clean code: componentize repeated page sections (top bar, filter rail, card sections, load-more footer).
+- [ ] Frontend clean code: centralize deep-link and intent navigation logic in a shared navigation helper.
+- [ ] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.
+- [ ] Frontend clean code: add remaining service modules (`admin_users_service.py`, `ai_curator_service.py`) for architecture parity.
+- [ ] Frontend clean code: increase service/use-case unit tests to cover extracted orchestration logic.
+- [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
+
+## Phase 11 — Operability + Quality
+- [ ] Observability: add frontend telemetry for core actions (share/select/review/complete) and page-level error tracking.
+- [ ] Accessibility pass: keyboard navigation, visible focus states, ARIA labels for icon-only actions, and contrast audit fixes.
+- [ ] Resilience UX: network/offline banner, retry affordances, and standardized section-level error states.
+- [ ] Performance: short-TTL client caching for hot reads (`/tracking`, review summaries), batched detail fetches, and fewer full reloads after mutations.
+- [ ] Quality gates: add visual regression checks for key pages and smoke e2e flows (login, track course, review, select path).
+
+## Phase 12 — Analytics + Data Durability
+- [ ] Colleague profiles with interest/completion tracking.
+- [ ] Basic analytics (popular courses, completion rates).
+- [ ] Import/export tools for course data.
+- [ ] UI polish + accessibility improvements.
+
+## Phase 13 — Advanced AI Curation (optional)
+- [ ] Add an “AI Curator” backend service that turns a user goal into a proposed learning plan (draft path + ordered draft courses).
+- [ ] Implement “suggest then approve”: UI preview with edit/remove/reorder before persisting.
+- [ ] Add course discovery step (start with constrained sources) and normalize results to the course schema.
+- [ ] Add de-duplication heuristics (URL-based + provider/title similarity).
+- [ ] Add provenance fields for AI-suggested content (e.g. `source`, `source_url`, `confidence`) and surface them in UI.
+- [ ] Run discovery as a background job (avoid blocking request/response; show progress + retries).
+- [ ] Persist approved drafts via existing domain services (`CoursesService`, `PathsService`, `TrackingService`) to keep consistency.

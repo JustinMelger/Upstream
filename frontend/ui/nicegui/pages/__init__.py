@@ -10,9 +10,8 @@ from frontend.ui.nicegui.pages import (
     articles,
     courses,
     home,
+    learning,
     login,
-    my_courses,
-    my_paths,
     paths,
     placeholders,
 )
@@ -24,9 +23,8 @@ __all__ = [
     "articles",
     "courses",
     "home",
+    "learning",
     "login",
-    "my_courses",
-    "my_paths",
     "paths",
     "placeholders",
 ]

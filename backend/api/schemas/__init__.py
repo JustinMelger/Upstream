@@ -1,4 +1,10 @@
 from backend.api.schemas.ai import AiDraftCourse, AiDraftPath, AiPlanRequest, AiPlanResponse
+from backend.api.schemas.article_reviews import (
+    ArticleReviewCreateRequest,
+    ArticleReviewPayload,
+    ArticleReviewSummaryItem,
+    DeleteArticleReviewResponse,
+)
 from backend.api.schemas.articles import ArticleCreateRequest, ArticlePayload
 from backend.api.schemas.auth import (
     CreateUserRequest,
@@ -23,6 +29,12 @@ from backend.api.schemas.course_reviews import (
     DeleteCourseReviewResponse,
 )
 from backend.api.schemas.courses import CourseCreateRequest, CoursePayload, CourseUpdateRequest, DeleteCourseResponse
+from backend.api.schemas.path_reviews import (
+    DeletePathReviewResponse,
+    PathReviewCreateRequest,
+    PathReviewPayload,
+    PathReviewSummaryItem,
+)
 from backend.api.schemas.paths import (
     DeletePathResponse,
     PathCourseItem,
@@ -68,6 +80,10 @@ __all__ = [
     "DisableUserResponse",
     "ArticlePayload",
     "ArticleCreateRequest",
+    "ArticleReviewPayload",
+    "ArticleReviewCreateRequest",
+    "ArticleReviewSummaryItem",
+    "DeleteArticleReviewResponse",
     "CoursePayload",
     "CourseCreateRequest",
     "CourseUpdateRequest",
@@ -84,6 +100,10 @@ __all__ = [
     "DeletePathResponse",
     "SelectPathResponse",
     "UnselectPathResponse",
+    "PathReviewPayload",
+    "PathReviewCreateRequest",
+    "PathReviewSummaryItem",
+    "DeletePathReviewResponse",
     "PathStatusRequest",
     "PathStatusResponse",
     "SelectedPathItem",

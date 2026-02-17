@@ -19,9 +19,8 @@ from frontend.ui.nicegui.pages import (
     articles,
     courses,
     home,
+    learning,
     login,
-    my_courses,
-    my_paths,
     paths,
     placeholders,
 )
@@ -36,12 +35,11 @@ def create_app() -> None:
 
     login.register(store=store, api=api)
     home.register(store=store, api=api)
+    learning.register(store=store, api=api)
     if settings.feature_ai_curator:
         ai_curator.register(store=store, api=api)
     courses.register(store=store, api=api)
     paths.register(store=store, api=api)
-    my_paths.register(store=store, api=api)
-    my_courses.register(store=store, api=api)
     if settings.feature_articles:
         articles.register(store=store, api=api)
     admin_users.register(store=store, api=api)

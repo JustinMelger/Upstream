@@ -144,3 +144,72 @@ async def test_get_path_not_found_returns_404(app_client):
     body = response.json()
     assert body.get("status") == "error"
     assert body.get("message") == "not_found"
+
+
+@pytest.mark.integration
+async def test_path_review_lifecycle_and_moderation(app_client):
+    """Users can review paths; owners/admin can moderate deletes."""
+    admin_token = await _login_admin(app_client)
+    await _create_user(app_client, admin_token, "alice", role="user")
+    await _create_user(app_client, admin_token, "bob", role="user")
+
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_token = alice_login.json()["token"]
+    bob_token = bob_login.json()["token"]
+
+    course_id = await _create_course(app_client, admin_token, "Path Review Course")
+    create_path = await app_client.post(
+        "/paths",
+        json={"name": "Reviewed Path", "description": "desc", "course_ids": [course_id]},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert create_path.status_code == 200
+    path_id = int(create_path.json()["id"])
+
+    created = await app_client.post(
+        f"/paths/{path_id}/reviews",
+        json={"rating": 4, "text": "Good structure"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert created.status_code == 200
+    review_id = int(created.json()["id"])
+    assert created.json()["created_by"] == "alice"
+
+    # Upsert same reviewer.
+    updated = await app_client.post(
+        f"/paths/{path_id}/reviews",
+        json={"rating": 5, "text": "Even better after update"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert updated.status_code == 200
+    assert int(updated.json()["id"]) == review_id
+    assert int(updated.json()["rating"]) == 5
+
+    listing = await app_client.get(f"/paths/{path_id}/reviews", headers={"X-Session-Token": bob_token})
+    assert listing.status_code == 200
+    rows = listing.json()
+    assert rows and int(rows[0]["id"]) == review_id
+
+    summary = await app_client.get(
+        "/paths/reviews/summary",
+        params={"path_ids": [path_id]},
+        headers={"X-Session-Token": bob_token},
+    )
+    assert summary.status_code == 200
+    srows = summary.json()
+    assert srows and int(srows[0]["path_id"]) == path_id
+    assert int(srows[0]["review_count"]) == 1
+
+    forbidden = await app_client.delete(
+        f"/paths/{path_id}/reviews/{review_id}",
+        headers={"X-Session-Token": bob_token},
+    )
+    assert forbidden.status_code == 403
+
+    deleted = await app_client.delete(
+        f"/paths/{path_id}/reviews/{review_id}",
+        headers={"X-Session-Token": admin_token},
+    )
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"] is True
