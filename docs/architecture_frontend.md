@@ -229,6 +229,9 @@ Responsibilities:
 - `Learning`: what the user plans to learn (tracked courses + selected paths; optionally saved articles later).
 - `Shared`: what the user contributed (courses created by the user, paths created by the user, articles shared by the user).
 - Keep this page thin by delegating orchestration to a dedicated service layer.
+- Show a "Continue learning" card with the next uncompleted course from selected paths.
+- Show review nudges (tracked courses / selected paths without a user review yet).
+- Reuse shared card action components for consistent `View` / `Review` actions.
 
 Backend endpoints (current + likely additions):
 

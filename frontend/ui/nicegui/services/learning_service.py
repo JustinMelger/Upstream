@@ -78,6 +78,77 @@ async def load_my_learning_data(
     tracked_course_ids = {int(cid) for cid in tracking_by_course_id.keys()}
     tracked_courses = [c for c in courses if int(c.get("id") or 0) in tracked_course_ids]
 
+    tracked_ids_sorted = sorted(int(c.get("id") or 0) for c in tracked_courses if int(c.get("id") or 0) > 0)
+    selected_ids_sorted = sorted(int(pid) for pid in selected_ids if int(pid) > 0)
+
+    course_review_summary_by_id: dict[int, dict[str, Any]] = {}
+    if tracked_ids_sorted:
+        try:
+            rows = await api.get("/courses/reviews/summary", params={"course_ids": tracked_ids_sorted})
+            for r in list(rows or []):
+                if not isinstance(r, dict):
+                    continue
+                try:
+                    cid = int(r.get("course_id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if cid > 0:
+                    course_review_summary_by_id[cid] = r
+        except Exception:
+            course_review_summary_by_id = {}
+
+    path_review_summary_by_id: dict[int, dict[str, Any]] = {}
+    if selected_ids_sorted:
+        try:
+            rows = await api.get("/paths/reviews/summary", params={"path_ids": selected_ids_sorted})
+            for r in list(rows or []):
+                if not isinstance(r, dict):
+                    continue
+                try:
+                    pid = int(r.get("path_id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if pid > 0:
+                    path_review_summary_by_id[pid] = r
+        except Exception:
+            path_review_summary_by_id = {}
+
+    pending_course_review_ids: list[int] = []
+    if tracked_ids_sorted:
+        course_review_rows = await asyncio.gather(
+            *(api.get(f"/courses/{cid}/reviews") for cid in tracked_ids_sorted), return_exceptions=True
+        )
+        for cid, rows in zip(tracked_ids_sorted, course_review_rows, strict=False):
+            if isinstance(rows, Exception):
+                continue
+            mine = False
+            for row in list(rows or []):
+                if not isinstance(row, dict):
+                    continue
+                if str(row.get("created_by") or "") == username:
+                    mine = True
+                    break
+            if not mine:
+                pending_course_review_ids.append(int(cid))
+
+    pending_path_review_ids: list[int] = []
+    if selected_ids_sorted:
+        path_review_rows = await asyncio.gather(
+            *(api.get(f"/paths/{pid}/reviews") for pid in selected_ids_sorted), return_exceptions=True
+        )
+        for pid, rows in zip(selected_ids_sorted, path_review_rows, strict=False):
+            if isinstance(rows, Exception):
+                continue
+            mine = False
+            for row in list(rows or []):
+                if not isinstance(row, dict):
+                    continue
+                if str(row.get("created_by") or "") == username:
+                    mine = True
+                    break
+            if not mine:
+                pending_path_review_ids.append(int(pid))
+
     return {
         "courses": courses,
         "tracking_by_course_id": tracking_by_course_id,
@@ -89,4 +160,8 @@ async def load_my_learning_data(
         "shared_paths": shared_paths,
         "articles": articles,
         "shared_articles": shared_articles,
+        "course_review_summary_by_id": course_review_summary_by_id,
+        "path_review_summary_by_id": path_review_summary_by_id,
+        "pending_course_review_ids": pending_course_review_ids,
+        "pending_path_review_ids": pending_path_review_ids,
     }

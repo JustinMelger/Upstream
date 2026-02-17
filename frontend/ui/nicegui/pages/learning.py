@@ -11,9 +11,10 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, tracking_chip_class, tracking_label
+from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.datetime_utils import format_date
@@ -32,6 +33,51 @@ def _progress_for_path_detail(
 ) -> tuple[int, int, float]:
     """Compute (completed, total, ratio) for a path based on course tracking."""
     return compute_path_progress(detail=detail, tracking_by_course_id=tracking_by_course_id)
+
+
+def _review_summary_label(row: dict[str, Any] | None) -> str:
+    """Format review summary as '★ 4.2 (12)'."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("review_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    try:
+        avg = float(row.get("avg_rating") or 0.0)
+    except (TypeError, ValueError):
+        avg = 0.0
+    return f"★ {avg:.1f} ({count})"
+
+
+def _next_uncompleted_course_from_selected_paths(
+    *,
+    selected_paths: list[dict[str, Any]],
+    path_details_by_id: dict[int, dict[str, Any]],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Pick first uncompleted course from selected paths in path order."""
+    for row in selected_paths:
+        try:
+            pid = int(row.get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        detail = path_details_by_id.get(pid) or {}
+        for course in list(detail.get("courses") or []):
+            if not isinstance(course, dict):
+                continue
+            try:
+                cid = int(course.get("id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if cid <= 0:
+                continue
+            status = str((tracking_by_course_id.get(cid) or {}).get("status") or "")
+            if status != "completed":
+                return {"path_id": pid, "path_name": str(row.get("name") or ""), "course": course}
+    return None
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -167,8 +213,53 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 tracking_by_course_id: dict[int, dict[str, Any]] = dict(data.get("tracking_by_course_id") or {})
                 selected_paths = list(data.get("selected_paths") or [])
                 path_details_by_id: dict[int, dict[str, Any]] = dict(data.get("path_details_by_id") or {})
+                course_review_summary_by_id: dict[int, dict[str, Any]] = dict(data.get("course_review_summary_by_id") or {})
+                path_review_summary_by_id: dict[int, dict[str, Any]] = dict(data.get("path_review_summary_by_id") or {})
+                pending_course_review_ids = {int(i) for i in list(data.get("pending_course_review_ids") or [])}
+                pending_path_review_ids = {int(i) for i in list(data.get("pending_path_review_ids") or [])}
 
                 ui.label("Learning").classes("text-lg font-semibold mt-2")
+
+                next_course = _next_uncompleted_course_from_selected_paths(
+                    selected_paths=selected_paths,
+                    path_details_by_id=path_details_by_id,
+                    tracking_by_course_id=tracking_by_course_id,
+                )
+                if next_course is not None:
+                    nxt = dict(next_course.get("course") or {})
+                    with ui.card().classes("lp-card w-full"):
+                        ui.label("Continue learning").classes("text-md font-semibold")
+                        ui.label(str(nxt.get("title") or "")).classes("text-sm font-semibold")
+                        path_name = str(next_course.get("path_name") or "").strip()
+                        if path_name:
+                            ui.label(f"From {path_name}").classes("text-xs").style("color: var(--lp-muted)")
+                        with ui.row().classes("items-center gap-2"):
+                            url = str(nxt.get("url") or "").strip()
+                            if url:
+                                ui.button("Continue", on_click=lambda u=url: ui.navigate.to(u, new_tab=True)).props(
+                                    "dense outline"
+                                )
+                            ui.button("Open path", on_click=lambda: ui.navigate.to("/paths?tab=selected")).props(
+                                "dense outline"
+                            )
+
+                with ui.card().classes("lp-card w-full"):
+                    ui.label("Review nudges").classes("text-md font-semibold")
+                    if not pending_course_review_ids and not pending_path_review_ids:
+                        ui.label("You're up to date on reviews.").classes("text-sm").style("color: var(--lp-muted)")
+                    else:
+                        if pending_course_review_ids:
+                            ui.label(f"{len(pending_course_review_ids)} tracked course(s) need your review.").classes(
+                                "text-sm"
+                            )
+                            ui.button("Review courses", on_click=lambda: ui.navigate.to("/courses?tab=tracked")).props(
+                                "dense outline"
+                            )
+                        if pending_path_review_ids:
+                            ui.label(f"{len(pending_path_review_ids)} selected path(s) need your review.").classes("text-sm")
+                            ui.button("Review paths", on_click=lambda: ui.navigate.to("/paths?tab=selected")).props(
+                                "dense outline"
+                            )
 
                 with ui.card().classes("lp-card w-full"):
                     ui.label("Tracked courses").classes("text-md font-semibold")
@@ -186,7 +277,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 bits = [b for b in [provider, category] if b]
                                 if bits:
                                     ui.label(" · ".join(bits)).classes("text-xs").style("color: var(--lp-muted)")
-                            ui.label(tracking_label(tr.get("status"))).classes(tracking_chip_class(tr.get("status")))
+                                review_badge = _review_summary_label(course_review_summary_by_id.get(cid))
+                                if review_badge:
+                                    ui.label(review_badge).classes("text-xs").style("color: var(--lp-muted)")
+                            with ui.row().classes("items-center gap-2"):
+                                ui.label(tracking_label(tr.get("status"))).classes(tracking_chip_class(tr.get("status")))
+
+                                async def _view_course(_cid: int = cid) -> None:
+                                    ui.navigate.to("/courses?tab=tracked")
+
+                                async def _review_course(_cid: int = cid) -> None:
+                                    ui.navigate.to("/courses?tab=tracked")
+
+                                render_view_review_actions(on_view=_view_course, on_review=_review_course)
 
                 with ui.card().classes("lp-card w-full"):
                     ui.label("Selected paths").classes("text-md font-semibold")
@@ -201,16 +304,21 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         )
                         with ui.column().classes("w-full gap-1"):
                             ui.label(str(row.get("name") or "")).classes("text-sm font-semibold")
-                            ui.label(status_label(str(row.get("status") or ""))).classes(
-                                status_chip_class(str(row.get("status") or ""))
-                            )
+                            ui.label("Tracked").classes("lp-chip lp-chip--sky")
+                            review_badge = _review_summary_label(path_review_summary_by_id.get(pid))
+                            if review_badge:
+                                ui.label(review_badge).classes("text-xs").style("color: var(--lp-muted)")
                             if total:
                                 ui.label(f"{completed}/{total} completed").classes("text-xs").style("color: var(--lp-muted)")
                                 ui.linear_progress(ratio, show_value=False).classes("w-full")
                             with ui.row().classes("items-center gap-2"):
-                                ui.button("Open selected", on_click=lambda: ui.navigate.to("/paths?tab=selected")).props(
-                                    "dense outline"
-                                )
+                                async def _view_path(_pid: int = pid) -> None:
+                                    ui.navigate.to("/paths?tab=selected")
+
+                                async def _review_path(_pid: int = pid) -> None:
+                                    ui.navigate.to("/paths?tab=selected")
+
+                                render_view_review_actions(on_view=_view_path, on_review=_review_path)
 
             await _load()
             content()
