@@ -21,7 +21,12 @@ from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation_intents import get_course_intent, pop_course_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.services.courses_service import load_courses_and_tracking, load_review_summaries, load_tracking_map
+from frontend.ui.nicegui.services.courses_service import (
+    load_courses_and_tracking,
+    load_recommendation_summaries,
+    load_review_summaries,
+    load_tracking_map,
+)
 
 
 def _parse_duration_hours(raw: str) -> float | None:
@@ -66,6 +71,19 @@ def _format_rating_badge(row: dict[str, Any] | None) -> str:
     except (TypeError, ValueError):
         avg = 0.0
     return f"★ {avg:.1f} ({count})"
+
+
+def _format_recommendation_badge(row: dict[str, Any] | None) -> str:
+    """Format a compact recommendation badge for course cards."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("recommendation_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    return f"↗ {count} rec"
 
 
 def _status_for_card(tracked: dict[str, Any] | None) -> str:
@@ -114,6 +132,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             courses: list[dict[str, Any]] = []
             tracking_by_course_id: dict[int, dict[str, Any]] = {}
             review_summary_by_course_id: dict[int, dict[str, Any]] = {}
+            recommendation_summary_by_course_id: dict[int, dict[str, Any]] = {}
             page_size = 10
             visible_count = page_size
 
@@ -314,7 +333,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 status_filter.update()
 
             async def _load() -> None:
-                nonlocal courses, tracking_by_course_id, review_summary_by_course_id, loading, loaded_once, visible_count
+                nonlocal courses, tracking_by_course_id, review_summary_by_course_id, recommendation_summary_by_course_id
+                nonlocal loading, loaded_once, visible_count
                 if loading:
                     return
                 loading = True
@@ -338,6 +358,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         api=api,
                         course_ids=[int(c.get("id") or 0) for c in courses if int(c.get("id") or 0) > 0],
                     )
+                    recommendation_summary_by_course_id = await load_recommendation_summaries(
+                        api=api,
+                        course_ids=[int(c.get("id") or 0) for c in courses if int(c.get("id") or 0) > 0],
+                    )
                     _recompute_facet_options()
                     courses_list.refresh()
                     meta.text = f"{len(courses)} courses"
@@ -346,6 +370,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses = []
                     tracking_by_course_id = {}
                     review_summary_by_course_id = {}
+                    recommendation_summary_by_course_id = {}
                     _recompute_facet_options()
                     courses_list.refresh()
                     meta.text = "0 courses"
@@ -516,11 +541,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @guard_ui_action(title="Load course details failed")
             async def _open_details(course_id: int, *, focus_reviews: bool = False) -> None:
-                course, reviews_payload = await asyncio.gather(
+                course, reviews_payload, recommendations_payload = await asyncio.gather(
                     api.get(f"/courses/{course_id}"),
                     api.get(f"/courses/{course_id}/reviews"),
+                    api.get(f"/courses/{course_id}/recommendations"),
                 )
                 reviews = list(reviews_payload or [])
+                recommendations = list(recommendations_payload or [])
                 view_mode = _normalize_course_view_mode(focus_reviews)
 
                 with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
@@ -543,6 +570,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
                                 if summary_label:
                                     ui.label(f"★ {summary_label}").classes("lp-meta-chip")
+                                rec_badge = _format_recommendation_badge(
+                                    recommendation_summary_by_course_id.get(int(course_id))
+                                )
+                                if rec_badge:
+                                    ui.label(rec_badge).classes("lp-meta-chip")
                             if course.get("url"):
                                 ui.button(
                                     "Open link",
@@ -551,6 +583,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ).props("outline dense")
 
                         ui.separator()
+                        if recommendations:
+                            rec_by = sorted(
+                                {
+                                    str(r.get("created_by") or "").strip()
+                                    for r in recommendations
+                                    if isinstance(r, dict) and str(r.get("created_by") or "").strip()
+                                }
+                            )
+                            if rec_by:
+                                ui.label(f"Recommended by {', '.join(rec_by[:3])}").classes("text-xs").style(
+                                    "color: var(--lp-muted)"
+                                )
 
                     def _sync_summary_from_reviews(current_reviews: list[dict[str, Any]]) -> None:
                         ratings: list[int] = []
@@ -598,6 +642,39 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     with ui.row().classes("justify-end mt-4"):
                         ui.button("Close", on_click=dialog.close).props("outline")
 
+                dialog.open()
+
+            @guard_ui_action(title="Recommend failed")
+            async def _open_recommend_dialog(course_id: int) -> None:
+                existing_note = ""
+                try:
+                    rows = await api.get(f"/courses/{int(course_id)}/recommendations")
+                    for row in list(rows or []):
+                        if not isinstance(row, dict):
+                            continue
+                        if str(row.get("created_by") or "") == username:
+                            existing_note = str(row.get("note") or "")
+                            break
+                except ApiError:
+                    existing_note = ""
+
+                with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):
+                    ui.label("Recommend course").classes("text-lg font-semibold")
+                    note = ui.textarea("Why this helps (optional)", value=existing_note).props("autogrow").classes("w-full")
+                    with ui.row().classes("justify-end mt-4"):
+
+                        @guard_ui_action(title="Recommend failed")
+                        async def _save_recommendation() -> None:
+                            await api.post(
+                                f"/courses/{int(course_id)}/recommendations",
+                                {"note": str(note.value or "").strip()},
+                            )
+                            ui.notify("Recommendation saved", type="positive")
+                            dialog.close()
+                            await _load()
+
+                        ui.button("Save", on_click=_save_recommendation)
+                        ui.button("Cancel", on_click=dialog.close).props("outline")
                 dialog.open()
 
             @ui.refreshable
@@ -747,6 +824,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 with ui.column().classes("gap-1"):
                                     title = str(c.get("title") or "")
                                     rating_badge = _format_rating_badge(review_summary_by_course_id.get(course_id))
+                                    rec_badge = _format_recommendation_badge(recommendation_summary_by_course_id.get(course_id))
                                     created_at = _parse_iso_datetime(c.get("created_at"))
                                     updated_at = _parse_iso_datetime(c.get("updated_at"))
                                     is_updated = (
@@ -763,6 +841,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             ui.label("Updated").classes("lp-chip lp-chip--teal")
                                         if rating_badge:
                                             ui.label(rating_badge).classes("lp-meta-chip")
+                                        if rec_badge:
+                                            ui.label(rec_badge).classes("lp-meta-chip")
                                         if can_edit:
 
                                             async def _do_delete(_cid: int = course_id) -> None:
@@ -824,6 +904,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             review_tooltip="Reviews",
                                             on_copy=on_copy,
                                         )
+
+                                        async def _recommend(_cid: int = course_id) -> None:
+                                            await _open_recommend_dialog(_cid)
+
+                                        ui.button("Recommend", on_click=_recommend).props("outline dense")
 
                                         current_status = str((tracked or {}).get("status") or "")
                                         options_map = {

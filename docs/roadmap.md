@@ -92,8 +92,8 @@
 - [x] Product UX/IA: rename `Home` to `Insights` and trim overlap with `My learning` (personal execution vs team insights split).
 
 ### Phase 10B — P1 Social Product Loop
-- [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).
-- [ ] Product UX: add “Recommended for you” on `My learning` with save/dismiss actions and “why this was recommended” explanation.
+- [x] Add recommendations for courses/paths (who recommended + optional note + timestamp).
+- [x] Product UX: add “Recommended for you” on `My learning` with save/dismiss actions and “why this was recommended” explanation.
 - [ ] Product UX: strengthen social trust signals on cards/details (shared by, avg rating + count, recent activity, endorsements).
 - [ ] Product UX: improve contribution loop (quick-share flow with optional note + feedback on teammate engagement).
 - [ ] Product UX: improve path outcomes UX (milestones + next actionable step + completion impact).

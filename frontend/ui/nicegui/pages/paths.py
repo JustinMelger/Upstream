@@ -28,6 +28,7 @@ from frontend.ui.nicegui.services.paths_service import (
     compute_path_progress,
     index_courses_by_int_id,
     index_rows_by_int_id,
+    load_path_recommendation_summaries,
     load_paths_page_data,
     select_path_and_seed_tracking,
 )
@@ -101,6 +102,19 @@ def _format_rating_badge(row: dict[str, Any] | None) -> str:
     return f"{avg:.1f}/5 ({count})"
 
 
+def _format_recommendation_badge(row: dict[str, Any] | None) -> str:
+    """Format a compact recommendation badge for path cards."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("recommendation_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    return f"↗ {count} rec"
+
+
 def _path_tracking_label(is_tracked: bool) -> str:
     """Return path tracking label for cards/details."""
     return "Tracked" if is_tracked else "Not tracked"
@@ -166,6 +180,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         courses: list[dict[str, Any]] = []
         course_by_id: dict[int, dict[str, Any]] = {}
         path_review_summary_by_id: dict[int, dict[str, Any]] = {}
+        path_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
         loading = False
         loaded_once = False
         page_size = 10
@@ -364,11 +379,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             detail = await api.get(f"/paths/{path_id}")
             normalized_view_mode = _normalize_path_view_mode(view_mode)
             path_reviews: list[dict[str, Any]] = []
+            path_recommendations: list[dict[str, Any]] = []
             try:
-                reviews_result = await api.get(f"/paths/{path_id}/reviews")
+                reviews_result, recommendations_result = await asyncio.gather(
+                    api.get(f"/paths/{path_id}/reviews"),
+                    api.get(f"/paths/{path_id}/recommendations"),
+                )
                 path_reviews = [r for r in list(reviews_result or []) if isinstance(r, dict)]
+                path_recommendations = [r for r in list(recommendations_result or []) if isinstance(r, dict)]
             except ApiError:
                 path_reviews = []
+                path_recommendations = []
 
             courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
             completed, total_courses, progress = compute_path_progress(
@@ -447,6 +468,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 summary = _format_review_summary(path_review_summary_by_id.get(int(path_id)))
                 if summary:
                     ui.label(f"Reviews: {summary}").classes("text-sm").style("color: var(--lp-muted)")
+                rec_badge = _format_recommendation_badge(path_recommendation_summary_by_id.get(int(path_id)))
+                if rec_badge:
+                    ui.label(rec_badge).classes("text-sm").style("color: var(--lp-muted)")
+                if path_recommendations:
+                    rec_by = sorted(
+                        {
+                            str(r.get("created_by") or "").strip()
+                            for r in path_recommendations
+                            if isinstance(r, dict) and str(r.get("created_by") or "").strip()
+                        }
+                    )
+                    if rec_by:
+                        ui.label(f"Recommended by {', '.join(rec_by[:3])}").classes("text-xs").style("color: var(--lp-muted)")
                 if normalized_view_mode != "reviews":
                     if total_courses > 0:
                         ui.label(f"Progress: {completed}/{total_courses} completed").classes("text-sm").style(
@@ -927,6 +961,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 rating_badge = _format_rating_badge(path_review_summary_by_id.get(pid))
                                 if rating_badge:
                                     ui.label(rating_badge).classes("lp-chip lp-chip--subtle")
+                                recommendation_badge = _format_recommendation_badge(path_recommendation_summary_by_id.get(pid))
+                                if recommendation_badge:
+                                    ui.label(recommendation_badge).classes("lp-chip lp-chip--subtle")
                                 ui.label(_path_tracking_label(is_tracked)).classes(_path_tracking_chip_class(is_tracked))
                             if selected and total_courses:
                                 ui.label(f"{completed}/{total_courses} completed").classes("text-sm").style(
@@ -946,6 +983,46 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     on_view=_view,
                                     on_review=_review,
                                 )
+
+                                @guard_ui_action(title="Recommend failed")
+                                async def _recommend(_pid: int = pid) -> None:
+                                    existing_note = ""
+                                    try:
+                                        rows = await api.get(f"/paths/{int(_pid)}/recommendations")
+                                        for row in list(rows or []):
+                                            if not isinstance(row, dict):
+                                                continue
+                                            if str(row.get("created_by") or "") == username:
+                                                existing_note = str(row.get("note") or "")
+                                                break
+                                    except ApiError:
+                                        existing_note = ""
+
+                                    with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):
+                                        ui.label("Recommend path").classes("text-lg font-semibold")
+                                        note = (
+                                            ui.textarea("Why this helps (optional)", value=existing_note)
+                                            .props("autogrow")
+                                            .classes("w-full")
+                                        )
+                                        with ui.row().classes("justify-end mt-4"):
+
+                                            @guard_ui_action(title="Recommend failed")
+                                            async def _save() -> None:
+                                                await api.post(
+                                                    f"/paths/{int(_pid)}/recommendations",
+                                                    {"note": str(note.value or "").strip()},
+                                                )
+                                                ui.notify("Recommendation saved", type="positive")
+                                                dialog.close()
+                                                await _load_all()
+
+                                            ui.button("Save", on_click=_save)
+                                            ui.button("Cancel", on_click=dialog.close).props("outline")
+
+                                    dialog.open()
+
+                                ui.button("Recommend", on_click=_recommend).props("outline dense")
 
                                 if selected:
 
@@ -981,6 +1058,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 nonlocal courses
                 nonlocal course_by_id
                 nonlocal path_review_summary_by_id
+                nonlocal path_recommendation_summary_by_id
                 nonlocal loading
                 nonlocal loaded_once
                 nonlocal visible_count
@@ -1005,9 +1083,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         if pid > 0:
                             path_ids.append(pid)
                     path_review_summary_by_id = {}
+                    path_recommendation_summary_by_id = {}
                     if path_ids:
                         try:
                             summaries = await api.get("/paths/reviews/summary", params={"path_ids": path_ids})
+                            path_recommendation_summary_by_id = await load_path_recommendation_summaries(
+                                api=api, path_ids=path_ids
+                            )
                             for row in list(summaries or []):
                                 if not isinstance(row, dict):
                                     continue
@@ -1019,6 +1101,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     path_review_summary_by_id[pid] = row
                         except ApiError:
                             path_review_summary_by_id = {}
+                            path_recommendation_summary_by_id = {}
                     create_course_ids.options = _course_options(courses)
                     create_course_ids.update()
                     _recompute_facet_options()
@@ -1031,6 +1114,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses = []
                     course_by_id = {}
                     path_review_summary_by_id = {}
+                    path_recommendation_summary_by_id = {}
                     _recompute_facet_options()
                     paths_list.refresh()
                     meta.text = "Failed to load"
