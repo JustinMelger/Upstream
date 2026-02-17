@@ -481,6 +481,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     )
                     if rec_by:
                         ui.label(f"Recommended by {', '.join(rec_by[:3])}").classes("text-xs").style("color: var(--lp-muted)")
+                timestamps: list[str] = []
+                for row in list(path_reviews) + list(path_recommendations):
+                    if not isinstance(row, dict):
+                        continue
+                    created_at = str(row.get("created_at") or "").strip()
+                    if created_at:
+                        timestamps.append(created_at)
+                if timestamps:
+                    latest_activity = max(timestamps)
+                    ui.label(f"Latest activity: {latest_activity[:10]}").classes("text-xs").style(
+                        "color: var(--lp-muted)"
+                    )
                 if normalized_view_mode != "reviews":
                     if total_courses > 0:
                         ui.label(f"Progress: {completed}/{total_courses} completed").classes("text-sm").style(

@@ -9,10 +9,8 @@ from typing import Any
 
 from nicegui import app, ui
 
-from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.owner_menu import render_owner_menu
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
@@ -595,6 +593,20 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ui.label(f"Recommended by {', '.join(rec_by[:3])}").classes("text-xs").style(
                                     "color: var(--lp-muted)"
                                 )
+                        latest_activity: str | None = None
+                        timestamps: list[str] = []
+                        for row in list(reviews) + list(recommendations):
+                            if not isinstance(row, dict):
+                                continue
+                            created_at = str(row.get("created_at") or "").strip()
+                            if created_at:
+                                timestamps.append(created_at)
+                        if timestamps:
+                            latest_activity = max(timestamps)
+                        if latest_activity:
+                            ui.label(f"Latest activity: {_format_short_date(latest_activity)}").classes("text-xs").style(
+                                "color: var(--lp-muted)"
+                            )
 
                     def _sync_summary_from_reviews(current_reviews: list[dict[str, Any]]) -> None:
                         ratings: list[int] = []
@@ -817,6 +829,24 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         course_id = int(c.get("id") or 0)
                         tracked = tracking_by_course_id.get(course_id)
                         can_edit = is_admin or (str(c.get("created_by") or "") == username)
+                        url = str(c.get("url") or "").strip()
+
+                        async def _view(_cid: int = course_id) -> None:
+                            await _open_details(_cid)
+
+                        async def _review(_cid: int = course_id) -> None:
+                            await _open_details(_cid, focus_reviews=True)
+
+                        async def _recommend(_cid: int = course_id) -> None:
+                            await _open_recommend_dialog(_cid)
+
+                        def _copy_link(*, _url: str = url) -> None:
+                            ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(_url)});")
+                            ui.notify("Link copied", type="positive")
+
+                        async def _do_delete(_cid: int = course_id) -> None:
+                            await _confirm_delete_course(_cid)
+
                         st = _status_for_card(tracked)
                         st_cls = f" lp-course-card--{st}" if st else ""
                         with ui.card().classes(f"w-full lp-course-card lp-card--hover{st_cls}"):
@@ -843,33 +873,31 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             ui.label(rating_badge).classes("lp-meta-chip")
                                         if rec_badge:
                                             ui.label(rec_badge).classes("lp-meta-chip")
-                                        if can_edit:
-
-                                            async def _do_delete(_cid: int = course_id) -> None:
-                                                await _confirm_delete_course(_cid)
-
-                                            render_owner_menu(
-                                                on_edit=lambda course=c: _render_edit_course_dialog(course),
-                                                on_delete=_do_delete,
-                                            )
+                                        with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                                            ui.menu_item("Review", _review)
+                                            ui.menu_item("Recommend", _recommend)
+                                            if url:
+                                                ui.menu_item("Copy link", _copy_link)
+                                            if can_edit:
+                                                ui.menu_item("Edit", lambda course=c: _render_edit_course_dialog(course))
+                                                ui.menu_item("Delete", _do_delete)
 
                                     ui.label(title).classes("text-lg font-semibold")
+                                    shared_by = str(c.get("created_by") or "").strip()
+                                    if shared_by:
+                                        ui.label(f"Shared by {shared_by}").classes("text-xs").style(
+                                            "color: var(--lp-muted)"
+                                        )
                                     if str(c.get("description") or "").strip():
                                         ui.label(str(c.get("description") or "")).classes("text-sm text-gray-600")
                                     with ui.row().classes("items-center gap-2 flex-wrap"):
-                                        shared_by = str(c.get("created_by") or "").strip()
-                                        if shared_by:
-                                            ui.label(f"Shared by {shared_by}").classes("text-xs").style(
-                                                "color: var(--lp-muted)"
-                                            )
-
                                         chips: list[str] = []
                                         if str(c.get("provider") or "").strip():
                                             chips.append(str(c.get("provider") or "").strip())
                                         if str(c.get("category") or "").strip():
                                             chips.append(str(c.get("category") or "").strip())
 
-                                        max_chips = 3
+                                        max_chips = 2
                                         for chip in chips[:max_chips]:
                                             ui.label(chip).classes("lp-meta-chip")
                                         if len(chips) > max_chips:
@@ -880,35 +908,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         )
 
                                 with ui.column().classes("items-end gap-2"):
-                                    with ui.row().classes("items-center"):
-
-                                        async def _view(_cid: int = course_id) -> None:
-                                            await _open_details(_cid)
-
-                                        async def _review(_cid: int = course_id) -> None:
-                                            await _open_details(_cid, focus_reviews=True)
-
-                                        url = str(c.get("url") or "").strip()
-                                        on_copy = None
-                                        if url:
-
-                                            def _copy_link(*, _url: str = url) -> None:
-                                                ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(_url)});")
-                                                ui.notify("Link copied", type="positive")
-
-                                            on_copy = _copy_link
-
-                                        render_view_review_actions(
-                                            on_view=_view,
-                                            on_review=_review,
-                                            review_tooltip="Reviews",
-                                            on_copy=on_copy,
-                                        )
-
-                                        async def _recommend(_cid: int = course_id) -> None:
-                                            await _open_recommend_dialog(_cid)
-
-                                        ui.button("Recommend", on_click=_recommend).props("outline dense")
+                                    with ui.row().classes("items-center gap-2"):
+                                        ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip("View")
 
                                         current_status = str((tracked or {}).get("status") or "")
                                         options_map = {
@@ -920,6 +921,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             value=current_status,
                                             label=None,
                                         ).props("dense")
+                                        status_select.style("min-width: 170px")
                                         status_select.props("use-input hide-selected fill-input")
                                         status_select.tooltip("Status")
 
