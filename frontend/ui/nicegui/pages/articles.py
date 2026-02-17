@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
+from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import format_date
 from frontend.ui.nicegui.core.errors import guard_ui_action
@@ -25,17 +26,38 @@ from frontend.ui.nicegui.services.articles_service import (
 )
 
 
+def _format_review_summary(row: dict[str, Any] | None) -> str:
+    """Format a review summary row into a compact label."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("review_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    try:
+        avg = float(row.get("avg_rating") or 0.0)
+    except (TypeError, ValueError):
+        avg = 0.0
+    return f"{avg:.1f}/5 ({count})"
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/articles` route."""
 
     @ui.page("/articles")
     async def articles_page() -> None:
-        if await require_user(store, api) is None:
+        user = await require_user(store, api)
+        if user is None:
             return
+        username = str(user.get("username") or "")
+        is_admin = str(user.get("role") or "") == "admin"
 
         render_shell(title="Articles", store=store, api=api)
 
         articles: list[dict[str, Any]] = []
+        review_summary_by_article_id: dict[int, dict[str, Any]] = {}
         loading = False
         loaded_once = False
         page_size = 10
@@ -133,7 +155,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         @guard_ui_action(title="Load failed")
         async def _load() -> None:
-            nonlocal articles, loading, loaded_once, visible_count
+            nonlocal articles, review_summary_by_article_id, loading, loaded_once, visible_count
             if loading:
                 return
             loading = True
@@ -143,6 +165,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             articles_list.refresh()
             try:
                 articles = list(await load_articles(api=api) or [])
+                article_ids = [int(a.get("id") or 0) for a in articles if int(a.get("id") or 0) > 0]
+                review_summary_by_article_id = {}
+                if article_ids:
+                    summaries = await api.get("/articles/reviews/summary", params={"article_ids": article_ids})
+                    for row in list(summaries or []):
+                        if not isinstance(row, dict):
+                            continue
+                        try:
+                            aid = int(row.get("article_id") or 0)
+                        except (TypeError, ValueError):
+                            continue
+                        if aid > 0:
+                            review_summary_by_article_id[aid] = row
                 loaded_once = True
                 needle = str(q.value or "").strip()
                 _recompute_facets(needle=needle)
@@ -157,6 +192,81 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 refresh_btn.enable()
                 active_filters.refresh()
                 articles_list.refresh()
+
+        @guard_ui_action(title="Load article details failed")
+        async def _open_details(article: dict[str, Any], *, focus_reviews: bool = False) -> None:
+            article_id = int(article.get("id") or 0)
+            reviews_payload = await api.get(f"/articles/{article_id}/reviews")
+            reviews = list(reviews_payload or [])
+
+            with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
+                ui.label(str(article.get("title") or "")).classes("text-xl font-semibold")
+                if not focus_reviews:
+                    with ui.row().classes("items-center justify-between w-full mt-2"):
+                        with ui.row().classes("items-center gap-2 flex-wrap"):
+                            tags = parse_tags(str(article.get("tags") or ""))
+                            for t in tags[:10]:
+                                ui.label(t).classes("lp-meta-chip")
+                            shared_by = str(article.get("created_by") or "").strip()
+                            if shared_by:
+                                ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
+                            summary = _format_review_summary(review_summary_by_article_id.get(article_id))
+                            if summary:
+                                ui.label(f"★ {summary}").classes("lp-meta-chip")
+                        url = str(article.get("url") or "").strip()
+                        if url:
+                            ui.button(
+                                "Open link",
+                                icon="open_in_new",
+                                on_click=lambda u=url: ui.navigate.to(u, new_tab=True),
+                            ).props("outline dense")
+                    ui.separator()
+
+                def _sync_summary(current_reviews: list[dict[str, Any]]) -> None:
+                    ratings: list[int] = []
+                    for r in list(current_reviews or []):
+                        try:
+                            ratings.append(int(r.get("rating") or 0))
+                        except (TypeError, ValueError):
+                            continue
+                    if not ratings:
+                        review_summary_by_article_id[article_id] = {
+                            "article_id": article_id,
+                            "avg_rating": 0.0,
+                            "review_count": 0,
+                        }
+                    else:
+                        avg = float(sum(ratings)) / float(len(ratings))
+                        review_summary_by_article_id[article_id] = {
+                            "article_id": article_id,
+                            "avg_rating": float(avg),
+                            "review_count": int(len(ratings)),
+                        }
+
+                async def _save_review(rating: int, text: str) -> dict[str, Any]:
+                    return await api.post(
+                        f"/articles/{article_id}/reviews",
+                        {"rating": int(rating), "text": str(text or "")},
+                    )
+
+                async def _delete_review(review_id: int) -> bool:
+                    await api.delete(f"/articles/{article_id}/reviews/{int(review_id)}")
+                    return True
+
+                render_reviews_panel(
+                    username=username,
+                    is_admin=is_admin,
+                    reviews=reviews,
+                    section_title="Reviews",
+                    empty_text="No reviews yet.",
+                    on_save=_save_review,
+                    on_delete=_delete_review,
+                    format_date=format_date,
+                    on_changed=_sync_summary,
+                )
+                with ui.row().classes("justify-end mt-4"):
+                    ui.button("Close", on_click=dialog.close).props("outline")
+            dialog.open()
 
         with render_container():
             with ui.row().classes("lp-topbar"):
@@ -312,21 +422,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         ui.label(t).classes("lp-meta-chip")
                                     if len(tags) > 10:
                                         ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
+                            summary = _format_review_summary(review_summary_by_article_id.get(int(a.get("id") or 0)))
+                            if summary:
+                                ui.label(f"★ {summary}").classes("lp-meta-chip")
 
-                            if url:
-                                with ui.row().classes("items-center gap-2 mt-2"):
+                            with ui.row().classes("items-center gap-2 mt-2"):
 
-                                    def _open(*, _url: str = url) -> None:
-                                        ui.navigate.to(_url, new_tab=True)
+                                async def _view(_a: dict[str, Any] = a) -> None:
+                                    await _open_details(_a, focus_reviews=False)
 
-                                    def _copy_btn(*, _url: str = url) -> None:
-                                        ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(_url)});")
-                                        ui.notify("Link copied", type="positive")
+                                async def _review(_a: dict[str, Any] = a) -> None:
+                                    await _open_details(_a, focus_reviews=True)
 
-                                    ui.button("", icon="open_in_new", on_click=_open).props("outline dense").tooltip("Open")
-                                    ui.button("", icon="content_copy", on_click=_copy_btn).props("outline dense").tooltip(
-                                        "Copy link"
-                                    )
+                                render_view_review_actions(on_view=_view, on_review=_review, review_tooltip="Reviews")
 
                     if total > len(shown_page):
                         with ui.row().classes("items-center justify-center mt-2"):
