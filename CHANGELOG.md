@@ -1,3 +1,14 @@
+# [0.7.0](https://github.com/JustinMelger/learning-platform/compare/v0.6.0...v0.7.0) (2026-02-17)
+
+
+### Features
+
+* add articles review ([0abec5a](https://github.com/JustinMelger/learning-platform/commit/0abec5a696d374a0e0d51112bda81819447702f1))
+* add articles reviewmigration + frontend page ([ebad2d4](https://github.com/JustinMelger/learning-platform/commit/ebad2d438b1b9b7304952921fc680abd3e472952))
+* backend my learning page ([e6dab44](https://github.com/JustinMelger/learning-platform/commit/e6dab445dd3da15799af6c17f11fa935c2a90a34))
+* finish 10a topics ([35058b5](https://github.com/JustinMelger/learning-platform/commit/35058b5a2bd4a8acc16ff87b5d70c2c996915988))
+* frontend my learning page ([afac714](https://github.com/JustinMelger/learning-platform/commit/afac7141c8674290c3a030ec74b58e5f894ea701))
+
 # [0.6.0](https://github.com/JustinMelger/learning-platform/compare/v0.5.0...v0.6.0) (2026-02-14)
 
 
