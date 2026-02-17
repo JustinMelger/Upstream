@@ -490,9 +490,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         timestamps.append(created_at)
                 if timestamps:
                     latest_activity = max(timestamps)
-                    ui.label(f"Latest activity: {latest_activity[:10]}").classes("text-xs").style(
-                        "color: var(--lp-muted)"
-                    )
+                    ui.label(f"Latest activity: {latest_activity[:10]}").classes("text-xs").style("color: var(--lp-muted)")
                 if normalized_view_mode != "reviews":
                     if total_courses > 0:
                         ui.label(f"Progress: {completed}/{total_courses} completed").classes("text-sm").style(

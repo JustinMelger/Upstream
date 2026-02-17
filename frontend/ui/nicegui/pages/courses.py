@@ -885,9 +885,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ui.label(title).classes("text-lg font-semibold")
                                     shared_by = str(c.get("created_by") or "").strip()
                                     if shared_by:
-                                        ui.label(f"Shared by {shared_by}").classes("text-xs").style(
-                                            "color: var(--lp-muted)"
-                                        )
+                                        ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
                                     if str(c.get("description") or "").strip():
                                         ui.label(str(c.get("description") or "")).classes("text-sm text-gray-600")
                                     with ui.row().classes("items-center gap-2 flex-wrap"):
