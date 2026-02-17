@@ -183,3 +183,35 @@ class ArticleReview(Base):
     text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class CourseRecommendation(Base):
+    """ORM model for course recommendations."""
+
+    __tablename__ = "course_recommendations"
+    __table_args__ = (
+        UniqueConstraint("course_id", "created_by", name="uq_course_recommendations_course_created_by"),
+        Index("idx_course_recommendations_course_id", "course_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class PathRecommendation(Base):
+    """ORM model for path recommendations."""
+
+    __tablename__ = "path_recommendations"
+    __table_args__ = (
+        UniqueConstraint("path_id", "created_by", name="uq_path_recommendations_path_created_by"),
+        Index("idx_path_recommendations_path_id", "path_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    path_id: Mapped[int] = mapped_column(ForeignKey("paths.id", ondelete="CASCADE"), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)

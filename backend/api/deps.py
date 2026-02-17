@@ -4,8 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database.async_repositories.article_reviews import ArticleReviewsRepository as SQLArticleReviewsRepository
 from backend.database.async_repositories.articles import ArticlesRepository as SQLArticlesRepository
 from backend.database.async_repositories.auth import AuthRepository as SQLAuthRepository
+from backend.database.async_repositories.course_recommendations import (
+    CourseRecommendationsRepository as SQLCourseRecommendationsRepository,
+)
 from backend.database.async_repositories.course_reviews import CourseReviewsRepository as SQLCourseReviewsRepository
 from backend.database.async_repositories.courses import CoursesRepository as SQLCoursesRepository
+from backend.database.async_repositories.path_recommendations import (
+    PathRecommendationsRepository as SQLPathRecommendationsRepository,
+)
 from backend.database.async_repositories.path_reviews import PathReviewsRepository as SQLPathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository as SQLPathsRepository
 from backend.database.async_repositories.tracking import TrackingRepository as SQLTrackingRepository
@@ -14,8 +20,10 @@ from backend.database.session import get_session
 from backend.services.article_reviews_service import ArticleReviewsService
 from backend.services.articles_service import ArticlesService
 from backend.services.auth_service import AuthService
+from backend.services.course_recommendations_service import CourseRecommendationsService
 from backend.services.course_reviews_service import CourseReviewsService
 from backend.services.courses_service import CoursesService
+from backend.services.path_recommendations_service import PathRecommendationsService
 from backend.services.path_reviews_service import PathReviewsService
 from backend.services.paths_service import PathsService
 from backend.services.tracking_service import TrackingService
@@ -62,9 +70,23 @@ async def get_course_reviews_service(session: AsyncSession = Depends(get_session
     return CourseReviewsService(SQLCourseReviewsRepository(session))
 
 
+async def get_course_recommendations_service(
+    session: AsyncSession = Depends(get_session),
+) -> CourseRecommendationsService:
+    """Provide a request-scoped CourseRecommendationsService dependency."""
+    return CourseRecommendationsService(SQLCourseRecommendationsRepository(session))
+
+
 async def get_path_reviews_service(session: AsyncSession = Depends(get_session)) -> PathReviewsService:
     """Provide a request-scoped PathReviewsService dependency."""
     return PathReviewsService(SQLPathReviewsRepository(session))
+
+
+async def get_path_recommendations_service(
+    session: AsyncSession = Depends(get_session),
+) -> PathRecommendationsService:
+    """Provide a request-scoped PathRecommendationsService dependency."""
+    return PathRecommendationsService(SQLPathRecommendationsRepository(session))
 
 
 async def require_session(
