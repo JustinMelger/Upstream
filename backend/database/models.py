@@ -115,3 +115,15 @@ class PathReviewRecord:
     text: str | None
     created_by: str
     created_at: str
+
+
+@dataclass(frozen=True)
+class ArticleReviewRecord:
+    """Article review row representation."""
+
+    id: int
+    article_id: int
+    rating: int
+    text: str | None
+    created_by: str
+    created_at: str

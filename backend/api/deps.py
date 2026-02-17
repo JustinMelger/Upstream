@@ -1,6 +1,7 @@
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.article_reviews import ArticleReviewsRepository as SQLArticleReviewsRepository
 from backend.database.async_repositories.articles import ArticlesRepository as SQLArticlesRepository
 from backend.database.async_repositories.auth import AuthRepository as SQLAuthRepository
 from backend.database.async_repositories.course_reviews import CourseReviewsRepository as SQLCourseReviewsRepository
@@ -10,6 +11,7 @@ from backend.database.async_repositories.paths import PathsRepository as SQLPath
 from backend.database.async_repositories.tracking import TrackingRepository as SQLTrackingRepository
 from backend.database.async_repositories.user_paths import UserPathsRepository as SQLUserPathsRepository
 from backend.database.session import get_session
+from backend.services.article_reviews_service import ArticleReviewsService
 from backend.services.articles_service import ArticlesService
 from backend.services.auth_service import AuthService
 from backend.services.course_reviews_service import CourseReviewsService
@@ -48,6 +50,11 @@ async def get_tracking_service(session: AsyncSession = Depends(get_session)) -> 
 async def get_articles_service(session: AsyncSession = Depends(get_session)) -> ArticlesService:
     """Provide a request-scoped ArticlesService dependency."""
     return ArticlesService(SQLArticlesRepository(session))
+
+
+async def get_article_reviews_service(session: AsyncSession = Depends(get_session)) -> ArticleReviewsService:
+    """Provide a request-scoped ArticleReviewsService dependency."""
+    return ArticleReviewsService(SQLArticleReviewsRepository(session))
 
 
 async def get_course_reviews_service(session: AsyncSession = Depends(get_session)) -> CourseReviewsService:

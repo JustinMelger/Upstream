@@ -165,3 +165,21 @@ class PathReview(Base):
     text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class ArticleReview(Base):
+    """ORM model for article reviews."""
+
+    __tablename__ = "article_reviews"
+    __table_args__ = (
+        UniqueConstraint("article_id", "created_by", name="uq_article_reviews_article_created_by"),
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_article_reviews_rating"),
+        Index("idx_article_reviews_article_id", "article_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    article_id: Mapped[int] = mapped_column(ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
