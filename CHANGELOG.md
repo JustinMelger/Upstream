@@ -1,3 +1,15 @@
+# [0.8.0](https://github.com/JustinMelger/learning-platform/compare/v0.7.0...v0.8.0) (2026-02-18)
+
+
+### Features
+
+* add activity feed ([066fcee](https://github.com/JustinMelger/learning-platform/commit/066fcee94aed43088d726f4ce8a40bb22be4f7c9))
+* add ai metadata ([1802943](https://github.com/JustinMelger/learning-platform/commit/1802943dbe472c960608e8cc146dd75fe87ae0ba))
+* add basic analytics forcourse in insight ([210b3c7](https://github.com/JustinMelger/learning-platform/commit/210b3c722b7c6b3817f708894d4a9a008ffb30fd))
+* add basic deduplication for shared courses ([1665c24](https://github.com/JustinMelger/learning-platform/commit/1665c24c4bc648e5e1b3e3406a2e4e387698fa5d))
+* add frontend recommendations ([701099f](https://github.com/JustinMelger/learning-platform/commit/701099f6074f25be8ad1d946d87f1f338c1df63f))
+* backend recommendation course + paths ([e4c7857](https://github.com/JustinMelger/learning-platform/commit/e4c785748cdac040beccce8a8c9fd9109eb42135))
+
 # [0.7.0](https://github.com/JustinMelger/learning-platform/compare/v0.6.0...v0.7.0) (2026-02-17)
 
 
