@@ -56,14 +56,35 @@ async def test_course_list_filters(db_session):
 async def test_update_and_delete_course(db_session):
     """Courses can be updated and deleted."""
     courses = CoursesService(CoursesRepository(db_session))
-    course = await courses.create_course({"title": "Cloud 101", "description": "Cloud intro", "duration_hours": 3})
+    course = await courses.create_course(
+        {
+            "title": "Cloud 101",
+            "description": "Cloud intro",
+            "learning_outcomes": "Understand cloud fundamentals",
+            "prerequisites": "General software basics",
+            "language": "English",
+            "duration_hours": 3,
+        }
+    )
     course_id = course["id"]
+    assert course["language"] == "English"
+    assert "Understand cloud fundamentals" in course["search_document"]
 
     updated = await courses.update_course(
-        course_id, {"title": "Cloud 201", "description": "Cloud advanced", "duration_hours": "bad"}
+        course_id,
+        {
+            "title": "Cloud 201",
+            "description": "Cloud advanced",
+            "learning_outcomes": "Deploy cloud workloads",
+            "prerequisites": "Cloud fundamentals",
+            "language": "Spanish",
+            "duration_hours": "bad",
+        },
     )
     assert updated["title"] == "Cloud 201"
     assert updated["duration_hours"] == 3
+    assert updated["language"] == "Spanish"
+    assert "Deploy cloud workloads" in updated["search_document"]
 
     assert await courses.get_course_by_id(course_id) is not None
     assert await courses.delete_course(course_id) is True

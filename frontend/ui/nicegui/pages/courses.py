@@ -415,10 +415,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 create_provider = ui.input("Provider").props("clearable").classes("w-full")
                 create_category = ui.input("Category").props("clearable").classes("w-full")
                 create_url = ui.input("URL").props("clearable").classes("w-full")
+                create_language = ui.input("Language").props("clearable").classes("w-full")
 
                 with ui.expansion("More fields").props("dense"):
                     with ui.column().classes("w-full gap-3"):
                         create_level = ui.input("Level").props("clearable").classes("w-full")
+                        create_learning_outcomes = (
+                            ui.textarea("Learning outcomes (optional)").props("autogrow").classes("w-full")
+                        )
+                        create_prerequisites = ui.textarea("Prerequisites (optional)").props("autogrow").classes("w-full")
                         create_duration_hours = ui.input("Duration hours").props("clearable").classes("w-full")
 
                 course_draft_key = f"courses_share_draft::{username}"
@@ -429,7 +434,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         "description": str(create_description.value or "").strip(),
                         "provider": str(create_provider.value or ""),
                         "category": str(create_category.value or ""),
+                        "language": str(create_language.value or ""),
                         "level": str(create_level.value or ""),
+                        "learning_outcomes": str(create_learning_outcomes.value or "").strip(),
+                        "prerequisites": str(create_prerequisites.value or "").strip(),
                         "duration_hours": str(create_duration_hours.value or ""),
                         "url": str(create_url.value or ""),
                     }
@@ -440,7 +448,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     create_description.value = str(draft.get("description") or "")
                     create_provider.value = str(draft.get("provider") or "")
                     create_category.value = str(draft.get("category") or "")
+                    create_language.value = str(draft.get("language") or "")
                     create_level.value = str(draft.get("level") or "")
+                    create_learning_outcomes.value = str(draft.get("learning_outcomes") or "")
+                    create_prerequisites.value = str(draft.get("prerequisites") or "")
                     create_duration_hours.value = str(draft.get("duration_hours") or "")
                     create_url.value = str(draft.get("url") or "")
 
@@ -474,7 +485,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             "description": str(create_description.value or "").strip(),
                             "provider": str(create_provider.value or ""),
                             "category": str(create_category.value or ""),
+                            "language": str(create_language.value or ""),
                             "level": str(create_level.value or ""),
+                            "learning_outcomes": str(create_learning_outcomes.value or "").strip(),
+                            "prerequisites": str(create_prerequisites.value or "").strip(),
                             "duration_hours": dh,
                             "url": str(create_url.value or ""),
                         }
@@ -510,12 +524,25 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     category_new = (
                         ui.input("Category", value=str(course.get("category") or "")).props("clearable").classes("w-full")
                     )
+                    language_new = (
+                        ui.input("Language", value=str(course.get("language") or "")).props("clearable").classes("w-full")
+                    )
                     url = ui.input("URL", value=str(course.get("url") or "")).props("clearable").classes("w-full")
 
                     with ui.expansion("More fields").props("dense"):
                         with ui.column().classes("w-full gap-3"):
                             level_new = (
                                 ui.input("Level", value=str(course.get("level") or "")).props("clearable").classes("w-full")
+                            )
+                            learning_outcomes_new = (
+                                ui.textarea("Learning outcomes (optional)", value=str(course.get("learning_outcomes") or ""))
+                                .props("autogrow")
+                                .classes("w-full")
+                            )
+                            prerequisites_new = (
+                                ui.textarea("Prerequisites (optional)", value=str(course.get("prerequisites") or ""))
+                                .props("autogrow")
+                                .classes("w-full")
                             )
                             duration_hours = (
                                 ui.input("Duration hours", value=str(course.get("duration_hours") or ""))
@@ -541,7 +568,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 "description": str(description.value or "").strip(),
                                 "provider": str(provider_new.value or ""),
                                 "category": str(category_new.value or ""),
+                                "language": str(language_new.value or ""),
                                 "level": str(level_new.value or ""),
+                                "learning_outcomes": str(learning_outcomes_new.value or "").strip(),
+                                "prerequisites": str(prerequisites_new.value or "").strip(),
                                 "duration_hours": dh,
                                 "url": str(url.value or ""),
                             }
@@ -591,6 +621,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         summary_label = _format_review_summary(review_summary_by_course_id.get(int(course_id)))
                         provider = str(course.get("provider") or "").strip()
                         category = str(course.get("category") or "").strip()
+                        language = str(course.get("language") or "").strip()
                         shared_by = str(course.get("created_by") or "").strip()
 
                         with ui.row().classes("items-center justify-between w-full mt-2"):
@@ -599,6 +630,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ui.label(provider).classes("lp-meta-chip")
                                 if category:
                                     ui.label(category).classes("lp-meta-chip")
+                                if language:
+                                    ui.label(language).classes("lp-meta-chip")
                                 if shared_by:
                                     ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
                                 if summary_label:
@@ -628,6 +661,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ui.label(f"Recommended by {', '.join(rec_by[:3])}").classes("text-xs").style(
                                     "color: var(--lp-muted)"
                                 )
+                        learning_outcomes = str(course.get("learning_outcomes") or "").strip()
+                        prerequisites = str(course.get("prerequisites") or "").strip()
+                        if learning_outcomes or prerequisites:
+                            ui.separator()
+                            if learning_outcomes:
+                                ui.label("Learning outcomes").classes("text-sm font-medium")
+                                ui.label(learning_outcomes).classes("text-sm text-gray-600")
+                            if prerequisites:
+                                ui.label("Prerequisites").classes("text-sm font-medium mt-2")
+                                ui.label(prerequisites).classes("text-sm text-gray-600")
                         latest_activity: str | None = None
                         timestamps: list[str] = []
                         for row in list(reviews) + list(recommendations):
@@ -929,6 +972,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             chips.append(str(c.get("provider") or "").strip())
                                         if str(c.get("category") or "").strip():
                                             chips.append(str(c.get("category") or "").strip())
+                                        if str(c.get("language") or "").strip():
+                                            chips.append(str(c.get("language") or "").strip())
 
                                         max_chips = 2
                                         for chip in chips[:max_chips]:
@@ -1141,7 +1186,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 provider_filter = ui.select({"": "Any provider"}, label="Provider", value="").props("dense").classes("w-full")
                 category_filter = ui.select({"": "Any category"}, label="Category", value="").props("dense").classes("w-full")
-                level_filter = ui.select({"": "Any level"}, label="Level", value="").props("dense").classes("w-full")
                 status_filter = (
                     ui.select(
                         {"": "Any status", "not_tracked": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
@@ -1151,6 +1195,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     .props("dense")
                     .classes("w-full")
                 )
+                with ui.expansion("More filters").props("dense"):
+                    with ui.column().classes("w-full"):
+                        level_filter = (
+                            ui.select({"": "Any level"}, label="Level (optional)", value="").props("dense").classes("w-full")
+                        )
                 provider_filter.on("update:model-value", _refresh_list)
                 category_filter.on("update:model-value", _refresh_list)
                 level_filter.on("update:model-value", _refresh_list)

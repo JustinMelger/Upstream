@@ -28,6 +28,9 @@ class CourseRecord:
     id: int
     title: str
     description: str
+    learning_outcomes: str | None
+    prerequisites: str | None
+    language: str | None
     provider: str | None
     category: str | None
     level: str | None

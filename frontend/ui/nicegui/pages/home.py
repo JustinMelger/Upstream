@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from nicegui import ui
@@ -9,10 +10,57 @@ from nicegui import ui
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons, render_inline_spinner
 from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.services.dashboard_service import load_dashboard_data
+from frontend.ui.nicegui.services.dashboard_service import _tracking_map as _tracking_map_service, load_dashboard_data
+
+
+def _parse_iso_ts(value: Any) -> datetime | None:
+    """Compatibility wrapper kept for helper tests."""
+    return parse_iso_datetime(value)
+
+
+def _tracking_map(tracking_rows: list[dict[str, Any]]) -> dict[int, str]:
+    """Compatibility wrapper around dashboard tracking mapping."""
+    return _tracking_map_service(tracking_rows)
+
+
+def _ids_by_status(tracking: dict[int, str]) -> tuple[list[int], list[int], list[int]]:
+    """Split tracked course ids by status."""
+    interested = [int(cid) for cid, status in tracking.items() if str(status or "") == "interested"]
+    in_progress = [int(cid) for cid, status in tracking.items() if str(status or "") == "in_progress"]
+    completed = [int(cid) for cid, status in tracking.items() if str(status or "") == "completed"]
+    return interested, in_progress, completed
+
+
+def _recent_tracking(rows: list[dict[str, Any]], *, limit: int = 5) -> list[dict[str, Any]]:
+    """Sort tracking rows by updated_at descending, skipping invalid timestamps."""
+    parsed: list[tuple[datetime, dict[str, Any]]] = []
+    for row in list(rows or []):
+        if not isinstance(row, dict):
+            continue
+        dt = _parse_iso_ts(row.get("updated_at"))
+        if not dt:
+            continue
+        parsed.append((dt, row))
+    parsed.sort(key=lambda item: item[0], reverse=True)
+    return [row for _, row in parsed[: max(0, int(limit))]]
+
+
+def _recent_courses(courses: list[dict[str, Any]], *, limit: int = 5) -> list[dict[str, Any]]:
+    """Sort courses by created_at descending, skipping invalid timestamps."""
+    parsed: list[tuple[datetime, dict[str, Any]]] = []
+    for course in list(courses or []):
+        if not isinstance(course, dict):
+            continue
+        dt = _parse_iso_ts(course.get("created_at"))
+        if not dt:
+            continue
+        parsed.append((dt, course))
+    parsed.sort(key=lambda item: item[0], reverse=True)
+    return [course for _, course in parsed[: max(0, int(limit))]]
 
 
 def _top_contributors(rows: list[dict[str, Any]], *, limit: int = 5) -> list[dict[str, Any]]:

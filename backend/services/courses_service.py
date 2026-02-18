@@ -3,20 +3,27 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from backend.core.errors import courses_error_handler, CoursesServiceError
+from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
 from backend.database.async_repositories.courses import CoursesRepository
-from backend.database.models import CourseRecord
+from backend.database.models import CourseRecommendationRecord, CourseRecord
+from backend.services.course_search_document import build_course_search_document
 
 
 class CoursesService:
     """Course management service."""
 
-    def __init__(self, repo: CoursesRepository):
+    def __init__(
+        self,
+        repo: CoursesRepository,
+        recommendations_repo: CourseRecommendationsRepository | None = None,
+    ):
         """Initialize the service.
 
         Args:
             repo: Persistence repository for courses.
         """
         self._repo = repo
+        self._recommendations_repo = recommendations_repo
 
     @courses_error_handler()
     async def list_courses(
@@ -38,9 +45,12 @@ class CoursesService:
         Returns:
             Course list payloads.
         """
+        recommendation_map: dict[int, list[CourseRecommendationRecord]] = {}
         async with self._repo.session.begin():
             rows = await self._repo.list_courses(query=query, provider=provider, category=category, level=level)
-        return [self._to_payload(row) for row in rows]
+            if self._recommendations_repo and rows:
+                recommendation_map = await self._recommendations_repo.list_for_courses(course_ids=[int(r.id) for r in rows])
+        return [self._to_payload(row, recommendations=recommendation_map.get(int(row.id), [])) for row in rows]
 
     @courses_error_handler()
     async def get_course_by_id(self, course_id: int) -> dict | None:
@@ -52,9 +62,13 @@ class CoursesService:
         Returns:
             Course payload or None if missing.
         """
+        recommendation_rows: list[CourseRecommendationRecord] = []
         async with self._repo.session.begin():
             course = await self._repo.get_course_by_id(course_id)
-        return self._to_payload(course) if course else None
+            if self._recommendations_repo and course:
+                recommendation_map = await self._recommendations_repo.list_for_courses(course_ids=[int(course_id)])
+                recommendation_rows = recommendation_map.get(int(course_id), [])
+        return self._to_payload(course, recommendations=recommendation_rows) if course else None
 
     @courses_error_handler()
     async def create_course(self, payload: dict) -> dict:
@@ -80,6 +94,9 @@ class CoursesService:
         provider = (payload.get("provider") or "").strip() or None
         category = (payload.get("category") or "").strip() or None
         level = (payload.get("level") or "").strip() or None
+        learning_outcomes = (payload.get("learning_outcomes") or "").strip() or None
+        prerequisites = (payload.get("prerequisites") or "").strip() or None
+        language = (payload.get("language") or "").strip() or None
         url = (payload.get("url") or "").strip() or None
         duration_hours = self._parse_float(payload.get("duration_hours"))
         created_at = datetime.now(timezone.utc).isoformat()
@@ -96,6 +113,9 @@ class CoursesService:
             course_id = await self._repo.create_course(
                 title=title,
                 description=description,
+                learning_outcomes=learning_outcomes,
+                prerequisites=prerequisites,
+                language=language,
                 provider=provider,
                 category=category,
                 level=level,
@@ -132,6 +152,9 @@ class CoursesService:
         provider = (payload.get("provider") or (existing.provider or "")).strip() or None
         category = (payload.get("category") or (existing.category or "")).strip() or None
         level = (payload.get("level") or (existing.level or "")).strip() or None
+        learning_outcomes = (payload.get("learning_outcomes") or (existing.learning_outcomes or "")).strip() or None
+        prerequisites = (payload.get("prerequisites") or (existing.prerequisites or "")).strip() or None
+        language = (payload.get("language") or (existing.language or "")).strip() or None
         url = (payload.get("url") or (existing.url or "")).strip() or None
         duration_hours = self._parse_float(payload.get("duration_hours"))
         if duration_hours is None:
@@ -142,6 +165,9 @@ class CoursesService:
                 course_id=course_id,
                 title=title,
                 description=description,
+                learning_outcomes=learning_outcomes,
+                prerequisites=prerequisites,
+                language=language,
                 provider=provider,
                 category=category,
                 level=level,
@@ -172,12 +198,18 @@ class CoursesService:
             return None
 
     @staticmethod
-    def _to_payload(course: CourseRecord) -> dict:
+    def _to_payload(course: CourseRecord, *, recommendations: list[CourseRecommendationRecord] | None = None) -> dict:
         """Convert a course record to an API payload."""
+        rec_rows = list(recommendations or [])
+        rec_notes = [str(r.note or "") for r in rec_rows if str(r.note or "").strip()]
+        rec_by = [str(r.created_by or "") for r in rec_rows if str(r.created_by or "").strip()]
         return {
             "id": course.id,
             "title": course.title or "",
             "description": course.description or "",
+            "learning_outcomes": course.learning_outcomes or "",
+            "prerequisites": course.prerequisites or "",
+            "language": course.language or "",
             "provider": course.provider or "",
             "category": course.category or "",
             "level": course.level or "",
@@ -185,4 +217,10 @@ class CoursesService:
             "url": course.url or "",
             "created_at": course.created_at,
             "created_by": course.created_by,
+            "search_document": build_course_search_document(
+                course=course,
+                recommendation_count=len(rec_rows),
+                recommendation_notes=rec_notes,
+                recommended_by=rec_by,
+            ),
         }

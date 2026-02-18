@@ -13,6 +13,9 @@ class CoursePayload(APIModel):
     id: int
     title: str
     description: str
+    learning_outcomes: str
+    prerequisites: str
+    language: str
     provider: str
     category: str
     level: str
@@ -20,6 +23,7 @@ class CoursePayload(APIModel):
     url: str
     created_at: str | None
     created_by: str | None
+    search_document: str
 
 
 class CourseCreateRequest(APIModel):
@@ -27,6 +31,9 @@ class CourseCreateRequest(APIModel):
 
     title: StrictStr | None = None
     description: StrictStr | None = None
+    learning_outcomes: StrictStr | None = None
+    prerequisites: StrictStr | None = None
+    language: StrictStr | None = None
     provider: StrictStr | None = None
     category: StrictStr | None = None
     level: StrictStr | None = None
@@ -39,6 +46,9 @@ class CourseUpdateRequest(APIModel):
 
     title: StrictStr | None = None
     description: StrictStr | None = None
+    learning_outcomes: StrictStr | None = None
+    prerequisites: StrictStr | None = None
+    language: StrictStr | None = None
     provider: StrictStr | None = None
     category: StrictStr | None = None
     level: StrictStr | None = None

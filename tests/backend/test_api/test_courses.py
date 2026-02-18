@@ -134,6 +134,9 @@ async def test_course_lifecycle(app_client):
         json={
             "title": "Data Fundamentals",
             "description": "Data intro",
+            "learning_outcomes": "Build and ship a basic API",
+            "prerequisites": "Python basics",
+            "language": "English",
             "provider": "ACME",
             "category": "Data",
             "level": "Beginner",
@@ -147,14 +150,24 @@ async def test_course_lifecycle(app_client):
     fetch = await app_client.get(f"/courses/{course_id}", headers={"X-Session-Token": token})
     assert fetch.status_code == 200
     assert fetch.json()["title"] == "Data Fundamentals"
+    assert fetch.json()["language"] == "English"
+    assert "Build and ship a basic API" in fetch.json()["search_document"]
 
     update = await app_client.put(
         f"/courses/{course_id}",
-        json={"title": "Data Fundamentals 2", "description": "Data intro updated"},
+        json={
+            "title": "Data Fundamentals 2",
+            "description": "Data intro updated",
+            "learning_outcomes": "Design and test APIs",
+            "prerequisites": "HTTP basics",
+            "language": "Spanish",
+        },
         headers={"X-Session-Token": token},
     )
     assert update.status_code == 200
     assert update.json()["title"] == "Data Fundamentals 2"
+    assert update.json()["language"] == "Spanish"
+    assert "Design and test APIs" in update.json()["search_document"]
 
     delete = await app_client.delete(f"/courses/{course_id}", headers={"X-Session-Token": token})
     assert delete.status_code == 200
@@ -258,6 +271,12 @@ async def test_course_recommendation_lifecycle_and_moderation(app_client):
     srows = summary.json()
     assert srows and int(srows[0]["course_id"]) == course_id
     assert int(srows[0]["recommendation_count"]) == 1
+
+    course_fetch = await app_client.get(f"/courses/{course_id}", headers={"X-Session-Token": bob_token})
+    assert course_fetch.status_code == 200
+    assert "recommended 1 time" in course_fetch.json()["search_document"]
+    assert "recommended_by alice" in course_fetch.json()["search_document"]
+    assert "Updated note" in course_fetch.json()["search_document"]
 
     forbidden = await app_client.delete(
         f"/courses/{course_id}/recommendations/{rec_id}",
