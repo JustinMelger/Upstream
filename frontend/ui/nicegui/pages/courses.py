@@ -405,7 +405,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             # Pre-build the Create dialog once so opening it is instant.
             create_dialog = ui.dialog()
             with create_dialog, ui.card().classes("lp-card lp-dialog w-[min(700px,95vw)]"):
-                ui.label("Create Course").classes("text-xl font-semibold")
+                ui.label("Share Course").classes("text-xl font-semibold")
+                ui.label("Save a draft if you want feedback before publishing.").classes("text-xs").style(
+                    "color: var(--lp-muted)"
+                )
 
                 create_title = ui.input("Title").props("clearable").classes("w-full")
                 create_description = ui.textarea("Description").props("autogrow").classes("w-full")
@@ -418,9 +421,44 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         create_level = ui.input("Level").props("clearable").classes("w-full")
                         create_duration_hours = ui.input("Duration hours").props("clearable").classes("w-full")
 
+                course_draft_key = f"courses_share_draft::{username}"
+
+                def _course_draft_payload() -> dict[str, Any]:
+                    return {
+                        "title": str(create_title.value or ""),
+                        "description": str(create_description.value or "").strip(),
+                        "provider": str(create_provider.value or ""),
+                        "category": str(create_category.value or ""),
+                        "level": str(create_level.value or ""),
+                        "duration_hours": str(create_duration_hours.value or ""),
+                        "url": str(create_url.value or ""),
+                    }
+
+                def _apply_course_draft(raw: Any) -> None:
+                    draft = raw if isinstance(raw, dict) else {}
+                    create_title.value = str(draft.get("title") or "")
+                    create_description.value = str(draft.get("description") or "")
+                    create_provider.value = str(draft.get("provider") or "")
+                    create_category.value = str(draft.get("category") or "")
+                    create_level.value = str(draft.get("level") or "")
+                    create_duration_hours.value = str(draft.get("duration_hours") or "")
+                    create_url.value = str(draft.get("url") or "")
+
                 with ui.row().classes("justify-end mt-4"):
 
-                    @guard_ui_action(title="Create course failed")
+                    def _save_draft() -> None:
+                        app.storage.user[course_draft_key] = _course_draft_payload()
+                        ui.notify("Draft saved", type="positive")
+
+                    def _load_draft() -> None:
+                        draft = app.storage.user.get(course_draft_key)
+                        if not isinstance(draft, dict):
+                            ui.notify("No saved draft found", type="warning")
+                            return
+                        _apply_course_draft(draft)
+                        ui.notify("Draft loaded", type="positive")
+
+                    @guard_ui_action(title="Share course failed")
                     async def _create_submit() -> None:
                         dh_raw = str(create_duration_hours.value or "")
                         dh = _parse_duration_hours(dh_raw)
@@ -441,21 +479,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             "url": str(create_url.value or ""),
                         }
                         await api.post("/courses", payload)
-                        ui.notify("Course created", type="positive")
+                        app.storage.user.pop(course_draft_key, None)
+                        ui.notify("Course shared", type="positive")
                         create_dialog.close()
                         await _load()
 
-                    ui.button("Create", on_click=_create_submit)
+                    ui.button("Save draft", on_click=_save_draft).props("outline")
+                    ui.button("Load draft", on_click=_load_draft).props("outline")
+                    ui.button("Share", on_click=_create_submit)
                     ui.button("Cancel", on_click=create_dialog.close).props("outline")
 
             def _open_create_dialog() -> None:
-                create_title.value = ""
-                create_description.value = ""
-                create_provider.value = ""
-                create_category.value = ""
-                create_level.value = ""
-                create_duration_hours.value = ""
-                create_url.value = ""
+                _apply_course_draft(app.storage.user.get(course_draft_key))
                 create_dialog.open()
 
             def _render_edit_course_dialog(course: dict[str, Any]) -> None:

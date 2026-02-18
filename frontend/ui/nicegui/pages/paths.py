@@ -660,13 +660,44 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             create_dialog = ui.dialog()
             with create_dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
                 ui.label("Share Path").classes("text-xl font-semibold")
+                ui.label("Save a draft if you want feedback before publishing.").classes("text-xs").style(
+                    "color: var(--lp-muted)"
+                )
                 create_name = ui.input("Name").props("clearable").classes("w-full")
                 create_description = ui.textarea("Description").props("autogrow").classes("w-full")
                 create_course_ids = ui.select({}, label="Courses (ordered)", multiple=True).classes("w-full")
 
+                path_draft_key = f"paths_share_draft::{username}"
+
+                def _path_draft_payload() -> dict[str, Any]:
+                    return {
+                        "name": str(create_name.value or ""),
+                        "description": str(create_description.value or ""),
+                        "course_ids": list(create_course_ids.value or []),
+                    }
+
+                def _apply_path_draft(raw: Any) -> None:
+                    draft = raw if isinstance(raw, dict) else {}
+                    create_name.value = str(draft.get("name") or "")
+                    create_description.value = str(draft.get("description") or "")
+                    create_course_ids.value = list(draft.get("course_ids") or [])
+                    create_course_ids.update()
+
                 with ui.row().classes("justify-end mt-4"):
 
-                    @guard_ui_action(title="Create path failed")
+                    def _save_draft() -> None:
+                        app.storage.user[path_draft_key] = _path_draft_payload()
+                        ui.notify("Draft saved", type="positive")
+
+                    def _load_draft() -> None:
+                        draft = app.storage.user.get(path_draft_key)
+                        if not isinstance(draft, dict):
+                            ui.notify("No saved draft found", type="warning")
+                            return
+                        _apply_path_draft(draft)
+                        ui.notify("Draft loaded", type="positive")
+
+                    @guard_ui_action(title="Share path failed")
                     async def _create_submit() -> None:
                         payload = {
                             "name": str(create_name.value or ""),
@@ -674,17 +705,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             "course_ids": list(create_course_ids.value or []),
                         }
                         await api.post("/paths", payload)
-                        ui.notify("Path created", type="positive")
+                        app.storage.user.pop(path_draft_key, None)
+                        ui.notify("Path shared", type="positive")
                         create_dialog.close()
                         await _load_all()
 
+                    ui.button("Save draft", on_click=_save_draft).props("outline")
+                    ui.button("Load draft", on_click=_load_draft).props("outline")
                     ui.button("Share", on_click=_create_submit)
                     ui.button("Cancel", on_click=create_dialog.close).props("outline")
 
             def _open_create_dialog() -> None:
-                create_name.value = ""
-                create_description.value = ""
-                create_course_ids.value = []
+                _apply_path_draft(app.storage.user.get(path_draft_key))
                 create_dialog.open()
 
             # Top bar (search + primary action + sort + count).

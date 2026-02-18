@@ -162,6 +162,50 @@ async def test_course_lifecycle(app_client):
 
 
 @pytest.mark.integration
+async def test_create_course_duplicate_url_returns_409(app_client):
+    """Creating a course with an existing URL returns a duplicate error."""
+    token = await _login_admin(app_client)
+    first = await app_client.post(
+        "/courses",
+        json={"title": "Course One", "description": "desc", "url": "https://example.com/course-a"},
+        headers={"X-Session-Token": token},
+    )
+    assert first.status_code == 200
+
+    duplicate = await app_client.post(
+        "/courses",
+        json={"title": "Course Two", "description": "desc", "url": " https://example.com/course-a "},
+        headers={"X-Session-Token": token},
+    )
+    assert duplicate.status_code == 409
+    body = duplicate.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "duplicate_url"
+
+
+@pytest.mark.integration
+async def test_create_course_duplicate_title_provider_returns_409(app_client):
+    """Creating a course with same title/provider returns a duplicate error."""
+    token = await _login_admin(app_client)
+    first = await app_client.post(
+        "/courses",
+        json={"title": "Intro to SQL", "description": "desc", "provider": "Acme Academy"},
+        headers={"X-Session-Token": token},
+    )
+    assert first.status_code == 200
+
+    duplicate = await app_client.post(
+        "/courses",
+        json={"title": "  intro to sql  ", "description": "another", "provider": " acme academy "},
+        headers={"X-Session-Token": token},
+    )
+    assert duplicate.status_code == 409
+    body = duplicate.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "duplicate_title_provider"
+
+
+@pytest.mark.integration
 async def test_course_recommendation_lifecycle_and_moderation(app_client):
     """Users can recommend courses; owners/admin can moderate deletes."""
     admin_token = await _login_admin(app_client)

@@ -142,6 +142,64 @@ class CoursesRepository:
         await self.session.flush()
         return int(row.id)
 
+    async def find_course_by_url(self, *, url: str) -> CourseRecord | None:
+        """Find a course by normalized URL (trimmed + lowercase exact match)."""
+        normalized = (url or "").strip().lower()
+        if not normalized:
+            return None
+        stmt = (
+            select(CourseModel)
+            .where(CourseModel.url.is_not(None))
+            .where(func.lower(func.trim(CourseModel.url)) == normalized)
+            .order_by(CourseModel.id.asc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+        return CourseRecord(
+            id=row.id,
+            title=row.title or "",
+            description=row.description or "",
+            provider=row.provider,
+            category=row.category,
+            level=row.level,
+            duration_hours=row.duration_hours,
+            url=row.url,
+            created_at=row.created_at,
+            created_by=row.created_by,
+        )
+
+    async def find_course_by_title_provider(self, *, title: str, provider: str | None) -> CourseRecord | None:
+        """Find a course by normalized title + provider (trimmed + lowercase exact match)."""
+        normalized_title = (title or "").strip().lower()
+        normalized_provider = (provider or "").strip().lower()
+        if not normalized_title:
+            return None
+        stmt = select(CourseModel).where(func.lower(func.trim(CourseModel.title)) == normalized_title)
+        if normalized_provider:
+            stmt = stmt.where(func.lower(func.trim(func.coalesce(CourseModel.provider, ""))) == normalized_provider)
+        else:
+            stmt = stmt.where(func.trim(func.coalesce(CourseModel.provider, "")) == "")
+        stmt = stmt.order_by(CourseModel.id.asc()).limit(1)
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+        return CourseRecord(
+            id=row.id,
+            title=row.title or "",
+            description=row.description or "",
+            provider=row.provider,
+            category=row.category,
+            level=row.level,
+            duration_hours=row.duration_hours,
+            url=row.url,
+            created_at=row.created_at,
+            created_by=row.created_by,
+        )
+
     async def update_course(
         self,
         *,
