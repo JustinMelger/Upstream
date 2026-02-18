@@ -54,6 +54,19 @@ def _review_summary_label(row: dict[str, Any] | None) -> str:
     return f"★ {avg:.1f} ({count})"
 
 
+def _recommendation_summary_label(row: dict[str, Any] | None) -> str:
+    """Format recommendation summary as '↗ N rec'."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("recommendation_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    return f"↗ {count} rec"
+
+
 def _build_course_navigation_url(*, course_id: int, view: str) -> str:
     """Build stable course details navigation URL."""
     return f"/courses?tab=tracked&course_id={int(course_id)}&view={str(view or 'full')}"
@@ -230,6 +243,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     shared_courses = list(data.get("shared_courses") or [])
                     shared_paths = list(data.get("shared_paths") or [])
                     shared_articles = list(data.get("shared_articles") or [])
+                    shared_course_review_summary_by_id: dict[int, dict[str, Any]] = dict(
+                        data.get("shared_course_review_summary_by_id") or {}
+                    )
+                    shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]] = dict(
+                        data.get("shared_course_recommendation_summary_by_id") or {}
+                    )
+                    shared_path_review_summary_by_id: dict[int, dict[str, Any]] = dict(
+                        data.get("shared_path_review_summary_by_id") or {}
+                    )
+                    shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]] = dict(
+                        data.get("shared_path_recommendation_summary_by_id") or {}
+                    )
 
                     ui.label("Shared by you").classes("text-lg font-semibold mt-2")
 
@@ -239,7 +264,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ui.label("You haven't shared any courses yet.").classes("text-sm").style("color: var(--lp-muted)")
                         for c in shared_courses[:12]:
                             with ui.row().classes("items-center justify-between w-full"):
-                                ui.label(str(c.get("title") or "")).classes("text-sm")
+                                with ui.column().classes("gap-0"):
+                                    ui.label(str(c.get("title") or "")).classes("text-sm")
+                                    cid = int(c.get("id") or 0)
+                                    parts = [
+                                        _review_summary_label(shared_course_review_summary_by_id.get(cid)),
+                                        _recommendation_summary_label(shared_course_recommendation_summary_by_id.get(cid)),
+                                    ]
+                                    parts = [part for part in parts if part]
+                                    if parts:
+                                        ui.label(" · ".join(parts)).classes("text-xs").style("color: var(--lp-muted)")
                                 cid = int(c.get("id") or 0)
                                 with ui.row().classes("items-center gap-2"):
 
@@ -269,7 +303,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ui.label("You haven't shared any paths yet.").classes("text-sm").style("color: var(--lp-muted)")
                         for p in shared_paths[:12]:
                             with ui.row().classes("items-center justify-between w-full"):
-                                ui.label(str(p.get("name") or "")).classes("text-sm")
+                                with ui.column().classes("gap-0"):
+                                    ui.label(str(p.get("name") or "")).classes("text-sm")
+                                    pid = int(p.get("id") or 0)
+                                    parts = [
+                                        _review_summary_label(shared_path_review_summary_by_id.get(pid)),
+                                        _recommendation_summary_label(shared_path_recommendation_summary_by_id.get(pid)),
+                                    ]
+                                    parts = [part for part in parts if part]
+                                    if parts:
+                                        ui.label(" · ".join(parts)).classes("text-xs").style("color: var(--lp-muted)")
                                 pid = int(p.get("id") or 0)
                                 with ui.row().classes("items-center gap-2"):
 

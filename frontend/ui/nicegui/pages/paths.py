@@ -8,10 +8,8 @@ from typing import Any
 
 from nicegui import app, ui
 
-from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.owner_menu import render_owner_menu
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.components.status_chips import (
     tracking_chip_class,
@@ -141,6 +139,63 @@ def _path_matches_state(path_id: int, selected_by_id: dict[int, dict[str, Any]],
     if key == "not_tracked":
         return not is_tracked
     return True
+
+
+def _path_outcomes(
+    *,
+    detail: dict[str, Any],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    """Compute path milestone + next-step metadata for UX rendering."""
+    completed, total, ratio = compute_path_progress(detail=detail, tracking_by_course_id=tracking_by_course_id)
+    courses = [c for c in list(detail.get("courses") or []) if isinstance(c, dict)]
+    next_course: dict[str, Any] | None = None
+    in_progress = 0
+    for c in courses:
+        try:
+            cid = int(c.get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        status = str((tracking_by_course_id.get(cid) or {}).get("status") or "").strip()
+        if status == "in_progress":
+            in_progress += 1
+        if next_course is None and status != "completed":
+            next_course = c
+
+    remaining = max(0, int(total) - int(completed))
+    if total <= 0:
+        milestone = "No courses"
+        milestone_class = "lp-chip lp-chip--muted"
+        impact = "Add courses to define this path."
+    elif remaining == 0:
+        milestone = "Completed"
+        milestone_class = "lp-chip lp-chip--lime"
+        impact = "All courses completed."
+    elif completed <= 0:
+        milestone = "Not started"
+        milestone_class = "lp-chip lp-chip--muted"
+        impact = f"{remaining} course(s) left to complete this path."
+    elif ratio >= 0.5:
+        milestone = "Halfway"
+        milestone_class = "lp-chip lp-chip--teal"
+        impact = f"{remaining} course(s) left to complete this path."
+    else:
+        milestone = "Started"
+        milestone_class = "lp-chip lp-chip--sky"
+        impact = f"{remaining} course(s) left to complete this path."
+
+    if in_progress > 0 and remaining > 0:
+        impact = f"{impact} {in_progress} in progress."
+
+    return {
+        "completed": completed,
+        "total": total,
+        "ratio": ratio,
+        "next_course": next_course,
+        "milestone": milestone,
+        "milestone_class": milestone_class,
+        "impact": impact,
+    }
 
 
 async def _load_paths_page_data(
@@ -392,10 +447,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 path_recommendations = []
 
             courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
-            completed, total_courses, progress = compute_path_progress(
+            outcomes = _path_outcomes(
                 detail=detail if isinstance(detail, dict) else {},
                 tracking_by_course_id=tracking_by_course_id,
             )
+            completed = int(outcomes.get("completed") or 0)
+            total_courses = int(outcomes.get("total") or 0)
+            progress = float(outcomes.get("ratio") or 0.0)
             course_ids_in_path: list[int] = []
             for c in courses_rows:
                 if not isinstance(c, dict):
@@ -452,15 +510,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if isinstance(c, dict)
             ]
 
-            next_course: dict[str, Any] | None = None
-            for c in courses_rows:
-                try:
-                    cid = int(c.get("id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if str((tracking_by_course_id.get(cid) or {}).get("status") or "") != "completed":
-                    next_course = c
-                    break
+            next_course: dict[str, Any] | None = outcomes.get("next_course") if isinstance(outcomes, dict) else None
 
             with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(900px,95vw)]"):
                 ui.label(detail.get("name") or "").classes("text-xl font-semibold")
@@ -497,12 +547,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             "color: var(--lp-muted)"
                         )
                         ui.linear_progress(progress, show_value=False).classes("w-full")
+                    with ui.row().classes("items-center gap-2 mt-2"):
+                        ui.label(str(outcomes.get("milestone") or "")).classes(str(outcomes.get("milestone_class") or ""))
+                        ui.label(str(outcomes.get("impact") or "")).classes("text-xs").style("color: var(--lp-muted)")
 
                     is_tracked = int(path_id) in selected_by_id
                     ui.label(f"State: {_path_tracking_label(is_tracked)}").classes("text-sm")
 
                     with ui.row().classes("items-center gap-2"):
                         if next_course is not None:
+                            next_title = str(next_course.get("title") or "").strip()
+                            if next_title:
+                                ui.label(f"Next step: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
 
                             @guard_ui_action(title="Open next course failed")
                             async def _open_next() -> None:
@@ -926,10 +982,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         st_cls = " lp-accent-card--interested" if is_tracked else ""
                         detail = selected_detail_by_path_id.get(pid) if selected else None
                         completed, total_courses, progress = (0, 0, 0.0)
+                        outcomes: dict[str, Any] = {}
                         if isinstance(detail, dict):
-                            completed, total_courses, progress = compute_path_progress(
-                                detail=detail, tracking_by_course_id=tracking_by_course_id
-                            )
+                            outcomes = _path_outcomes(detail=detail, tracking_by_course_id=tracking_by_course_id)
+                            completed = int(outcomes.get("completed") or 0)
+                            total_courses = int(outcomes.get("total") or 0)
+                            progress = float(outcomes.get("ratio") or 0.0)
 
                         created_at = _parse_iso_datetime(p.get("created_at"))
                         updated_at = _parse_iso_datetime(p.get("updated_at"))
@@ -947,52 +1005,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ui.label("New").classes("lp-chip lp-chip--sky")
                                 elif is_updated:
                                     ui.label("Updated").classes("lp-chip lp-chip--teal")
-                                if can_edit:
-
-                                    async def _do_edit(_pid: int = pid) -> None:
-                                        detail = await api.get(f"/paths/{_pid}")
-                                        await _open_edit(path_id=_pid, detail=detail, detail_dialog=None)
-
-                                    async def _do_delete(_pid: int = pid) -> None:
-                                        await _delete_path(_pid)
-
-                                    render_owner_menu(
-                                        on_edit=_do_edit,
-                                        on_delete=_do_delete,
-                                    )
-
-                            ui.label(p.get("name") or "").classes("text-lg font-semibold")
-                            if str(p.get("description") or "").strip():
-                                ui.label(p.get("description") or "").classes("text-sm text-gray-600")
-                            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
-                                shared_by = str(p.get("created_by") or "").strip()
-                                if shared_by:
-                                    ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
                                 rating_badge = _format_rating_badge(path_review_summary_by_id.get(pid))
                                 if rating_badge:
-                                    ui.label(rating_badge).classes("lp-chip lp-chip--subtle")
+                                    ui.label(f"★ {rating_badge}").classes("lp-meta-chip")
                                 recommendation_badge = _format_recommendation_badge(path_recommendation_summary_by_id.get(pid))
                                 if recommendation_badge:
-                                    ui.label(recommendation_badge).classes("lp-chip lp-chip--subtle")
-                                ui.label(_path_tracking_label(is_tracked)).classes(_path_tracking_chip_class(is_tracked))
-                            if selected and total_courses:
-                                ui.label(f"{completed}/{total_courses} completed").classes("text-sm").style(
-                                    "color: var(--lp-muted)"
-                                )
-                                ui.linear_progress(progress, show_value=False).classes("w-full")
-
-                            with ui.row().classes("items-center gap-2 mt-2"):
-
-                                async def _view(_pid: int = pid) -> None:
-                                    await _open_details(_pid, view_mode="full")
-
-                                async def _review(_pid: int = pid) -> None:
-                                    await _open_details(_pid, view_mode="reviews")
-
-                                render_view_review_actions(
-                                    on_view=_view,
-                                    on_review=_review,
-                                )
+                                    ui.label(recommendation_badge).classes("lp-meta-chip")
 
                                 @guard_ui_action(title="Recommend failed")
                                 async def _recommend(_pid: int = pid) -> None:
@@ -1032,7 +1050,61 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                                     dialog.open()
 
-                                ui.button("Recommend", on_click=_recommend).props("outline dense")
+                                def _copy_path_link(_pid: int = pid) -> None:
+                                    link = f"/paths?path_id={int(_pid)}&view=full"
+                                    ui.run_javascript(f"navigator.clipboard.writeText(window.location.origin + {repr(link)});")
+                                    ui.notify("Link copied", type="positive")
+
+                                async def _do_review(_pid: int = pid) -> None:
+                                    await _open_details(_pid, view_mode="reviews")
+
+                                async def _do_edit(_pid: int = pid) -> None:
+                                    detail = await api.get(f"/paths/{_pid}")
+                                    await _open_edit(path_id=_pid, detail=detail, detail_dialog=None)
+
+                                async def _do_delete(_pid: int = pid) -> None:
+                                    await _delete_path(_pid)
+
+                                with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                                    ui.menu_item("Review", _do_review)
+                                    ui.menu_item("Recommend", _recommend)
+                                    ui.menu_item("Copy link", _copy_path_link)
+                                    if can_edit:
+                                        ui.menu_item("Edit", _do_edit)
+                                        ui.menu_item("Delete", _do_delete)
+
+                            ui.label(p.get("name") or "").classes("text-lg font-semibold")
+                            if str(p.get("description") or "").strip():
+                                ui.label(p.get("description") or "").classes("text-sm text-gray-600")
+                            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
+                                shared_by = str(p.get("created_by") or "").strip()
+                                if shared_by:
+                                    ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
+                                ui.label(_path_tracking_label(is_tracked)).classes(_path_tracking_chip_class(is_tracked))
+                            if selected and total_courses:
+                                ui.label(f"{completed}/{total_courses} completed").classes("text-sm").style(
+                                    "color: var(--lp-muted)"
+                                )
+                                ui.linear_progress(progress, show_value=False).classes("w-full")
+                                with ui.row().classes("items-center gap-2"):
+                                    ui.label(str(outcomes.get("milestone") or "")).classes(
+                                        str(outcomes.get("milestone_class") or "")
+                                    )
+                                    ui.label(str(outcomes.get("impact") or "")).classes("text-xs").style(
+                                        "color: var(--lp-muted)"
+                                    )
+                                next_course = outcomes.get("next_course") if isinstance(outcomes, dict) else None
+                                if isinstance(next_course, dict):
+                                    next_title = str(next_course.get("title") or "").strip()
+                                    if next_title:
+                                        ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
+
+                            with ui.row().classes("items-center gap-2 mt-2"):
+
+                                async def _view(_pid: int = pid) -> None:
+                                    await _open_details(_pid, view_mode="full")
+
+                                ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip("View")
 
                                 if selected:
 

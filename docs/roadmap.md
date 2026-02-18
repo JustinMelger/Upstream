@@ -94,10 +94,10 @@
 ### Phase 10B — P1 Social Product Loop
 - [x] Add recommendations for courses/paths (who recommended + optional note + timestamp).
 - [x] Product UX: add “Recommended for you” on `My learning` with save/dismiss actions and “why this was recommended” explanation.
-- [ ] Product UX: strengthen social trust signals on cards/details (shared by, avg rating + count, recent activity, endorsements).
-- [ ] Product UX: improve contribution loop (quick-share flow with optional note + feedback on teammate engagement).
-- [ ] Product UX: improve path outcomes UX (milestones + next actionable step + completion impact).
-- [ ] Product UX: add team visibility dashboard (popular content, completion trends, top contributors).
+- [x] Product UX: strengthen social trust signals on cards/details (shared by, avg rating + count, recent activity, endorsements).
+- [x] Product UX: improve contribution loop (quick-share flow with optional note + feedback on teammate engagement).
+- [x] Product UX: improve path outcomes UX (milestones + next actionable step + completion impact).
+- [x] Product UX: add basicteam visibility dashboard ( top contributors).
 - [ ] Add “Suggest a course/path” drafts (user-submitted) with admin approve/edit → canonical content.
 - [ ] Basic de-duplication for suggested courses (URL-based + title/provider similarity).
 - [ ] Notifications v1 (optional): show “recommended to you” inbox or activity feed (no email).
@@ -134,6 +134,9 @@
 - [ ] Basic analytics (popular courses, completion rates).
 - [ ] Import/export tools for course data.
 - [ ] UI polish + accessibility improvements.
+- [ ] Analytics (users): per-user completion metrics (completed/in-progress/interested), review counts, recommendation counts, and contribution trends.
+- [ ] Analytics (courses): most-rated courses, highest-rated courses, most-recommended courses, and completion funnel by course.
+- [ ] Analytics UI: add sortable leaderboard/table views + chart views for users/courses with date-range filters.
 
 ## Phase 13 — Advanced AI Curation (optional)
 - [ ] Add an “AI Curator” backend service that turns a user goal into a proposed learning plan (draft path + ordered draft courses).

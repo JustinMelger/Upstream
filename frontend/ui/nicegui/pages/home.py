@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 from typing import Any
 
 from nicegui import ui
@@ -119,6 +120,171 @@ def _recent_courses(courses: list[dict[str, Any]], *, limit: int) -> list[dict[s
         return dt.timestamp() if dt else 0.0
 
     return sorted(courses, key=_key, reverse=True)[:limit]
+
+
+def _top_contributors(rows: list[dict[str, Any]], *, limit: int = 5) -> list[dict[str, Any]]:
+    """Rank teammates by a weighted activity score."""
+    ranked: list[dict[str, Any]] = []
+    for row in list(rows or []):
+        if not isinstance(row, dict):
+            continue
+        who = str(row.get("colleague_id") or "").strip()
+        if not who:
+            continue
+        try:
+            interested = int(row.get("interested") or 0)
+            in_progress = int(row.get("in_progress") or 0)
+            completed = int(row.get("completed") or 0)
+        except (TypeError, ValueError):
+            continue
+        score = (completed * 3) + (in_progress * 2) + interested
+        ranked.append(
+            {
+                "who": who,
+                "interested": interested,
+                "in_progress": in_progress,
+                "completed": completed,
+                "score": score,
+            }
+        )
+    return sorted(
+        ranked,
+        key=lambda r: (int(r.get("score") or 0), int(r.get("completed") or 0), str(r.get("who") or "")),
+        reverse=True,
+    )[:limit]
+
+
+def _popular_courses(
+    *, tracking_rows: list[dict[str, Any]], title_by_id: dict[int, str], limit: int = 5
+) -> list[dict[str, Any]]:
+    """Aggregate top courses with status split from tracking rows."""
+    agg: dict[str, dict[str, Any]] = {}
+    for row in list(tracking_rows or []):
+        if not isinstance(row, dict):
+            continue
+        try:
+            cid = int(row.get("course_id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if cid <= 0:
+            continue
+        title = str(title_by_id.get(cid) or f"Course {cid}").strip()
+        key = title.lower()
+        state = agg.setdefault(
+            key,
+            {
+                "title": title,
+                "interested": 0,
+                "in_progress": 0,
+                "completed": 0,
+                "engaged": 0,
+            },
+        )
+        status = str(row.get("status") or "")
+        if status in {"interested", "in_progress", "completed"}:
+            state[status] = int(state.get(status) or 0) + 1
+        state["engaged"] = int(state.get("engaged") or 0) + 1
+    rows = list(agg.values())
+    rows = sorted(rows, key=lambda r: (int(r.get("engaged") or 0), int(r.get("completed") or 0)), reverse=True)[:limit]
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        out.append(
+            {
+                "title": str(row.get("title") or ""),
+                "engaged": int(row.get("engaged") or 0),
+                "interested": int(row.get("interested") or 0),
+                "in_progress": int(row.get("in_progress") or 0),
+                "completed": int(row.get("completed") or 0),
+            }
+        )
+    return out
+
+
+def _contributors_chart_option(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build ECharts option for top contributors."""
+    labels = [str(r.get("who") or "") for r in rows][:5]
+    values = [int(r.get("score") or 0) for r in rows][:5]
+    return {
+        "grid": {"left": 40, "right": 20, "top": 10, "bottom": 45},
+        "xAxis": {"type": "category", "data": labels, "axisLabel": {"rotate": 35, "interval": 0}},
+        "yAxis": {"type": "value", "minInterval": 1},
+        "series": [
+            {
+                "type": "bar",
+                "data": values,
+                "itemStyle": {"color": "#4ea8ff"},
+                "label": {"show": True, "position": "top", "color": "#dbe8ff"},
+            }
+        ],
+        "tooltip": {"trigger": "item"},
+    }
+
+
+def _popular_courses_chart_option(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build ECharts option for top-5 courses with stacked status breakdown."""
+
+    top_rows = list(rows or [])[:5]
+    labels: list[str] = []
+    for r in top_rows:
+        title = str(r.get("title") or "")
+        if len(title) > 44:
+            title = f"{title[:41]}..."
+        labels.append(title)
+    interested = [int(r.get("interested") or 0) for r in top_rows]
+    in_progress = [int(r.get("in_progress") or 0) for r in top_rows]
+    completed = [int(r.get("completed") or 0) for r in top_rows]
+    totals = [int(a) + int(b) + int(c) for a, b, c in zip(interested, in_progress, completed, strict=False)]
+    totals_json = json.dumps(totals)
+    max_total = max(totals) if totals else 0
+    return {
+        "grid": {"left": 22, "right": 42, "top": 20, "bottom": 40, "containLabel": True},
+        "legend": {"data": ["Interested", "In progress", "Completed"], "textStyle": {"color": "#dbe8ff"}},
+        "xAxis": {"type": "value", "minInterval": 1, "max": int(max_total + 1)},
+        "yAxis": {"type": "category", "data": labels, "inverse": True},
+        "series": [
+            {
+                "name": "Interested",
+                "type": "bar",
+                "stack": "total",
+                "data": interested,
+                "itemStyle": {"color": "#64748b"},
+                "barWidth": 14,
+            },
+            {
+                "name": "In progress",
+                "type": "bar",
+                "stack": "total",
+                "data": in_progress,
+                "itemStyle": {"color": "#4ea8ff"},
+                "barWidth": 14,
+            },
+            {
+                "name": "Completed",
+                "type": "bar",
+                "stack": "total",
+                "data": completed,
+                "itemStyle": {"color": "#2dd4bf"},
+                "barWidth": 14,
+            },
+            {
+                "name": "Total",
+                "type": "line",
+                "data": totals,
+                "symbol": "none",
+                "lineStyle": {"opacity": 0},
+                "label": {
+                    "show": True,
+                    "position": "top",
+                    "color": "#dbe8ff",
+                    "formatter": (
+                        f"function(p){{const totals={totals_json};return String(totals[p.dataIndex] ?? p.value ?? '');}}"
+                    ),
+                },
+                "tooltip": {"show": False},
+            },
+        ],
+        "tooltip": {"trigger": "axis"},
+    }
 
 
 def _render_snapshot_metrics(*, snapshot_stats: dict[str, int]) -> None:
@@ -238,6 +404,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             snapshot_stats: dict[str, int] = {}
             team_recent: list[dict[str, Any]] = []
             team_stats_by_user: list[dict[str, Any]] = []
+            team_tracking_rows: list[dict[str, Any]] = []
             review_summary_by_course_id: dict[int, dict[str, Any]] = {}
 
             meta = ui.label("").classes("text-sm text-gray-600")
@@ -262,6 +429,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             async def _load() -> None:
                 nonlocal courses, paths, selected_paths, tracking_rows, snapshot_stats, team_recent, team_stats_by_user
                 nonlocal selected_path_details
+                nonlocal team_tracking_rows
                 nonlocal review_summary_by_course_id
                 nonlocal loading
                 if loading:
@@ -285,6 +453,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     snapshot_stats = dict(data.snapshot_stats)
                     team_stats_by_user = list(data.team_stats_by_user)
                     team_recent = list(data.team_recent)
+                    team_tracking_rows = list(data.team_tracking_rows)
                     selected_path_details = list(data.selected_path_details)
                     review_summary_by_course_id = dict(data.review_summary_by_course_id or {})
 
@@ -300,6 +469,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     snapshot_stats = {}
                     team_recent = []
                     team_stats_by_user = []
+                    team_tracking_rows = []
                     review_summary_by_course_id = {}
                     dashboard.refresh()
                     meta.text = "Failed to load"
@@ -368,6 +538,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 status = str(item.get("status") or "")
                                 updated = _format_time(str(item.get("updated_at") or ""))
                                 ui.label(f"• {who}: {title} — {status} ({updated})").classes("text-sm")
+
+                    ui.label("Team visibility dashboard").classes("text-lg font-semibold mt-4")
+                    contributors = _top_contributors(team_stats_by_user, limit=5)
+                    with ui.row().classes("w-full gap-3"):
+                        with ui.card().classes("lp-card grow min-w-[260px]"):
+                            ui.label("Top contributors").classes("text-md font-semibold")
+                            if not contributors:
+                                ui.label("No contributor data yet.").classes("text-sm text-gray-600")
+                            else:
+                                ui.echart(_contributors_chart_option(contributors)).classes("w-full h-56")
 
                 ui.separator()
 
