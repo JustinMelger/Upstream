@@ -109,16 +109,17 @@
 
 ### Phase 10D — P2 Frontend Architecture/Clean Code
 - [ ] Frontend architecture alignment: move My Learning tracking mutations (`set/clear`) into service/use-case layer so page stays UI-only.
-- [ ] Frontend architecture alignment: extract remaining Paths orchestration (select/unselect + selected detail/tracking refresh flow) into `paths_service.py` use-cases.
-- [ ] Frontend architecture alignment: remove temporary page-level service shims (e.g., `_load_paths_page_data` compat wrapper) and call service layer directly.
+- [x] Frontend architecture alignment: extract remaining Paths orchestration (select/unselect + selected detail/tracking refresh flow) into `paths_service.py` use-cases.
+- [x] Frontend architecture alignment: remove temporary page-level service shims (e.g., `_load_paths_page_data` compat wrapper) and call service layer directly.
 - [ ] Frontend architecture alignment: add `admin_users_service.py` and `ai_curator_service.py` to keep page modules focused on UI composition/event binding.
 - [ ] Frontend clean code: enforce page boundary (pages = UI composition/event binding; move API orchestration to services/use-cases).
 - [ ] Frontend clean code: introduce typed page state/view-model objects to reduce large closure state (`nonlocal`) usage.
 - [ ] Frontend clean code: extract large nested handlers into domain action modules (`learning_actions`, `courses_actions`, `paths_actions`).
 - [ ] Frontend clean code: componentize repeated page sections (top bar, filter rail, card sections, load-more footer).
+- [ ] Frontend clean code: reduce page-module size/complexity (`courses.py`, `paths.py`, `learning.py`) by splitting into focused UI sections and action modules.
 - [ ] Frontend clean code: centralize deep-link and intent navigation logic in a shared navigation helper.
 - [ ] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.
-- [ ] Frontend clean code: add remaining service modules (`admin_users_service.py`, `ai_curator_service.py`) for architecture parity.
+- [ ] Frontend clean code: add lightweight page-state reducers/helpers to tame `nonlocal` sprawl and make state transitions explicit/testable.
 - [ ] Frontend clean code: increase service/use-case unit tests to cover extracted orchestration logic.
 - [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 
@@ -134,6 +135,9 @@
 - [ ] Resilience UX: network/offline banner, retry affordances, and standardized section-level error states.
 - [ ] Performance: short-TTL client caching for hot reads (`/tracking`, review summaries), batched detail fetches, and fewer full reloads after mutations.
 - [ ] Quality gates: add visual regression checks for key pages and smoke e2e flows (login, track course, review, select path).
+- [ ] Test reliability: isolate backend integration test auth/session state per test (or per module) to remove intermittent `401/404/500` flakiness.
+- [ ] Docs sync: update `docs/architecture_frontend.md` to match current IA/routes (`My learning`, `Insights`, mailbox activity) and current service/page boundaries.
+- [ ] Docs sync: update `docs/architecture_backend.md` course/recommendation/review model details (`description`, `learning_outcomes`, `prerequisites`, `language`, `search_document`) and current service flows.
 
 ## Phase 12 — Analytics + Data Durability
 - [ ] Colleague profiles with interest/completion tracking.

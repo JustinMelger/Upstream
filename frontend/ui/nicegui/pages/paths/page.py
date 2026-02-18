@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
@@ -10,31 +9,24 @@ from nicegui import app, ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
-from frontend.ui.nicegui.components.status_chips import (
-    tracking_chip_class,
-    tracking_label,
+from frontend.ui.nicegui.components.path_card import render_path_card
+from frontend.ui.nicegui.components.path_detail_sections import (
+    render_path_detail_header,
+    render_path_detail_learning_section,
 )
+from frontend.ui.nicegui.components.paths_sections import render_paths_filter_rail, render_paths_topbar
+from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation_intents import get_path_intent, pop_path_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
+from frontend.ui.nicegui.pages.paths.controller import PathsPageController
+from frontend.ui.nicegui.pages.paths.state import PathsPageState
 from frontend.ui.nicegui.services.paths_service import (
     compute_path_progress,
-    index_courses_by_int_id,
-    index_rows_by_int_id,
-    load_path_recommendation_summaries,
-    load_paths_page_data,
-    select_path_and_seed_tracking,
 )
-
-
-_index_rows_by_int_id = index_rows_by_int_id
-_index_courses_by_int_id = index_courses_by_int_id
-_index_tracking_by_course_id = index_tracking_by_course_id
 
 
 _parse_iso_datetime = parse_iso_datetime
@@ -198,18 +190,6 @@ def _path_outcomes(
     }
 
 
-async def _load_paths_page_data(
-    api: ApiClient,
-) -> tuple[
-    list[dict[str, Any]],
-    dict[int, dict[str, Any]],
-    list[dict[str, Any]],
-    dict[int, dict[str, Any]],
-]:
-    """Compat shim: use the NiceGUI paths service layer."""
-    return await load_paths_page_data(api=api)
-
-
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/paths` route.
 
@@ -227,15 +207,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         render_shell(title="Paths", store=store, api=api)
         username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
+        controller = PathsPageController(api=api)
+        controller_state = PathsPageState()
 
-        paths: list[dict[str, Any]] = []
-        selected_by_id: dict[int, dict[str, Any]] = {}
-        selected_detail_by_path_id: dict[int, dict[str, Any]] = {}
-        tracking_by_course_id: dict[int, dict[str, Any]] = {}
-        courses: list[dict[str, Any]] = []
-        course_by_id: dict[int, dict[str, Any]] = {}
-        path_review_summary_by_id: dict[int, dict[str, Any]] = {}
-        path_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
         loading = False
         loaded_once = False
         page_size = 10
@@ -243,63 +217,38 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         async def _reload_selected() -> None:
             """Reload selected path rows (used after select/unselect/status updates)."""
-            nonlocal selected_by_id
             try:
-                selected_result = await api.get("/paths/selected/list")
+                await controller.reload_selected(state=controller_state)
             except ApiError as exc:
                 ui.notify(str(exc), type="negative")
-                selected_by_id = {}
+                controller_state.selected_by_id = {}
                 return
-            selected_by_id = _index_rows_by_int_id(list(selected_result or []))
 
         async def _reload_tracking() -> None:
             """Reload the current user's tracking map (used to compute path progress)."""
-            nonlocal tracking_by_course_id
             try:
-                tracking_result = await api.get("/tracking")
+                await controller.reload_tracking(state=controller_state)
             except ApiError:
-                tracking_by_course_id = {}
+                controller_state.tracking_by_course_id = {}
                 return
-            tracking_by_course_id = _index_tracking_by_course_id(list(tracking_result or []))
 
         async def _reload_selected_details() -> None:
             """Reload path detail payloads for currently selected paths."""
-            nonlocal selected_detail_by_path_id
-            path_ids = sorted(int(pid) for pid in selected_by_id.keys())
-            selected_detail_by_path_id = {}
-            if not path_ids:
-                return
-            results = await asyncio.gather(*(api.get(f"/paths/{pid}") for pid in path_ids), return_exceptions=True)
-            for pid, payload in zip(path_ids, results, strict=False):
-                if isinstance(payload, Exception):
-                    continue
-                if isinstance(payload, dict):
-                    selected_detail_by_path_id[int(pid)] = payload
+            await controller.reload_selected_details(state=controller_state)
 
         async def _ensure_selected_detail(path_id: int) -> None:
             """Ensure a selected path has a detail payload cached."""
-            nonlocal selected_detail_by_path_id
-            if int(path_id) in selected_detail_by_path_id:
-                return
             try:
-                detail = await api.get(f"/paths/{int(path_id)}")
+                await controller.ensure_selected_detail(path_id=int(path_id), state=controller_state)
             except ApiError:
                 return
-            if isinstance(detail, dict):
-                selected_detail_by_path_id[int(path_id)] = detail
 
         @guard_ui_action(title="Select failed")
         async def _select(path_id: int) -> None:
-            cached_detail = selected_detail_by_path_id.get(int(path_id))
-            seeded, detail = await select_path_and_seed_tracking(
-                api=api,
-                path_id=int(path_id),
-                tracking_by_course_id=tracking_by_course_id,
-                cached_detail=cached_detail if isinstance(cached_detail, dict) else None,
-            )
+            seeded, detail = await controller.select_path(path_id=int(path_id), state=controller_state)
             await _reload_selected()
             if isinstance(detail, dict):
-                selected_detail_by_path_id[int(path_id)] = detail
+                controller_state.selected_detail_by_path_id[int(path_id)] = detail
             else:
                 await _ensure_selected_detail(path_id)
             if seeded > 0:
@@ -316,14 +265,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         @guard_ui_action(title="Unselect failed")
         async def _unselect(path_id: int) -> None:
-            await api.post(f"/paths/{path_id}/unselect", {})
+            await controller.unselect_path(path_id=int(path_id))
             await _reload_selected()
-            selected_detail_by_path_id.pop(int(path_id), None)
+            controller_state.selected_detail_by_path_id.pop(int(path_id), None)
             paths_list.refresh()
 
         @guard_ui_action(title="Delete path failed")
         async def _delete_path(path_id: int) -> None:
-            await api.delete(f"/paths/{path_id}")
+            await controller.delete_path(path_id=int(path_id))
             await _load_all()
             ui.notify("Path deleted", type="positive")
 
@@ -345,7 +294,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 ui.label("Course Order").classes("text-lg font-semibold")
 
                 add_course = ui.select(
-                    {cid: f"{c.get('title') or ''} (#{cid})" for cid, c in sorted(course_by_id.items())},
+                    {cid: f"{c.get('title') or ''} (#{cid})" for cid, c in sorted(controller_state.course_by_id.items())},
                     label="Add course",
                 ).classes("w-full")
 
@@ -366,7 +315,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         if not ordered_course_ids:
                             ui.label("No courses selected.").classes("text-sm text-gray-600")
                         for idx, cid in enumerate(list(ordered_course_ids)):
-                            c = course_by_id.get(cid) or {}
+                            c = controller_state.course_by_id.get(cid) or {}
                             title = str(c.get("title") or f"Course #{cid}")
                             with ui.row().classes("items-center justify-between"):
                                 ui.label(f"{idx + 1}. {title}").classes("text-sm")
@@ -410,7 +359,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             "description": str(description.value or ""),
                             "course_ids": ordered_course_ids,
                         }
-                        await api.put(f"/paths/{path_id}", payload)
+                        await controller.update_path(path_id=int(path_id), payload=payload)
                         await _load_all()
                         paths_list.refresh()
                         ui.notify("Path updated", type="positive")
@@ -431,55 +380,22 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 path_id: Path ID.
                 view_mode: Either "full" or "reviews".
             """
-            detail = await api.get(f"/paths/{path_id}")
+            bundle = await controller.load_path_detail_bundle(path_id=int(path_id))
+            detail = dict(bundle.detail or {})
             normalized_view_mode = _normalize_path_view_mode(view_mode)
-            path_reviews: list[dict[str, Any]] = []
-            path_recommendations: list[dict[str, Any]] = []
-            try:
-                reviews_result, recommendations_result = await asyncio.gather(
-                    api.get(f"/paths/{path_id}/reviews"),
-                    api.get(f"/paths/{path_id}/recommendations"),
-                )
-                path_reviews = [r for r in list(reviews_result or []) if isinstance(r, dict)]
-                path_recommendations = [r for r in list(recommendations_result or []) if isinstance(r, dict)]
-            except ApiError:
-                path_reviews = []
-                path_recommendations = []
+            path_reviews: list[dict[str, Any]] = list(bundle.path_reviews or [])
+            path_recommendations: list[dict[str, Any]] = list(bundle.path_recommendations or [])
 
             courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
             outcomes = _path_outcomes(
                 detail=detail if isinstance(detail, dict) else {},
-                tracking_by_course_id=tracking_by_course_id,
+                tracking_by_course_id=controller_state.tracking_by_course_id,
             )
             completed = int(outcomes.get("completed") or 0)
             total_courses = int(outcomes.get("total") or 0)
             progress = float(outcomes.get("ratio") or 0.0)
-            course_ids_in_path: list[int] = []
-            for c in courses_rows:
-                if not isinstance(c, dict):
-                    continue
-                try:
-                    cid = int(c.get("id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if cid > 0:
-                    course_ids_in_path.append(cid)
 
-            review_summary_by_course_id: dict[int, dict[str, Any]] = {}
-            if course_ids_in_path:
-                try:
-                    rows = await api.get("/courses/reviews/summary", params={"course_ids": course_ids_in_path})
-                    for r in list(rows or []):
-                        if not isinstance(r, dict):
-                            continue
-                        try:
-                            cid = int(r.get("course_id") or 0)
-                        except (TypeError, ValueError):
-                            continue
-                        if cid > 0:
-                            review_summary_by_course_id[cid] = r
-                except ApiError:
-                    review_summary_by_course_id = {}
+            review_summary_by_course_id: dict[int, dict[str, Any]] = dict(bundle.course_review_summary_by_course_id or {})
 
             def _summary_label(cid: int) -> str:
                 row = review_summary_by_course_id.get(int(cid))
@@ -498,7 +414,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 return f"{avg:.1f}/5 ({count})"
 
             def _course_tracking_status(cid: int) -> str:
-                return str((tracking_by_course_id.get(int(cid)) or {}).get("status") or "").strip()
+                return str((controller_state.tracking_by_course_id.get(int(cid)) or {}).get("status") or "").strip()
 
             courses_rows = [
                 dict(
@@ -513,24 +429,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             next_course: dict[str, Any] | None = outcomes.get("next_course") if isinstance(outcomes, dict) else None
 
             with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(900px,95vw)]"):
-                ui.label(detail.get("name") or "").classes("text-xl font-semibold")
-                ui.label(detail.get("description") or "").classes("text-sm text-gray-600")
-                summary = _format_review_summary(path_review_summary_by_id.get(int(path_id)))
-                if summary:
-                    ui.label(f"Reviews: {summary}").classes("text-sm").style("color: var(--lp-muted)")
-                rec_badge = _format_recommendation_badge(path_recommendation_summary_by_id.get(int(path_id)))
-                if rec_badge:
-                    ui.label(rec_badge).classes("text-sm").style("color: var(--lp-muted)")
-                if path_recommendations:
-                    rec_by = sorted(
-                        {
-                            str(r.get("created_by") or "").strip()
-                            for r in path_recommendations
-                            if isinstance(r, dict) and str(r.get("created_by") or "").strip()
-                        }
-                    )
-                    if rec_by:
-                        ui.label(f"Recommended by {', '.join(rec_by[:3])}").classes("text-xs").style("color: var(--lp-muted)")
+                summary = _format_review_summary(controller_state.path_review_summary_by_id.get(int(path_id)))
+                rec_badge = _format_recommendation_badge(controller_state.path_recommendation_summary_by_id.get(int(path_id)))
+                rec_by = sorted(
+                    {
+                        str(r.get("created_by") or "").strip()
+                        for r in path_recommendations
+                        if isinstance(r, dict) and str(r.get("created_by") or "").strip()
+                    }
+                )
                 timestamps: list[str] = []
                 for row in list(path_reviews) + list(path_recommendations):
                     if not isinstance(row, dict):
@@ -538,63 +445,41 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     created_at = str(row.get("created_at") or "").strip()
                     if created_at:
                         timestamps.append(created_at)
-                if timestamps:
-                    latest_activity = max(timestamps)
-                    ui.label(f"Latest activity: {latest_activity[:10]}").classes("text-xs").style("color: var(--lp-muted)")
+                latest_activity = max(timestamps)[:10] if timestamps else ""
+                render_path_detail_header(
+                    name=str(detail.get("name") or ""),
+                    description=str(detail.get("description") or ""),
+                    review_summary=summary,
+                    recommendation_badge=rec_badge,
+                    recommended_by=", ".join(rec_by[:3]),
+                    latest_activity=latest_activity,
+                )
                 if normalized_view_mode != "reviews":
-                    if total_courses > 0:
-                        ui.label(f"Progress: {completed}/{total_courses} completed").classes("text-sm").style(
-                            "color: var(--lp-muted)"
-                        )
-                        ui.linear_progress(progress, show_value=False).classes("w-full")
-                    with ui.row().classes("items-center gap-2 mt-2"):
-                        ui.label(str(outcomes.get("milestone") or "")).classes(str(outcomes.get("milestone_class") or ""))
-                        ui.label(str(outcomes.get("impact") or "")).classes("text-xs").style("color: var(--lp-muted)")
+                    is_tracked = int(path_id) in controller_state.selected_by_id
 
-                    is_tracked = int(path_id) in selected_by_id
-                    ui.label(f"State: {_path_tracking_label(is_tracked)}").classes("text-sm")
+                    @guard_ui_action(title="Open next course failed")
+                    async def _open_next() -> None:
+                        if next_course is None:
+                            return
+                        url = str(next_course.get("url") or "").strip()
+                        if url:
+                            ui.navigate.to(url, new_tab=True)
+                            return
+                        ui.notify("Next course has no URL yet", type="warning")
 
-                    with ui.row().classes("items-center gap-2"):
-                        if next_course is not None:
-                            next_title = str(next_course.get("title") or "").strip()
-                            if next_title:
-                                ui.label(f"Next step: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
-
-                            @guard_ui_action(title="Open next course failed")
-                            async def _open_next() -> None:
-                                url = str(next_course.get("url") or "").strip()
-                                if url:
-                                    ui.navigate.to(url, new_tab=True)
-                                    return
-                                ui.notify("Next course has no URL yet", type="warning")
-
-                            cta = "Continue path" if completed > 0 else "Start next course"
-                            ui.button(cta, on_click=_open_next).props("outline")
-                        elif total_courses > 0:
-                            ui.label("Path completed").classes("lp-chip lp-chip--lime")
-
-                    ui.label("Courses").classes("text-lg font-semibold mt-4")
-                    if not courses_rows:
-                        ui.label("No courses in this path yet.").classes("text-sm").style("color: var(--lp-muted)")
-                    else:
-                        with ui.column().classes("w-full gap-2"):
-                            for idx, course in enumerate(courses_rows, start=1):
-                                title = str(course.get("title") or "").strip() or f"Course #{int(course.get('id') or 0)}"
-                                provider = str(course.get("provider") or "").strip()
-                                category = str(course.get("category") or "").strip()
-                                reviews = str(course.get("reviews") or "").strip()
-                                with ui.card().classes("w-full lp-card"):
-                                    ui.label(f"{idx}. {title}").classes("font-medium")
-                                    with ui.row().classes("items-center gap-2 flex-wrap"):
-                                        if provider:
-                                            ui.label(provider).classes("lp-chip lp-chip--subtle")
-                                        if category:
-                                            ui.label(category).classes("lp-chip lp-chip--subtle")
-                                        if reviews:
-                                            ui.label(reviews).classes("lp-chip lp-chip--subtle")
-                                        ui.label(tracking_label(str(course.get("tracking_status") or ""))).classes(
-                                            tracking_chip_class(str(course.get("tracking_status") or ""))
-                                        )
+                    render_path_detail_learning_section(
+                        total_courses=total_courses,
+                        completed=completed,
+                        progress=progress,
+                        milestone=str(outcomes.get("milestone") or ""),
+                        milestone_class=str(outcomes.get("milestone_class") or ""),
+                        impact=str(outcomes.get("impact") or ""),
+                        is_tracked=is_tracked,
+                        tracking_label_text=_path_tracking_label(is_tracked),
+                        next_title=str(next_course.get("title") or "").strip() if isinstance(next_course, dict) else "",
+                        on_open_next=_open_next if isinstance(next_course, dict) else None,
+                        courses_rows=courses_rows,
+                    )
 
                 ui.separator().classes("my-2")
 
@@ -606,14 +491,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         except (TypeError, ValueError):
                             continue
                     if not ratings:
-                        path_review_summary_by_id[int(path_id)] = {
+                        controller_state.path_review_summary_by_id[int(path_id)] = {
                             "path_id": int(path_id),
                             "avg_rating": 0.0,
                             "review_count": 0,
                         }
                     else:
                         avg = float(sum(ratings)) / float(len(ratings))
-                        path_review_summary_by_id[int(path_id)] = {
+                        controller_state.path_review_summary_by_id[int(path_id)] = {
                             "path_id": int(path_id),
                             "avg_rating": float(avg),
                             "review_count": int(len(ratings)),
@@ -621,17 +506,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     paths_list.refresh()
 
                 async def _save_path_review(rating: int, text: str) -> dict[str, Any]:
-                    return await api.post(
-                        f"/paths/{path_id}/reviews",
-                        {
-                            "rating": int(rating),
-                            "text": str(text or ""),
-                        },
-                    )
+                    return await controller.save_path_review(path_id=int(path_id), rating=int(rating), text=str(text or ""))
 
                 async def _delete_path_review(review_id: int) -> bool:
-                    await api.delete(f"/paths/{path_id}/reviews/{int(review_id)}")
-                    return True
+                    return await controller.delete_path_review(path_id=int(path_id), review_id=int(review_id))
 
                 render_reviews_panel(
                     username=username,
@@ -704,7 +582,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             "description": str(create_description.value or ""),
                             "course_ids": list(create_course_ids.value or []),
                         }
-                        await api.post("/paths", payload)
+                        await controller.create_path(payload=payload)
                         app.storage.user.pop(path_draft_key, None)
                         ui.notify("Path shared", type="positive")
                         create_dialog.close()
@@ -750,37 +628,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if initial_view_mode not in {"full", "reviews"}:
                     initial_dialog_mode = _normalize_path_view_mode(nav_intent.get("view"))
 
-            with ui.row().classes("lp-topbar"):
-                q = ui.input("Search paths").props("clearable debounce=300").style("flex: 1")
-                with ui.row().classes("items-center gap-2").style("margin-left: auto"):
-                    ui.button("Share", on_click=_open_create_dialog).props("dense")
-                    scope_filter = (
-                        ui.radio(
-                            {"all": "All", "selected": "Selected"},
-                            value=initial_scope,
-                        )
-                        .props("inline dense")
-                        .classes("text-sm")
-                    )
-                    sort_filter = (
-                        ui.select(
-                            {
-                                "": "Recommended",
-                                "top_rated": "Top rated",
-                                "most_reviewed": "Most reviewed",
-                                "newest": "Recently added",
-                                "name_az": "Name A–Z",
-                            },
-                            value="",
-                            label=None,
-                        )
-                        .props("dense")
-                        .style("min-width: 180px")
-                    )
-                    meta = ui.label("").classes("lp-topbar-meta")
+            q, scope_filter, sort_filter, meta = render_paths_topbar(
+                initial_scope=initial_scope,
+                on_open_create_dialog=_open_create_dialog,
+            )
 
             def _status_key(pid: int) -> str:
-                return "tracked" if int(pid) in selected_by_id else "not_tracked"
+                return "tracked" if int(pid) in controller_state.selected_by_id else "not_tracked"
 
             def _recompute_facet_options() -> None:
                 """Recompute status facet options with counts based on the current local filters."""
@@ -792,7 +646,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 def _passes(p: dict[str, Any], *, ignore: str) -> bool:
                     if ignore != "scope" and scope_v == "selected":
                         pid = int(p.get("id") or 0)
-                        if pid <= 0 or pid not in selected_by_id:
+                        if pid <= 0 or pid not in controller_state.selected_by_id:
                             return False
                     if needle and ignore != "needle":
                         if (
@@ -802,12 +656,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             return False
                     if ignore != "status":
                         status_v = str(status_filter.value or "").strip()
-                        if status_v and not _path_matches_state(int(p.get("id") or 0), selected_by_id, status_v):
+                        if status_v and not _path_matches_state(
+                            int(p.get("id") or 0), controller_state.selected_by_id, status_v
+                        ):
                             return False
                     return True
 
                 counts: dict[str, int] = {"not_tracked": 0, "tracked": 0}
-                for p in paths:
+                for p in controller_state.paths:
                     if not _passes(p, ignore="status"):
                         continue
                     pid = int(p.get("id") or 0)
@@ -921,13 +777,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 status_v = str(status_filter.value or "").strip()
                 sort_v = str(sort_filter.value or "").strip()
                 scope_v = str(scope_filter.value or "all")
-                shown = _filter_paths(paths, needle)
+                shown = _filter_paths(controller_state.paths, needle)
 
                 if scope_v == "selected":
-                    shown = [p for p in shown if int(p.get("id") or 0) in selected_by_id]
+                    shown = [p for p in shown if int(p.get("id") or 0) in controller_state.selected_by_id]
 
                 if status_v:
-                    shown = [p for p in shown if _path_matches_state(int(p.get("id") or 0), selected_by_id, status_v)]
+                    shown = [
+                        p
+                        for p in shown
+                        if _path_matches_state(int(p.get("id") or 0), controller_state.selected_by_id, status_v)
+                    ]
 
                 if sort_v:
                     if sort_v == "name_az":
@@ -943,7 +803,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                         def _top_rated_key(p: dict[str, Any]) -> tuple[float, int, int]:
                             pid = int(p.get("id") or 0)
-                            row = path_review_summary_by_id.get(pid) or {}
+                            row = controller_state.path_review_summary_by_id.get(pid) or {}
                             try:
                                 avg = float(row.get("avg_rating") or 0.0)
                             except (TypeError, ValueError):
@@ -959,7 +819,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                         def _most_reviewed_key(p: dict[str, Any]) -> tuple[int, float, int]:
                             pid = int(p.get("id") or 0)
-                            row = path_review_summary_by_id.get(pid) or {}
+                            row = controller_state.path_review_summary_by_id.get(pid) or {}
                             try:
                                 count = int(row.get("review_count") or 0)
                             except (TypeError, ValueError):
@@ -991,7 +851,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ).props("outline")
                                 ui.button("Refresh", on_click=_load_all).props("outline")
                             return
-                        if not paths and not any_filters:
+                        if not controller_state.paths and not any_filters:
                             ui.label("No paths yet.").classes("text-sm").style("color: var(--lp-muted)")
                             ui.label("Share the first path to get started.").classes("text-sm").style("color: var(--lp-muted)")
                             with ui.row().classes("items-center gap-2"):
@@ -1008,15 +868,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     shown_page = shown[: max(0, int(visible_count))]
                     for p in shown_page:
                         pid = int(p.get("id") or 0)
-                        selected = selected_by_id.get(pid)
+                        selected = controller_state.selected_by_id.get(pid)
                         can_edit = is_admin or (str(p.get("created_by") or "") == username)
                         is_tracked = selected is not None
                         st_cls = " lp-accent-card--interested" if is_tracked else ""
-                        detail = selected_detail_by_path_id.get(pid) if selected else None
+                        detail = controller_state.selected_detail_by_path_id.get(pid) if selected else None
                         completed, total_courses, progress = (0, 0, 0.0)
                         outcomes: dict[str, Any] = {}
                         if isinstance(detail, dict):
-                            outcomes = _path_outcomes(detail=detail, tracking_by_course_id=tracking_by_course_id)
+                            outcomes = _path_outcomes(
+                                detail=detail,
+                                tracking_by_course_id=controller_state.tracking_by_course_id,
+                            )
                             completed = int(outcomes.get("completed") or 0)
                             total_courses = int(outcomes.get("total") or 0)
                             progress = float(outcomes.get("ratio") or 0.0)
@@ -1030,128 +893,113 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             and updated_at > created_at
                         )
                         is_new = (not is_updated) and _is_recent(created_at)
+                        rating_badge = _format_rating_badge(controller_state.path_review_summary_by_id.get(pid))
+                        recommendation_badge = _format_recommendation_badge(
+                            controller_state.path_recommendation_summary_by_id.get(pid)
+                        )
+                        shared_by = str(p.get("created_by") or "").strip()
+                        milestone = str(outcomes.get("milestone") or "") if selected else ""
+                        milestone_class = str(outcomes.get("milestone_class") or "") if selected else ""
+                        impact = str(outcomes.get("impact") or "") if selected else ""
+                        next_course = outcomes.get("next_course") if isinstance(outcomes, dict) else None
+                        next_title = str(next_course.get("title") or "").strip() if isinstance(next_course, dict) else ""
 
-                        with ui.card().classes(f"w-full lp-accent-card lp-card--hover{st_cls}"):
-                            with ui.element("div").classes("lp-card-topright"):
-                                if is_new:
-                                    ui.label("New").classes("lp-chip lp-chip--sky")
-                                elif is_updated:
-                                    ui.label("Updated").classes("lp-chip lp-chip--teal")
-                                rating_badge = _format_rating_badge(path_review_summary_by_id.get(pid))
-                                if rating_badge:
-                                    ui.label(f"★ {rating_badge}").classes("lp-meta-chip")
-                                recommendation_badge = _format_recommendation_badge(path_recommendation_summary_by_id.get(pid))
-                                if recommendation_badge:
-                                    ui.label(recommendation_badge).classes("lp-meta-chip")
-
-                                @guard_ui_action(title="Recommend failed")
-                                async def _recommend(_pid: int = pid) -> None:
-                                    existing_note = ""
-                                    try:
-                                        rows = await api.get(f"/paths/{int(_pid)}/recommendations")
-                                        for row in list(rows or []):
-                                            if not isinstance(row, dict):
-                                                continue
-                                            if str(row.get("created_by") or "") == username:
-                                                existing_note = str(row.get("note") or "")
-                                                break
-                                    except ApiError:
-                                        existing_note = ""
-
-                                    with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):
-                                        ui.label("Recommend path").classes("text-lg font-semibold")
-                                        note = (
-                                            ui.textarea("Why this helps (optional)", value=existing_note)
-                                            .props("autogrow")
-                                            .classes("w-full")
-                                        )
-                                        with ui.row().classes("justify-end mt-4"):
-
-                                            @guard_ui_action(title="Recommend failed")
-                                            async def _save() -> None:
-                                                await api.post(
-                                                    f"/paths/{int(_pid)}/recommendations",
-                                                    {"note": str(note.value or "").strip()},
-                                                )
-                                                ui.notify("Recommendation saved", type="positive")
-                                                dialog.close()
-                                                await _load_all()
-
-                                            ui.button("Save", on_click=_save)
-                                            ui.button("Cancel", on_click=dialog.close).props("outline")
-
-                                    dialog.open()
-
-                                def _copy_path_link(_pid: int = pid) -> None:
-                                    link = f"/paths?path_id={int(_pid)}&view=full"
-                                    ui.run_javascript(f"navigator.clipboard.writeText(window.location.origin + {repr(link)});")
-                                    ui.notify("Link copied", type="positive")
-
-                                async def _do_review(_pid: int = pid) -> None:
-                                    await _open_details(_pid, view_mode="reviews")
-
-                                async def _do_edit(_pid: int = pid) -> None:
-                                    detail = await api.get(f"/paths/{_pid}")
-                                    await _open_edit(path_id=_pid, detail=detail, detail_dialog=None)
-
-                                async def _do_delete(_pid: int = pid) -> None:
-                                    await _delete_path(_pid)
-
-                                with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
-                                    ui.menu_item("Review", _do_review)
-                                    ui.menu_item("Recommend", _recommend)
-                                    ui.menu_item("Copy link", _copy_path_link)
-                                    if can_edit:
-                                        ui.menu_item("Edit", _do_edit)
-                                        ui.menu_item("Delete", _do_delete)
-
-                            ui.label(p.get("name") or "").classes("text-lg font-semibold")
-                            if str(p.get("description") or "").strip():
-                                ui.label(p.get("description") or "").classes("text-sm text-gray-600")
-                            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
-                                shared_by = str(p.get("created_by") or "").strip()
-                                if shared_by:
-                                    ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
-                                ui.label(_path_tracking_label(is_tracked)).classes(_path_tracking_chip_class(is_tracked))
-                            if selected and total_courses:
-                                ui.label(f"{completed}/{total_courses} completed").classes("text-sm").style(
-                                    "color: var(--lp-muted)"
+                        @guard_ui_action(title="Recommend failed")
+                        async def _recommend(_pid: int = pid) -> None:
+                            existing_note = ""
+                            try:
+                                existing_note = await controller.get_user_recommendation_note(
+                                    path_id=int(_pid), username=username
                                 )
-                                ui.linear_progress(progress, show_value=False).classes("w-full")
-                                with ui.row().classes("items-center gap-2"):
-                                    ui.label(str(outcomes.get("milestone") or "")).classes(
-                                        str(outcomes.get("milestone_class") or "")
-                                    )
-                                    ui.label(str(outcomes.get("impact") or "")).classes("text-xs").style(
-                                        "color: var(--lp-muted)"
-                                    )
-                                next_course = outcomes.get("next_course") if isinstance(outcomes, dict) else None
-                                if isinstance(next_course, dict):
-                                    next_title = str(next_course.get("title") or "").strip()
-                                    if next_title:
-                                        ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
+                            except ApiError:
+                                existing_note = ""
 
-                            with ui.row().classes("items-center gap-2 mt-2"):
+                            with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):
+                                ui.label("Recommend path").classes("text-lg font-semibold")
+                                note = (
+                                    ui.textarea("Why this helps (optional)", value=existing_note)
+                                    .props("autogrow")
+                                    .classes("w-full")
+                                )
+                                with ui.row().classes("justify-end mt-4"):
 
-                                async def _view(_pid: int = pid) -> None:
-                                    await _open_details(_pid, view_mode="full")
+                                    @guard_ui_action(title="Recommend failed")
+                                    async def _save() -> None:
+                                        await controller.save_recommendation(
+                                            path_id=int(_pid),
+                                            note=str(note.value or ""),
+                                        )
+                                        ui.notify("Recommendation saved", type="positive")
+                                        dialog.close()
+                                        await _load_all()
 
-                                ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip("View")
+                                    ui.button("Save", on_click=_save)
+                                    ui.button("Cancel", on_click=dialog.close).props("outline")
 
-                                if selected:
+                            dialog.open()
 
-                                    async def _do_unselect(_pid: int = pid) -> None:
-                                        await _unselect(_pid)
-                                        _recompute_facet_options()
+                        def _copy_path_link(_pid: int = pid) -> None:
+                            link = f"/paths?path_id={int(_pid)}&view=full"
+                            ui.run_javascript(f"navigator.clipboard.writeText(window.location.origin + {repr(link)});")
+                            ui.notify("Link copied", type="positive")
 
-                                    ui.button("Untrack", on_click=_do_unselect).props("outline dense")
-                                else:
+                        async def _do_review(_pid: int = pid) -> None:
+                            await _open_details(_pid, view_mode="reviews")
 
-                                    async def _do_select(_pid: int = pid) -> None:
-                                        await _select(_pid)
-                                        _recompute_facet_options()
+                        async def _do_edit(_pid: int = pid) -> None:
+                            detail = await controller.get_path_detail(path_id=int(_pid))
+                            await _open_edit(path_id=_pid, detail=detail, detail_dialog=None)
 
-                                    ui.button("Track", on_click=_do_select).props("outline dense")
+                        async def _do_delete(_pid: int = pid) -> None:
+                            await _delete_path(_pid)
+
+                        async def _view(_pid: int = pid) -> None:
+                            await _open_details(_pid, view_mode="full")
+
+                        if selected:
+
+                            async def _do_unselect(_pid: int = pid) -> None:
+                                await _unselect(_pid)
+                                _recompute_facet_options()
+
+                            on_track_toggle = _do_unselect
+                            track_toggle_label = "Untrack"
+                        else:
+
+                            async def _do_select(_pid: int = pid) -> None:
+                                await _select(_pid)
+                                _recompute_facet_options()
+
+                            on_track_toggle = _do_select
+                            track_toggle_label = "Track"
+
+                        render_path_card(
+                            path_row=p,
+                            card_class_suffix=st_cls,
+                            is_new=is_new,
+                            is_updated=is_updated,
+                            rating_badge=rating_badge,
+                            recommendation_badge=recommendation_badge,
+                            can_edit=can_edit,
+                            shared_by=shared_by,
+                            tracking_label_text=_path_tracking_label(is_tracked),
+                            tracking_chip_cls=_path_tracking_chip_class(is_tracked),
+                            completed=int(completed if selected else 0),
+                            total_courses=int(total_courses if selected else 0),
+                            progress=float(progress if selected else 0.0),
+                            milestone=milestone,
+                            milestone_class=milestone_class,
+                            impact=impact,
+                            next_title=next_title,
+                            on_review=_do_review,
+                            on_recommend=_recommend,
+                            on_copy_link=_copy_path_link,
+                            on_edit=_do_edit,
+                            on_delete=_do_delete,
+                            on_view=_view,
+                            on_track_toggle=on_track_toggle,
+                            track_toggle_label=track_toggle_label,
+                        )
 
                     if total > len(shown_page):
                         with ui.row().classes("items-center justify-center mt-2"):
@@ -1165,14 +1013,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             async def _load_all() -> None:
                 """Reload all data for this page."""
-                nonlocal paths
-                nonlocal selected_by_id
-                nonlocal selected_detail_by_path_id
-                nonlocal tracking_by_course_id
-                nonlocal courses
-                nonlocal course_by_id
-                nonlocal path_review_summary_by_id
-                nonlocal path_recommendation_summary_by_id
                 nonlocal loading
                 nonlocal loaded_once
                 nonlocal visible_count
@@ -1184,51 +1024,22 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 meta.text = "Loading..."
                 paths_list.refresh()
                 try:
-                    paths, selected_by_id, courses, course_by_id = await _load_paths_page_data(api)
-                    await asyncio.gather(_reload_tracking(), _reload_selected_details())
-                    path_ids: list[int] = []
-                    for p in paths:
-                        if not isinstance(p, dict):
-                            continue
-                        try:
-                            pid = int(p.get("id") or 0)
-                        except (TypeError, ValueError):
-                            continue
-                        if pid > 0:
-                            path_ids.append(pid)
-                    path_review_summary_by_id = {}
-                    path_recommendation_summary_by_id = {}
-                    if path_ids:
-                        try:
-                            summaries = await api.get("/paths/reviews/summary", params={"path_ids": path_ids})
-                            path_recommendation_summary_by_id = await load_path_recommendation_summaries(
-                                api=api, path_ids=path_ids
-                            )
-                            for row in list(summaries or []):
-                                if not isinstance(row, dict):
-                                    continue
-                                try:
-                                    pid = int(row.get("path_id") or 0)
-                                except (TypeError, ValueError):
-                                    continue
-                                if pid > 0:
-                                    path_review_summary_by_id[pid] = row
-                        except ApiError:
-                            path_review_summary_by_id = {}
-                            path_recommendation_summary_by_id = {}
-                    create_course_ids.options = _course_options(courses)
+                    await controller.load_all(state=controller_state)
+                    create_course_ids.options = _course_options(controller_state.courses)
                     create_course_ids.update()
                     _recompute_facet_options()
                     paths_list.refresh()
-                    meta.text = f"{len(paths)} paths"
+                    meta.text = f"{len(controller_state.paths)} paths"
                 except ApiError as exc:
                     ui.notify(str(exc), type="negative")
-                    paths = []
-                    selected_by_id = {}
-                    courses = []
-                    course_by_id = {}
-                    path_review_summary_by_id = {}
-                    path_recommendation_summary_by_id = {}
+                    controller_state.paths = []
+                    controller_state.selected_by_id = {}
+                    controller_state.selected_detail_by_path_id = {}
+                    controller_state.tracking_by_course_id = {}
+                    controller_state.courses = []
+                    controller_state.course_by_id = {}
+                    controller_state.path_review_summary_by_id = {}
+                    controller_state.path_recommendation_summary_by_id = {}
                     _recompute_facet_options()
                     paths_list.refresh()
                     meta.text = "Failed to load"
@@ -1240,17 +1051,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             def _render_rail() -> None:
                 nonlocal status_filter, refresh_btn
-                with ui.row().classes("items-center justify-between w-full"):
-                    ui.label("Filters").classes("text-md font-semibold")
-                    refresh_btn = ui.button("Refresh", on_click=_load_all).props("outline dense")
-
-                ui.label("Tip: select a path to track progress.").classes("text-xs").style("color: var(--lp-muted)")
-
-                status_filter = ui.select({"": "Any state"}, label="Path state", value="").props("dense").classes("w-full")
-                status_filter.on("update:model-value", _refresh_list)
-
-                ui.element("div").style("flex: 1")
-                ui.button("Clear", on_click=_reset_all).props("outline dense").classes("w-full")
+                status_filter, refresh_btn = render_paths_filter_rail(
+                    on_refresh=_load_all,
+                    on_reset=_reset_all,
+                    on_status_change=_refresh_list,
+                )
 
             def _render_main() -> None:
                 active_filters()

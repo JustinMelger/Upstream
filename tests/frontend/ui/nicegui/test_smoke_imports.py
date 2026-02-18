@@ -31,3 +31,14 @@ def test_pages_expose_register_callable() -> None:
 
     for mod in [ai_curator, admin_users, courses, home, learning, login, paths, placeholders]:
         assert callable(getattr(mod, "register", None))
+
+
+@pytest.mark.unit
+def test_paths_component_modules_are_importable() -> None:
+    from frontend.ui.nicegui.components import path_card, path_detail_sections, paths_sections
+
+    assert callable(getattr(path_card, "render_path_card", None))
+    assert callable(getattr(path_detail_sections, "render_path_detail_header", None))
+    assert callable(getattr(path_detail_sections, "render_path_detail_learning_section", None))
+    assert callable(getattr(paths_sections, "render_paths_topbar", None))
+    assert callable(getattr(paths_sections, "render_paths_filter_rail", None))

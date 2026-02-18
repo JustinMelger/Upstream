@@ -6,11 +6,61 @@ NiceGUI is event-driven and component-oriented, so a class-based or function-bas
 
 Recommended separation:
 
-- Pages: route handlers that compose UI and bind events.
-- UI components: reusable widgets (tables, forms, dialogs).
-- Frontend services: domain-specific “use cases” that orchestrate API calls and UI state updates.
+- Pages (View): route handlers that compose UI and bind events.
+- Page state (Model): typed state objects owned by each page/controller pair.
+- Page controllers (Controller): page-level orchestration and mutation flows.
+- UI components (View): reusable widgets (tables, forms, dialogs, sections).
+- Frontend services: domain-specific “use cases” used by controllers.
 - API client: typed wrapper that handles base URL, `X-Session-Token` injection, and error mapping.
 - Session store: single place to manage login state, token persistence, and current-user metadata.
+
+## Lightweight MVC Pattern
+
+We use a lightweight MVC variant for NiceGUI pages:
+
+- Model:
+  - Typed page state objects (for example `PathsPageState`).
+  - Backend/domain payloads returned by API/services.
+- View:
+  - Page modules (`frontend/ui/nicegui/pages/*.py`) for composition + event binding.
+  - Reusable sections/components (`frontend/ui/nicegui/components/*.py`).
+- Controller:
+  - Page-specific controller modules (`*_controller.py`) that orchestrate page workflows.
+  - Controllers call frontend services and `ApiClient`, but do not render UI.
+
+Rules:
+
+- Keep business/domain rules in backend services.
+- Keep frontend controllers focused on UI workflow orchestration.
+- Keep page modules thin and avoid large closure/nonlocal state when a typed model can be used.
+
+Reference implementation (current):
+
+- `frontend/ui/nicegui/pages/paths/page.py` (View composition + bindings)
+- `frontend/ui/nicegui/pages/paths/controller.py` (Controller orchestration)
+- `frontend/ui/nicegui/pages/paths/state.py` (Model)
+- `frontend/ui/nicegui/components/path_card.py`
+- `frontend/ui/nicegui/components/path_detail_sections.py`
+- `frontend/ui/nicegui/components/paths_sections.py`
+
+### MVC Migration Template (Short)
+
+Use this checklist when migrating a page to folder-based MVC:
+
+1. Create page folder:
+   - `pages/<domain>/page.py` (View)
+   - `pages/<domain>/controller.py` (Controller)
+   - `pages/<domain>/state.py` (Model state)
+   - `pages/<domain>/__init__.py` (exports `register`)
+2. Move typed page state dataclasses to `state.py`.
+3. Move API/workflow orchestration to `controller.py`.
+4. Keep `page.py` focused on UI composition, event binding, and component calls.
+5. Extract large UI blocks into `components/*_sections.py`.
+6. Add compatibility shim module for old imports during transition.
+7. Add/adjust tests:
+   - controller orchestration tests
+   - page/helper smoke tests
+   - import/register smoke checks
 
 ## NiceGUI Sequence
 
@@ -80,7 +130,8 @@ classDiagram
 Notes:
 
 - Pages should stay thin (UI composition + event handlers).
-- Frontend services should contain “workflow logic” (for example refresh lists after mutations).
+- Controllers should contain page-flow orchestration (for example refresh lists after mutations).
+- Frontend services should contain shared domain use-cases called by controllers.
 - `ApiClient` should be the only place that knows about HTTP and error envelopes.
 
 ## Pages And Routes

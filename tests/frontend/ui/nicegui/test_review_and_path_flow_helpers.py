@@ -56,6 +56,12 @@ class _FakeApi:
         self.calls.append(("GET", path, None))
         if path == "/paths/42":
             return {"id": 42, "courses": [{"id": 101}, {"id": 102}]}
+        if path == "/paths":
+            return [{"id": 42, "name": "P1"}]
+        if path == "/paths/selected/list":
+            return [{"id": 42, "status": "interested"}]
+        if path == "/courses":
+            return [{"id": 101, "title": "C1"}]
         return {}
 
 
@@ -88,3 +94,48 @@ async def test_select_path_and_seed_tracking_uses_cached_detail() -> None:
     assert seeded == 0
     assert isinstance(detail, dict) and int(detail.get("id") or 0) == 42
     assert api.calls == [("POST", "/paths/42/select", {})]
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_unselect_path_calls_expected_endpoint() -> None:
+    api = _FakeApi()
+    ok = await paths_service.unselect_path(api=api, path_id=42)
+    assert ok is True
+    assert api.calls == [("POST", "/paths/42/unselect", {})]
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_load_paths_page_data_returns_expected_shapes() -> None:
+    api = _FakeApi()
+    paths, selected_by_id, courses, course_by_id = await paths_service.load_paths_page_data(api=api)
+
+    assert isinstance(paths, list) and len(paths) == 1
+    assert selected_by_id == {42: {"id": 42, "status": "interested"}}
+    assert isinstance(courses, list) and len(courses) == 1
+    assert course_by_id == {101: {"id": 101, "title": "C1"}}
+
+
+class _FakeApiWithDetailFailure:
+    async def get(self, path: str, params: dict | None = None):
+        if path == "/paths/selected/list":
+            return [{"id": 1}, {"id": 2}]
+        if path == "/tracking":
+            return [{"course_id": 11, "status": "in_progress"}]
+        if path == "/paths/1":
+            return {"id": 1, "courses": [{"id": 11}]}
+        if path == "/paths/2":
+            raise RuntimeError("detail failed")
+        return {}
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_load_my_paths_page_data_tolerates_partial_detail_failures() -> None:
+    api = _FakeApiWithDetailFailure()
+    selected, details, tracking_by_course_id = await paths_service.load_my_paths_page_data(api=api)
+
+    assert [int(p["id"]) for p in selected] == [1, 2]
+    assert details == {1: {"id": 1, "courses": [{"id": 11}]}}
+    assert tracking_by_course_id == {11: {"course_id": 11, "status": "in_progress"}}
