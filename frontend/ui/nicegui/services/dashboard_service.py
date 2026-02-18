@@ -26,6 +26,7 @@ class DashboardData:
     team_recent: list[dict[str, Any]]
     selected_path_details: list[dict[str, Any]]
     review_summary_by_course_id: dict[int, dict[str, Any]]
+    team_tracking_rows: list[dict[str, Any]]
 
 
 def _index_review_summary(rows: list[dict[str, Any]] | None) -> dict[int, dict[str, Any]]:
@@ -123,7 +124,7 @@ async def load_dashboard_data(
     # Admin-only panels
     if is_admin:
         tasks.append(asyncio.create_task(api.get("/tracking/stats/users")))
-        tasks.append(asyncio.create_task(api.get("/tracking/recent", params={"limit": 5})))
+        tasks.append(asyncio.create_task(api.get("/tracking/recent", params={"limit": 100})))
 
     results = await asyncio.gather(*tasks)
     idx = 0
@@ -140,11 +141,34 @@ async def load_dashboard_data(
 
     team_stats_by_user: list[dict[str, Any]] = []
     team_recent: list[dict[str, Any]] = []
+    team_tracking_rows: list[dict[str, Any]] = []
     if is_admin:
         team_stats_by_user = list(results[idx] or [])
         idx += 1
         team_recent = list(results[idx] or [])
         idx += 1
+
+        colleague_ids: list[str] = []
+        seen_ids: set[str] = set()
+        for row in team_stats_by_user:
+            if not isinstance(row, dict):
+                continue
+            who = str(row.get("colleague_id") or "").strip()
+            if not who or who in seen_ids:
+                continue
+            seen_ids.add(who)
+            colleague_ids.append(who)
+        if colleague_ids:
+            team_tracking_payloads = await asyncio.gather(
+                *(api.get("/tracking", params={"colleague_id": who}) for who in colleague_ids),
+                return_exceptions=True,
+            )
+            for payload in team_tracking_payloads:
+                if isinstance(payload, Exception):
+                    continue
+                for row in list(payload or []):
+                    if isinstance(row, dict):
+                        team_tracking_rows.append(row)
 
     # Prefetch selected-path details (limit for UX).
     shown = selected_paths[:5]
@@ -187,4 +211,5 @@ async def load_dashboard_data(
         team_recent=team_recent,
         selected_path_details=selected_path_details,
         review_summary_by_course_id=review_summary_by_course_id,
+        team_tracking_rows=team_tracking_rows,
     )

@@ -59,3 +59,25 @@ async def load_review_summaries(*, api: ApiClient, course_ids: list[int]) -> dic
             continue
         out[cid] = row
     return out
+
+
+async def load_recommendation_summaries(*, api: ApiClient, course_ids: list[int]) -> dict[int, dict[str, Any]]:
+    """Load recommendation summary items for the given course ids and index them by course id."""
+    if not course_ids:
+        return {}
+    result = await api.get(
+        "/courses/recommendations/summary",
+        params={"course_ids": [int(i) for i in course_ids if int(i) > 0]},
+    )
+    out: dict[int, dict[str, Any]] = {}
+    for row in list(result or []):
+        if not isinstance(row, dict):
+            continue
+        try:
+            cid = int(row.get("course_id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if cid <= 0:
+            continue
+        out[cid] = row
+    return out

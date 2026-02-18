@@ -159,3 +159,115 @@ async def test_course_lifecycle(app_client):
     delete = await app_client.delete(f"/courses/{course_id}", headers={"X-Session-Token": token})
     assert delete.status_code == 200
     assert delete.json()["deleted"] is True
+
+
+@pytest.mark.integration
+async def test_create_course_duplicate_url_returns_409(app_client):
+    """Creating a course with an existing URL returns a duplicate error."""
+    token = await _login_admin(app_client)
+    first = await app_client.post(
+        "/courses",
+        json={"title": "Course One", "description": "desc", "url": "https://example.com/course-a"},
+        headers={"X-Session-Token": token},
+    )
+    assert first.status_code == 200
+
+    duplicate = await app_client.post(
+        "/courses",
+        json={"title": "Course Two", "description": "desc", "url": " https://example.com/course-a "},
+        headers={"X-Session-Token": token},
+    )
+    assert duplicate.status_code == 409
+    body = duplicate.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "duplicate_url"
+
+
+@pytest.mark.integration
+async def test_create_course_duplicate_title_provider_returns_409(app_client):
+    """Creating a course with same title/provider returns a duplicate error."""
+    token = await _login_admin(app_client)
+    first = await app_client.post(
+        "/courses",
+        json={"title": "Intro to SQL", "description": "desc", "provider": "Acme Academy"},
+        headers={"X-Session-Token": token},
+    )
+    assert first.status_code == 200
+
+    duplicate = await app_client.post(
+        "/courses",
+        json={"title": "  intro to sql  ", "description": "another", "provider": " acme academy "},
+        headers={"X-Session-Token": token},
+    )
+    assert duplicate.status_code == 409
+    body = duplicate.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "duplicate_title_provider"
+
+
+@pytest.mark.integration
+async def test_course_recommendation_lifecycle_and_moderation(app_client):
+    """Users can recommend courses; owners/admin can moderate deletes."""
+    admin_token = await _login_admin(app_client)
+    await _create_user(app_client, admin_token, "alice", role="user")
+    await _create_user(app_client, admin_token, "bob", role="user")
+
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_token = alice_login.json()["token"]
+    bob_token = bob_login.json()["token"]
+
+    created = await app_client.post(
+        "/courses",
+        json={"title": "Recommended Course", "description": "desc"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert created.status_code == 200
+    course_id = int(created.json()["id"])
+
+    rec1 = await app_client.post(
+        f"/courses/{course_id}/recommendations",
+        json={"note": "Helpful for onboarding"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert rec1.status_code == 200
+    rec_id = int(rec1.json()["id"])
+    assert rec1.json()["created_by"] == "alice"
+
+    # Upsert same user recommendation.
+    rec2 = await app_client.post(
+        f"/courses/{course_id}/recommendations",
+        json={"note": "Updated note"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert rec2.status_code == 200
+    assert int(rec2.json()["id"]) == rec_id
+    assert rec2.json()["note"] == "Updated note"
+
+    listing = await app_client.get(f"/courses/{course_id}/recommendations", headers={"X-Session-Token": bob_token})
+    assert listing.status_code == 200
+    rows = listing.json()
+    assert rows and int(rows[0]["id"]) == rec_id
+
+    summary = await app_client.get(
+        "/courses/recommendations/summary",
+        params={"course_ids": [course_id]},
+        headers={"X-Session-Token": bob_token},
+    )
+    assert summary.status_code == 200
+    srows = summary.json()
+    assert srows and int(srows[0]["course_id"]) == course_id
+    assert int(srows[0]["recommendation_count"]) == 1
+
+    forbidden = await app_client.delete(
+        f"/courses/{course_id}/recommendations/{rec_id}",
+        headers={"X-Session-Token": bob_token},
+    )
+    assert forbidden.status_code == 403
+
+    deleted = await app_client.delete(
+        f"/courses/{course_id}/recommendations/{rec_id}",
+        headers={"X-Session-Token": admin_token},
+    )
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"] is True

@@ -2,18 +2,29 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.api.deps import get_auth_service, get_course_reviews_service, get_courses_service, require_session
+from backend.api.deps import (
+    get_auth_service,
+    get_course_recommendations_service,
+    get_course_reviews_service,
+    get_courses_service,
+    require_session,
+)
 from backend.api.schemas import (
     CourseCreateRequest,
     CoursePayload,
+    CourseRecommendationCreateRequest,
+    CourseRecommendationPayload,
+    CourseRecommendationSummaryItem,
     CourseReviewCreateRequest,
     CourseReviewPayload,
     CourseReviewSummaryItem,
     CourseUpdateRequest,
+    DeleteCourseRecommendationResponse,
     DeleteCourseResponse,
     DeleteCourseReviewResponse,
 )
 from backend.services.auth_service import AuthService
+from backend.services.course_recommendations_service import CourseRecommendationsService
 from backend.services.course_reviews_service import CourseReviewsService
 from backend.services.courses_service import CoursesService
 
@@ -53,6 +64,16 @@ async def course_review_summaries(
 ):
     """Return average rating + count for each course id."""
     return await reviews.summaries(course_ids=list(course_ids or []))
+
+
+@router.get("/recommendations/summary", response_model=list[CourseRecommendationSummaryItem])
+async def course_recommendation_summaries(
+    course_ids: List[int] = Query(default=[], description="Course IDs to summarize"),
+    current_user: str = Depends(require_session),
+    recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
+):
+    """Return recommendation counts for each course id."""
+    return await recommendations.summaries(course_ids=list(course_ids or []))
 
 
 @router.get("/{course_id}", response_model=CoursePayload)
@@ -200,4 +221,55 @@ async def delete_course_review(
     if not await auth.is_admin(current_user) and str(review.get("created_by") or "") != str(current_user):
         raise HTTPException(status_code=403, detail="forbidden")
     deleted = await reviews.delete_review(review_id=int(review_id))
+    return {"deleted": bool(deleted)}
+
+
+@router.get("/{course_id}/recommendations", response_model=list[CourseRecommendationPayload])
+async def list_course_recommendations(
+    course_id: int,
+    current_user: str = Depends(require_session),
+    courses: CoursesService = Depends(get_courses_service),
+    recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
+):
+    """List recommendations for a course."""
+    existing = await courses.get_course_by_id(course_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="not_found")
+    return await recommendations.list_recommendations(course_id=course_id)
+
+
+@router.post("/{course_id}/recommendations", response_model=CourseRecommendationPayload)
+async def create_course_recommendation(
+    course_id: int,
+    payload: CourseRecommendationCreateRequest,
+    current_user: str = Depends(require_session),
+    courses: CoursesService = Depends(get_courses_service),
+    recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
+):
+    """Create/update current user's recommendation for a course."""
+    existing = await courses.get_course_by_id(course_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="not_found")
+    return await recommendations.create_recommendation(
+        course_id=course_id, payload=payload.model_dump(), created_by=current_user
+    )
+
+
+@router.delete("/{course_id}/recommendations/{recommendation_id}", response_model=DeleteCourseRecommendationResponse)
+async def delete_course_recommendation(
+    course_id: int,
+    recommendation_id: int,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+    recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
+):
+    """Delete a course recommendation (owner/admin only)."""
+    recommendation = await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))
+    if not recommendation:
+        raise HTTPException(status_code=404, detail="not_found")
+    if int(recommendation.get("course_id") or 0) != int(course_id):
+        raise HTTPException(status_code=404, detail="not_found")
+    if not await auth.is_admin(current_user) and str(recommendation.get("created_by") or "") != str(current_user):
+        raise HTTPException(status_code=403, detail="forbidden")
+    deleted = await recommendations.delete_recommendation(recommendation_id=int(recommendation_id))
     return {"deleted": bool(deleted)}

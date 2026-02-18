@@ -9,10 +9,8 @@ from typing import Any
 
 from nicegui import app, ui
 
-from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.owner_menu import render_owner_menu
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
@@ -21,7 +19,12 @@ from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation_intents import get_course_intent, pop_course_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.services.courses_service import load_courses_and_tracking, load_review_summaries, load_tracking_map
+from frontend.ui.nicegui.services.courses_service import (
+    load_courses_and_tracking,
+    load_recommendation_summaries,
+    load_review_summaries,
+    load_tracking_map,
+)
 
 
 def _parse_duration_hours(raw: str) -> float | None:
@@ -66,6 +69,19 @@ def _format_rating_badge(row: dict[str, Any] | None) -> str:
     except (TypeError, ValueError):
         avg = 0.0
     return f"★ {avg:.1f} ({count})"
+
+
+def _format_recommendation_badge(row: dict[str, Any] | None) -> str:
+    """Format a compact recommendation badge for course cards."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("recommendation_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    return f"↗ {count} rec"
 
 
 def _status_for_card(tracked: dict[str, Any] | None) -> str:
@@ -114,6 +130,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             courses: list[dict[str, Any]] = []
             tracking_by_course_id: dict[int, dict[str, Any]] = {}
             review_summary_by_course_id: dict[int, dict[str, Any]] = {}
+            recommendation_summary_by_course_id: dict[int, dict[str, Any]] = {}
             page_size = 10
             visible_count = page_size
 
@@ -314,7 +331,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 status_filter.update()
 
             async def _load() -> None:
-                nonlocal courses, tracking_by_course_id, review_summary_by_course_id, loading, loaded_once, visible_count
+                nonlocal courses, tracking_by_course_id, review_summary_by_course_id, recommendation_summary_by_course_id
+                nonlocal loading, loaded_once, visible_count
                 if loading:
                     return
                 loading = True
@@ -338,6 +356,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         api=api,
                         course_ids=[int(c.get("id") or 0) for c in courses if int(c.get("id") or 0) > 0],
                     )
+                    recommendation_summary_by_course_id = await load_recommendation_summaries(
+                        api=api,
+                        course_ids=[int(c.get("id") or 0) for c in courses if int(c.get("id") or 0) > 0],
+                    )
                     _recompute_facet_options()
                     courses_list.refresh()
                     meta.text = f"{len(courses)} courses"
@@ -346,6 +368,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses = []
                     tracking_by_course_id = {}
                     review_summary_by_course_id = {}
+                    recommendation_summary_by_course_id = {}
                     _recompute_facet_options()
                     courses_list.refresh()
                     meta.text = "0 courses"
@@ -382,7 +405,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             # Pre-build the Create dialog once so opening it is instant.
             create_dialog = ui.dialog()
             with create_dialog, ui.card().classes("lp-card lp-dialog w-[min(700px,95vw)]"):
-                ui.label("Create Course").classes("text-xl font-semibold")
+                ui.label("Share Course").classes("text-xl font-semibold")
+                ui.label("Save a draft if you want feedback before publishing.").classes("text-xs").style(
+                    "color: var(--lp-muted)"
+                )
 
                 create_title = ui.input("Title").props("clearable").classes("w-full")
                 create_description = ui.textarea("Description").props("autogrow").classes("w-full")
@@ -395,9 +421,44 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         create_level = ui.input("Level").props("clearable").classes("w-full")
                         create_duration_hours = ui.input("Duration hours").props("clearable").classes("w-full")
 
+                course_draft_key = f"courses_share_draft::{username}"
+
+                def _course_draft_payload() -> dict[str, Any]:
+                    return {
+                        "title": str(create_title.value or ""),
+                        "description": str(create_description.value or "").strip(),
+                        "provider": str(create_provider.value or ""),
+                        "category": str(create_category.value or ""),
+                        "level": str(create_level.value or ""),
+                        "duration_hours": str(create_duration_hours.value or ""),
+                        "url": str(create_url.value or ""),
+                    }
+
+                def _apply_course_draft(raw: Any) -> None:
+                    draft = raw if isinstance(raw, dict) else {}
+                    create_title.value = str(draft.get("title") or "")
+                    create_description.value = str(draft.get("description") or "")
+                    create_provider.value = str(draft.get("provider") or "")
+                    create_category.value = str(draft.get("category") or "")
+                    create_level.value = str(draft.get("level") or "")
+                    create_duration_hours.value = str(draft.get("duration_hours") or "")
+                    create_url.value = str(draft.get("url") or "")
+
                 with ui.row().classes("justify-end mt-4"):
 
-                    @guard_ui_action(title="Create course failed")
+                    def _save_draft() -> None:
+                        app.storage.user[course_draft_key] = _course_draft_payload()
+                        ui.notify("Draft saved", type="positive")
+
+                    def _load_draft() -> None:
+                        draft = app.storage.user.get(course_draft_key)
+                        if not isinstance(draft, dict):
+                            ui.notify("No saved draft found", type="warning")
+                            return
+                        _apply_course_draft(draft)
+                        ui.notify("Draft loaded", type="positive")
+
+                    @guard_ui_action(title="Share course failed")
                     async def _create_submit() -> None:
                         dh_raw = str(create_duration_hours.value or "")
                         dh = _parse_duration_hours(dh_raw)
@@ -418,21 +479,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             "url": str(create_url.value or ""),
                         }
                         await api.post("/courses", payload)
-                        ui.notify("Course created", type="positive")
+                        app.storage.user.pop(course_draft_key, None)
+                        ui.notify("Course shared", type="positive")
                         create_dialog.close()
                         await _load()
 
-                    ui.button("Create", on_click=_create_submit)
+                    ui.button("Save draft", on_click=_save_draft).props("outline")
+                    ui.button("Load draft", on_click=_load_draft).props("outline")
+                    ui.button("Share", on_click=_create_submit)
                     ui.button("Cancel", on_click=create_dialog.close).props("outline")
 
             def _open_create_dialog() -> None:
-                create_title.value = ""
-                create_description.value = ""
-                create_provider.value = ""
-                create_category.value = ""
-                create_level.value = ""
-                create_duration_hours.value = ""
-                create_url.value = ""
+                _apply_course_draft(app.storage.user.get(course_draft_key))
                 create_dialog.open()
 
             def _render_edit_course_dialog(course: dict[str, Any]) -> None:
@@ -516,11 +574,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @guard_ui_action(title="Load course details failed")
             async def _open_details(course_id: int, *, focus_reviews: bool = False) -> None:
-                course, reviews_payload = await asyncio.gather(
+                course, reviews_payload, recommendations_payload = await asyncio.gather(
                     api.get(f"/courses/{course_id}"),
                     api.get(f"/courses/{course_id}/reviews"),
+                    api.get(f"/courses/{course_id}/recommendations"),
                 )
                 reviews = list(reviews_payload or [])
+                recommendations = list(recommendations_payload or [])
                 view_mode = _normalize_course_view_mode(focus_reviews)
 
                 with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
@@ -543,6 +603,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
                                 if summary_label:
                                     ui.label(f"★ {summary_label}").classes("lp-meta-chip")
+                                rec_badge = _format_recommendation_badge(
+                                    recommendation_summary_by_course_id.get(int(course_id))
+                                )
+                                if rec_badge:
+                                    ui.label(rec_badge).classes("lp-meta-chip")
                             if course.get("url"):
                                 ui.button(
                                     "Open link",
@@ -551,6 +616,32 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ).props("outline dense")
 
                         ui.separator()
+                        if recommendations:
+                            rec_by = sorted(
+                                {
+                                    str(r.get("created_by") or "").strip()
+                                    for r in recommendations
+                                    if isinstance(r, dict) and str(r.get("created_by") or "").strip()
+                                }
+                            )
+                            if rec_by:
+                                ui.label(f"Recommended by {', '.join(rec_by[:3])}").classes("text-xs").style(
+                                    "color: var(--lp-muted)"
+                                )
+                        latest_activity: str | None = None
+                        timestamps: list[str] = []
+                        for row in list(reviews) + list(recommendations):
+                            if not isinstance(row, dict):
+                                continue
+                            created_at = str(row.get("created_at") or "").strip()
+                            if created_at:
+                                timestamps.append(created_at)
+                        if timestamps:
+                            latest_activity = max(timestamps)
+                        if latest_activity:
+                            ui.label(f"Latest activity: {_format_short_date(latest_activity)}").classes("text-xs").style(
+                                "color: var(--lp-muted)"
+                            )
 
                     def _sync_summary_from_reviews(current_reviews: list[dict[str, Any]]) -> None:
                         ratings: list[int] = []
@@ -598,6 +689,39 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     with ui.row().classes("justify-end mt-4"):
                         ui.button("Close", on_click=dialog.close).props("outline")
 
+                dialog.open()
+
+            @guard_ui_action(title="Recommend failed")
+            async def _open_recommend_dialog(course_id: int) -> None:
+                existing_note = ""
+                try:
+                    rows = await api.get(f"/courses/{int(course_id)}/recommendations")
+                    for row in list(rows or []):
+                        if not isinstance(row, dict):
+                            continue
+                        if str(row.get("created_by") or "") == username:
+                            existing_note = str(row.get("note") or "")
+                            break
+                except ApiError:
+                    existing_note = ""
+
+                with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):
+                    ui.label("Recommend course").classes("text-lg font-semibold")
+                    note = ui.textarea("Why this helps (optional)", value=existing_note).props("autogrow").classes("w-full")
+                    with ui.row().classes("justify-end mt-4"):
+
+                        @guard_ui_action(title="Recommend failed")
+                        async def _save_recommendation() -> None:
+                            await api.post(
+                                f"/courses/{int(course_id)}/recommendations",
+                                {"note": str(note.value or "").strip()},
+                            )
+                            ui.notify("Recommendation saved", type="positive")
+                            dialog.close()
+                            await _load()
+
+                        ui.button("Save", on_click=_save_recommendation)
+                        ui.button("Cancel", on_click=dialog.close).props("outline")
                 dialog.open()
 
             @ui.refreshable
@@ -740,6 +864,24 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         course_id = int(c.get("id") or 0)
                         tracked = tracking_by_course_id.get(course_id)
                         can_edit = is_admin or (str(c.get("created_by") or "") == username)
+                        url = str(c.get("url") or "").strip()
+
+                        async def _view(_cid: int = course_id) -> None:
+                            await _open_details(_cid)
+
+                        async def _review(_cid: int = course_id) -> None:
+                            await _open_details(_cid, focus_reviews=True)
+
+                        async def _recommend(_cid: int = course_id) -> None:
+                            await _open_recommend_dialog(_cid)
+
+                        def _copy_link(*, _url: str = url) -> None:
+                            ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(_url)});")
+                            ui.notify("Link copied", type="positive")
+
+                        async def _do_delete(_cid: int = course_id) -> None:
+                            await _confirm_delete_course(_cid)
+
                         st = _status_for_card(tracked)
                         st_cls = f" lp-course-card--{st}" if st else ""
                         with ui.card().classes(f"w-full lp-course-card lp-card--hover{st_cls}"):
@@ -747,6 +889,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 with ui.column().classes("gap-1"):
                                     title = str(c.get("title") or "")
                                     rating_badge = _format_rating_badge(review_summary_by_course_id.get(course_id))
+                                    rec_badge = _format_recommendation_badge(recommendation_summary_by_course_id.get(course_id))
                                     created_at = _parse_iso_datetime(c.get("created_at"))
                                     updated_at = _parse_iso_datetime(c.get("updated_at"))
                                     is_updated = (
@@ -763,33 +906,31 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             ui.label("Updated").classes("lp-chip lp-chip--teal")
                                         if rating_badge:
                                             ui.label(rating_badge).classes("lp-meta-chip")
-                                        if can_edit:
-
-                                            async def _do_delete(_cid: int = course_id) -> None:
-                                                await _confirm_delete_course(_cid)
-
-                                            render_owner_menu(
-                                                on_edit=lambda course=c: _render_edit_course_dialog(course),
-                                                on_delete=_do_delete,
-                                            )
+                                        if rec_badge:
+                                            ui.label(rec_badge).classes("lp-meta-chip")
+                                        with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                                            ui.menu_item("Review", _review)
+                                            ui.menu_item("Recommend", _recommend)
+                                            if url:
+                                                ui.menu_item("Copy link", _copy_link)
+                                            if can_edit:
+                                                ui.menu_item("Edit", lambda course=c: _render_edit_course_dialog(course))
+                                                ui.menu_item("Delete", _do_delete)
 
                                     ui.label(title).classes("text-lg font-semibold")
+                                    shared_by = str(c.get("created_by") or "").strip()
+                                    if shared_by:
+                                        ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
                                     if str(c.get("description") or "").strip():
                                         ui.label(str(c.get("description") or "")).classes("text-sm text-gray-600")
                                     with ui.row().classes("items-center gap-2 flex-wrap"):
-                                        shared_by = str(c.get("created_by") or "").strip()
-                                        if shared_by:
-                                            ui.label(f"Shared by {shared_by}").classes("text-xs").style(
-                                                "color: var(--lp-muted)"
-                                            )
-
                                         chips: list[str] = []
                                         if str(c.get("provider") or "").strip():
                                             chips.append(str(c.get("provider") or "").strip())
                                         if str(c.get("category") or "").strip():
                                             chips.append(str(c.get("category") or "").strip())
 
-                                        max_chips = 3
+                                        max_chips = 2
                                         for chip in chips[:max_chips]:
                                             ui.label(chip).classes("lp-meta-chip")
                                         if len(chips) > max_chips:
@@ -800,30 +941,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                         )
 
                                 with ui.column().classes("items-end gap-2"):
-                                    with ui.row().classes("items-center"):
-
-                                        async def _view(_cid: int = course_id) -> None:
-                                            await _open_details(_cid)
-
-                                        async def _review(_cid: int = course_id) -> None:
-                                            await _open_details(_cid, focus_reviews=True)
-
-                                        url = str(c.get("url") or "").strip()
-                                        on_copy = None
-                                        if url:
-
-                                            def _copy_link(*, _url: str = url) -> None:
-                                                ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(_url)});")
-                                                ui.notify("Link copied", type="positive")
-
-                                            on_copy = _copy_link
-
-                                        render_view_review_actions(
-                                            on_view=_view,
-                                            on_review=_review,
-                                            review_tooltip="Reviews",
-                                            on_copy=on_copy,
-                                        )
+                                    with ui.row().classes("items-center gap-2"):
+                                        ui.button("", icon="visibility", on_click=_view).props("outline dense").tooltip("View")
 
                                         current_status = str((tracked or {}).get("status") or "")
                                         options_map = {
@@ -835,6 +954,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                             value=current_status,
                                             label=None,
                                         ).props("dense")
+                                        status_select.style("min-width: 170px")
                                         status_select.props("use-input hide-selected fill-input")
                                         status_select.tooltip("Status")
 

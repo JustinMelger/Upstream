@@ -86,6 +86,13 @@ class CoursesService:
         created_by = (payload.get("created_by") or "").strip() or None
 
         async with self._repo.session.begin():
+            if url:
+                duplicate_url = await self._repo.find_course_by_url(url=url)
+                if duplicate_url:
+                    raise CoursesServiceError(detail="duplicate_url", status_code=409)
+            duplicate_title_provider = await self._repo.find_course_by_title_provider(title=title, provider=provider)
+            if duplicate_title_provider:
+                raise CoursesServiceError(detail="duplicate_title_provider", status_code=409)
             course_id = await self._repo.create_course(
                 title=title,
                 description=description,

@@ -127,3 +127,25 @@ class ArticleReviewRecord:
     text: str | None
     created_by: str
     created_at: str
+
+
+@dataclass(frozen=True)
+class CourseRecommendationRecord:
+    """Course recommendation row representation."""
+
+    id: int
+    course_id: int
+    note: str | None
+    created_by: str
+    created_at: str
+
+
+@dataclass(frozen=True)
+class PathRecommendationRecord:
+    """Path recommendation row representation."""
+
+    id: int
+    path_id: int
+    note: str | None
+    created_by: str
+    created_at: str

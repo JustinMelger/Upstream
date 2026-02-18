@@ -4,10 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.api.deps import (
     get_auth_service,
+    get_path_recommendations_service,
     get_path_reviews_service,
     get_paths_service,
     get_user_paths_service,
     require_session,
+)
+from backend.api.schemas.path_recommendations import (
+    DeletePathRecommendationResponse,
+    PathRecommendationCreateRequest,
+    PathRecommendationPayload,
+    PathRecommendationSummaryItem,
 )
 from backend.api.schemas.path_reviews import (
     DeletePathReviewResponse,
@@ -28,6 +35,7 @@ from backend.api.schemas.paths import (
     UnselectPathResponse,
 )
 from backend.services.auth_service import AuthService
+from backend.services.path_recommendations_service import PathRecommendationsService
 from backend.services.path_reviews_service import PathReviewsService
 from backend.services.paths_service import PathsService
 from backend.services.user_paths_service import UserPathsService
@@ -60,6 +68,16 @@ async def path_review_summaries(
 ):
     """Return average rating + count for each path id."""
     return await reviews.summaries(path_ids=list(path_ids or []))
+
+
+@router.get("/recommendations/summary", response_model=list[PathRecommendationSummaryItem])
+async def path_recommendation_summaries(
+    path_ids: List[int] = Query(default=[], description="Path IDs to summarize"),
+    current_user: str = Depends(require_session),
+    recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
+):
+    """Return recommendation counts for each path id."""
+    return await recommendations.summaries(path_ids=list(path_ids or []))
 
 
 @router.post("", response_model=PathDetailResponse)
@@ -233,6 +251,55 @@ async def delete_path_review(
     if not await auth.is_admin(current_user) and str(review.get("created_by") or "") != str(current_user):
         raise HTTPException(status_code=403, detail="forbidden")
     deleted = await reviews.delete_review(review_id=int(review_id))
+    return {"deleted": bool(deleted)}
+
+
+@router.get("/{path_id}/recommendations", response_model=list[PathRecommendationPayload])
+async def list_path_recommendations(
+    path_id: int,
+    current_user: str = Depends(require_session),
+    paths: PathsService = Depends(get_paths_service),
+    recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
+):
+    """List recommendations for a path."""
+    existing = await paths.get_path(path_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="not_found")
+    return await recommendations.list_recommendations(path_id=path_id)
+
+
+@router.post("/{path_id}/recommendations", response_model=PathRecommendationPayload)
+async def create_path_recommendation(
+    path_id: int,
+    payload: PathRecommendationCreateRequest,
+    current_user: str = Depends(require_session),
+    paths: PathsService = Depends(get_paths_service),
+    recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
+):
+    """Create/update current user's recommendation for a path."""
+    existing = await paths.get_path(path_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="not_found")
+    return await recommendations.create_recommendation(path_id=path_id, payload=payload.model_dump(), created_by=current_user)
+
+
+@router.delete("/{path_id}/recommendations/{recommendation_id}", response_model=DeletePathRecommendationResponse)
+async def delete_path_recommendation(
+    path_id: int,
+    recommendation_id: int,
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+    recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
+):
+    """Delete a path recommendation (owner/admin only)."""
+    recommendation = await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))
+    if not recommendation:
+        raise HTTPException(status_code=404, detail="not_found")
+    if int(recommendation.get("path_id") or 0) != int(path_id):
+        raise HTTPException(status_code=404, detail="not_found")
+    if not await auth.is_admin(current_user) and str(recommendation.get("created_by") or "") != str(current_user):
+        raise HTTPException(status_code=403, detail="forbidden")
+    deleted = await recommendations.delete_recommendation(recommendation_id=int(recommendation_id))
     return {"deleted": bool(deleted)}
 
 

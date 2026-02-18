@@ -54,6 +54,19 @@ def _review_summary_label(row: dict[str, Any] | None) -> str:
     return f"★ {avg:.1f} ({count})"
 
 
+def _recommendation_summary_label(row: dict[str, Any] | None) -> str:
+    """Format recommendation summary as '↗ N rec'."""
+    if not isinstance(row, dict):
+        return ""
+    try:
+        count = int(row.get("recommendation_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    if count <= 0:
+        return ""
+    return f"↗ {count} rec"
+
+
 def _build_course_navigation_url(*, course_id: int, view: str) -> str:
     """Build stable course details navigation URL."""
     return f"/courses?tab=tracked&course_id={int(course_id)}&view={str(view or 'full')}"
@@ -136,6 +149,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         page_size = 12
         tracked_visible = page_size
         selected_visible = page_size
+        dismissed_recommended_course_ids: set[int] = set()
+        dismissed_recommended_path_ids: set[int] = set()
 
         request = getattr(ui.context.client, "request", None)
         query_params = getattr(request, "query_params", {}) if request is not None else {}
@@ -187,6 +202,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await api.post("/tracking/delete", {"course_id": int(course_id)})
             await _load()
 
+        @guard_ui_action(title="Save recommendation failed")
+        async def _save_recommended_course(course_id: int) -> None:
+            await api.post("/tracking", {"course_id": int(course_id), "status": "interested"})
+            await _load()
+
+        @guard_ui_action(title="Save recommendation failed")
+        async def _save_recommended_path(path_id: int) -> None:
+            await api.post(f"/paths/{int(path_id)}/select", {})
+            await _load()
+
         with render_container():
             with ui.row().classes("lp-topbar"):
                 with ui.row().classes("items-center gap-2").style("margin-left: auto"):
@@ -218,6 +243,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     shared_courses = list(data.get("shared_courses") or [])
                     shared_paths = list(data.get("shared_paths") or [])
                     shared_articles = list(data.get("shared_articles") or [])
+                    shared_course_review_summary_by_id: dict[int, dict[str, Any]] = dict(
+                        data.get("shared_course_review_summary_by_id") or {}
+                    )
+                    shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]] = dict(
+                        data.get("shared_course_recommendation_summary_by_id") or {}
+                    )
+                    shared_path_review_summary_by_id: dict[int, dict[str, Any]] = dict(
+                        data.get("shared_path_review_summary_by_id") or {}
+                    )
+                    shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]] = dict(
+                        data.get("shared_path_recommendation_summary_by_id") or {}
+                    )
 
                     ui.label("Shared by you").classes("text-lg font-semibold mt-2")
 
@@ -227,7 +264,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ui.label("You haven't shared any courses yet.").classes("text-sm").style("color: var(--lp-muted)")
                         for c in shared_courses[:12]:
                             with ui.row().classes("items-center justify-between w-full"):
-                                ui.label(str(c.get("title") or "")).classes("text-sm")
+                                with ui.column().classes("gap-0"):
+                                    ui.label(str(c.get("title") or "")).classes("text-sm")
+                                    cid = int(c.get("id") or 0)
+                                    parts = [
+                                        _review_summary_label(shared_course_review_summary_by_id.get(cid)),
+                                        _recommendation_summary_label(shared_course_recommendation_summary_by_id.get(cid)),
+                                    ]
+                                    parts = [part for part in parts if part]
+                                    if parts:
+                                        ui.label(" · ".join(parts)).classes("text-xs").style("color: var(--lp-muted)")
                                 cid = int(c.get("id") or 0)
                                 with ui.row().classes("items-center gap-2"):
 
@@ -257,7 +303,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ui.label("You haven't shared any paths yet.").classes("text-sm").style("color: var(--lp-muted)")
                         for p in shared_paths[:12]:
                             with ui.row().classes("items-center justify-between w-full"):
-                                ui.label(str(p.get("name") or "")).classes("text-sm")
+                                with ui.column().classes("gap-0"):
+                                    ui.label(str(p.get("name") or "")).classes("text-sm")
+                                    pid = int(p.get("id") or 0)
+                                    parts = [
+                                        _review_summary_label(shared_path_review_summary_by_id.get(pid)),
+                                        _recommendation_summary_label(shared_path_recommendation_summary_by_id.get(pid)),
+                                    ]
+                                    parts = [part for part in parts if part]
+                                    if parts:
+                                        ui.label(" · ".join(parts)).classes("text-xs").style("color: var(--lp-muted)")
                                 pid = int(p.get("id") or 0)
                                 with ui.row().classes("items-center gap-2"):
 
@@ -307,8 +362,82 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 path_review_summary_by_id: dict[int, dict[str, Any]] = dict(data.get("path_review_summary_by_id") or {})
                 pending_course_review_ids = sorted({int(i) for i in list(data.get("pending_course_review_ids") or [])})
                 pending_path_review_ids = sorted({int(i) for i in list(data.get("pending_path_review_ids") or [])})
+                recommended_courses = [
+                    r
+                    for r in list(data.get("recommended_courses_for_you") or [])
+                    if isinstance(r, dict) and int(r.get("course_id") or 0) not in dismissed_recommended_course_ids
+                ]
+                recommended_paths = [
+                    r
+                    for r in list(data.get("recommended_paths_for_you") or [])
+                    if isinstance(r, dict) and int(r.get("path_id") or 0) not in dismissed_recommended_path_ids
+                ]
 
                 ui.label("Learning").classes("text-lg font-semibold mt-2")
+
+                with ui.card().classes("lp-card w-full"):
+                    ui.label("Recommended for you").classes("text-md font-semibold")
+                    if not recommended_courses and not recommended_paths:
+                        ui.label("No recommendations yet.").classes("text-sm").style("color: var(--lp-muted)")
+                    for row in recommended_courses[:5]:
+                        course = dict(row.get("course") or {})
+                        cid = int(row.get("course_id") or 0)
+                        why = str(row.get("why") or "").strip()
+                        with ui.row().classes("items-center justify-between w-full"):
+                            with ui.column().classes("gap-0"):
+                                ui.label(str(course.get("title") or "")).classes("text-sm font-semibold")
+                                if why:
+                                    ui.label(why).classes("text-xs").style("color: var(--lp-muted)")
+                            with ui.row().classes("items-center gap-2"):
+                                ui.button("Save", on_click=lambda _cid=cid: _save_recommended_course(_cid)).props(
+                                    "dense outline"
+                                )
+                                ui.button(
+                                    "Dismiss",
+                                    on_click=lambda _cid=cid: (
+                                        dismissed_recommended_course_ids.add(int(_cid)) or content.refresh()
+                                    ),
+                                ).props("dense flat")
+
+                                async def _view_course(_cid: int = cid) -> None:
+                                    set_course_intent(username=username, course_id=int(_cid), view="full")
+                                    app.storage.user["courses_open_intent"] = {
+                                        "course_id": int(_cid),
+                                        "view": "full",
+                                    }
+                                    url = _build_course_navigation_url(course_id=int(_cid), view="full")
+                                    ui.run_javascript(f"window.location.href={json.dumps(url)};")
+
+                                ui.button("", icon="visibility", on_click=_view_course).props("outline dense").tooltip("View")
+
+                    for row in recommended_paths[:5]:
+                        path = dict(row.get("path") or {})
+                        pid = int(row.get("path_id") or 0)
+                        why = str(row.get("why") or "").strip()
+                        with ui.row().classes("items-center justify-between w-full"):
+                            with ui.column().classes("gap-0"):
+                                ui.label(str(path.get("name") or "")).classes("text-sm font-semibold")
+                                if why:
+                                    ui.label(why).classes("text-xs").style("color: var(--lp-muted)")
+                            with ui.row().classes("items-center gap-2"):
+                                ui.button("Save", on_click=lambda _pid=pid: _save_recommended_path(_pid)).props("dense outline")
+                                ui.button(
+                                    "Dismiss",
+                                    on_click=lambda _pid=pid: (
+                                        dismissed_recommended_path_ids.add(int(_pid)) or content.refresh()
+                                    ),
+                                ).props("dense flat")
+
+                                async def _view_path(_pid: int = pid) -> None:
+                                    set_path_intent(username=username, path_id=int(_pid), view="full")
+                                    app.storage.user["paths_open_intent"] = {
+                                        "path_id": int(_pid),
+                                        "view": "full",
+                                    }
+                                    url = _build_path_navigation_url(path_id=int(_pid), view="full")
+                                    ui.run_javascript(f"window.location.href={json.dumps(url)};")
+
+                                ui.button("", icon="visibility", on_click=_view_path).props("outline dense").tooltip("View")
 
                 next_course = _next_uncompleted_course_from_selected_paths(
                     selected_paths=selected_paths,

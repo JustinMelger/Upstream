@@ -92,20 +92,20 @@
 - [x] Product UX/IA: rename `Home` to `Insights` and trim overlap with `My learning` (personal execution vs team insights split).
 
 ### Phase 10B — P1 Social Product Loop
-- [ ] Add recommendations for courses/paths (who recommended + optional note + timestamp).
-- [ ] Product UX: add “Recommended for you” on `My learning` with save/dismiss actions and “why this was recommended” explanation.
-- [ ] Product UX: strengthen social trust signals on cards/details (shared by, avg rating + count, recent activity, endorsements).
-- [ ] Product UX: improve contribution loop (quick-share flow with optional note + feedback on teammate engagement).
-- [ ] Product UX: improve path outcomes UX (milestones + next actionable step + completion impact).
-- [ ] Product UX: add team visibility dashboard (popular content, completion trends, top contributors).
-- [ ] Add “Suggest a course/path” drafts (user-submitted) with admin approve/edit → canonical content.
-- [ ] Basic de-duplication for suggested courses (URL-based + title/provider similarity).
-- [ ] Notifications v1 (optional): show “recommended to you” inbox or activity feed (no email).
+- [x] Add peer recommendations for courses/paths (who shared/recommended + optional note + timestamp).
+- [x] Product UX: add “Shared with you” / “Recommended for you” on `My learning` with save/dismiss actions and “why this was shared” explanation.
+- [x] Product UX: strengthen social trust signals on cards/details (shared by, avg rating + count, recent activity, endorsements).
+- [x] Product UX: improve contribution loop (quick-share flow with optional note + feedback on teammate engagement).
+- [x] Product UX: improve path outcomes UX (milestones + next actionable step + completion impact).
+- [x] Product UX: add basic team visibility dashboard (top contributors).
+- [x] Add “Quick share course/path” flow (instant publish for authenticated users) with optional draft mode for feedback-before-publish.
+- [x] Basic de-duplication for newly shared courses (URL-based + title/provider similarity).
+- [x] Notifications v1 (optional): show “shared/recommended for you” inbox or activity feed (no email).
 
 ### Phase 10C — P2 Content + AI Readiness
 - [ ] Course content description: add `courses.description` (short summary) and surface it across UI; keep `level` optional and de-emphasize (hide behind “more filters”) before deciding to drop it.
 - [ ] AI-ready metadata: add/standardize course content fields (`description`, optional `learning_outcomes`, `prerequisites`, `language`) and define a derived “search document” that combines course + review text for later AI search/planning.
-- [ ] Copy/wording shift: change UI labels from admin CRUD (“New course/path”) to social contribution (“Share course/path”) once ownership/permissions is live.
+- [ ] Copy/wording shift: complete UI label migration from admin CRUD (“New course/path”) to social contribution (“Share course/path”) now that ownership/permissions is live.
 
 ### Phase 10D — P2 Frontend Architecture/Clean Code
 - [ ] Frontend architecture alignment: move My Learning tracking mutations (`set/clear`) into service/use-case layer so page stays UI-only.
@@ -134,6 +134,9 @@
 - [ ] Basic analytics (popular courses, completion rates).
 - [ ] Import/export tools for course data.
 - [ ] UI polish + accessibility improvements.
+- [ ] Analytics (users): per-user completion metrics (completed/in-progress/interested), review counts, recommendation counts, and contribution trends.
+- [ ] Analytics (courses): most-rated courses, highest-rated courses, most-recommended courses, and completion funnel by course.
+- [ ] Analytics UI: add sortable leaderboard/table views + chart views for users/courses with date-range filters.
 
 ## Phase 13 — Advanced AI Curation (optional)
 - [ ] Add an “AI Curator” backend service that turns a user goal into a proposed learning plan (draft path + ordered draft courses).

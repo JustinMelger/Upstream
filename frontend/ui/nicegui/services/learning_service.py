@@ -113,6 +113,42 @@ async def load_my_learning_data(
         except Exception:
             path_review_summary_by_id = {}
 
+    # Recommendation summaries for trust signals + "Recommended for you".
+    all_course_ids = sorted(int(c.get("id") or 0) for c in courses if isinstance(c, dict) and int(c.get("id") or 0) > 0)
+    all_path_ids = sorted(int(p.get("id") or 0) for p in paths if isinstance(p, dict) and int(p.get("id") or 0) > 0)
+
+    course_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
+    if all_course_ids:
+        try:
+            rows = await api.get("/courses/recommendations/summary", params={"course_ids": all_course_ids})
+            for r in list(rows or []):
+                if not isinstance(r, dict):
+                    continue
+                try:
+                    cid = int(r.get("course_id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if cid > 0:
+                    course_recommendation_summary_by_id[cid] = r
+        except Exception:
+            course_recommendation_summary_by_id = {}
+
+    path_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
+    if all_path_ids:
+        try:
+            rows = await api.get("/paths/recommendations/summary", params={"path_ids": all_path_ids})
+            for r in list(rows or []):
+                if not isinstance(r, dict):
+                    continue
+                try:
+                    pid = int(r.get("path_id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if pid > 0:
+                    path_recommendation_summary_by_id[pid] = r
+        except Exception:
+            path_recommendation_summary_by_id = {}
+
     pending_course_review_ids: list[int] = []
     if tracked_ids_sorted:
         course_review_rows = await asyncio.gather(
@@ -149,6 +185,126 @@ async def load_my_learning_data(
             if not mine:
                 pending_path_review_ids.append(int(pid))
 
+    recommended_courses_for_you: list[dict[str, Any]] = []
+    for c in courses:
+        if not isinstance(c, dict):
+            continue
+        cid = int(c.get("id") or 0)
+        if cid <= 0:
+            continue
+        if cid in tracking_by_course_id:
+            continue
+        if str(c.get("created_by") or "") == username:
+            continue
+        count = int((course_recommendation_summary_by_id.get(cid) or {}).get("recommendation_count") or 0)
+        if count <= 0:
+            continue
+        recommended_courses_for_you.append(
+            {"course_id": cid, "course": c, "recommendation_count": count, "why": f"{count} teammate recommendation(s)"}
+        )
+    recommended_courses_for_you = sorted(
+        recommended_courses_for_you,
+        key=lambda row: (
+            int(row.get("recommendation_count") or 0),
+            int(row.get("course_id") or 0),
+        ),
+        reverse=True,
+    )[:5]
+
+    recommended_paths_for_you: list[dict[str, Any]] = []
+    selected_set = {int(pid) for pid in selected_ids_sorted}
+    for p in paths:
+        if not isinstance(p, dict):
+            continue
+        pid = int(p.get("id") or 0)
+        if pid <= 0:
+            continue
+        if pid in selected_set:
+            continue
+        if str(p.get("created_by") or "") == username:
+            continue
+        count = int((path_recommendation_summary_by_id.get(pid) or {}).get("recommendation_count") or 0)
+        if count <= 0:
+            continue
+        recommended_paths_for_you.append(
+            {"path_id": pid, "path": p, "recommendation_count": count, "why": f"{count} teammate recommendation(s)"}
+        )
+    recommended_paths_for_you = sorted(
+        recommended_paths_for_you,
+        key=lambda row: (
+            int(row.get("recommendation_count") or 0),
+            int(row.get("path_id") or 0),
+        ),
+        reverse=True,
+    )[:5]
+
+    shared_course_ids = sorted(int(c.get("id") or 0) for c in shared_courses if int(c.get("id") or 0) > 0)
+    shared_path_ids = sorted(int(p.get("id") or 0) for p in shared_paths if int(p.get("id") or 0) > 0)
+
+    shared_course_review_summary_by_id: dict[int, dict[str, Any]] = {}
+    if shared_course_ids:
+        try:
+            rows = await api.get("/courses/reviews/summary", params={"course_ids": shared_course_ids})
+            for r in list(rows or []):
+                if not isinstance(r, dict):
+                    continue
+                try:
+                    cid = int(r.get("course_id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if cid > 0:
+                    shared_course_review_summary_by_id[cid] = r
+        except Exception:
+            shared_course_review_summary_by_id = {}
+
+    shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
+    if shared_course_ids:
+        try:
+            rows = await api.get("/courses/recommendations/summary", params={"course_ids": shared_course_ids})
+            for r in list(rows or []):
+                if not isinstance(r, dict):
+                    continue
+                try:
+                    cid = int(r.get("course_id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if cid > 0:
+                    shared_course_recommendation_summary_by_id[cid] = r
+        except Exception:
+            shared_course_recommendation_summary_by_id = {}
+
+    shared_path_review_summary_by_id: dict[int, dict[str, Any]] = {}
+    if shared_path_ids:
+        try:
+            rows = await api.get("/paths/reviews/summary", params={"path_ids": shared_path_ids})
+            for r in list(rows or []):
+                if not isinstance(r, dict):
+                    continue
+                try:
+                    pid = int(r.get("path_id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if pid > 0:
+                    shared_path_review_summary_by_id[pid] = r
+        except Exception:
+            shared_path_review_summary_by_id = {}
+
+    shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
+    if shared_path_ids:
+        try:
+            rows = await api.get("/paths/recommendations/summary", params={"path_ids": shared_path_ids})
+            for r in list(rows or []):
+                if not isinstance(r, dict):
+                    continue
+                try:
+                    pid = int(r.get("path_id") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if pid > 0:
+                    shared_path_recommendation_summary_by_id[pid] = r
+        except Exception:
+            shared_path_recommendation_summary_by_id = {}
+
     return {
         "courses": courses,
         "tracking_by_course_id": tracking_by_course_id,
@@ -162,6 +318,14 @@ async def load_my_learning_data(
         "shared_articles": shared_articles,
         "course_review_summary_by_id": course_review_summary_by_id,
         "path_review_summary_by_id": path_review_summary_by_id,
+        "course_recommendation_summary_by_id": course_recommendation_summary_by_id,
+        "path_recommendation_summary_by_id": path_recommendation_summary_by_id,
         "pending_course_review_ids": pending_course_review_ids,
         "pending_path_review_ids": pending_path_review_ids,
+        "recommended_courses_for_you": recommended_courses_for_you,
+        "recommended_paths_for_you": recommended_paths_for_you,
+        "shared_course_review_summary_by_id": shared_course_review_summary_by_id,
+        "shared_course_recommendation_summary_by_id": shared_course_recommendation_summary_by_id,
+        "shared_path_review_summary_by_id": shared_path_review_summary_by_id,
+        "shared_path_recommendation_summary_by_id": shared_path_recommendation_summary_by_id,
     }

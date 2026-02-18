@@ -22,6 +22,12 @@ from backend.api.schemas.auth import (
     UserListItem,
 )
 from backend.api.schemas.common import APIModel, ErrorResponse, HealthResponse
+from backend.api.schemas.course_recommendations import (
+    CourseRecommendationCreateRequest,
+    CourseRecommendationPayload,
+    CourseRecommendationSummaryItem,
+    DeleteCourseRecommendationResponse,
+)
 from backend.api.schemas.course_reviews import (
     CourseReviewCreateRequest,
     CourseReviewPayload,
@@ -29,6 +35,13 @@ from backend.api.schemas.course_reviews import (
     DeleteCourseReviewResponse,
 )
 from backend.api.schemas.courses import CourseCreateRequest, CoursePayload, CourseUpdateRequest, DeleteCourseResponse
+from backend.api.schemas.notifications import NotificationActivityItem
+from backend.api.schemas.path_recommendations import (
+    DeletePathRecommendationResponse,
+    PathRecommendationCreateRequest,
+    PathRecommendationPayload,
+    PathRecommendationSummaryItem,
+)
 from backend.api.schemas.path_reviews import (
     DeletePathReviewResponse,
     PathReviewCreateRequest,
@@ -92,6 +105,10 @@ __all__ = [
     "CourseReviewCreateRequest",
     "CourseReviewSummaryItem",
     "DeleteCourseReviewResponse",
+    "CourseRecommendationPayload",
+    "CourseRecommendationCreateRequest",
+    "CourseRecommendationSummaryItem",
+    "DeleteCourseRecommendationResponse",
     "PathListItem",
     "PathCourseItem",
     "PathDetailResponse",
@@ -104,9 +121,14 @@ __all__ = [
     "PathReviewCreateRequest",
     "PathReviewSummaryItem",
     "DeletePathReviewResponse",
+    "PathRecommendationPayload",
+    "PathRecommendationCreateRequest",
+    "PathRecommendationSummaryItem",
+    "DeletePathRecommendationResponse",
     "PathStatusRequest",
     "PathStatusResponse",
     "SelectedPathItem",
+    "NotificationActivityItem",
     "TrackingUpsertRequest",
     "TrackingDeleteRequest",
     "TrackingRecordPayload",
