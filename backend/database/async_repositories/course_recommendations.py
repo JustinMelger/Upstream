@@ -32,6 +32,30 @@ class CourseRecommendationsRepository:
             for r in rows
         ]
 
+    async def list_for_courses(self, *, course_ids: list[int]) -> dict[int, list[CourseRecommendationRecord]]:
+        """List recommendations for many courses grouped by course_id."""
+        ids = [int(i) for i in list(course_ids or []) if int(i) > 0]
+        if not ids:
+            return {}
+        result = await self.session.execute(
+            select(CourseRecommendationModel)
+            .where(CourseRecommendationModel.course_id.in_(ids))
+            .order_by(CourseRecommendationModel.course_id.asc(), CourseRecommendationModel.id.desc())
+        )
+        grouped: dict[int, list[CourseRecommendationRecord]] = {}
+        for r in result.scalars().all():
+            cid = int(r.course_id)
+            grouped.setdefault(cid, []).append(
+                CourseRecommendationRecord(
+                    id=int(r.id),
+                    course_id=cid,
+                    note=r.note,
+                    created_by=str(r.created_by),
+                    created_at=str(r.created_at),
+                )
+            )
+        return grouped
+
     async def create_recommendation(
         self,
         *,

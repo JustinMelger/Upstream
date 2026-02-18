@@ -39,7 +39,10 @@ async def get_auth_service(session: AsyncSession = Depends(get_session)) -> Auth
 
 async def get_courses_service(session: AsyncSession = Depends(get_session)) -> CoursesService:
     """Provide a request-scoped CoursesService dependency."""
-    return CoursesService(SQLCoursesRepository(session))
+    return CoursesService(
+        SQLCoursesRepository(session),
+        recommendations_repo=SQLCourseRecommendationsRepository(session),
+    )
 
 
 async def get_paths_service(session: AsyncSession = Depends(get_session)) -> PathsService:

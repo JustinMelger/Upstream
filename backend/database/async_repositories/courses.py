@@ -44,6 +44,9 @@ class CoursesRepository:
             stmt = stmt.where(
                 func.lower(CourseModel.title).like(like)
                 | func.lower(func.coalesce(CourseModel.description, "")).like(like)
+                | func.lower(func.coalesce(CourseModel.learning_outcomes, "")).like(like)
+                | func.lower(func.coalesce(CourseModel.prerequisites, "")).like(like)
+                | func.lower(func.coalesce(CourseModel.language, "")).like(like)
                 | func.lower(func.coalesce(CourseModel.provider, "")).like(like)
                 | func.lower(func.coalesce(CourseModel.category, "")).like(like)
                 | func.lower(func.coalesce(CourseModel.level, "")).like(like)
@@ -63,6 +66,9 @@ class CoursesRepository:
                 id=row.id,
                 title=row.title or "",
                 description=row.description or "",
+                learning_outcomes=row.learning_outcomes,
+                prerequisites=row.prerequisites,
+                language=row.language,
                 provider=row.provider,
                 category=row.category,
                 level=row.level,
@@ -91,6 +97,9 @@ class CoursesRepository:
             id=row.id,
             title=row.title or "",
             description=row.description or "",
+            learning_outcomes=row.learning_outcomes,
+            prerequisites=row.prerequisites,
+            language=row.language,
             provider=row.provider,
             category=row.category,
             level=row.level,
@@ -105,6 +114,9 @@ class CoursesRepository:
         *,
         title: str,
         description: str,
+        learning_outcomes: str | None,
+        prerequisites: str | None,
+        language: str | None,
         provider: str | None,
         category: str | None,
         level: str | None,
@@ -130,6 +142,9 @@ class CoursesRepository:
         row = CourseModel(
             title=title,
             description=description,
+            learning_outcomes=learning_outcomes,
+            prerequisites=prerequisites,
+            language=language,
             provider=provider,
             category=category,
             level=level,
@@ -162,6 +177,9 @@ class CoursesRepository:
             id=row.id,
             title=row.title or "",
             description=row.description or "",
+            learning_outcomes=row.learning_outcomes,
+            prerequisites=row.prerequisites,
+            language=row.language,
             provider=row.provider,
             category=row.category,
             level=row.level,
@@ -191,6 +209,9 @@ class CoursesRepository:
             id=row.id,
             title=row.title or "",
             description=row.description or "",
+            learning_outcomes=row.learning_outcomes,
+            prerequisites=row.prerequisites,
+            language=row.language,
             provider=row.provider,
             category=row.category,
             level=row.level,
@@ -206,6 +227,9 @@ class CoursesRepository:
         course_id: int,
         title: str,
         description: str,
+        learning_outcomes: str | None,
+        prerequisites: str | None,
+        language: str | None,
         provider: str | None,
         category: str | None,
         level: str | None,
@@ -232,6 +256,9 @@ class CoursesRepository:
             .values(
                 title=title,
                 description=description,
+                learning_outcomes=learning_outcomes,
+                prerequisites=prerequisites,
+                language=language,
                 provider=provider,
                 category=category,
                 level=level,

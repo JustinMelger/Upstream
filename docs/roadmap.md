@@ -103,9 +103,9 @@
 - [x] Notifications v1 (optional): show “shared/recommended for you” inbox or activity feed (no email).
 
 ### Phase 10C — P2 Content + AI Readiness
-- [ ] Course content description: add `courses.description` (short summary) and surface it across UI; keep `level` optional and de-emphasize (hide behind “more filters”) before deciding to drop it.
-- [ ] AI-ready metadata: add/standardize course content fields (`description`, optional `learning_outcomes`, `prerequisites`, `language`) and define a derived “search document” that combines course + review text for later AI search/planning.
-- [ ] Copy/wording shift: complete UI label migration from admin CRUD (“New course/path”) to social contribution (“Share course/path”) now that ownership/permissions is live.
+- [x] Course content description: add `courses.description` (short summary) and surface it across UI; keep `level` optional and de-emphasize (hide behind “more filters”) before deciding to drop it.
+- [x] AI-ready metadata: add/standardize course content fields (`description`, optional `learning_outcomes`, `prerequisites`, `language`) and define a derived “search document” that combines course + review text for later AI search/planning.
+- [x] Copy/wording shift: complete UI label migration from admin CRUD (“New course/path”) to social contribution (“Share course/path”) now that ownership/permissions is live.
 
 ### Phase 10D — P2 Frontend Architecture/Clean Code
 - [ ] Frontend architecture alignment: move My Learning tracking mutations (`set/clear`) into service/use-case layer so page stays UI-only.
@@ -123,6 +123,12 @@
 - [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 
 ## Phase 11 — Operability + Quality
+- [ ] Activity feed UX v2: add filters (`All`, `Recommendations`, `Ratings`, `Courses`, `Paths`, `Articles`).
+- [ ] Activity feed UX v2: add unread state + mailbox badge + “Mark all read”.
+- [ ] Activity feed UX v2: add relative timestamps with absolute time on hover.
+- [ ] Activity feed UX v2: add pagination/“Load more” for older events.
+- [ ] Activity feed UX v2: improve article deep-linking to open the specific item context.
+- [ ] Activity feed UX v2: group burst events and rank high-signal events higher (e.g., ratings on your shared content).
 - [ ] Observability: add frontend telemetry for core actions (share/select/review/complete) and page-level error tracking.
 - [ ] Accessibility pass: keyboard navigation, visible focus states, ARIA labels for icon-only actions, and contrast audit fixes.
 - [ ] Resilience UX: network/offline banner, retry affordances, and standardized section-level error states.
