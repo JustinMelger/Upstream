@@ -55,9 +55,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             with ui.row().classes("items-center justify-between w-full"):
                 tab_filter = (
-                    ui.radio({"inbox": "Inbox", "team": "Team activity"}, value=initial_tab).props("inline dense").classes(
-                        "text-sm"
-                    )
+                    ui.radio({"inbox": "Inbox", "team": "Team activity"}, value=initial_tab)
+                    .props("inline dense")
+                    .classes("text-sm")
                 )
                 refresh_btn = ui.button("Refresh").props("dense outline")
 

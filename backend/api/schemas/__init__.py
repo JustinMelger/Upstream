@@ -35,6 +35,7 @@ from backend.api.schemas.course_reviews import (
     DeleteCourseReviewResponse,
 )
 from backend.api.schemas.courses import CourseCreateRequest, CoursePayload, CourseUpdateRequest, DeleteCourseResponse
+from backend.api.schemas.notifications import NotificationActivityItem
 from backend.api.schemas.path_recommendations import (
     DeletePathRecommendationResponse,
     PathRecommendationCreateRequest,
@@ -47,7 +48,6 @@ from backend.api.schemas.path_reviews import (
     PathReviewPayload,
     PathReviewSummaryItem,
 )
-from backend.api.schemas.notifications import NotificationActivityItem
 from backend.api.schemas.paths import (
     DeletePathResponse,
     PathCourseItem,

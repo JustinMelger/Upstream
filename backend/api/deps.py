@@ -9,11 +9,11 @@ from backend.database.async_repositories.course_recommendations import (
 )
 from backend.database.async_repositories.course_reviews import CourseReviewsRepository as SQLCourseReviewsRepository
 from backend.database.async_repositories.courses import CoursesRepository as SQLCoursesRepository
+from backend.database.async_repositories.notifications import NotificationsRepository as SQLNotificationsRepository
 from backend.database.async_repositories.path_recommendations import (
     PathRecommendationsRepository as SQLPathRecommendationsRepository,
 )
 from backend.database.async_repositories.path_reviews import PathReviewsRepository as SQLPathReviewsRepository
-from backend.database.async_repositories.notifications import NotificationsRepository as SQLNotificationsRepository
 from backend.database.async_repositories.paths import PathsRepository as SQLPathsRepository
 from backend.database.async_repositories.tracking import TrackingRepository as SQLTrackingRepository
 from backend.database.async_repositories.user_paths import UserPathsRepository as SQLUserPathsRepository
@@ -24,9 +24,9 @@ from backend.services.auth_service import AuthService
 from backend.services.course_recommendations_service import CourseRecommendationsService
 from backend.services.course_reviews_service import CourseReviewsService
 from backend.services.courses_service import CoursesService
+from backend.services.notifications_service import NotificationsService
 from backend.services.path_recommendations_service import PathRecommendationsService
 from backend.services.path_reviews_service import PathReviewsService
-from backend.services.notifications_service import NotificationsService
 from backend.services.paths_service import PathsService
 from backend.services.tracking_service import TrackingService
 from backend.services.user_paths_service import UserPathsService

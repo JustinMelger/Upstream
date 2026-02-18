@@ -14,8 +14,8 @@ from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.theme import apply_theme
 from frontend.ui.nicegui.pages import (
-    admin_users,
     activity,
+    admin_users,
     ai_curator,
     articles,
     courses,

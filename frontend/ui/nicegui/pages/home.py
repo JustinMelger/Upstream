@@ -46,6 +46,7 @@ def _top_contributors(rows: list[dict[str, Any]], *, limit: int = 5) -> list[dic
         reverse=True,
     )[:limit]
 
+
 def _contributors_chart_option(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Build ECharts option for top contributors."""
     labels = [str(r.get("who") or "") for r in rows][:5]
@@ -65,6 +66,7 @@ def _contributors_chart_option(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "tooltip": {"trigger": "item"},
     }
 
+
 def _render_snapshot_metrics(*, snapshot_stats: dict[str, int]) -> None:
     """Render the three dashboard snapshot metric cards."""
 
@@ -78,6 +80,7 @@ def _render_snapshot_metrics(*, snapshot_stats: dict[str, int]) -> None:
         _metric("Interested", int(snapshot_stats.get("interested", 0)), "")
         _metric("In progress", int(snapshot_stats.get("in_progress", 0)), "")
         _metric("Completed", int(snapshot_stats.get("completed", 0)), "")
+
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the insights routes.
@@ -106,16 +109,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             ui.label("Your learning overview and statistics.").classes("text-sm text-gray-600")
 
             # State
-            courses: list[dict[str, Any]] = []
-            paths: list[dict[str, Any]] = []
-            selected_paths: list[dict[str, Any]] = []
-            selected_path_details: list[dict[str, Any]] = []
-            tracking_rows: list[dict[str, Any]] = []
             snapshot_stats: dict[str, int] = {}
-            team_recent: list[dict[str, Any]] = []
             team_stats_by_user: list[dict[str, Any]] = []
-            team_tracking_rows: list[dict[str, Any]] = []
-            review_summary_by_course_id: dict[int, dict[str, Any]] = {}
 
             meta = ui.label("").classes("text-sm text-gray-600")
             loading = False
@@ -137,10 +132,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 mode = ui.radio({"mine": "My stats", "team": "Team totals"}, value="mine")
 
             async def _load_overview() -> None:
-                nonlocal courses, paths, selected_paths, tracking_rows, snapshot_stats, team_recent, team_stats_by_user
-                nonlocal selected_path_details
-                nonlocal team_tracking_rows
-                nonlocal review_summary_by_course_id
+                nonlocal snapshot_stats, team_stats_by_user
                 nonlocal loading
                 if loading:
                     return
@@ -156,31 +148,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         is_admin=is_admin,
                         mode_value=str(mode.value) if mode is not None else "mine",
                     )
-                    courses = list(data.courses)
-                    paths = list(data.paths)
-                    selected_paths = list(data.selected_paths)
-                    tracking_rows = list(data.tracking_rows)
                     snapshot_stats = dict(data.snapshot_stats)
                     team_stats_by_user = list(data.team_stats_by_user)
-                    team_recent = list(data.team_recent)
-                    team_tracking_rows = list(data.team_tracking_rows)
-                    selected_path_details = list(data.selected_path_details)
-                    review_summary_by_course_id = dict(data.review_summary_by_course_id or {})
 
                     dashboard.refresh()
                     meta.text = "Updated"
                 except Exception as exc:  # ApiError already stringifies nicely, but keep this generic.
                     ui.notify(str(exc), type="negative")
-                    courses = []
-                    paths = []
-                    selected_paths = []
-                    selected_path_details = []
-                    tracking_rows = []
                     snapshot_stats = {}
-                    team_recent = []
                     team_stats_by_user = []
-                    team_tracking_rows = []
-                    review_summary_by_course_id = {}
                     dashboard.refresh()
                     meta.text = "Failed to load"
                 finally:

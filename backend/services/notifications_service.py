@@ -46,7 +46,9 @@ class NotificationsService:
             path_reviews = await self._repo.list_recent_path_review_events(limit=source_limit)
             article_reviews = await self._repo.list_recent_article_review_events(limit=source_limit)
             own_course_recommendations = (
-                await self._repo.list_recent_course_recommendation_events_by_user(created_by=str(current_user), limit=safe_limit)
+                await self._repo.list_recent_course_recommendation_events_by_user(
+                    created_by=str(current_user), limit=safe_limit
+                )
                 if is_team
                 else []
             )

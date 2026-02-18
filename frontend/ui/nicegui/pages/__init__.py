@@ -5,8 +5,8 @@ wire `@ui.page` routes.
 """
 
 from frontend.ui.nicegui.pages import (
-    admin_users,
     activity,
+    admin_users,
     ai_curator,
     articles,
     courses,
