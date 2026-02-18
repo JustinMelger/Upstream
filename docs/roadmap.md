@@ -100,7 +100,7 @@
 - [x] Product UX: add basic team visibility dashboard (top contributors).
 - [x] Add “Quick share course/path” flow (instant publish for authenticated users) with optional draft mode for feedback-before-publish.
 - [x] Basic de-duplication for newly shared courses (URL-based + title/provider similarity).
-- [ ] Notifications v1 (optional): show “shared/recommended for you” inbox or activity feed (no email).
+- [x] Notifications v1 (optional): show “shared/recommended for you” inbox or activity feed (no email).
 
 ### Phase 10C — P2 Content + AI Readiness
 - [ ] Course content description: add `courses.description` (short summary) and surface it across UI; keep `level` optional and de-emphasize (hide behind “more filters”) before deciding to drop it.

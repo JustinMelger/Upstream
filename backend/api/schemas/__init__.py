@@ -47,6 +47,7 @@ from backend.api.schemas.path_reviews import (
     PathReviewPayload,
     PathReviewSummaryItem,
 )
+from backend.api.schemas.notifications import NotificationActivityItem
 from backend.api.schemas.paths import (
     DeletePathResponse,
     PathCourseItem,
@@ -127,6 +128,7 @@ __all__ = [
     "PathStatusRequest",
     "PathStatusResponse",
     "SelectedPathItem",
+    "NotificationActivityItem",
     "TrackingUpsertRequest",
     "TrackingDeleteRequest",
     "TrackingRecordPayload",

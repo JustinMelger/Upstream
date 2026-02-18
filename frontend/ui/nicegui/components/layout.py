@@ -72,6 +72,13 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                     await store.logout(api)
                     ui.navigate.to("/login")
 
+                activity_btn = ui.button(icon="markunread_mailbox", on_click=lambda: ui.navigate.to("/activity")).props(
+                    "outline dense"
+                )
+                activity_btn.tooltip("Activity")
+                if _is_active("/activity"):
+                    activity_btn.classes("lp-nav-active")
+
                 ui.button("Logout", on_click=_logout).props("outline dense")
 
 
