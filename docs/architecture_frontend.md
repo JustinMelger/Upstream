@@ -43,24 +43,9 @@ Reference implementation (current):
 - `frontend/ui/nicegui/components/path_detail_sections.py`
 - `frontend/ui/nicegui/components/paths_sections.py`
 
-### MVC Migration Template (Short)
+Migration details (template + phased implementation plan):
 
-Use this checklist when migrating a page to folder-based MVC:
-
-1. Create page folder:
-   - `pages/<domain>/page.py` (View)
-   - `pages/<domain>/controller.py` (Controller)
-   - `pages/<domain>/state.py` (Model state)
-   - `pages/<domain>/__init__.py` (exports `register`)
-2. Move typed page state dataclasses to `state.py`.
-3. Move API/workflow orchestration to `controller.py`.
-4. Keep `page.py` focused on UI composition, event binding, and component calls.
-5. Extract large UI blocks into `components/*_sections.py`.
-6. Add compatibility shim module for old imports during transition.
-7. Add/adjust tests:
-   - controller orchestration tests
-   - page/helper smoke tests
-   - import/register smoke checks
+- `docs/frontend_mvc_migration.md`
 
 ## NiceGUI Sequence
 
