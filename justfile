@@ -18,6 +18,9 @@ unit:
 architecture:
 	DATABASE_URL={{DATABASE_URL}} uv run pytest -m architecture
 
+architecture-sync-check:
+	./scripts/check_architecture_sync.sh
+
 frontend-arch-guards:
 	uv run pytest tests/frontend/ui/nicegui/test_page_package_exports.py tests/frontend/ui/nicegui/test_page_package_layout.py
 

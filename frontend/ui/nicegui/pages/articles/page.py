@@ -34,12 +34,10 @@ from frontend.ui.nicegui.pages.articles.transitions import (
     finalize_articles_load,
 )
 from frontend.ui.nicegui.pages.articles.ui_glue import (
+    article_is_new,
     build_active_filter_chips,
     compute_articles_meta_text,
     compute_expanded_visible_count,
-)
-from frontend.ui.nicegui.services.articles_service import (
-    article_is_new,
     parse_tags,
 )
 
@@ -84,7 +82,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         meta: Any = None
 
         async def _submit_share(payload: dict[str, Any]) -> None:
-            await api.post("/articles", payload)
+            await controller.create_article(payload=payload)
             await _load()
 
         _open_share_dialog = build_share_article_dialog(on_submit=_submit_share)
@@ -172,11 +170,20 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         @guard_ui_action(title="Load article details failed")
         async def _open_details(article: dict[str, Any], *, focus_reviews: bool = False) -> None:
             await open_article_details_dialog(
-                api=api,
                 article=article,
                 focus_reviews=focus_reviews,
                 username=username,
                 is_admin=is_admin,
+                load_reviews=lambda _article_id: controller.load_article_reviews(article_id=int(_article_id)),
+                save_review=lambda _article_id, _rating, _text: controller.save_article_review(
+                    article_id=int(_article_id),
+                    rating=int(_rating),
+                    text=str(_text or ""),
+                ),
+                delete_review=lambda _article_id, _review_id: controller.delete_article_review(
+                    article_id=int(_article_id),
+                    review_id=int(_review_id),
+                ),
                 review_summary_by_article_id=state.review_summary_by_article_id,
                 format_review_summary=_format_review_summary,
                 format_date=format_date,

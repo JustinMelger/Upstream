@@ -123,6 +123,19 @@
 - [x] Frontend clean code: increase service/use-case unit tests to cover extracted orchestration logic.
 - [x] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 
+### Phase 10E — P2 Architecture Hardening (Coupling + Clean Code)
+- [x] Frontend boundary hardening: remove remaining `ApiClient` calls from UI flow modules (`dialogs.py`, `detail_flow.py`) and route through page controllers/services.
+- [x] Frontend boundary hardening: enforce "no direct `api.get/post/put/delete` in `page.py`/UI flow modules" with architecture guard tests.
+- [x] Backend coupling reduction: extract repeated owner/admin authorization checks from routers into reusable policy dependencies/helpers.
+- [x] Backend clean code: standardize review/recommendation endpoint authorization and not-found handling via shared helpers to reduce duplicated branch logic.
+- [x] Persistence best practice: migrate high-value timestamp-like text columns to typed timezone-aware datetime (`sessions.*`, `tracking.updated_at`) with safe casts and repository compatibility shims.
+- [x] Architecture quality gates: keep docs and architecture guards in lock-step; add CI check that fails on architecture doc/guard drift.
+- [ ] Complexity follow-up: further split `courses/page.py` and `paths/page.py` orchestration blocks into smaller action/section modules to reduce page-level complexity.
+- [ ] Reliability follow-up: replace broad `except Exception` fallbacks in frontend services with typed error handling + structured logging where fallback behavior is intentional.
+- [ ] Reuse follow-up: centralize duplicated review/recommendation summary formatting helpers into shared UI glue utilities and reuse across courses/paths/articles/learning.
+- [ ] Persistence follow-up: continue phased migration of remaining text timestamp columns to typed timezone-aware datetime (users/content/reviews/recommendations/user_paths).
+- [ ] Docs follow-up: resolve remaining backend architecture doc drift (tracking stats auth sequence and related flow notes) to keep diagrams fully implementation-accurate.
+
 ## Phase 11 — Operability + Quality
 
 ### Phase 11A — UX & Visual System

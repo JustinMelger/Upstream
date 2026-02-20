@@ -37,10 +37,10 @@ from frontend.ui.nicegui.pages.learning.state import LearningPageState
 from frontend.ui.nicegui.pages.learning.ui_glue import (
     compute_meta_text,
     compute_next_visibility,
+    compute_path_progress,
     resolve_tracking_status_value,
 )
 from frontend.ui.nicegui.pages.learning.view_model import build_learning_tab_view, build_shared_tab_view
-from frontend.ui.nicegui.services.paths_service import compute_path_progress
 
 
 def _progress_for_path_detail(

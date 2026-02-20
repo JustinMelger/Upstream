@@ -1,8 +1,9 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from backend.api.deps import get_article_reviews_service, get_articles_service, get_auth_service, require_session
+from backend.api.policies import require_existing_owner_or_admin, require_row_exists, require_row_parent_match
 from backend.api.schemas import (
     ArticleCreateRequest,
     ArticlePayload,
@@ -80,12 +81,9 @@ async def delete_article_review(
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
 ):
     """Delete an article review (owner or admin)."""
-    review = await reviews.get_review_by_id(review_id=int(review_id))
-    if not review or int(review.get("article_id") or 0) != int(article_id):
-        raise HTTPException(status_code=404, detail="not_found")
-
-    if not await auth.is_admin(current_user) and str(review.get("created_by") or "") != str(current_user):
-        raise HTTPException(status_code=403, detail="forbidden")
+    review = require_row_exists(await reviews.get_review_by_id(review_id=int(review_id)))
+    require_row_parent_match(row=review, parent_field="article_id", parent_id=int(article_id))
+    await require_existing_owner_or_admin(row=review, current_user=current_user, auth=auth)
 
     deleted = await reviews.delete_review(review_id=int(review_id))
     return {"deleted": bool(deleted)}

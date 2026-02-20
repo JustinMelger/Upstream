@@ -60,3 +60,27 @@ def resolve_tracking_status_value(
                     return str(key)
         return ""
     return str(raw or fallback_value or "")
+
+
+def compute_path_progress(
+    *,
+    detail: dict[str, Any],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+) -> tuple[int, int, float]:
+    """Return (completed, total, ratio) for a path detail payload."""
+    courses = [c for c in list(detail.get("courses") or []) if isinstance(c, dict)]
+    total = 0
+    completed = 0
+    for course in courses:
+        try:
+            cid = int(course.get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if cid <= 0:
+            continue
+        total += 1
+        status = str((tracking_by_course_id.get(cid) or {}).get("status") or "").strip().lower()
+        if status == "completed":
+            completed += 1
+    ratio = (float(completed) / float(total)) if total > 0 else 0.0
+    return completed, total, ratio

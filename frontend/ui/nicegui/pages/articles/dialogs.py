@@ -9,7 +9,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
-from frontend.ui.nicegui.services.articles_service import parse_tags
+from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
 
 
 def build_share_article_dialog(
@@ -50,19 +50,20 @@ def build_share_article_dialog(
 
 async def open_article_details_dialog(
     *,
-    api: Any,
     article: dict[str, Any],
     focus_reviews: bool,
     username: str,
     is_admin: bool,
+    load_reviews: Callable[[int], Awaitable[list[dict[str, Any]]]],
+    save_review: Callable[[int, int, str], Awaitable[dict[str, Any]]],
+    delete_review: Callable[[int, int], Awaitable[bool]],
     review_summary_by_article_id: dict[int, dict[str, Any]],
     format_review_summary: Callable[[dict[str, Any] | None], str],
     format_date: Callable[[Any], str],
 ) -> None:
     """Open article details/reviews dialog."""
     article_id = int(article.get("id") or 0)
-    reviews_payload = await api.get(f"/articles/{article_id}/reviews")
-    reviews = list(reviews_payload or [])
+    reviews = list(await load_reviews(int(article_id)) or [])
 
     with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
         ui.label(str(article.get("title") or "")).classes("text-xl font-semibold")
@@ -109,14 +110,10 @@ async def open_article_details_dialog(
                 }
 
         async def _save_review(rating: int, text: str) -> dict[str, Any]:
-            return await api.post(
-                f"/articles/{article_id}/reviews",
-                {"rating": int(rating), "text": str(text or "")},
-            )
+            return await save_review(int(article_id), int(rating), str(text or ""))
 
         async def _delete_review(review_id: int) -> bool:
-            await api.delete(f"/articles/{article_id}/reviews/{int(review_id)}")
-            return True
+            return await delete_review(int(article_id), int(review_id))
 
         render_reviews_panel(
             username=username,

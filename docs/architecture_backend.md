@@ -262,12 +262,17 @@ erDiagram
   COURSES {
     INTEGER id
     STRING title
+    STRING description
+    STRING learning_outcomes
+    STRING prerequisites
+    STRING language
     STRING provider
     STRING category
     STRING level
     NUMERIC duration_hours
     STRING url
     TIMESTAMP created_at
+    STRING created_by
   }
 ```
 
@@ -287,7 +292,7 @@ sequenceDiagram
 
   User->>UI: Create learning path
   UI->>API: POST /paths
-  API->>Auth: require_session + is_admin
+  API->>Auth: require_session
   Auth->>DB: SELECT session + user role
   DB-->>Auth: session + role
   Auth-->>API: authorized
@@ -338,13 +343,11 @@ classDiagram
   class PathsRepository {
     +list_paths(): list[PathRecord]
     +get_path(path_id): (PathRecord, list[PathCourseRecord])|None
-    +create_path(name, description): int
+    +create_path_with_courses(name, description, course_ids, created_by): int
     +path_name_exists(name): bool
     +path_name_exists_for_other_id(path_id, name): bool
-    +set_path_courses(path_id, course_ids): None
-    +delete_path_courses(path_id): None
-    +update_path(path_id, name, description): int
-    +delete_path(path_id): int
+    +update_path_with_courses(path_id, name, description, course_ids): int
+    +delete_path_with_courses(path_id): int
   }
 
   class SQLPathsRepository {
@@ -500,6 +503,10 @@ erDiagram
 
 - `GET /articles`: List/search shared links.
 - `POST /articles`: Share a link (authenticated users).
+- `GET /articles/reviews/summary`: Review summary rows by article id.
+- `GET /articles/{article_id}/reviews`: List article reviews.
+- `POST /articles/{article_id}/reviews`: Create/update current user's review.
+- `DELETE /articles/{article_id}/reviews/{review_id}`: Delete review (owner/admin).
 
 ### Articles Data Model
 

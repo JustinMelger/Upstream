@@ -39,7 +39,7 @@ def test_articles_page_imports_controller_and_state() -> None:
     assert "frontend.ui.nicegui.pages.articles.controller" in imports
     assert "frontend.ui.nicegui.pages.articles.state" in imports
     assert "frontend.ui.nicegui.pages.articles.transitions" in imports
-    assert "frontend.ui.nicegui.services.articles_service" in imports
+    assert "frontend.ui.nicegui.services.articles_service" not in imports
 
 
 @pytest.mark.unit

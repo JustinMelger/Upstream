@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +19,20 @@ class AuthRepository:
             session: SQLAlchemy AsyncSession for this request.
         """
         self.session = session
+
+    @staticmethod
+    def _as_datetime(value: str | datetime) -> datetime:
+        """Normalize either ISO string or datetime to datetime."""
+        if isinstance(value, datetime):
+            return value
+        return datetime.fromisoformat(str(value))
+
+    @staticmethod
+    def _as_iso(value: datetime | str) -> str:
+        """Normalize either datetime or string into ISO-8601 string."""
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return str(value)
 
     async def get_user(self, username: str) -> UserRecord | None:
         """Fetch a user by username (case-insensitive).
@@ -143,9 +159,9 @@ class AuthRepository:
         self,
         colleague_id: str,
         token_hash: str,
-        created_at: str,
-        last_seen: str,
-        expires_at: str,
+        created_at: str | datetime,
+        last_seen: str | datetime,
+        expires_at: str | datetime,
     ) -> None:
         """Insert a session record.
 
@@ -160,9 +176,9 @@ class AuthRepository:
             SessionModel(
                 colleague_id=colleague_id,
                 token_hash=token_hash,
-                created_at=created_at,
-                last_seen=last_seen,
-                expires_at=expires_at,
+                created_at=self._as_datetime(created_at),
+                last_seen=self._as_datetime(last_seen),
+                expires_at=self._as_datetime(expires_at),
             )
         )
 
@@ -182,9 +198,9 @@ class AuthRepository:
         if not row:
             return None
         colleague_id, expires_at = row
-        return SessionRecord(colleague_id=colleague_id, expires_at=expires_at)
+        return SessionRecord(colleague_id=colleague_id, expires_at=self._as_iso(expires_at))
 
-    async def update_session_last_seen(self, token_hash: str, last_seen: str) -> None:
+    async def update_session_last_seen(self, token_hash: str, last_seen: str | datetime) -> None:
         """Update a session's last_seen timestamp.
 
         Args:
@@ -192,7 +208,7 @@ class AuthRepository:
             last_seen: Timestamp (ISO string).
         """
         await self.session.execute(
-            update(SessionModel).where(SessionModel.token_hash == token_hash).values(last_seen=last_seen)
+            update(SessionModel).where(SessionModel.token_hash == token_hash).values(last_seen=self._as_datetime(last_seen))
         )
 
     async def delete_session(self, token_hash: str) -> int:
@@ -219,7 +235,7 @@ class AuthRepository:
         result = await self.session.execute(delete(SessionModel).where(SessionModel.colleague_id == colleague_id))
         return int(result.rowcount or 0)
 
-    async def purge_expired_sessions(self, now: str) -> int:
+    async def purge_expired_sessions(self, now: str | datetime) -> int:
         """Delete expired sessions.
 
         Args:
@@ -228,7 +244,7 @@ class AuthRepository:
         Returns:
             Number of sessions removed.
         """
-        result = await self.session.execute(delete(SessionModel).where(SessionModel.expires_at < now))
+        result = await self.session.execute(delete(SessionModel).where(SessionModel.expires_at < self._as_datetime(now)))
         return int(result.rowcount or 0)
 
     async def update_last_login(self, username: str, now: str) -> None:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import case, delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +24,20 @@ class TrackingRepository:
         """
         self.session = session
 
+    @staticmethod
+    def _as_datetime(value: str | datetime) -> datetime:
+        """Normalize either ISO string or datetime to datetime."""
+        if isinstance(value, datetime):
+            return value
+        return datetime.fromisoformat(str(value))
+
+    @staticmethod
+    def _as_iso(value: datetime | str) -> str:
+        """Normalize either datetime or string into ISO-8601 string."""
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return str(value)
+
     async def list_tracking(self, colleague_id: str | None) -> list[TrackingRecord]:
         """List tracking records, optionally filtered by colleague.
 
@@ -37,7 +53,12 @@ class TrackingRepository:
         result = await self.session.execute(stmt)
         rows = result.scalars().all()
         return [
-            TrackingRecord(colleague_id=row.colleague_id, course_id=row.course_id, status=row.status, updated_at=row.updated_at)
+            TrackingRecord(
+                colleague_id=row.colleague_id,
+                course_id=row.course_id,
+                status=row.status,
+                updated_at=self._as_iso(row.updated_at),
+            )
             for row in rows
         ]
 
@@ -53,7 +74,12 @@ class TrackingRepository:
         result = await self.session.execute(select(TrackingModel).order_by(TrackingModel.updated_at.desc()).limit(limit))
         rows = result.scalars().all()
         return [
-            TrackingRecord(colleague_id=row.colleague_id, course_id=row.course_id, status=row.status, updated_at=row.updated_at)
+            TrackingRecord(
+                colleague_id=row.colleague_id,
+                course_id=row.course_id,
+                status=row.status,
+                updated_at=self._as_iso(row.updated_at),
+            )
             for row in rows
         ]
 
@@ -114,7 +140,7 @@ class TrackingRepository:
             for row in result.all()
         ]
 
-    async def upsert_tracking(self, colleague_id: str, course_id: int, status: str, updated_at: str) -> None:
+    async def upsert_tracking(self, colleague_id: str, course_id: int, status: str, updated_at: str | datetime) -> None:
         """Insert or update a tracking record.
 
         Args:
@@ -125,10 +151,15 @@ class TrackingRepository:
         """
         stmt = (
             insert(TrackingModel)
-            .values(colleague_id=colleague_id, course_id=course_id, status=status, updated_at=updated_at)
+            .values(
+                colleague_id=colleague_id,
+                course_id=course_id,
+                status=status,
+                updated_at=self._as_datetime(updated_at),
+            )
             .on_conflict_do_update(
                 index_elements=[TrackingModel.colleague_id, TrackingModel.course_id],
-                set_={"status": status, "updated_at": updated_at},
+                set_={"status": status, "updated_at": self._as_datetime(updated_at)},
             )
         )
         await self.session.execute(stmt)

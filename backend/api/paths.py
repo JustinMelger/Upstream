@@ -10,6 +10,11 @@ from backend.api.deps import (
     get_user_paths_service,
     require_session,
 )
+from backend.api.policies import (
+    require_existing_owner_or_admin,
+    require_row_exists,
+    require_row_parent_match,
+)
 from backend.api.schemas.path_recommendations import (
     DeletePathRecommendationResponse,
     PathRecommendationCreateRequest,
@@ -199,10 +204,7 @@ async def get_path(
     Returns:
         dict: Path payload.
     """
-    path = await paths.get_path(path_id)
-    if not path:
-        raise HTTPException(status_code=404, detail="not_found")
-    return path
+    return require_row_exists(await paths.get_path(path_id))
 
 
 @router.get("/{path_id}/reviews", response_model=list[PathReviewPayload])
@@ -213,9 +215,7 @@ async def list_path_reviews(
     reviews: PathReviewsService = Depends(get_path_reviews_service),
 ):
     """List reviews for a path."""
-    existing = await paths.get_path(path_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="not_found")
+    require_row_exists(await paths.get_path(path_id))
     return await reviews.list_reviews(path_id=path_id)
 
 
@@ -228,9 +228,7 @@ async def create_path_review(
     reviews: PathReviewsService = Depends(get_path_reviews_service),
 ):
     """Create a review for a path (any authenticated user)."""
-    existing = await paths.get_path(path_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="not_found")
+    require_row_exists(await paths.get_path(path_id))
     return await reviews.create_review(path_id=path_id, payload=payload.model_dump(), created_by=current_user)
 
 
@@ -243,13 +241,9 @@ async def delete_path_review(
     reviews: PathReviewsService = Depends(get_path_reviews_service),
 ):
     """Delete a path review (owner/admin only)."""
-    review = await reviews.get_review_by_id(review_id=int(review_id))
-    if not review:
-        raise HTTPException(status_code=404, detail="not_found")
-    if int(review.get("path_id") or 0) != int(path_id):
-        raise HTTPException(status_code=404, detail="not_found")
-    if not await auth.is_admin(current_user) and str(review.get("created_by") or "") != str(current_user):
-        raise HTTPException(status_code=403, detail="forbidden")
+    review = require_row_exists(await reviews.get_review_by_id(review_id=int(review_id)))
+    require_row_parent_match(row=review, parent_field="path_id", parent_id=int(path_id))
+    await require_existing_owner_or_admin(row=review, current_user=current_user, auth=auth)
     deleted = await reviews.delete_review(review_id=int(review_id))
     return {"deleted": bool(deleted)}
 
@@ -262,9 +256,7 @@ async def list_path_recommendations(
     recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
 ):
     """List recommendations for a path."""
-    existing = await paths.get_path(path_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="not_found")
+    require_row_exists(await paths.get_path(path_id))
     return await recommendations.list_recommendations(path_id=path_id)
 
 
@@ -277,9 +269,7 @@ async def create_path_recommendation(
     recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
 ):
     """Create/update current user's recommendation for a path."""
-    existing = await paths.get_path(path_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="not_found")
+    require_row_exists(await paths.get_path(path_id))
     return await recommendations.create_recommendation(path_id=path_id, payload=payload.model_dump(), created_by=current_user)
 
 
@@ -292,13 +282,11 @@ async def delete_path_recommendation(
     recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
 ):
     """Delete a path recommendation (owner/admin only)."""
-    recommendation = await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))
-    if not recommendation:
-        raise HTTPException(status_code=404, detail="not_found")
-    if int(recommendation.get("path_id") or 0) != int(path_id):
-        raise HTTPException(status_code=404, detail="not_found")
-    if not await auth.is_admin(current_user) and str(recommendation.get("created_by") or "") != str(current_user):
-        raise HTTPException(status_code=403, detail="forbidden")
+    recommendation = require_row_exists(
+        await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))
+    )
+    require_row_parent_match(row=recommendation, parent_field="path_id", parent_id=int(path_id))
+    await require_existing_owner_or_admin(row=recommendation, current_user=current_user, auth=auth)
     deleted = await recommendations.delete_recommendation(recommendation_id=int(recommendation_id))
     return {"deleted": bool(deleted)}
 
@@ -319,12 +307,11 @@ async def remove_path(
     Returns:
         dict: Delete result.
     """
-    if not await auth.is_admin(current_user):
-        existing = await paths.get_path(path_id)
-        if not existing:
-            raise HTTPException(status_code=404, detail="not_found")
-        if str(existing.get("created_by") or "") != str(current_user):
-            raise HTTPException(status_code=403, detail="forbidden")
+    await require_existing_owner_or_admin(
+        row=await paths.get_path(path_id),
+        current_user=current_user,
+        auth=auth,
+    )
 
     deleted = await paths.delete_path(path_id)
     if not deleted:
@@ -350,10 +337,9 @@ async def edit_path(
     Returns:
         dict: Updated path.
     """
-    if not await auth.is_admin(current_user):
-        existing = await paths.get_path(path_id)
-        if not existing:
-            raise HTTPException(status_code=404, detail="not_found")
-        if str(existing.get("created_by") or "") != str(current_user):
-            raise HTTPException(status_code=403, detail="forbidden")
+    await require_existing_owner_or_admin(
+        row=await paths.get_path(path_id),
+        current_user=current_user,
+        auth=auth,
+    )
     return await paths.update_path(path_id, payload.model_dump())

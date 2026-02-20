@@ -62,7 +62,7 @@ async def test_expired_session_is_purged(db_session):
     await auth_service.create_user("dave", "pass123", "user")
     token = (await auth_service.create_session("dave"))["token"]
 
-    past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    past = datetime.now(timezone.utc) - timedelta(days=1)
     async with db_session.begin():
         await db_session.execute(
             text("UPDATE sessions SET expires_at = :past WHERE colleague_id = :cid"), {"past": past, "cid": "dave"}

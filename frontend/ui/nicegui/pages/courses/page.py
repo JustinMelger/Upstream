@@ -249,11 +249,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 return True
 
             async def _perform_set_tracking(*, course_id: int, status: str) -> bool:
-                await api.post("/tracking", {"course_id": int(course_id), "status": str(status)})
+                await controller.set_tracking_status(course_id=int(course_id), status=str(status))
                 return await _reload_tracking_only()
 
             async def _perform_clear_tracking(*, course_id: int) -> bool:
-                await api.post("/tracking/delete", {"course_id": int(course_id)})
+                await controller.clear_tracking_status(course_id=int(course_id))
                 return await _reload_tracking_only()
 
             @guard_ui_action(title="Update status failed")
@@ -281,7 +281,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
             async def _create_submit(payload: dict[str, Any]) -> None:
-                await api.post("/courses", payload)
+                await controller.create_course(payload=payload)
                 await _load()
 
             _open_create_dialog = build_share_course_dialog(
@@ -291,7 +291,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             )
 
             async def _save_edit(course_id: int, payload: dict[str, Any]) -> None:
-                await api.put(f"/courses/{int(course_id)}", payload)
+                await controller.update_course(course_id=int(course_id), payload=payload)
                 await _load()
 
             def _render_edit_course_dialog(course: dict[str, Any]) -> None:
@@ -302,7 +302,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
             async def _delete_course_and_reload(course_id: int) -> None:
-                await api.delete(f"/courses/{int(course_id)}")
+                await controller.delete_course(course_id=int(course_id))
                 await _load()
 
             async def _confirm_delete_course(course_id: int) -> None:
@@ -314,12 +314,26 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             @guard_ui_action(title="Load course details failed")
             async def _open_details(course_id: int, *, focus_reviews: bool = False) -> None:
                 await open_course_details_dialog(
-                    api=api,
                     course_id=int(course_id),
                     focus_reviews=focus_reviews,
                     username=username,
                     is_admin=is_admin,
                     state=page_state,
+                    load_detail_bundle=lambda _cid, _scope: controller.load_course_detail_bundle(
+                        course_id=int(_cid),
+                        cache_scope=str(_scope or ""),
+                    ),
+                    save_review=lambda _cid, _rating, _text, _scope: controller.save_course_review(
+                        course_id=int(_cid),
+                        rating=int(_rating),
+                        text=str(_text or ""),
+                        cache_scope=str(_scope or ""),
+                    ),
+                    delete_review=lambda _cid, _review_id, _scope: controller.delete_course_review(
+                        course_id=int(_cid),
+                        review_id=int(_review_id),
+                        cache_scope=str(_scope or ""),
+                    ),
                     normalize_course_view_mode=_normalize_course_view_mode,
                     format_review_summary=_format_review_summary,
                     format_short_date=_format_short_date,
@@ -339,10 +353,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 await open_recommend_course_dialog(
                     course_id=int(course_id),
                     username=username,
-                    load_recommendations=lambda _cid: api.get(f"/courses/{int(_cid)}/recommendations"),
-                    save_recommendation=lambda _cid, _note: api.post(
-                        f"/courses/{int(_cid)}/recommendations",
-                        {"note": str(_note or "").strip()},
+                    load_recommendations=lambda _cid: controller.load_course_recommendations(course_id=int(_cid)),
+                    save_recommendation=lambda _cid, _note: controller.save_course_recommendation(
+                        course_id=int(_cid),
+                        note=str(_note or ""),
                     ),
                     on_saved=lambda _cid=int(course_id): _refresh_course_recommendation_summary(_cid),
                 )
