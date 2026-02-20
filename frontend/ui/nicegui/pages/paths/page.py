@@ -14,6 +14,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.mutation_flow import run_optimistic_mutation
 from frontend.ui.nicegui.core.navigation_intents import (
     get_path_intent,
     get_path_storage_intent,
@@ -21,7 +22,12 @@ from frontend.ui.nicegui.core.navigation_intents import (
     pop_path_storage_intent,
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.paths.actions import build_path_card_actions
+from frontend.ui.nicegui.pages.paths.actions import (
+    PathsFilterControls,
+    build_path_card_actions,
+    clear_path_filter_by_key,
+    reset_path_filter_controls,
+)
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.detail_flow import open_path_details_dialog
 from frontend.ui.nicegui.pages.paths.dialogs import build_share_path_dialog, open_edit_path_dialog
@@ -136,8 +142,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         @guard_ui_action(title="Select failed")
         async def _select(path_id: int) -> bool:
-            snapshot = apply_optimistic_select(state=controller_state, path_id=int(path_id))
-            try:
+            async def _perform_select() -> bool:
                 seeded, detail = await controller.select_path(path_id=int(path_id), state=controller_state)
                 reloaded = await _reload_selected()
                 if not reloaded:
@@ -162,15 +167,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     # Keep selection persisted even when opening the dialog fails.
                     safe_notify("Path selected, but details failed to open", type="warning")
                 return True
-            except Exception:
-                rollback_optimistic_selection(state=controller_state, snapshot=snapshot)
-                paths_list.refresh()
-                raise
+
+            return await run_optimistic_mutation(
+                apply_optimistic=lambda: apply_optimistic_select(state=controller_state, path_id=int(path_id)),
+                perform_mutation=_perform_select,
+                rollback=lambda snapshot: rollback_optimistic_selection(state=controller_state, snapshot=snapshot),
+                refresh_ui=paths_list.refresh,
+            )
 
         @guard_ui_action(title="Unselect failed")
         async def _unselect(path_id: int) -> bool:
-            snapshot = apply_optimistic_unselect(state=controller_state, path_id=int(path_id))
-            try:
+            async def _perform_unselect() -> bool:
                 await controller.unselect_path(path_id=int(path_id))
                 reloaded = await _reload_selected()
                 if not reloaded:
@@ -178,10 +185,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 controller_state.selected_detail_by_path_id.pop(int(path_id), None)
                 paths_list.refresh()
                 return True
-            except Exception:
-                rollback_optimistic_selection(state=controller_state, snapshot=snapshot)
-                paths_list.refresh()
-                raise
+
+            return await run_optimistic_mutation(
+                apply_optimistic=lambda: apply_optimistic_unselect(state=controller_state, path_id=int(path_id)),
+                perform_mutation=_perform_unselect,
+                rollback=lambda snapshot: rollback_optimistic_selection(state=controller_state, snapshot=snapshot),
+                refresh_ui=paths_list.refresh,
+            )
 
         @guard_ui_action(title="Delete path failed")
         async def _delete_path(path_id: int) -> None:
@@ -283,16 +293,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 paths_list.refresh()
 
             def _clear_filter_values() -> None:
-                q.value = ""
-                if status_filter is not None:
-                    status_filter.value = ""
-                sort_filter.value = ""
-                scope_filter.value = "all"
-                q.update()
-                if status_filter is not None:
-                    status_filter.update()
-                sort_filter.update()
-                scope_filter.update()
+                reset_path_filter_controls(
+                    controls=PathsFilterControls(
+                        scope_filter=scope_filter,
+                        search_input=q,
+                        status_filter=status_filter,
+                        sort_filter=sort_filter,
+                    )
+                )
                 _recompute_facet_options()
                 active_filters.refresh()
                 paths_list.refresh()
@@ -328,40 +336,21 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 with ui.row().classes("items-center gap-2 w-full"):
                     for chip in chips:
-                        if chip.key == "scope":
-
-                            def _clear_scope() -> None:
-                                scope_filter.value = "all"
-                                scope_filter.update()
-                                _refresh_list()
-
-                            _chip(chip.label, _clear_scope)
-                        elif chip.key == "search":
-
-                            def _clear_q() -> None:
-                                q.value = ""
-                                q.update()
-                                _refresh_list()
-
-                            _chip(chip.label, _clear_q)
-                        elif chip.key == "status":
-
-                            def _clear_status() -> None:
-                                if status_filter is None:
-                                    return
-                                status_filter.value = ""
-                                status_filter.update()
-                                _refresh_list()
-
-                            _chip(chip.label, _clear_status)
-                        elif chip.key == "sort":
-
-                            def _clear_sort() -> None:
-                                sort_filter.value = ""
-                                sort_filter.update()
-                                _refresh_list()
-
-                            _chip(chip.label, _clear_sort)
+                        _chip(
+                            chip.label,
+                            lambda key=chip.key: (
+                                clear_path_filter_by_key(
+                                    key=key,
+                                    controls=PathsFilterControls(
+                                        scope_filter=scope_filter,
+                                        search_input=q,
+                                        status_filter=status_filter,
+                                        sort_filter=sort_filter,
+                                    ),
+                                )
+                                and _refresh_list()
+                            ),
+                        )
 
             @ui.refreshable
             def paths_list() -> None:

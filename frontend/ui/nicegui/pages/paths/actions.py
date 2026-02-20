@@ -25,6 +25,16 @@ class PathCardActions:
     track_toggle_label: str
 
 
+@dataclass(slots=True)
+class PathsFilterControls:
+    """UI controls used by filter-clear/reset handlers."""
+
+    scope_filter: Any
+    search_input: Any
+    status_filter: Any | None
+    sort_filter: Any
+
+
 def path_share_link(*, path_id: int) -> str:
     """Build a copyable app-relative deep link for a path."""
     return f"/paths?path_id={int(path_id)}&view=full"
@@ -157,3 +167,40 @@ def build_path_card_actions(
         on_track_toggle=on_track_toggle,
         track_toggle_label=track_toggle_label,
     )
+
+
+def clear_path_filter_by_key(*, key: str, controls: PathsFilterControls) -> bool:
+    """Clear a single path filter key and update its control."""
+    k = str(key or "")
+    if k == "scope":
+        controls.scope_filter.value = "all"
+        controls.scope_filter.update()
+        return True
+    if k == "search":
+        controls.search_input.value = ""
+        controls.search_input.update()
+        return True
+    if k == "status":
+        if controls.status_filter is None:
+            return False
+        controls.status_filter.value = ""
+        controls.status_filter.update()
+        return True
+    if k == "sort":
+        controls.sort_filter.value = ""
+        controls.sort_filter.update()
+        return True
+    return False
+
+
+def reset_path_filter_controls(*, controls: PathsFilterControls) -> None:
+    """Reset all path filter controls to defaults and update them."""
+    controls.search_input.value = ""
+    controls.search_input.update()
+    if controls.status_filter is not None:
+        controls.status_filter.value = ""
+        controls.status_filter.update()
+    controls.sort_filter.value = ""
+    controls.sort_filter.update()
+    controls.scope_filter.value = "all"
+    controls.scope_filter.update()

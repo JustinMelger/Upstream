@@ -13,6 +13,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.mutation_flow import run_optimistic_mutation
 from frontend.ui.nicegui.core.navigation_intents import (
     get_course_intent,
     get_course_storage_intent,
@@ -20,7 +21,12 @@ from frontend.ui.nicegui.core.navigation_intents import (
     pop_course_storage_intent,
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.courses.actions import build_course_card_actions
+from frontend.ui.nicegui.pages.courses.actions import (
+    CoursesFilterControls,
+    build_course_card_actions,
+    clear_course_filter_by_key,
+    reset_course_filter_controls,
+)
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
 from frontend.ui.nicegui.pages.courses.detail_flow import open_course_details_dialog
 from frontend.ui.nicegui.pages.courses.dialogs import (
@@ -285,45 +291,37 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 courses_list.refresh()
                 return True
 
+            async def _perform_set_tracking(*, course_id: int, status: str) -> bool:
+                await api.post("/tracking", {"course_id": int(course_id), "status": str(status)})
+                return await _reload_tracking_only()
+
+            async def _perform_clear_tracking(*, course_id: int) -> bool:
+                await api.post("/tracking/delete", {"course_id": int(course_id)})
+                return await _reload_tracking_only()
+
             @guard_ui_action(title="Update status failed")
             async def _set_tracking(course_id: int, status: str) -> bool:
-                snapshot = apply_optimistic_tracking_set(
-                    state=page_state,
-                    course_id=int(course_id),
-                    status=str(status),
+                return await run_optimistic_mutation(
+                    apply_optimistic=lambda: apply_optimistic_tracking_set(
+                        state=page_state,
+                        course_id=int(course_id),
+                        status=str(status),
+                    ),
+                    perform_mutation=lambda: _perform_set_tracking(course_id=int(course_id), status=str(status)),
+                    rollback=lambda snapshot: rollback_optimistic_tracking(state=page_state, snapshot=snapshot),
+                    refresh_ui=courses_list.refresh,
+                    on_success=lambda: safe_notify("Updated status", type="positive"),
                 )
-                courses_list.refresh()
-                try:
-                    await api.post("/tracking", {"course_id": course_id, "status": status})
-                    ok = await _reload_tracking_only()
-                    if ok:
-                        safe_notify("Updated status", type="positive")
-                        return True
-                    rollback_optimistic_tracking(state=page_state, snapshot=snapshot)
-                    courses_list.refresh()
-                    return False
-                except Exception:
-                    rollback_optimistic_tracking(state=page_state, snapshot=snapshot)
-                    courses_list.refresh()
-                    raise
 
             @guard_ui_action(title="Remove status failed")
             async def _clear_tracking(course_id: int) -> bool:
-                snapshot = apply_optimistic_tracking_clear(state=page_state, course_id=int(course_id))
-                courses_list.refresh()
-                try:
-                    await api.post("/tracking/delete", {"course_id": course_id})
-                    ok = await _reload_tracking_only()
-                    if ok:
-                        safe_notify("Removed status", type="positive")
-                        return True
-                    rollback_optimistic_tracking(state=page_state, snapshot=snapshot)
-                    courses_list.refresh()
-                    return False
-                except Exception:
-                    rollback_optimistic_tracking(state=page_state, snapshot=snapshot)
-                    courses_list.refresh()
-                    raise
+                return await run_optimistic_mutation(
+                    apply_optimistic=lambda: apply_optimistic_tracking_clear(state=page_state, course_id=int(course_id)),
+                    perform_mutation=lambda: _perform_clear_tracking(course_id=int(course_id)),
+                    rollback=lambda snapshot: rollback_optimistic_tracking(state=page_state, snapshot=snapshot),
+                    refresh_ui=courses_list.refresh,
+                    on_success=lambda: safe_notify("Removed status", type="positive"),
+                )
 
             async def _create_submit(payload: dict[str, Any]) -> None:
                 await api.post("/courses", payload)
@@ -496,20 +494,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             def _clear_filter_values() -> None:
                 reset = default_courses_filter_reset_state()
-                scope_filter.value = reset.scope
-                q.value = reset.search
-                provider_filter.value = reset.provider
-                category_filter.value = reset.category
-                level_filter.value = reset.level
-                status_filter.value = reset.status
-                sort_filter.value = reset.sort
-                scope_filter.update()
-                q.update()
-                provider_filter.update()
-                category_filter.update()
-                level_filter.update()
-                status_filter.update()
-                sort_filter.update()
+                reset_course_filter_controls(
+                    controls=CoursesFilterControls(
+                        scope_filter=scope_filter,
+                        search_input=q,
+                        provider_filter=provider_filter,
+                        category_filter=category_filter,
+                        level_filter=level_filter,
+                        status_filter=status_filter,
+                        sort_filter=sort_filter,
+                    ),
+                    reset_state=reset,
+                )
                 active_filters.refresh()
                 courses_list.refresh()
 
@@ -537,17 +533,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     return
 
                 def _clear_filter_key(key: str) -> None:
-                    clear_map = {
-                        "scope": lambda: setattr(scope_filter, "value", "all") or scope_filter.update(),
-                        "search": lambda: setattr(q, "value", "") or q.update(),
-                        "provider": lambda: setattr(provider_filter, "value", "") or provider_filter.update(),
-                        "category": lambda: setattr(category_filter, "value", "") or category_filter.update(),
-                        "level": lambda: setattr(level_filter, "value", "") or level_filter.update(),
-                        "status": lambda: setattr(status_filter, "value", "") or status_filter.update(),
-                    }
-                    clear = clear_map.get(str(key))
-                    if callable(clear):
-                        clear()
+                    clear_course_filter_by_key(
+                        key=str(key),
+                        controls=CoursesFilterControls(
+                            scope_filter=scope_filter,
+                            search_input=q,
+                            provider_filter=provider_filter,
+                            category_filter=category_filter,
+                            level_filter=level_filter,
+                            status_filter=status_filter,
+                            sort_filter=sort_filter,
+                        ),
+                    )
                     active_filters.refresh()
                     courses_list.refresh()
 

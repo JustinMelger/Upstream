@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 import json
+from typing import Any
 
 from nicegui import ui
 
@@ -21,6 +22,19 @@ class CourseCardActions:
     on_copy_link: Callable[[], None]
     on_edit: Callable[[], None]
     on_delete: Callable[[], Awaitable[None]]
+
+
+@dataclass(slots=True)
+class CoursesFilterControls:
+    """UI controls used by filter-clear/reset handlers."""
+
+    scope_filter: Any
+    search_input: Any
+    provider_filter: Any
+    category_filter: Any
+    level_filter: Any
+    status_filter: Any
+    sort_filter: Any
 
 
 def copy_course_link(*, url: str) -> None:
@@ -67,3 +81,51 @@ def build_course_card_actions(
         on_edit=_edit,
         on_delete=_delete,
     )
+
+
+def clear_course_filter_by_key(*, key: str, controls: CoursesFilterControls) -> bool:
+    """Clear a single course filter key and update its control."""
+    k = str(key or "")
+    if k == "scope":
+        controls.scope_filter.value = "all"
+        controls.scope_filter.update()
+        return True
+    if k == "search":
+        controls.search_input.value = ""
+        controls.search_input.update()
+        return True
+    if k == "provider":
+        controls.provider_filter.value = ""
+        controls.provider_filter.update()
+        return True
+    if k == "category":
+        controls.category_filter.value = ""
+        controls.category_filter.update()
+        return True
+    if k == "level":
+        controls.level_filter.value = ""
+        controls.level_filter.update()
+        return True
+    if k == "status":
+        controls.status_filter.value = ""
+        controls.status_filter.update()
+        return True
+    return False
+
+
+def reset_course_filter_controls(*, controls: CoursesFilterControls, reset_state: Any) -> None:
+    """Apply default reset state to all filter controls and update them."""
+    controls.scope_filter.value = str(reset_state.scope)
+    controls.search_input.value = str(reset_state.search)
+    controls.provider_filter.value = str(reset_state.provider)
+    controls.category_filter.value = str(reset_state.category)
+    controls.level_filter.value = str(reset_state.level)
+    controls.status_filter.value = str(reset_state.status)
+    controls.sort_filter.value = str(reset_state.sort)
+    controls.scope_filter.update()
+    controls.search_input.update()
+    controls.provider_filter.update()
+    controls.category_filter.update()
+    controls.level_filter.update()
+    controls.status_filter.update()
+    controls.sort_filter.update()

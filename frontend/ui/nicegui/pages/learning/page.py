@@ -21,7 +21,13 @@ from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions
+from frontend.ui.nicegui.pages.learning.actions import (
+    LearningNavigationActions,
+    dismiss_recommended_course,
+    dismiss_recommended_path,
+    load_more_selected,
+    load_more_tracked,
+)
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
 from frontend.ui.nicegui.pages.learning.route_init import resolve_learning_initial_view
 from frontend.ui.nicegui.pages.learning.sections import (
@@ -34,7 +40,6 @@ from frontend.ui.nicegui.pages.learning.sections import (
 )
 from frontend.ui.nicegui.pages.learning.state import LearningPageState
 from frontend.ui.nicegui.pages.learning.ui_glue import (
-    compute_expanded_visible_count,
     compute_meta_text,
     compute_next_visibility,
     resolve_tracking_status_value,
@@ -281,11 +286,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     recommended_paths=learning_vm.recommended_paths,
                     on_save_recommended_course=_save_recommended_course,
                     on_save_recommended_path=_save_recommended_path,
-                    on_dismiss_recommended_course=lambda _cid: (
-                        state.dismissed_recommended_course_ids.add(int(_cid)) or content.refresh()
+                    on_dismiss_recommended_course=lambda _cid: dismiss_recommended_course(
+                        state=state,
+                        course_id=int(_cid),
+                        refresh=content.refresh,
                     ),
-                    on_dismiss_recommended_path=lambda _pid: (
-                        state.dismissed_recommended_path_ids.add(int(_pid)) or content.refresh()
+                    on_dismiss_recommended_path=lambda _pid: dismiss_recommended_path(
+                        state=state,
+                        path_id=int(_pid),
+                        refresh=content.refresh,
                     ),
                     on_view_course=nav_actions.make_course_view_action,
                     on_view_path=nav_actions.make_path_view_action,
@@ -340,18 +349,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     on_browse_courses=lambda: ui.navigate.to("/courses"),
                 )
                 if len(learning_vm.tracked_courses) > state.tracked_visible:
-
-                    def _more_tracked() -> None:
-                        state.tracked_visible = compute_expanded_visible_count(
-                            current_visible=int(state.tracked_visible),
-                            total_count=len(learning_vm.tracked_courses),
-                            page_size=state.page_size,
-                        )
-                        content.refresh()
-
                     ui.button(
                         f"Load more ({state.tracked_visible}/{len(learning_vm.tracked_courses)})",
-                        on_click=_more_tracked,
+                        on_click=lambda: load_more_tracked(
+                            state=state,
+                            total_count=len(learning_vm.tracked_courses),
+                            refresh=content.refresh,
+                        ),
                     ).props("outline dense")
 
                 render_selected_paths_section(
@@ -367,18 +371,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     on_browse_paths=lambda: ui.navigate.to("/paths"),
                 )
                 if len(learning_vm.selected_paths) > state.selected_visible:
-
-                    def _more_selected() -> None:
-                        state.selected_visible = compute_expanded_visible_count(
-                            current_visible=int(state.selected_visible),
-                            total_count=len(learning_vm.selected_paths),
-                            page_size=state.page_size,
-                        )
-                        content.refresh()
-
                     ui.button(
                         f"Load more ({state.selected_visible}/{len(learning_vm.selected_paths)})",
-                        on_click=_more_selected,
+                        on_click=lambda: load_more_selected(
+                            state=state,
+                            total_count=len(learning_vm.selected_paths),
+                            refresh=content.refresh,
+                        ),
                     ).props("outline dense")
 
             await _load()

@@ -16,6 +16,7 @@ from frontend.ui.nicegui.core.navigation_intents import (
     set_path_intent,
     set_path_storage_intent,
 )
+from frontend.ui.nicegui.pages.learning.state import LearningPageState
 
 
 @dataclass(slots=True)
@@ -64,3 +65,27 @@ class LearningNavigationActions:
 
     def navigate_tab(self, tab: str) -> None:
         ui.navigate.to(build_learning_tab_link(tab=str(tab)))
+
+
+def dismiss_recommended_course(*, state: LearningPageState, course_id: int, refresh: Callable[[], None]) -> None:
+    """Dismiss a recommended course and refresh content."""
+    state.dismissed_recommended_course_ids.add(int(course_id))
+    refresh()
+
+
+def dismiss_recommended_path(*, state: LearningPageState, path_id: int, refresh: Callable[[], None]) -> None:
+    """Dismiss a recommended path and refresh content."""
+    state.dismissed_recommended_path_ids.add(int(path_id))
+    refresh()
+
+
+def load_more_tracked(*, state: LearningPageState, total_count: int, refresh: Callable[[], None]) -> None:
+    """Increase tracked section visible count and refresh content."""
+    state.tracked_visible = min(int(total_count), int(state.tracked_visible) + int(state.page_size))
+    refresh()
+
+
+def load_more_selected(*, state: LearningPageState, total_count: int, refresh: Callable[[], None]) -> None:
+    """Increase selected section visible count and refresh content."""
+    state.selected_visible = min(int(total_count), int(state.selected_visible) + int(state.page_size))
+    refresh()

@@ -3,7 +3,14 @@ from __future__ import annotations
 import pytest
 
 from frontend.ui.nicegui.pages.paths import actions as paths_actions
-from frontend.ui.nicegui.pages.paths.actions import build_path_card_actions, build_track_toggle, path_share_link
+from frontend.ui.nicegui.pages.paths.actions import (
+    PathsFilterControls,
+    build_path_card_actions,
+    build_track_toggle,
+    clear_path_filter_by_key,
+    path_share_link,
+    reset_path_filter_controls,
+)
 
 
 @pytest.mark.unit
@@ -199,3 +206,63 @@ async def test_build_path_card_actions_wires_callbacks(monkeypatch: pytest.Monke
     assert "open:5:full" in calls
     assert "select:5" in calls
     assert "after" in calls
+
+
+class _Control:
+    def __init__(self, value: str = "") -> None:
+        self.value = value
+        self.updated = 0
+
+    def update(self) -> None:
+        self.updated += 1
+
+
+@pytest.mark.unit
+def test_clear_path_filter_by_key_updates_expected_control() -> None:
+    controls = PathsFilterControls(
+        scope_filter=_Control("selected"),
+        search_input=_Control("needle"),
+        status_filter=_Control("tracked"),
+        sort_filter=_Control("newest"),
+    )
+    assert clear_path_filter_by_key(key="search", controls=controls) is True
+    assert controls.search_input.value == ""
+    assert controls.search_input.updated == 1
+    assert clear_path_filter_by_key(key="scope", controls=controls) is True
+    assert controls.scope_filter.value == "all"
+    assert controls.scope_filter.updated == 1
+    assert clear_path_filter_by_key(key="status", controls=controls) is True
+    assert controls.status_filter is not None and controls.status_filter.value == ""
+    assert clear_path_filter_by_key(key="sort", controls=controls) is True
+    assert controls.sort_filter.value == ""
+    assert clear_path_filter_by_key(key="unknown", controls=controls) is False
+
+
+@pytest.mark.unit
+def test_reset_path_filter_controls_sets_defaults_and_updates() -> None:
+    controls = PathsFilterControls(
+        scope_filter=_Control("selected"),
+        search_input=_Control("needle"),
+        status_filter=_Control("tracked"),
+        sort_filter=_Control("newest"),
+    )
+    reset_path_filter_controls(controls=controls)
+    assert controls.scope_filter.value == "all"
+    assert controls.search_input.value == ""
+    assert controls.status_filter is not None and controls.status_filter.value == ""
+    assert controls.sort_filter.value == ""
+    assert controls.scope_filter.updated == 1
+    assert controls.search_input.updated == 1
+    assert controls.status_filter is not None and controls.status_filter.updated == 1
+    assert controls.sort_filter.updated == 1
+
+
+@pytest.mark.unit
+def test_clear_path_filter_by_key_status_returns_false_when_control_missing() -> None:
+    controls = PathsFilterControls(
+        scope_filter=_Control("selected"),
+        search_input=_Control("needle"),
+        status_filter=None,
+        sort_filter=_Control("newest"),
+    )
+    assert clear_path_filter_by_key(key="status", controls=controls) is False

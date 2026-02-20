@@ -113,13 +113,13 @@
 - [x] Frontend architecture alignment: remove temporary page-level service shims (e.g., `_load_paths_page_data` compat wrapper) and call service layer directly.
 - [x] Frontend architecture alignment: add `admin_users_service.py` and `ai_curator_service.py` to keep page modules focused on UI composition/event binding.
 - [x] Frontend clean code: enforce page boundary (pages = UI composition/event binding; move API orchestration to services/use-cases).
-- [ ] Frontend clean code: introduce typed page state/view-model objects to reduce large closure state (`nonlocal`) usage.
-- [ ] Frontend clean code: extract large nested handlers into domain action modules (`learning_actions`, `courses_actions`, `paths_actions`).
+- [x] Frontend clean code: introduce typed page state/view-model objects to reduce large closure state (`nonlocal`) usage.
+- [x] Frontend clean code: extract large nested handlers into domain action modules (`learning_actions`, `courses_actions`, `paths_actions`).
 - [ ] Frontend clean code: componentize repeated page sections (top bar, filter rail, card sections, load-more footer).
 - [ ] Frontend clean code: reduce page-module size/complexity (`courses.py`, `paths.py`, `learning.py`) by splitting into focused UI sections and action modules.
 - [x] Frontend clean code: centralize deep-link and intent navigation logic in a shared navigation helper.
-- [ ] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.
-- [ ] Frontend clean code: add lightweight page-state reducers/helpers to tame `nonlocal` sprawl and make state transitions explicit/testable.
+- [x] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.
+- [x] Frontend clean code: add lightweight page-state reducers/helpers to tame `nonlocal` sprawl and make state transitions explicit/testable.
 - [ ] Frontend clean code: increase service/use-case unit tests to cover extracted orchestration logic.
 - [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 
