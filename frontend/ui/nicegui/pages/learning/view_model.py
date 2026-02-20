@@ -55,15 +55,23 @@ def build_learning_tab_view(
     dismissed_recommended_path_ids: set[int],
 ) -> LearningTabView:
     """Build typed learning-tab projection from raw page data payload."""
-    pending_course_review_ids = sorted({int(i) for i in list(data.get("pending_course_review_ids") or [])})
-    pending_path_review_ids = sorted({int(i) for i in list(data.get("pending_path_review_ids") or [])})
-
     def _valid_int_id(value: Any) -> int | None:
         try:
             parsed = int(value or 0)
         except (TypeError, ValueError):
             return None
         return parsed if parsed > 0 else None
+
+    def _sorted_positive_ids(values: list[Any]) -> list[int]:
+        ids: set[int] = set()
+        for raw in values:
+            parsed = _valid_int_id(raw)
+            if parsed is not None:
+                ids.add(parsed)
+        return sorted(ids)
+
+    pending_course_review_ids = _sorted_positive_ids(list(data.get("pending_course_review_ids") or []))
+    pending_path_review_ids = _sorted_positive_ids(list(data.get("pending_path_review_ids") or []))
 
     recommended_courses = [
         r

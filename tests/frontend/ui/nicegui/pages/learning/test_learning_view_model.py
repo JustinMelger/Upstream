@@ -44,3 +44,15 @@ def test_build_learning_tab_view_filters_dismissed_recommendations_and_sorts_pen
     assert [int(r["course_id"]) for r in vm.recommended_courses] == [1]
     assert [int(r["path_id"]) for r in vm.recommended_paths] == [3]
 
+
+def test_build_learning_tab_view_ignores_invalid_pending_review_ids() -> None:
+    vm = build_learning_tab_view(
+        data={
+            "pending_course_review_ids": ["bad", None, "", 0, -1, "5"],
+            "pending_path_review_ids": ["x", 3.0, "0"],
+        },
+        dismissed_recommended_course_ids=set(),
+        dismissed_recommended_path_ids=set(),
+    )
+    assert vm.pending_course_review_ids == [5]
+    assert vm.pending_path_review_ids == [3]
