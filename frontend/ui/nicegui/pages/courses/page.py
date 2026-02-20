@@ -22,9 +22,9 @@ from frontend.ui.nicegui.core.navigation_intents import (
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.courses.actions import (
-    CoursesFilterControls,
     build_course_card_actions,
     clear_course_filter_by_key,
+    CoursesFilterControls,
     recompute_course_facet_controls,
     reset_course_filter_controls,
 )
@@ -48,8 +48,8 @@ from frontend.ui.nicegui.pages.courses.route_init import intent_matches_course, 
 from frontend.ui.nicegui.pages.courses.sections import (
     render_active_filter_chips,
     render_course_card,
-    render_courses_topbar,
     render_courses_empty_state,
+    render_courses_topbar,
     render_filters_rail,
     render_load_more_control,
 )
@@ -327,6 +327,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @guard_ui_action(title="Recommend failed")
             async def _open_recommend_dialog(course_id: int) -> None:
+                async def _refresh_course_recommendation_summary(_course_id: int) -> None:
+                    row = await controller.load_recommendation_summary_for_course(course_id=int(_course_id))
+                    if isinstance(row, dict):
+                        page_state.recommendation_summary_by_course_id[int(_course_id)] = row
+                    else:
+                        page_state.recommendation_summary_by_course_id.pop(int(_course_id), None)
+                    courses_list.refresh()
+
                 await open_recommend_course_dialog(
                     course_id=int(course_id),
                     username=username,
@@ -335,7 +343,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         f"/courses/{int(_cid)}/recommendations",
                         {"note": str(_note or "").strip()},
                     ),
-                    on_saved=_load,
+                    on_saved=lambda _cid=int(course_id): _refresh_course_recommendation_summary(_cid),
                 )
 
             @ui.refreshable

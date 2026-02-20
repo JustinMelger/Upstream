@@ -121,7 +121,7 @@
 - [x] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.
 - [x] Frontend clean code: add lightweight page-state reducers/helpers to tame `nonlocal` sprawl and make state transitions explicit/testable.
 - [x] Frontend clean code: increase service/use-case unit tests to cover extracted orchestration logic.
-- [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
+- [x] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 
 ## Phase 11 — Operability + Quality
 - [ ] Activity feed UX v2: add filters (`All`, `Recommendations`, `Ratings`, `Courses`, `Paths`, `Articles`).

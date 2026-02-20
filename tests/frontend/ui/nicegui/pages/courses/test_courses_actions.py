@@ -4,9 +4,9 @@ import pytest
 
 from frontend.ui.nicegui.pages.courses import actions as courses_actions
 from frontend.ui.nicegui.pages.courses.actions import (
-    CoursesFilterControls,
     build_course_card_actions,
     clear_course_filter_by_key,
+    CoursesFilterControls,
     recompute_course_facet_controls,
     reset_course_filter_controls,
 )

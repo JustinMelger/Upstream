@@ -45,3 +45,14 @@ async def test_courses_controller_reload_tracking() -> None:
 
     tracking = await controller.reload_tracking()
     assert tracking == {7: {"course_id": 7, "status": "in_progress"}}
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_courses_controller_load_recommendation_summary_for_course() -> None:
+    api = _FakeApi()
+    controller = CoursesPageController(api=api)
+
+    row = await controller.load_recommendation_summary_for_course(course_id=7)
+    assert isinstance(row, dict)
+    assert int(row.get("recommendation_count") or 0) == 3

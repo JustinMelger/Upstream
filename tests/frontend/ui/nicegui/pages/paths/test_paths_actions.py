@@ -4,14 +4,14 @@ import pytest
 
 from frontend.ui.nicegui.pages.paths import actions as paths_actions
 from frontend.ui.nicegui.pages.paths.actions import (
-    PathsFilterControls,
     build_path_card_actions,
     build_track_toggle,
     clear_path_filter_by_key,
     path_share_link,
+    PathsFilterControls,
     recompute_path_status_filter,
-    resolve_paths_empty_state,
     reset_path_filter_controls,
+    resolve_paths_empty_state,
 )
 
 
@@ -332,15 +332,16 @@ def test_recompute_path_status_filter_noop_when_status_control_missing() -> None
 
 @pytest.mark.unit
 def test_resolve_paths_empty_state_variants() -> None:
-    assert resolve_paths_empty_state(
-        has_rows=True, scope_value="all", has_any_filters=False, has_any_paths=True
-    ) == "has_rows"
-    assert resolve_paths_empty_state(
-        has_rows=False, scope_value="selected", has_any_filters=False, has_any_paths=True
-    ) == "selected_empty"
-    assert resolve_paths_empty_state(
-        has_rows=False, scope_value="all", has_any_filters=False, has_any_paths=False
-    ) == "catalog_empty"
-    assert resolve_paths_empty_state(
-        has_rows=False, scope_value="all", has_any_filters=True, has_any_paths=True
-    ) == "filters_empty"
+    assert resolve_paths_empty_state(has_rows=True, scope_value="all", has_any_filters=False, has_any_paths=True) == "has_rows"
+    assert (
+        resolve_paths_empty_state(has_rows=False, scope_value="selected", has_any_filters=False, has_any_paths=True)
+        == "selected_empty"
+    )
+    assert (
+        resolve_paths_empty_state(has_rows=False, scope_value="all", has_any_filters=False, has_any_paths=False)
+        == "catalog_empty"
+    )
+    assert (
+        resolve_paths_empty_state(has_rows=False, scope_value="all", has_any_filters=True, has_any_paths=True)
+        == "filters_empty"
+    )

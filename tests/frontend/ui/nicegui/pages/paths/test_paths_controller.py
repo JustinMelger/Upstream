@@ -110,6 +110,17 @@ async def test_controller_get_user_recommendation_note_returns_empty_when_missin
 
 @pytest.mark.unit
 @pytest.mark.anyio
+async def test_controller_load_recommendation_summary_for_path() -> None:
+    api = _FakeApi()
+    controller = PathsPageController(api=api)
+
+    row = await controller.load_recommendation_summary_for_path(path_id=42)
+    assert isinstance(row, dict)
+    assert int(row.get("recommendation_count") or 0) == 2
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
 async def test_controller_path_mutations_call_expected_endpoints() -> None:
     api = _FakeApi()
     controller = PathsPageController(api=api)

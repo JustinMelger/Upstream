@@ -46,3 +46,9 @@ class CoursesPageController:
     async def reload_tracking(self) -> dict[int, dict[str, Any]]:
         """Load current user's tracking map only."""
         return await load_tracking_map(api=self._api)
+
+    async def load_recommendation_summary_for_course(self, *, course_id: int) -> dict[str, Any] | None:
+        """Load recommendation summary row for a single course id."""
+        rows = await load_recommendation_summaries(api=self._api, course_ids=[int(course_id)])
+        row = rows.get(int(course_id))
+        return dict(row) if isinstance(row, dict) else None

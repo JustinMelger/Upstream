@@ -89,6 +89,12 @@ class PathsPageController:
         payload = await self._api.post(f"/paths/{int(path_id)}/recommendations", {"note": str(note or "").strip()})
         return dict(payload or {}) if isinstance(payload, dict) else {}
 
+    async def load_recommendation_summary_for_path(self, *, path_id: int) -> dict[str, Any] | None:
+        """Load recommendation summary row for a single path id."""
+        rows = await load_path_recommendation_summaries(api=self._api, path_ids=[int(path_id)])
+        row = rows.get(int(path_id))
+        return dict(row) if isinstance(row, dict) else None
+
     async def save_path_review(self, *, path_id: int, rating: int, text: str) -> dict[str, Any]:
         """Create or update current user's review for a path."""
         payload = await self._api.post(

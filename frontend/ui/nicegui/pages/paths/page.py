@@ -8,8 +8,8 @@ from nicegui import app, ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.path_card import render_path_card
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
+from frontend.ui.nicegui.components.path_card import render_path_card
 from frontend.ui.nicegui.components.paths_sections import render_paths_filter_rail, render_paths_topbar
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
@@ -24,12 +24,12 @@ from frontend.ui.nicegui.core.navigation_intents import (
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.paths.actions import (
-    PathsFilterControls,
     build_path_card_actions,
     clear_path_filter_by_key,
+    PathsFilterControls,
     recompute_path_status_filter,
-    resolve_paths_empty_state,
     reset_path_filter_controls,
+    resolve_paths_empty_state,
 )
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.detail_flow import open_path_details_dialog
@@ -201,6 +201,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await controller.delete_path(path_id=int(path_id))
             await _load_all()
             safe_notify("Path deleted", type="positive")
+
+        async def _refresh_path_recommendation_summary(path_id: int) -> None:
+            row = await controller.load_recommendation_summary_for_path(path_id=int(path_id))
+            if isinstance(row, dict):
+                controller_state.path_recommendation_summary_by_id[int(path_id)] = row
+            else:
+                controller_state.path_recommendation_summary_by_id.pop(int(path_id), None)
+            paths_list.refresh()
 
         async def _open_edit(*, path_id: int, detail: dict[str, Any], detail_dialog: ui.dialog | None) -> None:
             """Open an edit dialog for a path (owner/admin only, enforced by backend)."""
@@ -446,7 +454,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 path_id=int(_path_id),
                                 note=str(_note),
                             ),
-                            on_saved=_load_all,
+                            on_saved=lambda _pid=pid: _refresh_path_recommendation_summary(_pid),
                             get_path_detail=lambda _pid: controller.get_path_detail(path_id=int(_pid)),
                             on_open_edit=lambda _pid, _detail: _open_edit(path_id=_pid, detail=_detail, detail_dialog=None),
                             on_delete=_delete_path,
@@ -485,6 +493,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         )
 
                     if total > len(shown_page):
+
                         def _load_more() -> None:
                             ui_state.visible_count = compute_expanded_visible_count(
                                 current_visible=int(ui_state.visible_count),

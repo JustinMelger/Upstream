@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-import time
 from dataclasses import dataclass
+import time
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient

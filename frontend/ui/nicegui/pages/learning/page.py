@@ -21,9 +21,9 @@ from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.learning.actions import (
-    LearningNavigationActions,
     dismiss_recommended_course,
     dismiss_recommended_path,
+    LearningNavigationActions,
     load_more_selected,
     load_more_tracked,
 )

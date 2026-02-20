@@ -23,8 +23,8 @@ from frontend.ui.nicegui.pages.articles.reducers import compute_facet_state, der
 from frontend.ui.nicegui.pages.articles.sections import (
     render_active_filter_chips,
     render_article_card,
-    render_articles_topbar,
     render_articles_empty_state,
+    render_articles_topbar,
     render_filters_rail,
 )
 from frontend.ui.nicegui.pages.articles.state import ArticlesPageState
@@ -283,6 +283,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         )
 
                     if total > len(shown_page):
+
                         def _load_more() -> None:
                             state.visible_count = compute_expanded_visible_count(
                                 current_visible=int(state.visible_count),
