@@ -17,7 +17,7 @@ def render_paths_topbar(
     Returns:
         Tuple of `(search_input, scope_filter, sort_filter, meta_label)`.
     """
-    with ui.row().classes("lp-topbar"):
+    with ui.row().classes("lp-topbar lp-sticky-controls"):
         search_input = ui.input("Search paths").props("clearable debounce=300").style("flex: 1")
         with ui.row().classes("items-center gap-2").style("margin-left: auto"):
             ui.button("Share", on_click=on_open_create_dialog).props("dense")

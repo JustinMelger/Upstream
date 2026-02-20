@@ -55,12 +55,12 @@ def render_path_card(
                     ui.menu_item("Edit", on_edit)
                     ui.menu_item("Delete", on_delete)
 
-        ui.label(path_row.get("name") or "").classes("text-lg font-semibold")
+        ui.label(path_row.get("name") or "").classes("text-lg font-semibold lp-card-title")
         if str(path_row.get("description") or "").strip():
-            ui.label(path_row.get("description") or "").classes("text-sm text-gray-600")
+            ui.label(path_row.get("description") or "").classes("text-sm text-gray-600 lp-card-body")
         with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
             if shared_by:
-                ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
+                ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
             ui.label(tracking_label_text).classes(tracking_chip_cls)
 
         if total_courses > 0:
@@ -72,6 +72,7 @@ def render_path_card(
             if next_title:
                 ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
 
-        with ui.row().classes("items-center gap-2 mt-2"):
+        with ui.row().classes("items-center gap-2 mt-2") as actions_row:
+            actions_row.classes("lp-card-actions")
             ui.button("", icon="visibility", on_click=on_view).props("outline dense").tooltip("View")
             ui.button(track_toggle_label, on_click=on_track_toggle).props("outline dense")

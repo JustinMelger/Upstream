@@ -8,6 +8,7 @@ from typing import Any
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
+from frontend.ui.nicegui.pages.courses.media import extract_youtube_video_id, youtube_embed_url
 
 
 @dataclass(slots=True)
@@ -22,6 +23,8 @@ class CourseCardView:
     shared_by: str
     tracking_label_text: str
     tracking_chip_cls: str
+    has_video_preview: bool
+    video_embed_url: str
 
 
 def format_rating_badge(row: dict[str, Any] | None) -> str:
@@ -54,6 +57,7 @@ def map_course_card_view(
     updated_at = parse_iso_datetime(course_row.get("updated_at"))
     is_updated = is_recent(updated_at) and created_at is not None and updated_at is not None and updated_at > created_at
     is_new = (not is_updated) and is_recent(created_at)
+    video_id = extract_youtube_video_id(str(course_row.get("url") or "").strip())
     return CourseCardView(
         card_class_suffix=f" lp-course-card--{status}" if status else "",
         is_new=is_new,
@@ -63,4 +67,6 @@ def map_course_card_view(
         shared_by=str(course_row.get("created_by") or "").strip(),
         tracking_label_text=tracking_label((tracked_row or {}).get("status")),
         tracking_chip_cls=tracking_chip_class((tracked_row or {}).get("status")),
+        has_video_preview=bool(video_id),
+        video_embed_url=youtube_embed_url(video_id) if video_id else "",
     )

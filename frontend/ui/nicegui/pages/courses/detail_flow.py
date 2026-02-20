@@ -9,6 +9,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
+from frontend.ui.nicegui.pages.courses.media import extract_youtube_video_id, render_youtube_embed, youtube_embed_url
 from frontend.ui.nicegui.pages.courses.state import CoursesPageState
 
 
@@ -43,6 +44,8 @@ async def open_course_details_dialog(
             category = str(course.get("category") or "").strip()
             language = str(course.get("language") or "").strip()
             shared_by = str(course.get("created_by") or "").strip()
+            source_url = str(course.get("url") or "").strip()
+            video_id = extract_youtube_video_id(source_url)
 
             with ui.row().classes("items-center justify-between w-full mt-2"):
                 with ui.row().classes("items-center gap-2 flex-wrap"):
@@ -60,14 +63,19 @@ async def open_course_details_dialog(
                     rec_count = int(rec_row.get("recommendation_count") or 0) if isinstance(rec_row, dict) else 0
                     if rec_count > 0:
                         ui.label(f"↗ {rec_count} rec").classes("lp-meta-chip")
-                if course.get("url"):
+                if source_url:
                     ui.button(
-                        "Open link",
+                        "Open source",
                         icon="open_in_new",
-                        on_click=lambda u=str(course.get("url")): ui.navigate.to(u, new_tab=True),
+                        on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True),
                     ).props("outline dense")
 
             ui.separator()
+            if video_id:
+                ui.label("Preview").classes("text-xs").style("color: var(--lp-muted)")
+                with ui.element("div").classes("lp-video-wrap"):
+                    render_youtube_embed(youtube_embed_url(video_id))
+
             if recommendations:
                 rec_by = sorted(
                     {

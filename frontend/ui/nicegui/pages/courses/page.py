@@ -396,6 +396,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             review_summary_row=page_state.review_summary_by_course_id.get(course_id),
                             recommendation_summary_row=page_state.recommendation_summary_by_course_id.get(course_id),
                         )
+                        is_preview_open = int(ui_state.preview_course_id or 0) == int(course_id)
                         render_course_card(
                             course_row=c,
                             tracked_row=tracked if isinstance(tracked, dict) else None,
@@ -407,6 +408,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             resolve_status_value=resolve_tracking_status_value,
                             on_set_status=_set_tracking,
                             on_clear_status=_clear_tracking,
+                            has_video_preview=bool(card_vm.has_video_preview),
+                            is_preview_open=bool(is_preview_open),
+                            preview_embed_url=str(card_vm.video_embed_url or ""),
+                            on_toggle_preview=lambda _cid=course_id: (
+                                setattr(
+                                    ui_state,
+                                    "preview_course_id",
+                                    None if int(ui_state.preview_course_id or 0) == int(_cid) else int(_cid),
+                                ),
+                                courses_list.refresh(),
+                            ),
                         )
 
                     def _load_more() -> None:

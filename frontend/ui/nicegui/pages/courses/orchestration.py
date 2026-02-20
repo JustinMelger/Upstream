@@ -92,7 +92,7 @@ async def load_courses(
         refresh_courses_list_ui()
     finally:
         load_done = finalize_courses_load(ok=ok, course_count=len(page_state.courses))
-        meta.text = compute_meta_text(len(page_state.courses))
+        meta.text = compute_meta_text(course_count=len(page_state.courses))
         ui_state.loading = load_done.loading
         ui_state.loaded_once = load_done.loaded_once
         refresh_btn.enable()

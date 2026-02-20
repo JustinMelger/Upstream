@@ -8,6 +8,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.card_actions import render_view_review_actions
+from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.pages.articles.ui_glue import ActiveFilterChip
 
 
@@ -31,7 +32,7 @@ class ArticlesTopbarControls:
 
 def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
     """Render articles topbar and return controls."""
-    with ui.row().classes("lp-topbar"):
+    with ui.row().classes("lp-topbar lp-sticky-controls"):
         search_input = ui.input("Search articles").props("clearable debounce=300").style("flex: 1")
         with ui.row().classes("items-center gap-2").style("margin-left: auto"):
             ui.button("Share", on_click=on_share).props("dense")
@@ -66,7 +67,9 @@ def render_filters_rail(
     ui.label("Tip: share useful resources with colleagues.").classes("text-xs").style("color: var(--lp-muted)")
 
     tag_filter = ui.select({"": "Any tag"}, label="Tag", value="").props("dense").classes("w-full")
-    author_filter = ui.select({"": "Anyone"}, label="Shared by", value="").props("dense").classes("w-full")
+    with ui.expansion("More filters").props("dense"):
+        with ui.column().classes("w-full"):
+            author_filter = ui.select({"": "Anyone"}, label="Shared by", value="").props("dense").classes("w-full")
     ui.button("Reset all", on_click=on_reset).props("outline").classes("w-full mt-2")
 
     return ArticlesFilterControls(
@@ -109,15 +112,21 @@ def render_articles_empty_state(
 ) -> None:
     """Render empty states for the articles list."""
     if not has_articles and not any_filters:
-        ui.label("No articles yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Share the first link to get started.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.button("Share an article", on_click=on_share).props("outline")
+        render_empty_block(
+            title="No articles yet.",
+            description="Share the first link to get started.",
+            primary_label="Share an article",
+            on_primary=on_share,
+        )
         return
 
-    ui.label("No articles match your filters.").classes("text-sm").style("color: var(--lp-muted)")
-    with ui.row().classes("items-center gap-2"):
-        ui.button("Reset all", on_click=on_reset).props("outline")
-        ui.button("Refresh", on_click=on_refresh).props("outline")
+    render_empty_block(
+        title="No articles match your filters.",
+        primary_label="Reset all",
+        on_primary=on_reset,
+        secondary_label="Refresh",
+        on_secondary=on_refresh,
+    )
 
 
 def render_article_card(
@@ -139,11 +148,11 @@ def render_article_card(
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
 
-        ui.label(title).classes("text-lg font-semibold")
+        ui.label(title).classes("text-lg font-semibold lp-card-title")
         if url:
             ui.link(url, url).props("target=_blank").classes("text-sm")
 
-        ui.label(subtitle_text).classes("text-xs").style("color: var(--lp-muted)")
+        ui.label(subtitle_text).classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
 
         if tags:
             with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
@@ -154,5 +163,6 @@ def render_article_card(
         if summary_text:
             ui.label(summary_text).classes("lp-meta-chip")
 
-        with ui.row().classes("items-center gap-2 mt-2"):
+        with ui.row().classes("items-center gap-2 mt-2") as actions_row:
+            actions_row.classes("lp-card-actions")
             render_view_review_actions(on_view=view_action, on_review=review_action, review_tooltip="Reviews")

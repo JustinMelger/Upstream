@@ -7,9 +7,11 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.errors import safe_notify
+from frontend.ui.nicegui.pages.courses.media import render_youtube_embed
 from frontend.ui.nicegui.pages.courses.ui_glue import ActiveFilterChip
 
 
@@ -36,10 +38,12 @@ class CoursesTopbarControls:
 
 def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbarControls:
     """Render courses topbar and return controls."""
-    with ui.row().classes("lp-topbar"):
-        search_input = ui.input("Search courses").props("clearable debounce=300").style("flex: 1")
-        with ui.row().classes("items-center gap-2").style("margin-left: auto"):
-            ui.button("Share", on_click=on_share).props("dense")
+    with ui.row().classes("lp-topbar lp-sticky-controls"):
+        search_input = ui.input("Search courses").props("clearable debounce=300 dense").classes("lp-topbar-search").style(
+            "flex: 1"
+        )
+        with ui.row().classes("items-center gap-2 lp-topbar-group").style("margin-left: auto"):
+            ui.label("View").classes("lp-topbar-group-label")
             scope_filter = (
                 ui.radio(
                     {"all": "All", "tracked": "Tracked"},
@@ -48,6 +52,8 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbar
                 .props("inline dense")
                 .classes("text-sm")
             )
+        with ui.row().classes("items-center gap-2 lp-topbar-group"):
+            ui.label("Sort").classes("lp-topbar-group-label")
             sort_filter = (
                 ui.select(
                     {
@@ -63,7 +69,10 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbar
                 .props("dense")
                 .style("min-width: 180px")
             )
-            meta = ui.label("").classes("lp-topbar-meta")
+        with ui.row().classes("items-center gap-2 lp-topbar-group"):
+            ui.button("Share", on_click=on_share).props("dense")
+        with ui.row().classes("items-center gap-2 lp-topbar-group"):
+            meta = ui.label("").classes("lp-topbar-meta lp-topbar-count")
     return CoursesTopbarControls(
         search_input=search_input,
         scope_filter=scope_filter,
@@ -114,8 +123,8 @@ def render_filters_rail(
 
     ui.label("Tip: use filters to narrow results.").classes("text-xs").style("color: var(--lp-muted)")
 
-    provider_filter = ui.select({"": "Any provider"}, label="Provider", value="").props("dense").classes("w-full")
-    category_filter = ui.select({"": "Any category"}, label="Category", value="").props("dense").classes("w-full")
+    provider_filter = ui.select({"": "Any provider"}, label="Provider", value="").props("dense").classes("w-full lp-filter-select")
+    category_filter = ui.select({"": "Any category"}, label="Category", value="").props("dense").classes("w-full lp-filter-select")
     status_filter = (
         ui.select(
             {"": "Any status", "not_tracked": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
@@ -123,11 +132,13 @@ def render_filters_rail(
             value="",
         )
         .props("dense")
-        .classes("w-full")
+        .classes("w-full lp-filter-select")
     )
     with ui.expansion("More filters").props("dense"):
         with ui.column().classes("w-full"):
-            level_filter = ui.select({"": "Any level"}, label="Level (optional)", value="").props("dense").classes("w-full")
+            level_filter = (
+                ui.select({"": "Any level"}, label="Level (optional)", value="").props("dense").classes("w-full lp-filter-select")
+            )
 
     provider_filter.on("update:model-value", on_filters_changed)
     category_filter.on("update:model-value", on_filters_changed)
@@ -160,13 +171,15 @@ def render_tracking_status_select(
         options=options_map,
         value=current_status,
         label=None,
-    ).props("dense")
-    status_select.style("min-width: 170px")
+    ).props("dense outlined").classes("lp-status-select")
+    status_select.style("min-width: 148px; max-width: 188px")
     status_select.props("use-input hide-selected fill-input")
     status_select.tooltip("Status")
+    saved_hint = ui.label("").classes("lp-status-saved")
 
     async def _on_status_change(e: Any, _cid: int = int(course_id), _select=status_select) -> None:
         _select.disable()
+        saved_hint.text = ""
         try:
             value = resolve_status_value(
                 raw_event=e,
@@ -185,6 +198,7 @@ def render_tracking_status_select(
             _select.value = value
             _select.update()
             await on_set_status(_cid, value)
+            saved_hint.text = "Saved"
         finally:
             _select.enable()
 
@@ -204,8 +218,20 @@ def render_course_card(
     resolve_status_value: Any,
     on_set_status: Any,
     on_clear_status: Any,
+    has_video_preview: bool,
+    is_preview_open: bool,
+    preview_embed_url: str,
+    on_toggle_preview: Any,
 ) -> None:
     """Render one course card including action menu and status control."""
+    async def _on_primary_action() -> None:
+        cid = int(course_row.get("id") or 0)
+        current_status = str((tracked_row or {}).get("status") or "").strip()
+        if current_status:
+            actions.on_view()
+            return
+        await on_set_status(cid, "interested")
+
     with ui.card().classes(f"w-full lp-course-card lp-card--hover{card_vm.card_class_suffix}"):
         title = str(course_row.get("title") or "")
         with ui.element("div").classes("lp-card-topright"):
@@ -213,25 +239,34 @@ def render_course_card(
                 ui.label("New").classes("lp-chip lp-chip--sky")
             elif card_vm.is_updated:
                 ui.label("Updated").classes("lp-chip lp-chip--teal")
-            if card_vm.rating_badge:
-                ui.label(card_vm.rating_badge).classes("lp-meta-chip")
-            if card_vm.recommendation_badge:
-                ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
             with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
                 ui.menu_item("Review", actions.on_review)
                 ui.menu_item("Recommend", actions.on_recommend)
+                if has_video_preview:
+                    ui.menu_item("Preview", on_toggle_preview)
                 if has_url:
                     ui.menu_item("Copy link", actions.on_copy_link)
                 if can_edit:
                     ui.menu_item("Edit", actions.on_edit)
                     ui.menu_item("Delete", actions.on_delete)
 
-        ui.label(title).classes("text-lg font-semibold")
+        ui.label(title).classes("text-lg font-semibold lp-card-title")
         shared_by = card_vm.shared_by
-        if shared_by:
-            ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
+        with ui.row().classes("items-center gap-2 flex-wrap lp-social-strip"):
+            if shared_by:
+                ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
+            if card_vm.rating_badge:
+                ui.label(card_vm.rating_badge).classes("lp-meta-chip")
+            if card_vm.recommendation_badge:
+                ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
         if str(course_row.get("description") or "").strip():
-            ui.label(str(course_row.get("description") or "")).classes("text-sm text-gray-600")
+            ui.label(str(course_row.get("description") or "")).classes("text-sm text-gray-600 lp-card-body")
+        if bool(is_preview_open) and str(preview_embed_url or "").strip():
+            with ui.element("div").classes("lp-video-wrap"):
+                render_youtube_embed(str(preview_embed_url))
+            source_url = str(course_row.get("url") or "").strip()
+            if source_url:
+                ui.link("Open source video", source_url).props("target=_blank").classes("text-xs")
         with ui.row().classes("items-center gap-2 flex-wrap"):
             chips: list[str] = []
             if str(course_row.get("provider") or "").strip():
@@ -243,14 +278,20 @@ def render_course_card(
 
             max_chips = 2
             for chip in chips[:max_chips]:
-                ui.label(chip).classes("lp-meta-chip")
+                ui.label(chip).classes("lp-meta-chip lp-meta-chip--quiet")
             if len(chips) > max_chips:
-                ui.label(f"+{len(chips) - max_chips}").classes("lp-meta-chip")
+                ui.label(f"+{len(chips) - max_chips}").classes("lp-meta-chip lp-meta-chip--quiet")
 
             ui.label(card_vm.tracking_label_text).classes(card_vm.tracking_chip_cls)
 
-        with ui.row().classes("items-center gap-2 mt-2"):
-            ui.button("", icon="visibility", on_click=actions.on_view).props("outline dense").tooltip("View")
+        with ui.row().classes("items-center gap-2 mt-2") as actions_row:
+            actions_row.classes("lp-card-actions")
+            primary_label = "Continue" if str((tracked_row or {}).get("status") or "").strip() else "Track"
+            ui.button(primary_label, on_click=_on_primary_action).props("dense")
+            ui.button("", icon="visibility", on_click=actions.on_view).props("outline dense").tooltip("Details")
+            if has_video_preview:
+                preview_label = "Hide preview" if bool(is_preview_open) else "Preview"
+                ui.button(preview_label, on_click=on_toggle_preview).props("outline dense")
 
             current_status = str((tracked_row or {}).get("status") or "")
             options_map = {
@@ -280,27 +321,35 @@ def render_courses_empty_state(
 ) -> None:
     """Render empty-state variants for courses list."""
     if scope_value == "tracked" and not any_filters:
-        ui.label("No tracked courses yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Browse courses and set a status to start tracking.").classes("text-sm").style("color: var(--lp-muted)")
-        with ui.row().classes("items-center gap-2"):
-            ui.button("Browse all courses", on_click=on_browse_all).props("outline")
-            ui.button("Refresh", on_click=on_refresh).props("outline")
+        render_empty_block(
+            title="No tracked courses yet.",
+            description="Browse courses and set a status to start tracking.",
+            primary_label="Browse all courses",
+            on_primary=on_browse_all,
+            secondary_label="Refresh",
+            on_secondary=on_refresh,
+        )
         return
 
     if (not has_any_courses) and (not any_filters):
-        ui.label("No courses yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Share the first course to get started.").classes("text-sm").style("color: var(--lp-muted)")
-        with ui.row().classes("items-center gap-2"):
-            ui.button("Share a course", on_click=on_share).props("outline")
-            ui.button("Refresh", on_click=on_refresh).props("outline")
+        render_empty_block(
+            title="No courses yet.",
+            description="Share the first course to get started.",
+            primary_label="Share a course",
+            on_primary=on_share,
+            secondary_label="Refresh",
+            on_secondary=on_refresh,
+        )
         return
 
-    ui.label("No courses match your filters.").classes("text-sm").style("color: var(--lp-muted)")
-    if any_filters:
-        ui.label("Try resetting filters to broaden results.").classes("text-xs").style("color: var(--lp-muted)")
-    with ui.row().classes("items-center gap-2"):
-        ui.button("Reset all", on_click=on_reset_all).props("outline")
-        ui.button("Refresh", on_click=on_refresh).props("outline")
+    render_empty_block(
+        title="No courses match your filters.",
+        description="Try resetting filters to broaden results." if any_filters else "",
+        primary_label="Reset all",
+        on_primary=on_reset_all,
+        secondary_label="Refresh",
+        on_secondary=on_refresh,
+    )
 
 
 def render_load_more_control(

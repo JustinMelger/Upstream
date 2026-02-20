@@ -178,18 +178,19 @@
 ## Phase 11 — Operability + Quality
 
 ### Phase 11A — UX & Visual System
-- [ ] Styling system refresh: define shared design tokens (spacing, typography scale, radii, shadows, semantic colors) and apply globally.
-- [ ] Styling system refresh: refine color system (keep blue identity, increase surface contrast steps, strengthen semantic accents for primary/success/warning/error).
-- [ ] Styling system refresh: run a layout rhythm/density pass across topbars, filter rails, cards, dialogs, and section spacing.
-- [ ] Styling/layout refresh: improve perceived page width (collapsible filter rail, wider content container, responsive drawer-mode filters on narrower desktop/tablet).
-- [ ] Styling system refresh: standardize interaction states (hover/focus/active/disabled), improve contrast/focus visibility, and add subtle motion polish.
-- [ ] UX polish: strengthen card hierarchy (title/meta/chip priority), reduce action-row noise, and standardize primary vs secondary actions.
-- [ ] UX polish: make filter UX progressive (top 2-3 always visible, remaining filters behind “More filters”).
-- [ ] UX polish: unify empty/loading/error states across core pages with consistent CTA patterns.
-- [ ] UX typography: apply a consistent type scale and weights across topbars, cards, rails, and dialogs.
-- [ ] UX productivity: keep key list controls visible on scroll (sticky topbar/list controls where appropriate).
+- [x] Styling system refresh: define shared design tokens (spacing, typography scale, radii, shadows, semantic colors) and apply globally.
+- [x] Styling system refresh: refine color system (keep blue identity, increase surface contrast steps, strengthen semantic accents for primary/success/warning/error).
+- [x] Styling system refresh: run a layout rhythm/density pass across topbars, filter rails, cards, dialogs, and section spacing.
+- [x] Styling/layout refresh: improve perceived page width (collapsible filter rail, wider content container, responsive drawer-mode filters on narrower desktop/tablet).
+- [x] Styling system refresh: standardize interaction states (hover/focus/active/disabled), improve contrast/focus visibility, and add subtle motion polish.
+- [x] UX polish: strengthen card hierarchy (title/meta/chip priority), reduce action-row noise, and standardize primary vs secondary actions.
+- [x] UX polish: make filter UX progressive (top 2-3 always visible, remaining filters behind “More filters”).
+- [x] UX polish: unify empty/loading/error states across core pages with consistent CTA patterns.
+- [x] UX typography: apply a consistent type scale and weights across topbars, cards, rails, and dialogs.
+- [x] UX productivity: keep key list controls visible on scroll (sticky topbar/list controls where appropriate).
 - [ ] Motion polish: add subtle transitions for refreshes, filter expand/collapse, and card state updates.
-- [ ] Course media UX: support embedded course videos when source is YouTube (validated URL parsing, safe embed iframe, and fallback external link).
+- [x] motion + micro-interaction foundation (card enter/stagger feel, richer button/chip hover-press states, and subtle control transitions).
+- [x] Course media UX: support embedded course videos when source is YouTube (validated URL parsing, safe embed iframe, and fallback external link).
 
 ### Phase 11B — Activity Feed UX v2
 - [ ] Activity feed UX v2: add filters (`All`, `Recommendations`, `Ratings`, `Courses`, `Paths`, `Articles`).
