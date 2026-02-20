@@ -27,8 +27,8 @@ from frontend.ui.nicegui.pages.learning.sections import (
     render_continue_learning_section,
     render_recommended_section,
     render_review_nudges_section,
-    render_shared_content,
     render_selected_paths_section,
+    render_shared_content,
     render_tracked_courses_section,
 )
 from frontend.ui.nicegui.pages.learning.state import LearningPageState
@@ -299,7 +299,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 tracking_by_course_id: dict[int, dict[str, Any]] = dict(state.data.get("tracking_by_course_id") or {})
                 selected_paths = list(state.data.get("selected_paths") or [])
                 path_details_by_id: dict[int, dict[str, Any]] = dict(state.data.get("path_details_by_id") or {})
-                course_review_summary_by_id: dict[int, dict[str, Any]] = dict(state.data.get("course_review_summary_by_id") or {})
+                course_review_summary_by_id: dict[int, dict[str, Any]] = dict(
+                    state.data.get("course_review_summary_by_id") or {}
+                )
                 path_review_summary_by_id: dict[int, dict[str, Any]] = dict(state.data.get("path_review_summary_by_id") or {})
                 pending_course_review_ids = sorted({int(i) for i in list(state.data.get("pending_course_review_ids") or [])})
                 pending_path_review_ids = sorted({int(i) for i in list(state.data.get("pending_path_review_ids") or [])})

@@ -71,12 +71,7 @@ def map_course_card_view(
     status = _status_for_card(tracked_row)
     created_at = parse_iso_datetime(course_row.get("created_at"))
     updated_at = parse_iso_datetime(course_row.get("updated_at"))
-    is_updated = (
-        is_recent(updated_at)
-        and created_at is not None
-        and updated_at is not None
-        and updated_at > created_at
-    )
+    is_updated = is_recent(updated_at) and created_at is not None and updated_at is not None and updated_at > created_at
     is_new = (not is_updated) and is_recent(created_at)
     return CourseCardView(
         card_class_suffix=f" lp-course-card--{status}" if status else "",

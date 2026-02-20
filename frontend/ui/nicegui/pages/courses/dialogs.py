@@ -179,14 +179,20 @@ def open_edit_course_dialog(
         with ui.expansion("More fields").props("dense"):
             with ui.column().classes("w-full gap-3"):
                 level_new = ui.input("Level", value=str(course.get("level") or "")).props("clearable").classes("w-full")
-                learning_outcomes_new = ui.textarea(
-                    "Learning outcomes (optional)", value=str(course.get("learning_outcomes") or "")
-                ).props("autogrow").classes("w-full")
-                prerequisites_new = ui.textarea("Prerequisites (optional)", value=str(course.get("prerequisites") or "")).props(
-                    "autogrow"
-                ).classes("w-full")
-                duration_hours = ui.input("Duration hours", value=str(course.get("duration_hours") or "")).props("clearable").classes(
-                    "w-full"
+                learning_outcomes_new = (
+                    ui.textarea("Learning outcomes (optional)", value=str(course.get("learning_outcomes") or ""))
+                    .props("autogrow")
+                    .classes("w-full")
+                )
+                prerequisites_new = (
+                    ui.textarea("Prerequisites (optional)", value=str(course.get("prerequisites") or ""))
+                    .props("autogrow")
+                    .classes("w-full")
+                )
+                duration_hours = (
+                    ui.input("Duration hours", value=str(course.get("duration_hours") or ""))
+                    .props("clearable")
+                    .classes("w-full")
                 )
 
         with ui.row().classes("justify-end mt-4"):

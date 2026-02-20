@@ -42,6 +42,7 @@ Status:
 - `paths`: complete
 - `courses`: complete (package conversion + route init + state + controller + reducers + view-model + dialogs/actions + detail-flow + transitions + ui-glue + sections extraction complete, including filters/status-control, course-card, empty-state, and pagination UI blocks; architecture tests added)
 - `learning`: in progress (package conversion + controller/state + actions + route-init + sections + ui-glue extraction complete for core flows; final helper extraction and parity cleanup remains)
+- `articles`: complete (package conversion + controller/state + dialogs/actions + sections/ui-glue + reducers/transitions extraction complete; architecture/controller/action/glue/reducer/transition tests added)
 
 Phase 4: Roll out by page priority
 

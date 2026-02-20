@@ -11,6 +11,7 @@ from frontend.ui.nicegui.pages.learning.page import (
     register,
 )
 
+
 __all__ = [
     "register",
     "_build_course_navigation_url",

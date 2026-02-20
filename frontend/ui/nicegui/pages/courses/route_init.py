@@ -15,7 +15,9 @@ class CoursesRouteInit:
     initial_focus_reviews: bool
 
 
-def resolve_courses_route_init(*, request: Any, storage_intent: dict[str, Any] | None, nav_intent: dict[str, Any] | None) -> CoursesRouteInit:
+def resolve_courses_route_init(
+    *, request: Any, storage_intent: dict[str, Any] | None, nav_intent: dict[str, Any] | None
+) -> CoursesRouteInit:
     """Resolve initial scope/course/dialog mode from query params and intents."""
     query_params = getattr(request, "query_params", {}) if request is not None else {}
     initial_tab = str(getattr(query_params, "get", lambda _k, _d=None: _d)("tab", "") or "").strip().lower()

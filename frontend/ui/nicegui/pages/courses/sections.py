@@ -43,6 +43,7 @@ def render_active_filter_chips(
 
     with ui.row().classes("items-center gap-2 w-full"):
         for chip in chips:
+
             def _clear(_key: str = chip.key) -> None:
                 on_clear_key(_key)
 
