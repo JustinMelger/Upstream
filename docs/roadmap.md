@@ -124,6 +124,8 @@
 - [x] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 
 ## Phase 11 — Operability + Quality
+
+### Phase 11A — UX & Visual System
 - [ ] Styling system refresh: define shared design tokens (spacing, typography scale, radii, shadows, semantic colors) and apply globally.
 - [ ] Styling system refresh: refine color system (keep blue identity, increase surface contrast steps, strengthen semantic accents for primary/success/warning/error).
 - [ ] Styling system refresh: run a layout rhythm/density pass across topbars, filter rails, cards, dialogs, and section spacing.
@@ -134,20 +136,26 @@
 - [ ] UX polish: unify empty/loading/error states across core pages with consistent CTA patterns.
 - [ ] UX typography: apply a consistent type scale and weights across topbars, cards, rails, and dialogs.
 - [ ] UX productivity: keep key list controls visible on scroll (sticky topbar/list controls where appropriate).
-- [ ] Accessibility UX: improve keyboard navigation and focus management for menus, dropdowns, dialogs, and card actions.
 - [ ] Motion polish: add subtle transitions for refreshes, filter expand/collapse, and card state updates.
 - [ ] Course media UX: support embedded course videos when source is YouTube (validated URL parsing, safe embed iframe, and fallback external link).
+
+### Phase 11B — Activity Feed UX v2
 - [ ] Activity feed UX v2: add filters (`All`, `Recommendations`, `Ratings`, `Courses`, `Paths`, `Articles`).
 - [ ] Activity feed UX v2: add unread state + mailbox badge + “Mark all read”.
 - [ ] Activity feed UX v2: add relative timestamps with absolute time on hover.
 - [ ] Activity feed UX v2: add pagination/“Load more” for older events.
 - [ ] Activity feed UX v2: improve article deep-linking to open the specific item context.
 - [ ] Activity feed UX v2: group burst events and rank high-signal events higher (e.g., ratings on your shared content).
-- [ ] Observability: add frontend telemetry for core actions (share/select/review/complete) and page-level error tracking.
+
+### Phase 11C — Reliability & Accessibility
 - [ ] Notification resilience hardening: enrich `safe_notify` logs with action/page context, add optional strict mode for dev/test, and add regression tests for deleted-slot notification paths.
+- [ ] Observability: add frontend telemetry for core actions (share/select/review/complete) and page-level error tracking.
+- [ ] Accessibility UX: improve keyboard navigation and focus management for menus, dropdowns, dialogs, and card actions.
 - [ ] Accessibility pass: keyboard navigation, visible focus states, ARIA labels for icon-only actions, and contrast audit fixes.
 - [ ] Resilience UX: network/offline banner, retry affordances, and standardized section-level error states.
 - [ ] Performance: short-TTL client caching for hot reads (`/tracking`, review summaries), batched detail fetches, and fewer full reloads after mutations.
+
+### Phase 11D — Quality Gates & Test Stability
 - [ ] Quality gates: add visual regression checks for key pages and smoke e2e flows (login, track course, review, select path).
 - [ ] Test reliability: isolate backend integration test auth/session state per test (or per module) to remove intermittent `401/404/500` flakiness.
 - [x] Docs sync: update `docs/architecture_frontend.md` to match current IA/routes (`My learning`, `Insights`, mailbox activity) and current service/page boundaries.
