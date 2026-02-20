@@ -9,6 +9,8 @@ from frontend.ui.nicegui.pages.paths.actions import (
     build_track_toggle,
     clear_path_filter_by_key,
     path_share_link,
+    recompute_path_status_filter,
+    resolve_paths_empty_state,
     reset_path_filter_controls,
 )
 
@@ -266,3 +268,79 @@ def test_clear_path_filter_by_key_status_returns_false_when_control_missing() ->
         sort_filter=_Control("newest"),
     )
     assert clear_path_filter_by_key(key="status", controls=controls) is False
+
+
+@pytest.mark.unit
+def test_recompute_path_status_filter_updates_and_clears_invalid_selection() -> None:
+    controls = PathsFilterControls(
+        scope_filter=_Control("all"),
+        search_input=_Control("api"),
+        status_filter=_Control("tracked"),
+        sort_filter=_Control("newest"),
+    )
+    normalized = type("Normalized", (), dict(scope="all", search="api"))()
+
+    def _fake_counts(**_kwargs) -> dict[str, int]:
+        return {"tracked": 2, "not_tracked": 1}
+
+    def _fake_options(*, scope_value: str, counts: dict[str, int]) -> dict[str, str]:
+        return {"": "Any state", "tracked": f"Tracked ({counts.get('tracked', 0)})"}
+
+    recompute_path_status_filter(
+        controls=controls,
+        paths=[],
+        selected_by_id={},
+        normalized_filters=normalized,
+        compute_status_counts=_fake_counts,
+        build_status_options=_fake_options,
+    )
+    assert controls.status_filter is not None
+    assert controls.status_filter.value == "tracked"
+    assert controls.status_filter.updated == 1
+
+    controls.status_filter.value = "not_tracked"
+    recompute_path_status_filter(
+        controls=controls,
+        paths=[],
+        selected_by_id={},
+        normalized_filters=normalized,
+        compute_status_counts=_fake_counts,
+        build_status_options=_fake_options,
+    )
+    assert controls.status_filter.value == ""
+
+
+@pytest.mark.unit
+def test_recompute_path_status_filter_noop_when_status_control_missing() -> None:
+    controls = PathsFilterControls(
+        scope_filter=_Control("all"),
+        search_input=_Control("api"),
+        status_filter=None,
+        sort_filter=_Control(""),
+    )
+    normalized = type("Normalized", (), dict(scope="all", search="api"))()
+    recompute_path_status_filter(
+        controls=controls,
+        paths=[],
+        selected_by_id={},
+        normalized_filters=normalized,
+        compute_status_counts=lambda **_kwargs: {"tracked": 1},
+        build_status_options=lambda **_kwargs: {"": "Any state", "tracked": "Tracked (1)"},
+    )
+    assert controls.status_filter is None
+
+
+@pytest.mark.unit
+def test_resolve_paths_empty_state_variants() -> None:
+    assert resolve_paths_empty_state(
+        has_rows=True, scope_value="all", has_any_filters=False, has_any_paths=True
+    ) == "has_rows"
+    assert resolve_paths_empty_state(
+        has_rows=False, scope_value="selected", has_any_filters=False, has_any_paths=True
+    ) == "selected_empty"
+    assert resolve_paths_empty_state(
+        has_rows=False, scope_value="all", has_any_filters=False, has_any_paths=False
+    ) == "catalog_empty"
+    assert resolve_paths_empty_state(
+        has_rows=False, scope_value="all", has_any_filters=True, has_any_paths=True
+    ) == "filters_empty"

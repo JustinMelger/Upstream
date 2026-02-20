@@ -35,6 +35,47 @@ class PathsFilterControls:
     sort_filter: Any
 
 
+def recompute_path_status_filter(
+    *,
+    controls: PathsFilterControls,
+    paths: list[dict[str, Any]],
+    selected_by_id: dict[int, dict[str, Any]],
+    normalized_filters: Any,
+    compute_status_counts: Callable[..., dict[str, int]],
+    build_status_options: Callable[..., dict[str, str]],
+) -> None:
+    """Recompute path-status filter options and apply them to control state."""
+    if controls.status_filter is None:
+        return
+    counts = compute_status_counts(
+        paths=paths,
+        selected_by_id=selected_by_id,
+        scope_value=str(normalized_filters.scope),
+        needle=str(normalized_filters.search),
+    )
+    controls.status_filter.options = build_status_options(scope_value=str(normalized_filters.scope), counts=counts)
+    if controls.status_filter.value and controls.status_filter.value not in controls.status_filter.options:
+        controls.status_filter.value = ""
+    controls.status_filter.update()
+
+
+def resolve_paths_empty_state(
+    *,
+    has_rows: bool,
+    scope_value: str,
+    has_any_filters: bool,
+    has_any_paths: bool,
+) -> str:
+    """Return which empty-state variant should be rendered."""
+    if has_rows:
+        return "has_rows"
+    if str(scope_value or "") == "selected" and not bool(has_any_filters):
+        return "selected_empty"
+    if (not bool(has_any_paths)) and (not bool(has_any_filters)):
+        return "catalog_empty"
+    return "filters_empty"
+
+
 def path_share_link(*, path_id: int) -> str:
     """Build a copyable app-relative deep link for a path."""
     return f"/paths?path_id={int(path_id)}&view=full"

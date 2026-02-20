@@ -27,6 +27,8 @@ from frontend.ui.nicegui.pages.paths.actions import (
     PathsFilterControls,
     build_path_card_actions,
     clear_path_filter_by_key,
+    recompute_path_status_filter,
+    resolve_paths_empty_state,
     reset_path_filter_controls,
 )
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
@@ -268,24 +270,25 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             def _recompute_facet_options() -> None:
                 """Recompute status facet options with counts based on the current local filters."""
-                if status_filter is None:
-                    return
                 normalized = normalize_paths_filter_values(
                     scope_value=str(scope_filter.value or "all"),
                     search_value=str(q.value or ""),
                     status_value=str(status_filter.value or ""),
                     sort_value=str(sort_filter.value or ""),
                 )
-                counts = compute_status_counts(
+                recompute_path_status_filter(
+                    controls=PathsFilterControls(
+                        scope_filter=scope_filter,
+                        search_input=q,
+                        status_filter=status_filter,
+                        sort_filter=sort_filter,
+                    ),
                     paths=controller_state.paths,
                     selected_by_id=controller_state.selected_by_id,
-                    scope_value=normalized.scope,
-                    needle=normalized.search,
+                    normalized_filters=normalized,
+                    compute_status_counts=compute_status_counts,
+                    build_status_options=build_status_options,
                 )
-                status_filter.options = build_status_options(scope_value=normalized.scope, counts=counts)
-                if status_filter.value and status_filter.value not in status_filter.options:
-                    status_filter.value = ""
-                status_filter.update()
 
             def _refresh_list(*_: Any) -> None:
                 ui_state.visible_count = int(ui_state.page_size)
@@ -381,9 +384,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         render_card_skeletons(count=4)
                         return
 
-                    if not shown:
-                        any_filters = any([str(q.value or "").strip(), str(status_filter.value or "").strip()])
-                        if normalized.scope == "selected" and not any_filters:
+                    any_filters = any([str(q.value or "").strip(), str(status_filter.value or "").strip()])
+                    empty_state = resolve_paths_empty_state(
+                        has_rows=bool(shown),
+                        scope_value=normalized.scope,
+                        has_any_filters=bool(any_filters),
+                        has_any_paths=bool(controller_state.paths),
+                    )
+                    if empty_state != "has_rows":
+                        if empty_state == "selected_empty":
                             ui.label("No selected paths yet.").classes("text-sm").style("color: var(--lp-muted)")
                             ui.label("Browse paths and select one to start tracking.").classes("text-sm").style(
                                 "color: var(--lp-muted)"
@@ -395,7 +404,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 ).props("outline")
                                 ui.button("Refresh", on_click=_load_all).props("outline")
                             return
-                        if not controller_state.paths and not any_filters:
+                        if empty_state == "catalog_empty":
                             ui.label("No paths yet.").classes("text-sm").style("color: var(--lp-muted)")
                             ui.label("Share the first path to get started.").classes("text-sm").style("color: var(--lp-muted)")
                             with ui.row().classes("items-center gap-2"):

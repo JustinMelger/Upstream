@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import time
+from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
@@ -19,6 +21,57 @@ def index_tracking_by_course_id(rows: list[dict[str, Any]] | None) -> dict[int, 
             continue
         out[int(raw)] = r
     return out
+
+
+@dataclass(slots=True)
+class CourseDetailBundle:
+    """Cached payloads used by course detail dialog rendering."""
+
+    course: dict[str, Any]
+    reviews: list[dict[str, Any]]
+    recommendations: list[dict[str, Any]]
+
+
+_COURSE_DETAIL_CACHE: dict[int, tuple[float, CourseDetailBundle]] = {}
+_COURSE_DETAIL_CACHE_TTL_SECONDS = 20.0
+
+
+def clear_course_detail_cache(*, course_id: int | None = None) -> None:
+    """Clear cached course detail payloads."""
+    if course_id is None:
+        _COURSE_DETAIL_CACHE.clear()
+        return
+    _COURSE_DETAIL_CACHE.pop(int(course_id), None)
+
+
+async def load_course_detail_bundle(
+    *,
+    api: ApiClient,
+    course_id: int,
+    now_fn: Any = time.monotonic,
+    ttl_seconds: float = _COURSE_DETAIL_CACHE_TTL_SECONDS,
+) -> CourseDetailBundle:
+    """Load detail dialog payloads with short-TTL caching."""
+    cid = int(course_id)
+    now = float(now_fn())
+    cached = _COURSE_DETAIL_CACHE.get(cid)
+    if isinstance(cached, tuple) and len(cached) == 2:
+        expiry, payload = cached
+        if float(expiry) > now:
+            return payload
+
+    course, reviews_payload, recommendations_payload = await asyncio.gather(
+        api.get(f"/courses/{cid}"),
+        api.get(f"/courses/{cid}/reviews"),
+        api.get(f"/courses/{cid}/recommendations"),
+    )
+    bundle = CourseDetailBundle(
+        course=dict(course or {}),
+        reviews=list(reviews_payload or []),
+        recommendations=list(recommendations_payload or []),
+    )
+    _COURSE_DETAIL_CACHE[cid] = (now + float(ttl_seconds), bundle)
+    return bundle
 
 
 async def load_courses_and_tracking(

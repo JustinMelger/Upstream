@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -11,6 +10,7 @@ from nicegui import ui
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.pages.courses.state import CoursesPageState
+from frontend.ui.nicegui.services.courses_service import clear_course_detail_cache, load_course_detail_bundle
 
 
 async def open_course_details_dialog(
@@ -26,13 +26,10 @@ async def open_course_details_dialog(
     format_short_date: Callable[[Any], str],
 ) -> None:
     """Open course details dialog with reviews and recommendation metadata."""
-    course, reviews_payload, recommendations_payload = await asyncio.gather(
-        api.get(f"/courses/{course_id}"),
-        api.get(f"/courses/{course_id}/reviews"),
-        api.get(f"/courses/{course_id}/recommendations"),
-    )
-    reviews = list(reviews_payload or [])
-    recommendations = list(recommendations_payload or [])
+    bundle = await load_course_detail_bundle(api=api, course_id=int(course_id))
+    course = dict(bundle.course or {})
+    reviews = list(bundle.reviews or [])
+    recommendations = list(bundle.recommendations or [])
     view_mode = normalize_course_view_mode(focus_reviews)
 
     with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
@@ -127,13 +124,16 @@ async def open_course_details_dialog(
                 }
 
         async def _save_review(rating: int, text: str) -> dict[str, Any]:
-            return await api.post(
+            out = await api.post(
                 f"/courses/{course_id}/reviews",
                 {"rating": int(rating), "text": str(text or "")},
             )
+            clear_course_detail_cache(course_id=int(course_id))
+            return out
 
         async def _delete_review(review_id: int) -> bool:
             await api.delete(f"/courses/{course_id}/reviews/{int(review_id)}")
+            clear_course_detail_cache(course_id=int(course_id))
             return True
 
         render_reviews_panel(
