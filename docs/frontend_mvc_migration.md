@@ -40,13 +40,14 @@ Phase 3: Standardize state transitions
 
 Status:
 - `paths`: complete
-- `courses`: pending
+- `courses`: complete (package conversion + route init + state + controller + reducers + view-model + dialogs/actions + detail-flow + transitions + ui-glue + sections extraction complete, including filters/status-control, course-card, empty-state, and pagination UI blocks; architecture tests added)
+- `learning`: in progress (package conversion + controller/state + actions + route-init + sections + ui-glue extraction complete for core flows; final helper extraction and parity cleanup remains)
 
 Phase 4: Roll out by page priority
 
 1. `paths` (reference implementation; complete and stabilize)
-2. `courses` (largest remaining page)
-3. `learning` (next highest orchestration complexity)
+2. `learning` (next highest orchestration complexity)
+3. `courses` (complete; keep stable as secondary reference)
 4. Smaller pages only as needed
 
 Phase 5: Clean up and enforce
@@ -91,4 +92,5 @@ Migration recipe (apply to next page, e.g. `courses`):
 Next:
 
 - Stabilize `paths` as the reference implementation.
-- Begin applying the same extractor pattern to `courses`.
+- Complete final `courses/page.py` composition cleanup and parity checks.
+- Begin applying the same extractor pattern to `learning`.
