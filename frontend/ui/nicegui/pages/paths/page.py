@@ -14,8 +14,12 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
-from frontend.ui.nicegui.core.navigation_intents import get_path_intent, pop_path_intent
-from frontend.ui.nicegui.core.navigation_intents import get_path_storage_intent, pop_path_storage_intent
+from frontend.ui.nicegui.core.navigation_intents import (
+    get_path_intent,
+    get_path_storage_intent,
+    pop_path_intent,
+    pop_path_storage_intent,
+)
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.paths.actions import build_path_card_actions
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController

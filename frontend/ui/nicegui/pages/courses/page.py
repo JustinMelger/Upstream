@@ -13,8 +13,12 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
-from frontend.ui.nicegui.core.navigation_intents import get_course_intent, pop_course_intent
-from frontend.ui.nicegui.core.navigation_intents import get_course_storage_intent, pop_course_storage_intent
+from frontend.ui.nicegui.core.navigation_intents import (
+    get_course_intent,
+    get_course_storage_intent,
+    pop_course_intent,
+    pop_course_storage_intent,
+)
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.courses.actions import build_course_card_actions
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController

@@ -10,8 +10,12 @@ from typing import Any
 from nicegui import app, ui
 
 from frontend.ui.nicegui.core.navigation import build_learning_tab_link
-from frontend.ui.nicegui.core.navigation_intents import set_course_intent, set_path_intent
-from frontend.ui.nicegui.core.navigation_intents import set_course_storage_intent, set_path_storage_intent
+from frontend.ui.nicegui.core.navigation_intents import (
+    set_course_intent,
+    set_course_storage_intent,
+    set_path_intent,
+    set_path_storage_intent,
+)
 
 
 @dataclass(slots=True)
