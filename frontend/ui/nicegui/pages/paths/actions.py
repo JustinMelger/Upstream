@@ -8,7 +8,7 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 
 
 @dataclass(slots=True)
@@ -34,7 +34,7 @@ def copy_path_link(*, path_id: int) -> None:
     """Copy a deep link for a path to the clipboard."""
     link = path_share_link(path_id=int(path_id))
     ui.run_javascript(f"navigator.clipboard.writeText(window.location.origin + {repr(link)});")
-    ui.notify("Link copied", type="positive")
+    safe_notify("Link copied", type="positive")
 
 
 def build_track_toggle(
@@ -86,7 +86,7 @@ async def open_recommend_dialog(
             @guard_ui_action(title="Recommend failed")
             async def _save() -> None:
                 await save_recommendation(int(path_id), str(note.value or ""))
-                ui.notify("Recommendation saved", type="positive")
+                safe_notify("Recommendation saved", type="positive")
                 dialog.close()
                 await on_saved()
 
