@@ -21,4 +21,3 @@ def test_safe_notify_ignores_missing_ui_context(monkeypatch: pytest.MonkeyPatch)
 def test_notify_error_uses_safe_notify_when_context_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(core_errors, "ui", _FailingUi())
     core_errors.notify_error(ApiError(status_code=503, message="backend_unreachable"))
-

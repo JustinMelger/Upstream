@@ -26,4 +26,3 @@ def test_articles_card_keeps_topright_badge_and_bottom_actions() -> None:
     src = Path("frontend/ui/nicegui/pages/articles/sections.py").read_text(encoding="utf-8")
     assert 'with ui.element("div").classes("lp-card-topright")' in src
     assert 'with ui.row().classes("items-center gap-2 mt-2")' in src
-

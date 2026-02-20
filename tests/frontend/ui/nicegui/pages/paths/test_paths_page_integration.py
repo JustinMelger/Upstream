@@ -144,6 +144,7 @@ async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch:
     monkeypatch.setattr(paths_page, "get_path_intent", lambda **_kwargs: None)
     monkeypatch.setattr(paths_page, "intent_matches_path", lambda *_args, **_kwargs: False)
     monkeypatch.setattr(paths_page, "pop_path_intent", lambda **_kwargs: None)
+
     async def _open_details_dialog(**_kwargs) -> None:  # noqa: ANN003
         return None
 
@@ -247,6 +248,7 @@ async def test_paths_select_keeps_optimistic_state_when_selected_reload_fails(mo
     monkeypatch.setattr(paths_page, "get_path_intent", lambda **_kwargs: None)
     monkeypatch.setattr(paths_page, "intent_matches_path", lambda *_args, **_kwargs: False)
     monkeypatch.setattr(paths_page, "pop_path_intent", lambda **_kwargs: None)
+
     async def _open_details_dialog(**_kwargs) -> None:  # noqa: ANN003
         return None
 
