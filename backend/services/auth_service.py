@@ -5,6 +5,8 @@ import hashlib
 import secrets
 
 import bcrypt
+from pydantic import StrictBool, StrictStr, ValidationError
+from pydantic.dataclasses import dataclass
 from sqlalchemy.exc import IntegrityError
 
 from backend.core.config import settings
@@ -62,6 +64,54 @@ class AuthService:
         """
         return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
+    @staticmethod
+    def _parse_username_payload(payload: dict) -> "AuthUsernamePayload":
+        """Parse and validate username-only payloads."""
+        try:
+            return AuthUsernamePayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise AuthServiceError(detail="invalid_payload", status_code=400) from exc
+
+    @staticmethod
+    def _parse_session_payload(payload: dict) -> "AuthSessionPayload":
+        """Parse and validate session payloads."""
+        try:
+            return AuthSessionPayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise AuthServiceError(detail="invalid_payload", status_code=400) from exc
+
+    @staticmethod
+    def _parse_create_user_payload(payload: dict) -> "AuthCreateUserPayload":
+        """Parse and validate create-user payloads."""
+        try:
+            return AuthCreateUserPayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise AuthServiceError(detail="invalid_payload", status_code=400) from exc
+
+    @staticmethod
+    def _parse_update_password_payload(payload: dict) -> "AuthUpdatePasswordPayload":
+        """Parse and validate update-password payloads."""
+        try:
+            return AuthUpdatePasswordPayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise AuthServiceError(detail="invalid_payload", status_code=400) from exc
+
+    @staticmethod
+    def _parse_set_disabled_payload(payload: dict) -> "AuthSetDisabledPayload":
+        """Parse and validate set-user-disabled payloads."""
+        try:
+            return AuthSetDisabledPayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise AuthServiceError(detail="invalid_payload", status_code=400) from exc
+
+    @staticmethod
+    def _parse_authenticate_payload(payload: dict) -> "AuthAuthenticatePayload":
+        """Parse and validate authenticate-user payloads."""
+        try:
+            return AuthAuthenticatePayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise AuthServiceError(detail="invalid_payload", status_code=400) from exc
+
     @auth_error_handler()
     async def is_admin(self, username: str | None) -> bool:
         """Check if a user is an admin.
@@ -72,9 +122,11 @@ class AuthService:
         Returns:
             True if admin.
         """
-        if not username:
+        data = self._parse_username_payload({"username": username})
+        candidate = data.username
+        if not candidate:
             return False
-        user = await self.get_user(username)
+        user = await self.get_user(candidate)
         return bool(user and user.role == "admin")
 
     @auth_error_handler()
@@ -87,7 +139,9 @@ class AuthService:
         Returns:
             Token and expiry payload.
         """
-        user = await self.get_user(colleague_id)
+        data = self._parse_session_payload({"colleague_id": colleague_id})
+        username = str(data.colleague_id or "").strip()
+        user = await self.get_user(username)
         if not user:
             raise AuthServiceError(detail="user_not_found", status_code=404)
 
@@ -101,7 +155,7 @@ class AuthService:
             try:
                 async with session_scope(self._repo.session):
                     await self._repo.create_session(
-                        colleague_id=colleague_id,
+                        colleague_id=username,
                         token_hash=token_hash,
                         created_at=now.isoformat(),
                         last_seen=now.isoformat(),
@@ -123,9 +177,10 @@ class AuthService:
         Returns:
             Session data or None if invalid/expired.
         """
-        if not token:
+        data = self._parse_session_payload({"token": token})
+        if not data.token:
             return None
-        token_hash = self._hash_token(token)
+        token_hash = self._hash_token(data.token)
         now = datetime.now(timezone.utc)
         async with session_scope(self._repo.session):
             row = await self._repo.get_session(token_hash)
@@ -151,8 +206,10 @@ class AuthService:
         Returns:
             Number of sessions revoked.
         """
+        data = self._parse_session_payload({"colleague_id": colleague_id})
+        username = str(data.colleague_id or "").strip()
         async with session_scope(self._repo.session):
-            return await self._repo.revoke_sessions(colleague_id)
+            return await self._repo.revoke_sessions(username)
 
     @auth_error_handler()
     async def get_user(self, username: str) -> UserRecord | None:
@@ -164,8 +221,10 @@ class AuthService:
         Returns:
             User record or None.
         """
+        data = self._parse_username_payload({"username": username})
+        candidate = str(data.username or "").strip()
         async with session_scope(self._repo.session):
-            return await self._repo.get_user(username)
+            return await self._repo.get_user(candidate)
 
     @auth_error_handler()
     async def has_users(self) -> bool:
@@ -189,11 +248,15 @@ class AuthService:
         Returns:
             Created user metadata.
         """
+        data = self._parse_create_user_payload({"username": username, "password": password, "role": role})
+        username_value = str(data.username or "").strip()
+        password_value = str(data.password or "")
+        role_value = str(data.role or "").strip()
         now = datetime.now(timezone.utc).isoformat()
-        password_hash = self._hash_password(password)
+        password_hash = self._hash_password(password_value)
         async with session_scope(self._repo.session):
-            await self._repo.create_user(username, password_hash, role, now)
-        return {"username": username, "role": role}
+            await self._repo.create_user(username_value, password_hash, role_value, now)
+        return {"username": username_value, "role": role_value}
 
     @auth_error_handler()
     async def list_users(self) -> list[dict]:
@@ -216,10 +279,13 @@ class AuthService:
         Returns:
             Number of rows updated.
         """
+        data = self._parse_update_password_payload({"username": username, "password": password})
+        username_value = str(data.username or "").strip()
+        password_value = str(data.password or "")
         now = datetime.now(timezone.utc).isoformat()
-        password_hash = self._hash_password(password)
+        password_hash = self._hash_password(password_value)
         async with session_scope(self._repo.session):
-            return await self._repo.update_password(username, password_hash, now)
+            return await self._repo.update_password(username_value, password_hash, now)
 
     @auth_error_handler()
     async def delete_user(self, username: str) -> int:
@@ -231,8 +297,10 @@ class AuthService:
         Returns:
             Number of rows deleted.
         """
+        data = self._parse_username_payload({"username": username})
+        candidate = str(data.username or "").strip()
         async with session_scope(self._repo.session):
-            return await self._repo.delete_user(username)
+            return await self._repo.delete_user(candidate)
 
     @auth_error_handler()
     async def authenticate_user(self, username: str, password: str) -> dict | None:
@@ -245,16 +313,19 @@ class AuthService:
         Returns:
             User metadata if valid, else None.
         """
-        user = await self.get_user(username)
+        data = self._parse_authenticate_payload({"username": username, "password": password})
+        username_value = str(data.username or "").strip()
+        password_value = str(data.password or "")
+        user = await self.get_user(username_value)
         if not user:
             return None
         if user.disabled:
             return None
-        if not self._verify_password(password, user.password_hash):
+        if not self._verify_password(password_value, user.password_hash):
             return None
         now = datetime.now(timezone.utc).isoformat()
         async with session_scope(self._repo.session):
-            await self._repo.update_last_login(username, now)
+            await self._repo.update_last_login(username_value, now)
         return {"username": user.username, "role": user.role}
 
     @auth_error_handler()
@@ -268,9 +339,14 @@ class AuthService:
         Returns:
             Number of rows updated.
         """
+        data = self._parse_set_disabled_payload({"username": username, "disabled": disabled})
+        username_value = str(data.username or "").strip()
+        disabled_value = data.disabled
+        if disabled_value is None:
+            raise AuthServiceError(detail="invalid_payload", status_code=400)
         now = datetime.now(timezone.utc).isoformat()
         async with session_scope(self._repo.session):
-            return await self._repo.set_user_disabled(username, disabled, now)
+            return await self._repo.set_user_disabled(username_value, disabled_value, now)
 
     @auth_error_handler()
     async def purge_expired_sessions(self) -> int:
@@ -282,3 +358,51 @@ class AuthService:
         now = datetime.now(timezone.utc).isoformat()
         async with session_scope(self._repo.session):
             return await self._repo.purge_expired_sessions(now)
+
+
+@dataclass
+class AuthUsernamePayload:
+    """Typed service-layer payload for username-only calls."""
+
+    username: StrictStr | None = None
+
+
+@dataclass
+class AuthSessionPayload:
+    """Typed service-layer payload for session-related calls."""
+
+    colleague_id: StrictStr | None = None
+    token: StrictStr | None = None
+
+
+@dataclass
+class AuthCreateUserPayload:
+    """Typed service-layer payload for user creation."""
+
+    username: StrictStr | None = None
+    password: StrictStr | None = None
+    role: StrictStr | None = None
+
+
+@dataclass
+class AuthUpdatePasswordPayload:
+    """Typed service-layer payload for password updates."""
+
+    username: StrictStr | None = None
+    password: StrictStr | None = None
+
+
+@dataclass
+class AuthSetDisabledPayload:
+    """Typed service-layer payload for enabling/disabling users."""
+
+    username: StrictStr | None = None
+    disabled: StrictBool | None = None
+
+
+@dataclass
+class AuthAuthenticatePayload:
+    """Typed service-layer payload for authentication."""
+
+    username: StrictStr | None = None
+    password: StrictStr | None = None

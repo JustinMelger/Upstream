@@ -211,7 +211,12 @@ async def app_client(
 
     async def _override_get_session() -> AsyncIterator[AsyncSession]:
         async with sessionmaker() as session:
-            yield session
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
 
     app.dependency_overrides[app_get_session] = _override_get_session
 

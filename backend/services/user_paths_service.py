@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pydantic import ValidationError
+from pydantic import StrictInt, StrictStr, ValidationError
 from pydantic.dataclasses import dataclass
 
 from backend.core.errors import user_paths_error_handler, UserPathsServiceError
@@ -18,16 +18,16 @@ STATUS_VALUES = {"interested", "in_progress", "completed"}
 class UserPathMutationPayload:
     """Typed service-layer payload for user path mutations."""
 
-    colleague_id: str | None = None
-    path_id: int | str | None = None
-    status: str | None = None
+    colleague_id: StrictStr | None = None
+    path_id: StrictInt | None = None
+    status: StrictStr | None = None
 
 
 @dataclass
 class UserPathListPayload:
     """Typed service-layer payload for user path list queries."""
 
-    colleague_id: str | None = None
+    colleague_id: StrictStr | None = None
 
 
 class UserPathsService:
@@ -56,9 +56,8 @@ class UserPathsService:
         username = str(data.colleague_id or "").strip()
         if not username:
             raise UserPathsServiceError(detail="invalid_payload", status_code=400)
-        try:
-            path_id_i = int(data.path_id)
-        except (TypeError, ValueError):
+        path_id_i = data.path_id
+        if path_id_i is None:
             raise UserPathsServiceError(detail="invalid_payload", status_code=400)
         now = datetime.now(timezone.utc).isoformat()
         async with session_scope(self._repo.session):
@@ -100,9 +99,8 @@ class UserPathsService:
         username = str(data.colleague_id or "").strip()
         if not username:
             raise UserPathsServiceError(detail="invalid_payload", status_code=400)
-        try:
-            path_id_i = int(data.path_id)
-        except (TypeError, ValueError):
+        path_id_i = data.path_id
+        if path_id_i is None:
             raise UserPathsServiceError(detail="invalid_payload", status_code=400)
         async with session_scope(self._repo.session):
             return await self._repo.remove_user_path(username, path_id_i)
@@ -132,9 +130,8 @@ class UserPathsService:
         username = str(data.colleague_id or "").strip()
         if not username:
             raise UserPathsServiceError(detail="invalid_payload", status_code=400)
-        try:
-            path_id_i = int(data.path_id)
-        except (TypeError, ValueError):
+        path_id_i = data.path_id
+        if path_id_i is None:
             raise UserPathsServiceError(detail="invalid_payload", status_code=400)
         status_value = str(data.status or "").strip()
         if status_value not in STATUS_VALUES:

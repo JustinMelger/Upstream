@@ -54,19 +54,7 @@ async def set_tracking(
     Returns:
         dict: Tracking record.
     """
-    colleague_id = current_user
-    course_id = payload.course_id
-    status = (payload.status or "").strip()
-
-    if not course_id or not status:
-        raise HTTPException(status_code=400, detail="missing_fields")
-
-    try:
-        course_id_int = int(course_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="invalid_course_id")
-
-    return await tracking.upsert_tracking(colleague_id, course_id_int, status)
+    return await tracking.upsert_tracking(current_user, payload.course_id, payload.status)  # type: ignore[arg-type]
 
 
 @router.post("/delete", response_model=TrackingDeleteResponse)
@@ -84,18 +72,7 @@ async def delete_tracking(
     Returns:
         dict: Delete result.
     """
-    colleague_id = current_user
-    course_id = payload.course_id
-
-    if not course_id:
-        raise HTTPException(status_code=400, detail="missing_fields")
-
-    try:
-        course_id_int = int(course_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="invalid_course_id")
-
-    removed = await tracking.remove_tracking(colleague_id, course_id_int)
+    removed = await tracking.remove_tracking(current_user, payload.course_id)  # type: ignore[arg-type]
     if removed == 0:
         raise HTTPException(status_code=404, detail="not_found")
     return {"removed": removed}

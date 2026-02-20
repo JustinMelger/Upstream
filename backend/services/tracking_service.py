@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pydantic import ValidationError
+from pydantic import StrictInt, StrictStr, ValidationError
 from pydantic.dataclasses import dataclass
 
 from backend.core.errors import tracking_error_handler, TrackingServiceError
@@ -18,23 +18,23 @@ STATUS_VALUES = {"interested", "in_progress", "completed"}
 class TrackingListPayload:
     """Typed service-layer payload for tracking list queries."""
 
-    colleague_id: str | None = None
+    colleague_id: StrictStr | None = None
 
 
 @dataclass
 class TrackingRecentActivityPayload:
     """Typed service-layer payload for tracking recent activity queries."""
 
-    limit: int | str | None = 10
+    limit: StrictInt | None = 10
 
 
 @dataclass
 class TrackingMutationPayload:
     """Typed service-layer payload for tracking mutations."""
 
-    colleague_id: str | None = None
-    course_id: int | str | None = None
-    status: str | None = None
+    colleague_id: StrictStr | None = None
+    course_id: StrictInt | None = None
+    status: StrictStr | None = None
 
 
 class TrackingService:
@@ -74,7 +74,7 @@ class TrackingService:
             Tracking payloads ordered by updated_at desc.
         """
         data = self._parse_recent_activity_payload({"limit": limit})
-        safe_limit = max(1, min(int(data.limit or 10), 100))
+        safe_limit = max(1, min(data.limit or 10, 100))
         async with session_scope(self._repo.session):
             rows = await self._repo.list_recent_activity(safe_limit)
         return [self._to_payload(row) for row in rows]
@@ -122,9 +122,8 @@ class TrackingService:
         username = str(data.colleague_id or "").strip()
         if not username:
             raise TrackingServiceError(detail="invalid_payload", status_code=400)
-        try:
-            course_id_i = int(data.course_id)
-        except (TypeError, ValueError):
+        course_id_i = data.course_id
+        if course_id_i is None:
             raise TrackingServiceError(detail="invalid_payload", status_code=400)
         status_value = str(data.status or "").strip()
         if status_value not in STATUS_VALUES:
@@ -141,9 +140,8 @@ class TrackingService:
         username = str(data.colleague_id or "").strip()
         if not username:
             raise TrackingServiceError(detail="invalid_payload", status_code=400)
-        try:
-            course_id_i = int(data.course_id)
-        except (TypeError, ValueError):
+        course_id_i = data.course_id
+        if course_id_i is None:
             raise TrackingServiceError(detail="invalid_payload", status_code=400)
         async with session_scope(self._repo.session):
             return await self._repo.remove_tracking(username, course_id_i)

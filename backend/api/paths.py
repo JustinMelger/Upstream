@@ -161,11 +161,7 @@ async def set_path_status(
     Returns:
         dict: Update result.
     """
-    status = (payload.status or "").strip()
-    if not status:
-        raise HTTPException(status_code=400, detail="missing_fields")
-
-    updated = await user_paths.update_user_path_status(current_user, path_id, status)
+    updated = await user_paths.update_user_path_status(current_user, path_id, payload.status)  # type: ignore[arg-type]
 
     if updated == 0:
         raise HTTPException(status_code=404, detail="path_not_selected")

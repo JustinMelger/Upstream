@@ -140,6 +140,14 @@
 - [x] Transaction boundary hardening: introduced shared `session_scope(...)` in backend services to avoid nested transaction failures when services are composed.
 - [x] Typing hardening: started replacing untyped service payload dict handling with pydantic dataclass payloads (courses/paths mutation flows) plus regression tests.
 - [x] Frontend reliability guard: removed broad `except Exception` handlers from page modules and added an architecture test to prevent reintroduction.
+- [x] Backend complexity reduction: refactor `NotificationsService.list_activity` into composable event-builder functions + shared normalize/dedupe/sort pipeline with focused unit tests.
+- [x] Backend typing hardening: tighten service-boundary dataclass fields (prefer strict types over broad `int | str | None`) and remove post-parse coercion branches where possible.
+- [x] Boundary ownership cleanup: reduce duplicate router/service validation paths (especially tracking/path-status flows) and standardize error semantics by layer.
+- [x] Architecture guard maintainability: evolve backend payload-boundary guard from a fully hardcoded method map to a mixed explicit+convention strategy to reduce brittle refactor churn.
+- [x] Backend docs fidelity: add a short enforceable matrix in `docs/architecture_backend.md` mapping service entrypoints -> `_parse_*` helpers -> architecture tests.
+- [x] Transaction boundary decoupling: remove reliance on SQLAlchemy transaction internals in `session_scope`; adopt explicit app-level transaction ownership (request-scoped unit-of-work/dependency) and keep services transaction-agnostic.
+- [x] Transaction reliability guard: add focused tests for explicit transaction vs implicit request transaction behavior (commit/rollback semantics) without inspecting ORM internal transaction-origin fields.
+- [x] Notifications domain typing: replace stringly-typed activity event dict assembly with a typed `ActivityEvent` model (dataclass/TypedDict + enum-like constants) and central event builder utilities.
 
 ## Phase 11 — Operability + Quality
 
@@ -164,6 +172,8 @@
 - [ ] Activity feed UX v2: add pagination/“Load more” for older events.
 - [ ] Activity feed UX v2: improve article deep-linking to open the specific item context.
 - [ ] Activity feed UX v2: group burst events and rank high-signal events higher (e.g., ratings on your shared content).
+- [ ] Activity feed correctness: sort by parsed timezone-aware datetimes (not raw timestamp strings) to guarantee true chronological ordering across offsets.
+- [ ] Activity feed resilience: skip malformed activity rows (bad ids/ratings/timestamps), log structured context, and continue returning valid events.
 
 ### Phase 11C — Reliability & Accessibility
 - [ ] Notification resilience hardening: enrich `safe_notify` logs with action/page context, add optional strict mode for dev/test, and add regression tests for deleted-slot notification paths.

@@ -198,6 +198,37 @@ Endpoints still use `HTTPException` directly for request/permission semantics (f
 
 Each router defines Pydantic request and response schemas. Invalid request payloads (wrong types, missing required fields, invalid list element types) are rejected with `422 Unprocessable Entity` before service methods run.
 
+## Service Input Boundary
+
+Services must parse externally influenced inputs at the service boundary using typed Pydantic dataclass `_parse_*` helpers.
+
+Required contract:
+- Each service entrypoint that accepts request/user-provided values calls a local `_parse_*` helper before business logic.
+- Each `_parse_*` helper catches `ValidationError` and raises the domain `*ServiceError` with:
+  - `detail="invalid_payload"`
+  - `status_code=400`
+
+This keeps router-level schema validation and service-level domain validation aligned, and provides deterministic error semantics for tests and clients.
+
+### Service Payload Boundary Matrix
+
+This matrix is the enforceable contract for service-boundary input parsing.
+
+| Service file | Entrypoints covered | Parse helpers | Guard test |
+| --- | --- | --- | --- |
+| `backend/services/auth_service.py` | `is_admin`, `create_session`, `get_session`, `revoke_sessions`, `get_user`, `create_user`, `update_password`, `delete_user`, `authenticate_user`, `set_user_disabled` | `_parse_username_payload`, `_parse_session_payload`, `_parse_create_user_payload`, `_parse_update_password_payload`, `_parse_set_disabled_payload`, `_parse_authenticate_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/courses_service.py` | `create_course`, `update_course` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/paths_service.py` | `create_path`, `update_path` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/articles_service.py` | `create_article` | `_parse_create_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/course_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/path_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/article_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/course_recommendations_service.py` | `create_recommendation` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/path_recommendations_service.py` | `create_recommendation` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/tracking_service.py` | `list_tracking`, `list_recent_activity`, `upsert_tracking`, `remove_tracking` | `_parse_list_payload`, `_parse_recent_activity_payload`, `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/user_paths_service.py` | `add_user_path`, `list_user_paths`, `remove_user_path`, `update_user_path_status` | `_parse_mutation_payload`, `_parse_list_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/notifications_service.py` | `list_activity` | `_parse_activity_query` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+
 ## Courses Architecture
 
 ### Courses Sequence
