@@ -37,6 +37,59 @@ class CoursesFilterControls:
     sort_filter: Any
 
 
+def recompute_course_facet_controls(
+    *,
+    controls: CoursesFilterControls,
+    courses: list[dict[str, Any]],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+    normalized_filters: Any,
+    compute_facet_counts: Callable[..., tuple[dict[str, int], dict[str, int], dict[str, int], dict[str, int]]],
+    build_count_options: Callable[..., dict[str, str]],
+    build_status_options: Callable[..., dict[str, str]],
+) -> None:
+    """Recompute facet options and apply values/updates to controls."""
+    provider_counts, category_counts, level_counts, status_counts = compute_facet_counts(
+        courses=courses,
+        tracking_by_course_id=tracking_by_course_id,
+        scope_value=str(normalized_filters.scope),
+        needle=str(normalized_filters.search),
+        provider_value=str(normalized_filters.provider),
+        category_value=str(normalized_filters.category),
+        level_value=str(normalized_filters.level),
+        status_value=str(normalized_filters.status),
+    )
+
+    # Preserve selected values even when they drop to 0-count after other filters.
+    selected_provider = str(controls.provider_filter.value or "").strip()
+    if selected_provider and selected_provider not in provider_counts:
+        provider_counts[selected_provider] = 0
+    selected_category = str(controls.category_filter.value or "").strip()
+    if selected_category and selected_category not in category_counts:
+        category_counts[selected_category] = 0
+    selected_level = str(controls.level_filter.value or "").strip()
+    if selected_level and selected_level not in level_counts:
+        level_counts[selected_level] = 0
+
+    controls.provider_filter.options = build_count_options(any_label="Any provider", counts=provider_counts)
+    controls.category_filter.options = build_count_options(any_label="Any category", counts=category_counts)
+    controls.level_filter.options = build_count_options(any_label="Any level", counts=level_counts)
+    controls.status_filter.options = build_status_options(status_counts=status_counts)
+
+    if controls.provider_filter.value and controls.provider_filter.value not in controls.provider_filter.options:
+        controls.provider_filter.value = ""
+    if controls.category_filter.value and controls.category_filter.value not in controls.category_filter.options:
+        controls.category_filter.value = ""
+    if controls.level_filter.value and controls.level_filter.value not in controls.level_filter.options:
+        controls.level_filter.value = ""
+    if controls.status_filter.value and controls.status_filter.value not in controls.status_filter.options:
+        controls.status_filter.value = ""
+
+    controls.provider_filter.update()
+    controls.category_filter.update()
+    controls.level_filter.update()
+    controls.status_filter.update()
+
+
 def copy_course_link(*, url: str) -> None:
     """Copy a course URL to clipboard."""
     ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(str(url or ''))});")

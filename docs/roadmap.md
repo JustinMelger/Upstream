@@ -116,7 +116,7 @@
 - [x] Frontend clean code: introduce typed page state/view-model objects to reduce large closure state (`nonlocal`) usage.
 - [x] Frontend clean code: extract large nested handlers into domain action modules (`learning_actions`, `courses_actions`, `paths_actions`).
 - [x] Frontend clean code: componentize repeated page sections (top bar, filter rail, card sections, load-more footer).
-- [ ] Frontend clean code: reduce page-module size/complexity (`courses.py`, `paths.py`, `learning.py`) by splitting into focused UI sections and action modules.
+- [x] Frontend clean code: reduce page-module size/complexity (`courses.py`, `paths.py`, `learning.py`) by splitting into focused UI sections and action modules.
 - [x] Frontend clean code: centralize deep-link and intent navigation logic in a shared navigation helper.
 - [x] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.
 - [x] Frontend clean code: add lightweight page-state reducers/helpers to tame `nonlocal` sprawl and make state transitions explicit/testable.

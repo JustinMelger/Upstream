@@ -322,3 +322,124 @@ def render_review_nudges_section(
         if pending_path_review_ids:
             ui.label(f"{len(pending_path_review_ids)} selected path(s) need your review.").classes("text-sm")
             ui.button("Review paths", on_click=on_open_first_path_review).props("dense outline")
+
+
+def render_shared_tab(
+    *,
+    shared_vm: Any,
+    review_summary_label: Any,
+    recommendation_summary_label: Any,
+    nav_actions: Any,
+    feature_articles: bool,
+    on_open_articles: Any,
+) -> None:
+    """Compose shared-tab UI from the shared view-model."""
+    render_shared_content(
+        shared_courses=shared_vm.shared_courses,
+        shared_paths=shared_vm.shared_paths,
+        shared_articles=shared_vm.shared_articles,
+        shared_course_review_summary_by_id=shared_vm.shared_course_review_summary_by_id,
+        shared_course_recommendation_summary_by_id=shared_vm.shared_course_recommendation_summary_by_id,
+        shared_path_review_summary_by_id=shared_vm.shared_path_review_summary_by_id,
+        shared_path_recommendation_summary_by_id=shared_vm.shared_path_recommendation_summary_by_id,
+        review_summary_label=review_summary_label,
+        recommendation_summary_label=recommendation_summary_label,
+        on_view_course=nav_actions.make_course_view_action,
+        on_review_course=nav_actions.make_course_review_action,
+        on_view_path=nav_actions.make_path_view_action,
+        on_review_path=nav_actions.make_path_review_action,
+        feature_articles=bool(feature_articles),
+        on_open_articles=on_open_articles,
+    )
+
+
+def render_learning_tab(
+    *,
+    learning_vm: Any,
+    state: Any,
+    next_course: dict[str, Any] | None,
+    first_course_review_action: Any,
+    first_path_review_action: Any,
+    review_summary_label: Any,
+    tracking_label_fn: Any,
+    tracking_chip_class_fn: Any,
+    resolve_status_value: Any,
+    progress_for_path_detail: Any,
+    nav_actions: Any,
+    on_save_recommended_course: Any,
+    on_save_recommended_path: Any,
+    on_dismiss_recommended_course: Any,
+    on_dismiss_recommended_path: Any,
+    on_set_tracking_status: Any,
+    on_clear_tracking_status: Any,
+    on_browse_courses: Any,
+    on_browse_paths: Any,
+    on_open_selected_paths: Any,
+    on_load_more_tracked: Any,
+    on_load_more_selected: Any,
+) -> None:
+    """Compose learning-tab UI from the learning view-model."""
+    ui.label("Learning").classes("text-lg font-semibold mt-2")
+
+    render_recommended_section(
+        recommended_courses=learning_vm.recommended_courses,
+        recommended_paths=learning_vm.recommended_paths,
+        on_save_recommended_course=on_save_recommended_course,
+        on_save_recommended_path=on_save_recommended_path,
+        on_dismiss_recommended_course=on_dismiss_recommended_course,
+        on_dismiss_recommended_path=on_dismiss_recommended_path,
+        on_view_course=nav_actions.make_course_view_action,
+        on_view_path=nav_actions.make_path_view_action,
+    )
+
+    if next_course is not None:
+        render_continue_learning_section(
+            next_course=next_course,
+            on_open_selected_paths=on_open_selected_paths,
+        )
+
+    render_review_nudges_section(
+        pending_course_review_ids=learning_vm.pending_course_review_ids,
+        pending_path_review_ids=learning_vm.pending_path_review_ids,
+        on_open_first_course_review=first_course_review_action,
+        on_open_first_path_review=first_path_review_action,
+    )
+
+    render_tracked_courses_section(
+        tracked_courses=learning_vm.tracked_courses,
+        tracking_by_course_id=learning_vm.tracking_by_course_id,
+        course_review_summary_by_id=learning_vm.course_review_summary_by_id,
+        tracked_visible=state.tracked_visible,
+        review_summary_label=review_summary_label,
+        tracking_label_fn=tracking_label_fn,
+        tracking_chip_class_fn=tracking_chip_class_fn,
+        on_view_course=nav_actions.make_course_view_action,
+        on_review_course=nav_actions.make_course_review_action,
+        resolve_status_value=resolve_status_value,
+        on_set_status=on_set_tracking_status,
+        on_clear_status=on_clear_tracking_status,
+        on_browse_courses=on_browse_courses,
+    )
+    if len(learning_vm.tracked_courses) > state.tracked_visible:
+        ui.button(
+            f"Load more ({state.tracked_visible}/{len(learning_vm.tracked_courses)})",
+            on_click=on_load_more_tracked,
+        ).props("outline dense")
+
+    render_selected_paths_section(
+        selected_paths=learning_vm.selected_paths,
+        selected_visible=state.selected_visible,
+        path_details_by_id=learning_vm.path_details_by_id,
+        tracking_by_course_id=learning_vm.tracking_by_course_id,
+        path_review_summary_by_id=learning_vm.path_review_summary_by_id,
+        progress_for_path_detail=progress_for_path_detail,
+        review_summary_label=review_summary_label,
+        on_view_path=nav_actions.make_path_view_action,
+        on_review_path=nav_actions.make_path_review_action,
+        on_browse_paths=on_browse_paths,
+    )
+    if len(learning_vm.selected_paths) > state.selected_visible:
+        ui.button(
+            f"Load more ({state.selected_visible}/{len(learning_vm.selected_paths)})",
+            on_click=on_load_more_selected,
+        ).props("outline dense")

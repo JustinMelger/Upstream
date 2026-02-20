@@ -7,6 +7,7 @@ from frontend.ui.nicegui.pages.courses.actions import (
     CoursesFilterControls,
     build_course_card_actions,
     clear_course_filter_by_key,
+    recompute_course_facet_controls,
     reset_course_filter_controls,
 )
 
@@ -114,3 +115,110 @@ def test_reset_course_filter_controls_sets_all_values_and_updates() -> None:
     assert controls.level_filter.updated == 1
     assert controls.status_filter.updated == 1
     assert controls.sort_filter.updated == 1
+
+
+@pytest.mark.unit
+def test_recompute_course_facet_controls_applies_options_preserves_selected_and_updates() -> None:
+    controls = CoursesFilterControls(
+        scope_filter=_Control("all"),
+        search_input=_Control("api"),
+        provider_filter=_Control("ChosenProvider"),
+        category_filter=_Control("ChosenCategory"),
+        level_filter=_Control("ChosenLevel"),
+        status_filter=_Control("completed"),
+        sort_filter=_Control("newest"),
+    )
+    normalized = type(
+        "Normalized",
+        (),
+        dict(
+            scope="all",
+            search="api",
+            provider="chosenprovider",
+            category="chosencategory",
+            level="chosenlevel",
+            status="completed",
+        ),
+    )()
+
+    def _fake_counts(**_kwargs):
+        return ({"OtherProvider": 2}, {"OtherCategory": 1}, {"OtherLevel": 1}, {"completed": 3})
+
+    def _fake_build_count_options(*, any_label: str, counts: dict[str, int]) -> dict[str, str]:
+        out: dict[str, str] = {"": any_label}
+        out.update({k: f"{k} ({v})" for k, v in counts.items()})
+        return out
+
+    def _fake_build_status_options(*, status_counts: dict[str, int]) -> dict[str, str]:
+        return {"": "Any status", "completed": f"Completed ({status_counts.get('completed', 0)})"}
+
+    recompute_course_facet_controls(
+        controls=controls,
+        courses=[],
+        tracking_by_course_id={},
+        normalized_filters=normalized,
+        compute_facet_counts=_fake_counts,
+        build_count_options=_fake_build_count_options,
+        build_status_options=_fake_build_status_options,
+    )
+    assert "ChosenProvider" in controls.provider_filter.options
+    assert "ChosenCategory" in controls.category_filter.options
+    assert "ChosenLevel" in controls.level_filter.options
+    assert controls.provider_filter.value == "ChosenProvider"
+    assert controls.category_filter.value == "ChosenCategory"
+    assert controls.level_filter.value == "ChosenLevel"
+    assert controls.status_filter.value == "completed"
+    assert controls.provider_filter.updated == 1
+    assert controls.category_filter.updated == 1
+    assert controls.level_filter.updated == 1
+    assert controls.status_filter.updated == 1
+
+
+@pytest.mark.unit
+def test_recompute_course_facet_controls_preserves_selected_facet_values_but_clears_invalid_status() -> None:
+    controls = CoursesFilterControls(
+        scope_filter=_Control("all"),
+        search_input=_Control("api"),
+        provider_filter=_Control("ProviderX"),
+        category_filter=_Control("CategoryX"),
+        level_filter=_Control("LevelX"),
+        status_filter=_Control("in_progress"),
+        sort_filter=_Control(""),
+    )
+    normalized = type(
+        "Normalized",
+        (),
+        dict(
+            scope="all",
+            search="api",
+            provider="",
+            category="",
+            level="",
+            status="",
+        ),
+    )()
+
+    def _fake_counts(**_kwargs):
+        return ({"ProviderA": 1}, {"CategoryA": 1}, {"LevelA": 1}, {"completed": 2})
+
+    def _fake_build_count_options(*, any_label: str, counts: dict[str, int]) -> dict[str, str]:
+        out: dict[str, str] = {"": any_label}
+        out.update({k: f"{k} ({v})" for k, v in counts.items()})
+        return out
+
+    def _fake_build_status_options(*, status_counts: dict[str, int]) -> dict[str, str]:
+        return {"": "Any status", "completed": f"Completed ({status_counts.get('completed', 0)})"}
+
+    recompute_course_facet_controls(
+        controls=controls,
+        courses=[],
+        tracking_by_course_id={},
+        normalized_filters=normalized,
+        compute_facet_counts=_fake_counts,
+        build_count_options=_fake_build_count_options,
+        build_status_options=_fake_build_status_options,
+    )
+    assert controls.provider_filter.value == "ProviderX"
+    assert controls.category_filter.value == "CategoryX"
+    assert controls.level_filter.value == "LevelX"
+    assert controls.status_filter.value == ""

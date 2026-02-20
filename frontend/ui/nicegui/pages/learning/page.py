@@ -16,7 +16,6 @@ from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.config import settings
-from frontend.ui.nicegui.core.datetime_utils import format_date
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
@@ -31,12 +30,8 @@ from frontend.ui.nicegui.pages.learning.actions import (
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
 from frontend.ui.nicegui.pages.learning.route_init import resolve_learning_initial_view
 from frontend.ui.nicegui.pages.learning.sections import (
-    render_continue_learning_section,
-    render_recommended_section,
-    render_review_nudges_section,
-    render_selected_paths_section,
-    render_shared_content,
-    render_tracked_courses_section,
+    render_learning_tab,
+    render_shared_tab,
 )
 from frontend.ui.nicegui.pages.learning.state import LearningPageState
 from frontend.ui.nicegui.pages.learning.ui_glue import (
@@ -46,9 +41,6 @@ from frontend.ui.nicegui.pages.learning.ui_glue import (
 )
 from frontend.ui.nicegui.pages.learning.view_model import build_learning_tab_view, build_shared_tab_view
 from frontend.ui.nicegui.services.paths_service import compute_path_progress
-
-
-_format_date = format_date
 
 
 def _progress_for_path_detail(
@@ -252,20 +244,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if str(view_filter.value or "learning") == "shared":
                     shared_vm = build_shared_tab_view(data=state.data)
 
-                    render_shared_content(
-                        shared_courses=shared_vm.shared_courses,
-                        shared_paths=shared_vm.shared_paths,
-                        shared_articles=shared_vm.shared_articles,
-                        shared_course_review_summary_by_id=shared_vm.shared_course_review_summary_by_id,
-                        shared_course_recommendation_summary_by_id=shared_vm.shared_course_recommendation_summary_by_id,
-                        shared_path_review_summary_by_id=shared_vm.shared_path_review_summary_by_id,
-                        shared_path_recommendation_summary_by_id=shared_vm.shared_path_recommendation_summary_by_id,
+                    render_shared_tab(
+                        shared_vm=shared_vm,
                         review_summary_label=_review_summary_label,
                         recommendation_summary_label=_recommendation_summary_label,
-                        on_view_course=nav_actions.make_course_view_action,
-                        on_review_course=nav_actions.make_course_review_action,
-                        on_view_path=nav_actions.make_path_view_action,
-                        on_review_path=nav_actions.make_path_review_action,
+                        nav_actions=nav_actions,
                         feature_articles=bool(settings.feature_articles),
                         on_open_articles=lambda: ui.navigate.to("/articles"),
                     )
@@ -277,27 +260,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     data=state.data,
                     dismissed_recommended_course_ids=state.dismissed_recommended_course_ids,
                     dismissed_recommended_path_ids=state.dismissed_recommended_path_ids,
-                )
-
-                ui.label("Learning").classes("text-lg font-semibold mt-2")
-
-                render_recommended_section(
-                    recommended_courses=learning_vm.recommended_courses,
-                    recommended_paths=learning_vm.recommended_paths,
-                    on_save_recommended_course=_save_recommended_course,
-                    on_save_recommended_path=_save_recommended_path,
-                    on_dismiss_recommended_course=lambda _cid: dismiss_recommended_course(
-                        state=state,
-                        course_id=int(_cid),
-                        refresh=content.refresh,
-                    ),
-                    on_dismiss_recommended_path=lambda _pid: dismiss_recommended_path(
-                        state=state,
-                        path_id=int(_pid),
-                        refresh=content.refresh,
-                    ),
-                    on_view_course=nav_actions.make_course_view_action,
-                    on_view_path=nav_actions.make_path_view_action,
                 )
 
                 next_course = _next_uncompleted_course_from_selected_paths(
@@ -312,11 +274,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     )
                     if fallback is not None:
                         next_course = {"path_id": 0, "path_name": "", "course": fallback}
-                if next_course is not None:
-                    render_continue_learning_section(
-                        next_course=next_course,
-                        on_open_selected_paths=lambda: ui.navigate.to("/paths?tab=selected"),
-                    )
 
                 first_course_review_action: Any = lambda: None
                 if learning_vm.pending_course_review_ids:
@@ -326,59 +283,46 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 first_path_review_action: Any = lambda: None
                 if learning_vm.pending_path_review_ids:
                     first_path_review_action = nav_actions.make_path_review_action(int(learning_vm.pending_path_review_ids[0]))
-                render_review_nudges_section(
-                    pending_course_review_ids=learning_vm.pending_course_review_ids,
-                    pending_path_review_ids=learning_vm.pending_path_review_ids,
-                    on_open_first_course_review=first_course_review_action,
-                    on_open_first_path_review=first_path_review_action,
-                )
-
-                render_tracked_courses_section(
-                    tracked_courses=learning_vm.tracked_courses,
-                    tracking_by_course_id=learning_vm.tracking_by_course_id,
-                    course_review_summary_by_id=learning_vm.course_review_summary_by_id,
-                    tracked_visible=state.tracked_visible,
+                render_learning_tab(
+                    learning_vm=learning_vm,
+                    state=state,
+                    next_course=next_course,
+                    first_course_review_action=first_course_review_action,
+                    first_path_review_action=first_path_review_action,
                     review_summary_label=_review_summary_label,
                     tracking_label_fn=tracking_label,
                     tracking_chip_class_fn=tracking_chip_class,
-                    on_view_course=nav_actions.make_course_view_action,
-                    on_review_course=nav_actions.make_course_review_action,
                     resolve_status_value=resolve_tracking_status_value,
-                    on_set_status=_set_tracking_status,
-                    on_clear_status=_clear_tracking_status,
-                    on_browse_courses=lambda: ui.navigate.to("/courses"),
-                )
-                if len(learning_vm.tracked_courses) > state.tracked_visible:
-                    ui.button(
-                        f"Load more ({state.tracked_visible}/{len(learning_vm.tracked_courses)})",
-                        on_click=lambda: load_more_tracked(
-                            state=state,
-                            total_count=len(learning_vm.tracked_courses),
-                            refresh=content.refresh,
-                        ),
-                    ).props("outline dense")
-
-                render_selected_paths_section(
-                    selected_paths=learning_vm.selected_paths,
-                    selected_visible=state.selected_visible,
-                    path_details_by_id=learning_vm.path_details_by_id,
-                    tracking_by_course_id=learning_vm.tracking_by_course_id,
-                    path_review_summary_by_id=learning_vm.path_review_summary_by_id,
                     progress_for_path_detail=_progress_for_path_detail,
-                    review_summary_label=_review_summary_label,
-                    on_view_path=nav_actions.make_path_view_action,
-                    on_review_path=nav_actions.make_path_review_action,
+                    nav_actions=nav_actions,
+                    on_save_recommended_course=_save_recommended_course,
+                    on_save_recommended_path=_save_recommended_path,
+                    on_dismiss_recommended_course=lambda _cid: dismiss_recommended_course(
+                        state=state,
+                        course_id=int(_cid),
+                        refresh=content.refresh,
+                    ),
+                    on_dismiss_recommended_path=lambda _pid: dismiss_recommended_path(
+                        state=state,
+                        path_id=int(_pid),
+                        refresh=content.refresh,
+                    ),
+                    on_set_tracking_status=_set_tracking_status,
+                    on_clear_tracking_status=_clear_tracking_status,
+                    on_browse_courses=lambda: ui.navigate.to("/courses"),
                     on_browse_paths=lambda: ui.navigate.to("/paths"),
+                    on_open_selected_paths=lambda: ui.navigate.to("/paths?tab=selected"),
+                    on_load_more_tracked=lambda: load_more_tracked(
+                        state=state,
+                        total_count=len(learning_vm.tracked_courses),
+                        refresh=content.refresh,
+                    ),
+                    on_load_more_selected=lambda: load_more_selected(
+                        state=state,
+                        total_count=len(learning_vm.selected_paths),
+                        refresh=content.refresh,
+                    ),
                 )
-                if len(learning_vm.selected_paths) > state.selected_visible:
-                    ui.button(
-                        f"Load more ({state.selected_visible}/{len(learning_vm.selected_paths)})",
-                        on_click=lambda: load_more_selected(
-                            state=state,
-                            total_count=len(learning_vm.selected_paths),
-                            refresh=content.refresh,
-                        ),
-                    ).props("outline dense")
 
             await _load()
             content()

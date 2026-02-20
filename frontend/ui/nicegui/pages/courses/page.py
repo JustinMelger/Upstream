@@ -25,6 +25,7 @@ from frontend.ui.nicegui.pages.courses.actions import (
     CoursesFilterControls,
     build_course_card_actions,
     clear_course_filter_by_key,
+    recompute_course_facet_controls,
     reset_course_filter_controls,
 )
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
@@ -169,8 +170,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 Counts are computed "excluding the facet itself" (standard faceting), so users can see
                 the impact of picking a different value before clicking it.
                 """
-
-                needle = str(q.value or "").strip().lower()
                 normalized = normalize_courses_filter_values(
                     scope_value=str(scope_filter.value or "all"),
                     search_value=str(q.value or ""),
@@ -180,46 +179,23 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     status_value=str(status_filter.value or ""),
                     sort_value=str(sort_filter.value or ""),
                 )
-                provider_counts, category_counts, level_counts, status_counts = compute_facet_counts(
+                recompute_course_facet_controls(
+                    controls=CoursesFilterControls(
+                        scope_filter=scope_filter,
+                        search_input=q,
+                        provider_filter=provider_filter,
+                        category_filter=category_filter,
+                        level_filter=level_filter,
+                        status_filter=status_filter,
+                        sort_filter=sort_filter,
+                    ),
                     courses=page_state.courses,
                     tracking_by_course_id=page_state.tracking_by_course_id,
-                    scope_value=normalized.scope,
-                    needle=normalized.search,
-                    provider_value=normalized.provider,
-                    category_value=normalized.category,
-                    level_value=normalized.level,
-                    status_value=normalized.status,
+                    normalized_filters=normalized,
+                    compute_facet_counts=compute_facet_counts,
+                    build_count_options=build_count_options,
+                    build_status_options=_build_status_options,
                 )
-
-                # Preserve current selections even if they have a 0-count after other filters.
-                selected_provider = str(provider_filter.value or "").strip()
-                if selected_provider and selected_provider not in provider_counts:
-                    provider_counts[selected_provider] = 0
-                selected_category = str(category_filter.value or "").strip()
-                if selected_category and selected_category not in category_counts:
-                    category_counts[selected_category] = 0
-                selected_level = str(level_filter.value or "").strip()
-                if selected_level and selected_level not in level_counts:
-                    level_counts[selected_level] = 0
-
-                provider_filter.options = build_count_options(any_label="Any provider", counts=provider_counts)
-                category_filter.options = build_count_options(any_label="Any category", counts=category_counts)
-                level_filter.options = build_count_options(any_label="Any level", counts=level_counts)
-                status_filter.options = _build_status_options(status_counts=status_counts)
-
-                if provider_filter.value and provider_filter.value not in provider_filter.options:
-                    provider_filter.value = ""
-                if category_filter.value and category_filter.value not in category_filter.options:
-                    category_filter.value = ""
-                if level_filter.value and level_filter.value not in level_filter.options:
-                    level_filter.value = ""
-                if status_filter.value and status_filter.value not in status_filter.options:
-                    status_filter.value = ""
-
-                provider_filter.update()
-                category_filter.update()
-                level_filter.update()
-                status_filter.update()
 
             async def _load() -> None:
                 if ui_state.loading:
