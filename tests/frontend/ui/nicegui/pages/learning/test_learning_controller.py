@@ -30,23 +30,37 @@ async def test_learning_controller_load_page_data_calls_service(monkeypatch: pyt
 
 @pytest.mark.unit
 @pytest.mark.anyio
-async def test_learning_controller_tracking_and_save_calls() -> None:
-    calls: list[tuple[str, dict]] = []
+async def test_learning_controller_tracking_and_save_calls(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, int, str]] = []
 
-    class _Api:
-        async def post(self, path: str, payload: dict):  # noqa: ANN001
-            calls.append((path, payload))
-            return {}
+    from frontend.ui.nicegui.pages.learning import controller as learning_controller
 
-    c = LearningPageController(api=_Api())  # type: ignore[arg-type]
+    async def _set_tracking_status(*, api, course_id: int, status: str):  # noqa: ANN001
+        calls.append(("set", course_id, status))
+
+    async def _clear_tracking_status(*, api, course_id: int):  # noqa: ANN001
+        calls.append(("clear", course_id, ""))
+
+    async def _save_recommended_course(*, api, course_id: int):  # noqa: ANN001
+        calls.append(("save_course", course_id, "interested"))
+
+    async def _save_recommended_path(*, api, path_id: int):  # noqa: ANN001
+        calls.append(("save_path", path_id, "selected"))
+
+    monkeypatch.setattr(learning_controller, "set_tracking_status", _set_tracking_status)
+    monkeypatch.setattr(learning_controller, "clear_tracking_status", _clear_tracking_status)
+    monkeypatch.setattr(learning_controller, "save_recommended_course", _save_recommended_course)
+    monkeypatch.setattr(learning_controller, "save_recommended_path", _save_recommended_path)
+
+    c = LearningPageController(api=object())  # type: ignore[arg-type]
     await c.set_tracking_status(course_id=3, status="in_progress")
     await c.clear_tracking_status(course_id=3)
     await c.save_recommended_course(course_id=9)
     await c.save_recommended_path(path_id=4)
 
     assert calls == [
-        ("/tracking", {"course_id": 3, "status": "in_progress"}),
-        ("/tracking/delete", {"course_id": 3}),
-        ("/tracking", {"course_id": 9, "status": "interested"}),
-        ("/paths/4/select", {}),
+        ("set", 3, "in_progress"),
+        ("clear", 3, ""),
+        ("save_course", 9, "interested"),
+        ("save_path", 4, "selected"),
     ]

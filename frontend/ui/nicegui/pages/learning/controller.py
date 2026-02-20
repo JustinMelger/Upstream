@@ -5,7 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
-from frontend.ui.nicegui.services.learning_service import load_my_learning_data
+from frontend.ui.nicegui.services.learning_service import (
+    clear_tracking_status,
+    load_my_learning_data,
+    save_recommended_course,
+    save_recommended_path,
+    set_tracking_status,
+)
 
 
 class LearningPageController:
@@ -24,16 +30,16 @@ class LearningPageController:
 
     async def set_tracking_status(self, *, course_id: int, status: str) -> None:
         """Set tracking status for a course."""
-        await self._api.post("/tracking", {"course_id": int(course_id), "status": str(status)})
+        await set_tracking_status(api=self._api, course_id=int(course_id), status=str(status))
 
     async def clear_tracking_status(self, *, course_id: int) -> None:
         """Clear tracking status for a course."""
-        await self._api.post("/tracking/delete", {"course_id": int(course_id)})
+        await clear_tracking_status(api=self._api, course_id=int(course_id))
 
     async def save_recommended_course(self, *, course_id: int) -> None:
         """Save a recommended course as interested."""
-        await self._api.post("/tracking", {"course_id": int(course_id), "status": "interested"})
+        await save_recommended_course(api=self._api, course_id=int(course_id))
 
     async def save_recommended_path(self, *, path_id: int) -> None:
         """Save a recommended path as selected."""
-        await self._api.post(f"/paths/{int(path_id)}/select", {})
+        await save_recommended_path(api=self._api, path_id=int(path_id))

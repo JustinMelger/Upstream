@@ -10,6 +10,26 @@ from frontend.ui.nicegui.services._indexing import index_by_int_id
 from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
 
 
+async def set_tracking_status(*, api: ApiClient, course_id: int, status: str) -> None:
+    """Set tracking status for a course."""
+    await api.post("/tracking", {"course_id": int(course_id), "status": str(status)})
+
+
+async def clear_tracking_status(*, api: ApiClient, course_id: int) -> None:
+    """Clear tracking status for a course."""
+    await api.post("/tracking/delete", {"course_id": int(course_id)})
+
+
+async def save_recommended_course(*, api: ApiClient, course_id: int) -> None:
+    """Save a recommended course as interested."""
+    await set_tracking_status(api=api, course_id=int(course_id), status="interested")
+
+
+async def save_recommended_path(*, api: ApiClient, path_id: int) -> None:
+    """Save a recommended path as selected."""
+    await api.post(f"/paths/{int(path_id)}/select", {})
+
+
 async def load_my_learning_data(
     *,
     api: ApiClient,
