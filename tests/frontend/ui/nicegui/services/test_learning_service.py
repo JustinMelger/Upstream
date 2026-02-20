@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 
+from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.services.learning_service import (
     clear_tracking_status,
     load_my_learning_data,
@@ -80,3 +81,61 @@ async def test_learning_tracking_mutation_use_cases_call_expected_endpoints() ->
         ("/tracking", {"course_id": 9, "status": "interested"}),
         ("/paths/4/select", {}),
     ]
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_load_my_learning_data_keeps_working_when_summary_endpoints_fail_with_api_error() -> None:
+    class _Api(_FakeApi):
+        async def get(self, path: str, params: dict[str, Any] | None = None) -> Any:  # noqa: ARG002
+            if path in {
+                "/courses/reviews/summary",
+                "/paths/reviews/summary",
+                "/courses/recommendations/summary",
+                "/paths/recommendations/summary",
+            }:
+                raise ApiError(status_code=503, message="backend_unreachable")
+            return self.payloads.get(path)
+
+    api = _Api(
+        payloads={
+            "/courses": [{"id": 2, "title": "C2", "created_by": "bob"}],
+            "/tracking": [{"course_id": 2, "status": "in_progress"}],
+            "/paths": [{"id": 11, "name": "P2", "created_by": "bob"}],
+            "/paths/selected/list": [{"id": 11, "name": "P2", "status": "interested"}],
+            "/paths/11": {"id": 11, "name": "P2", "courses": [{"id": 2}]},
+            "/articles": [],
+            "/courses/2/reviews": [],
+            "/paths/11/reviews": [],
+        }
+    )
+
+    data = await load_my_learning_data(api=api, username="alice", include_articles=True)
+    assert data["course_review_summary_by_id"] == {}
+    assert data["path_review_summary_by_id"] == {}
+    assert data["course_recommendation_summary_by_id"] == {}
+    assert data["path_recommendation_summary_by_id"] == {}
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_load_my_learning_data_does_not_swallow_unexpected_summary_errors() -> None:
+    class _Api(_FakeApi):
+        async def get(self, path: str, params: dict[str, Any] | None = None) -> Any:  # noqa: ARG002
+            if path == "/courses/reviews/summary":
+                raise RuntimeError("boom")
+            return self.payloads.get(path)
+
+    api = _Api(
+        payloads={
+            "/courses": [{"id": 2, "title": "C2", "created_by": "bob"}],
+            "/tracking": [{"course_id": 2, "status": "in_progress"}],
+            "/paths": [],
+            "/paths/selected/list": [],
+            "/articles": [],
+            "/courses/2/reviews": [],
+        }
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        await load_my_learning_data(api=api, username="alice", include_articles=True)

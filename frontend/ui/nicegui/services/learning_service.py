@@ -3,11 +3,53 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 
-from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.services._indexing import index_by_int_id
 from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
+
+
+logger = logging.getLogger(__name__)
+
+
+async def _load_summary_map(
+    *,
+    api: ApiClient,
+    path: str,
+    param_key: str,
+    ids: list[int],
+    row_id_key: str,
+    log_context: str,
+) -> dict[int, dict[str, Any]]:
+    """Best-effort summary loader with typed fallback logging."""
+    out: dict[int, dict[str, Any]] = {}
+    if not ids:
+        return out
+    try:
+        rows = await api.get(path, params={param_key: ids})
+    except ApiError as exc:
+        logger.warning(
+            "Learning summary unavailable",
+            extra={
+                "context": log_context,
+                "status_code": int(exc.status_code),
+                "id_count": len(ids),
+                "endpoint": path,
+            },
+        )
+        return out
+    for row in list(rows or []):
+        if not isinstance(row, dict):
+            continue
+        try:
+            row_id = int(row.get(row_id_key) or 0)
+        except (TypeError, ValueError):
+            continue
+        if row_id > 0:
+            out[row_id] = row
+    return out
 
 
 async def set_tracking_status(*, api: ApiClient, course_id: int, status: str) -> None:
@@ -101,73 +143,45 @@ async def load_my_learning_data(
     tracked_ids_sorted = sorted(int(c.get("id") or 0) for c in tracked_courses if int(c.get("id") or 0) > 0)
     selected_ids_sorted = sorted(int(pid) for pid in selected_ids if int(pid) > 0)
 
-    course_review_summary_by_id: dict[int, dict[str, Any]] = {}
-    if tracked_ids_sorted:
-        try:
-            rows = await api.get("/courses/reviews/summary", params={"course_ids": tracked_ids_sorted})
-            for r in list(rows or []):
-                if not isinstance(r, dict):
-                    continue
-                try:
-                    cid = int(r.get("course_id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if cid > 0:
-                    course_review_summary_by_id[cid] = r
-        except Exception:
-            course_review_summary_by_id = {}
+    course_review_summary_by_id = await _load_summary_map(
+        api=api,
+        path="/courses/reviews/summary",
+        param_key="course_ids",
+        ids=tracked_ids_sorted,
+        row_id_key="course_id",
+        log_context="tracked_course_reviews",
+    )
 
-    path_review_summary_by_id: dict[int, dict[str, Any]] = {}
-    if selected_ids_sorted:
-        try:
-            rows = await api.get("/paths/reviews/summary", params={"path_ids": selected_ids_sorted})
-            for r in list(rows or []):
-                if not isinstance(r, dict):
-                    continue
-                try:
-                    pid = int(r.get("path_id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if pid > 0:
-                    path_review_summary_by_id[pid] = r
-        except Exception:
-            path_review_summary_by_id = {}
+    path_review_summary_by_id = await _load_summary_map(
+        api=api,
+        path="/paths/reviews/summary",
+        param_key="path_ids",
+        ids=selected_ids_sorted,
+        row_id_key="path_id",
+        log_context="selected_path_reviews",
+    )
 
     # Recommendation summaries for trust signals + "Recommended for you".
     all_course_ids = sorted(int(c.get("id") or 0) for c in courses if isinstance(c, dict) and int(c.get("id") or 0) > 0)
     all_path_ids = sorted(int(p.get("id") or 0) for p in paths if isinstance(p, dict) and int(p.get("id") or 0) > 0)
 
-    course_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
-    if all_course_ids:
-        try:
-            rows = await api.get("/courses/recommendations/summary", params={"course_ids": all_course_ids})
-            for r in list(rows or []):
-                if not isinstance(r, dict):
-                    continue
-                try:
-                    cid = int(r.get("course_id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if cid > 0:
-                    course_recommendation_summary_by_id[cid] = r
-        except Exception:
-            course_recommendation_summary_by_id = {}
+    course_recommendation_summary_by_id = await _load_summary_map(
+        api=api,
+        path="/courses/recommendations/summary",
+        param_key="course_ids",
+        ids=all_course_ids,
+        row_id_key="course_id",
+        log_context="all_course_recommendations",
+    )
 
-    path_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
-    if all_path_ids:
-        try:
-            rows = await api.get("/paths/recommendations/summary", params={"path_ids": all_path_ids})
-            for r in list(rows or []):
-                if not isinstance(r, dict):
-                    continue
-                try:
-                    pid = int(r.get("path_id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if pid > 0:
-                    path_recommendation_summary_by_id[pid] = r
-        except Exception:
-            path_recommendation_summary_by_id = {}
+    path_recommendation_summary_by_id = await _load_summary_map(
+        api=api,
+        path="/paths/recommendations/summary",
+        param_key="path_ids",
+        ids=all_path_ids,
+        row_id_key="path_id",
+        log_context="all_path_recommendations",
+    )
 
     pending_course_review_ids: list[int] = []
     if tracked_ids_sorted:
@@ -261,69 +275,41 @@ async def load_my_learning_data(
     shared_course_ids = sorted(int(c.get("id") or 0) for c in shared_courses if int(c.get("id") or 0) > 0)
     shared_path_ids = sorted(int(p.get("id") or 0) for p in shared_paths if int(p.get("id") or 0) > 0)
 
-    shared_course_review_summary_by_id: dict[int, dict[str, Any]] = {}
-    if shared_course_ids:
-        try:
-            rows = await api.get("/courses/reviews/summary", params={"course_ids": shared_course_ids})
-            for r in list(rows or []):
-                if not isinstance(r, dict):
-                    continue
-                try:
-                    cid = int(r.get("course_id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if cid > 0:
-                    shared_course_review_summary_by_id[cid] = r
-        except Exception:
-            shared_course_review_summary_by_id = {}
+    shared_course_review_summary_by_id = await _load_summary_map(
+        api=api,
+        path="/courses/reviews/summary",
+        param_key="course_ids",
+        ids=shared_course_ids,
+        row_id_key="course_id",
+        log_context="shared_course_reviews",
+    )
 
-    shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
-    if shared_course_ids:
-        try:
-            rows = await api.get("/courses/recommendations/summary", params={"course_ids": shared_course_ids})
-            for r in list(rows or []):
-                if not isinstance(r, dict):
-                    continue
-                try:
-                    cid = int(r.get("course_id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if cid > 0:
-                    shared_course_recommendation_summary_by_id[cid] = r
-        except Exception:
-            shared_course_recommendation_summary_by_id = {}
+    shared_course_recommendation_summary_by_id = await _load_summary_map(
+        api=api,
+        path="/courses/recommendations/summary",
+        param_key="course_ids",
+        ids=shared_course_ids,
+        row_id_key="course_id",
+        log_context="shared_course_recommendations",
+    )
 
-    shared_path_review_summary_by_id: dict[int, dict[str, Any]] = {}
-    if shared_path_ids:
-        try:
-            rows = await api.get("/paths/reviews/summary", params={"path_ids": shared_path_ids})
-            for r in list(rows or []):
-                if not isinstance(r, dict):
-                    continue
-                try:
-                    pid = int(r.get("path_id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if pid > 0:
-                    shared_path_review_summary_by_id[pid] = r
-        except Exception:
-            shared_path_review_summary_by_id = {}
+    shared_path_review_summary_by_id = await _load_summary_map(
+        api=api,
+        path="/paths/reviews/summary",
+        param_key="path_ids",
+        ids=shared_path_ids,
+        row_id_key="path_id",
+        log_context="shared_path_reviews",
+    )
 
-    shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]] = {}
-    if shared_path_ids:
-        try:
-            rows = await api.get("/paths/recommendations/summary", params={"path_ids": shared_path_ids})
-            for r in list(rows or []):
-                if not isinstance(r, dict):
-                    continue
-                try:
-                    pid = int(r.get("path_id") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if pid > 0:
-                    shared_path_recommendation_summary_by_id[pid] = r
-        except Exception:
-            shared_path_recommendation_summary_by_id = {}
+    shared_path_recommendation_summary_by_id = await _load_summary_map(
+        api=api,
+        path="/paths/recommendations/summary",
+        param_key="path_ids",
+        ids=shared_path_ids,
+        row_id_key="path_id",
+        log_context="shared_path_recommendations",
+    )
 
     return {
         "courses": courses,

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.models import SessionRecord, UserRecord
 from backend.database.orm_models import Session as SessionModel, User as UserModel
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 
 
-class AuthRepository:
+class AuthRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of auth persistence."""
 
     def __init__(self, session: AsyncSession):
@@ -19,20 +18,6 @@ class AuthRepository:
             session: SQLAlchemy AsyncSession for this request.
         """
         self.session = session
-
-    @staticmethod
-    def _as_datetime(value: str | datetime) -> datetime:
-        """Normalize either ISO string or datetime to datetime."""
-        if isinstance(value, datetime):
-            return value
-        return datetime.fromisoformat(str(value))
-
-    @staticmethod
-    def _as_iso(value: datetime | str) -> str:
-        """Normalize either datetime or string into ISO-8601 string."""
-        if isinstance(value, datetime):
-            return value.isoformat()
-        return str(value)
 
     async def get_user(self, username: str) -> UserRecord | None:
         """Fetch a user by username (case-insensitive).
@@ -60,7 +45,7 @@ class AuthRepository:
         result = await self.session.execute(select(UserModel.id).limit(1))
         return result.first() is not None
 
-    async def create_user(self, username: str, password_hash: str, role: str, now: str) -> None:
+    async def create_user(self, username: str, password_hash: str, role: str, now: str | datetime) -> None:
         """Create a user record.
 
         Args:
@@ -74,8 +59,8 @@ class AuthRepository:
                 username=username,
                 password_hash=password_hash,
                 role=role,
-                created_at=now,
-                updated_at=now,
+                created_at=self._as_datetime(now),
+                updated_at=self._as_datetime(now),
                 last_login_at=None,
                 disabled=False,
             )
@@ -93,15 +78,15 @@ class AuthRepository:
             {
                 "username": row.username,
                 "role": row.role,
-                "created_at": row.created_at,
-                "updated_at": row.updated_at,
-                "last_login_at": row.last_login_at or "",
+                "created_at": self._as_iso(row.created_at),
+                "updated_at": self._as_iso(row.updated_at),
+                "last_login_at": self._as_iso(row.last_login_at) if row.last_login_at else "",
                 "disabled": bool(row.disabled),
             }
             for row in rows
         ]
 
-    async def update_password(self, username: str, password_hash: str, now: str) -> int:
+    async def update_password(self, username: str, password_hash: str, now: str | datetime) -> int:
         """Update a user's password hash.
 
         Args:
@@ -115,7 +100,7 @@ class AuthRepository:
         result = await self.session.execute(
             update(UserModel)
             .where(func.lower(UserModel.username) == func.lower(username))
-            .values(password_hash=password_hash, updated_at=now)
+            .values(password_hash=password_hash, updated_at=self._as_datetime(now))
         )
         return int(result.rowcount or 0)
 
@@ -131,7 +116,7 @@ class AuthRepository:
         result = await self.session.execute(delete(UserModel).where(func.lower(UserModel.username) == func.lower(username)))
         return int(result.rowcount or 0)
 
-    async def set_user_disabled(self, username: str, disabled: bool, now: str) -> int:
+    async def set_user_disabled(self, username: str, disabled: bool, now: str | datetime) -> int:
         """Disable or enable a user.
 
         Disabling a user also revokes their sessions.
@@ -147,7 +132,7 @@ class AuthRepository:
         result = await self.session.execute(
             update(UserModel)
             .where(func.lower(UserModel.username) == func.lower(username))
-            .values(disabled=disabled, updated_at=now)
+            .values(disabled=disabled, updated_at=self._as_datetime(now))
         )
         if disabled:
             await self.session.execute(
@@ -247,7 +232,7 @@ class AuthRepository:
         result = await self.session.execute(delete(SessionModel).where(SessionModel.expires_at < self._as_datetime(now)))
         return int(result.rowcount or 0)
 
-    async def update_last_login(self, username: str, now: str) -> None:
+    async def update_last_login(self, username: str, now: str | datetime) -> None:
         """Update a user's last_login_at timestamp.
 
         Args:
@@ -257,5 +242,5 @@ class AuthRepository:
         await self.session.execute(
             update(UserModel)
             .where(func.lower(UserModel.username) == func.lower(username))
-            .values(last_login_at=now, updated_at=now)
+            .values(last_login_at=self._as_datetime(now), updated_at=self._as_datetime(now))
         )

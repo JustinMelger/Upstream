@@ -15,6 +15,7 @@ from frontend.ui.nicegui.core.datetime_utils import format_date
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
 from frontend.ui.nicegui.pages.articles.dialogs import build_share_article_dialog, open_article_details_dialog
@@ -40,23 +41,6 @@ from frontend.ui.nicegui.pages.articles.ui_glue import (
     compute_expanded_visible_count,
     parse_tags,
 )
-
-
-def _format_review_summary(row: dict[str, Any] | None) -> str:
-    """Format a review summary row into a compact label."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("review_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    try:
-        avg = float(row.get("avg_rating") or 0.0)
-    except (TypeError, ValueError):
-        avg = 0.0
-    return f"{avg:.1f}/5 ({count})"
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -185,7 +169,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     review_id=int(_review_id),
                 ),
                 review_summary_by_article_id=state.review_summary_by_article_id,
-                format_review_summary=_format_review_summary,
+                format_review_summary=lambda row: format_review_summary(row, style="fraction"),
                 format_date=format_date,
             )
 
@@ -270,7 +254,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     for a in shown_page:
                         created_by = str(a.get("created_by") or "").strip()
                         created_at = str(a.get("created_at") or "").strip()
-                        summary = _format_review_summary(state.review_summary_by_article_id.get(int(a.get("id") or 0)))
+                        summary = format_review_summary(
+                            state.review_summary_by_article_id.get(int(a.get("id") or 0)),
+                            style="fraction",
+                        )
                         subtitle_bits = [
                             f"Shared by {created_by}" if created_by else "",
                             format_date(created_at),

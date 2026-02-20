@@ -78,7 +78,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         state.snapshot_stats = dict(bundle.snapshot_stats or {})
                         state.team_stats_by_user = list(bundle.team_stats_by_user or [])
                         ok = True
-                    except Exception as exc:  # ApiError already stringifies nicely, but keep this generic.
+                    except ApiError as exc:
                         safe_notify(str(exc), type="negative")
                         state.snapshot_stats = {}
                         state.team_stats_by_user = []

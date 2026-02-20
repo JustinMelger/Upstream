@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
+from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary as _format_review
 from frontend.ui.nicegui.services.paths_service import compute_path_progress
 
 
@@ -32,19 +33,7 @@ class PathCardView:
 
 def format_review_summary(row: dict[str, Any] | None) -> str:
     """Format a path review summary row into a compact label."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("review_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    try:
-        avg = float(row.get("avg_rating") or 0.0)
-    except (TypeError, ValueError):
-        avg = 0.0
-    return f"{avg:.1f}/5 ({count})"
+    return _format_review(row, style="fraction")
 
 
 def format_rating_badge(row: dict[str, Any] | None) -> str:
@@ -54,15 +43,7 @@ def format_rating_badge(row: dict[str, Any] | None) -> str:
 
 def format_recommendation_badge(row: dict[str, Any] | None) -> str:
     """Format a compact recommendation badge for path cards."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("recommendation_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    return f"↗ {count} rec"
+    return format_recommendation_summary(row)
 
 
 def path_tracking_label(is_tracked: bool) -> str:

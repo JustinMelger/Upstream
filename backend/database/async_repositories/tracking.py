@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from sqlalchemy import case, delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import TrackingRecord
 from backend.database.orm_models import Tracking as TrackingModel
 
@@ -13,7 +12,7 @@ from backend.database.orm_models import Tracking as TrackingModel
 STATUS_VALUES = ("interested", "in_progress", "completed")
 
 
-class TrackingRepository:
+class TrackingRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of tracking persistence."""
 
     def __init__(self, session: AsyncSession):
@@ -23,20 +22,6 @@ class TrackingRepository:
             session: SQLAlchemy AsyncSession for this request.
         """
         self.session = session
-
-    @staticmethod
-    def _as_datetime(value: str | datetime) -> datetime:
-        """Normalize either ISO string or datetime to datetime."""
-        if isinstance(value, datetime):
-            return value
-        return datetime.fromisoformat(str(value))
-
-    @staticmethod
-    def _as_iso(value: datetime | str) -> str:
-        """Normalize either datetime or string into ISO-8601 string."""
-        if isinstance(value, datetime):
-            return value.isoformat()
-        return str(value)
 
     async def list_tracking(self, colleague_id: str | None) -> list[TrackingRecord]:
         """List tracking records, optionally filtered by colleague.

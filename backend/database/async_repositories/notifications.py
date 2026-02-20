@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.orm_models import (
     Article as ArticleModel,
     ArticleReview as ArticleReviewModel,
@@ -15,7 +16,7 @@ from backend.database.orm_models import (
 )
 
 
-class NotificationsRepository:
+class NotificationsRepository(RepositoryDateTimeCodec):
     """Read-only repository for notifications/activity feed data."""
 
     def __init__(self, session: AsyncSession):
@@ -41,7 +42,7 @@ class NotificationsRepository:
                 "course_id": int(r.id),
                 "title": str(r.title or ""),
                 "created_by": str(r.created_by or ""),
-                "created_at": str(r.created_at or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
             }
             for r in rows
             if str(r.created_by or "").strip() and str(r.created_at or "").strip()
@@ -68,7 +69,7 @@ class NotificationsRepository:
                 "recommendation_id": int(r.id),
                 "course_id": int(r.course_id),
                 "created_by": str(r.created_by or ""),
-                "created_at": str(r.created_at or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
                 "title": str(r.title or ""),
                 "course_owner": str(r.course_owner or ""),
             }
@@ -98,7 +99,7 @@ class NotificationsRepository:
                 "recommendation_id": int(r.id),
                 "course_id": int(r.course_id),
                 "created_by": str(r.created_by or ""),
-                "created_at": str(r.created_at or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
                 "title": str(r.title or ""),
                 "course_owner": str(r.course_owner or ""),
             }
@@ -127,7 +128,7 @@ class NotificationsRepository:
                 "recommendation_id": int(r.id),
                 "path_id": int(r.path_id),
                 "created_by": str(r.created_by or ""),
-                "created_at": str(r.created_at or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
                 "name": str(r.name or ""),
                 "path_owner": str(r.path_owner or ""),
             }
@@ -157,7 +158,7 @@ class NotificationsRepository:
                 "recommendation_id": int(r.id),
                 "path_id": int(r.path_id),
                 "created_by": str(r.created_by or ""),
-                "created_at": str(r.created_at or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
                 "name": str(r.name or ""),
                 "path_owner": str(r.path_owner or ""),
             }
@@ -187,7 +188,7 @@ class NotificationsRepository:
                 "review_id": int(r.id),
                 "course_id": int(r.course_id),
                 "created_by": str(r.created_by or ""),
-                "created_at": str(r.created_at or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
                 "rating": int(r.rating or 0),
                 "title": str(r.title or ""),
                 "course_owner": str(r.course_owner or ""),
@@ -218,7 +219,7 @@ class NotificationsRepository:
                 "review_id": int(r.id),
                 "path_id": int(r.path_id),
                 "created_by": str(r.created_by or ""),
-                "created_at": str(r.created_at or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
                 "rating": int(r.rating or 0),
                 "name": str(r.name or ""),
                 "path_owner": str(r.path_owner or ""),
@@ -249,7 +250,7 @@ class NotificationsRepository:
                 "review_id": int(r.id),
                 "article_id": int(r.article_id),
                 "created_by": str(r.created_by or ""),
-                "created_at": str(r.created_at or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
                 "rating": int(r.rating or 0),
                 "title": str(r.title or ""),
                 "article_owner": str(r.article_owner or ""),

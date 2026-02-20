@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 
-from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.pages.paths.state import PathDetailBundle, PathsPageState
 from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
 from frontend.ui.nicegui.services.paths_service import (
@@ -16,6 +17,9 @@ from frontend.ui.nicegui.services.paths_service import (
     select_path_and_seed_tracking,
     unselect_path,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class PathsPageController:
@@ -140,7 +144,11 @@ class PathsPageController:
             )
             path_reviews = [r for r in list(reviews_result or []) if isinstance(r, dict)]
             path_recommendations = [r for r in list(recommendations_result or []) if isinstance(r, dict)]
-        except Exception:
+        except ApiError as exc:
+            logger.warning(
+                "Path social payload unavailable",
+                extra={"path_id": int(path_id), "status_code": int(exc.status_code)},
+            )
             path_reviews = []
             path_recommendations = []
 
@@ -158,7 +166,11 @@ class PathsPageController:
         course_review_summary_by_course_id: dict[int, dict[str, Any]] = {}
         try:
             course_review_summary_by_course_id = await self._load_course_review_summary(course_ids=course_ids_in_path)
-        except Exception:
+        except ApiError as exc:
+            logger.warning(
+                "Path course review summary unavailable",
+                extra={"path_id": int(path_id), "status_code": int(exc.status_code), "course_count": len(course_ids_in_path)},
+            )
             course_review_summary_by_course_id = {}
 
         return PathDetailBundle(

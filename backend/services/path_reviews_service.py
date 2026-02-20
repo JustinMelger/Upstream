@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from pydantic import ValidationError
+from pydantic.dataclasses import dataclass
 from sqlalchemy.exc import IntegrityError
 
 from backend.core.errors import error_handler, ServiceError
 from backend.database.async_repositories.path_reviews import PathReviewsRepository
+from backend.database.tx import session_scope
 
 
 class PathReviewsServiceError(ServiceError):
@@ -24,6 +27,14 @@ def path_reviews_error_handler(
     )
 
 
+@dataclass
+class PathReviewMutationPayload:
+    """Typed service-layer payload for path review mutation."""
+
+    rating: int | float | str | None = None
+    text: str | None = None
+
+
 class PathReviewsService:
     """Path reviews service."""
 
@@ -32,7 +43,7 @@ class PathReviewsService:
 
     @path_reviews_error_handler()
     async def list_reviews(self, *, path_id: int) -> list[dict]:
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             rows = await self._repo.list_for_path(path_id=path_id)
         return [
             {
@@ -49,7 +60,8 @@ class PathReviewsService:
     @path_reviews_error_handler()
     async def create_review(self, *, path_id: int, payload: dict, created_by: str) -> dict:
         """Create or update the current user's review for a path."""
-        rating = payload.get("rating")
+        data = self._parse_mutation_payload(payload)
+        rating = data.rating
         try:
             rating_i = int(rating)
         except (TypeError, ValueError):
@@ -57,11 +69,11 @@ class PathReviewsService:
         if rating_i < 1 or rating_i > 5:
             raise PathReviewsServiceError(detail="invalid_rating", status_code=400)
 
-        text = str(payload.get("text") or "").strip() or None
+        text = str(data.text or "").strip() or None
         created_at = datetime.now(timezone.utc).isoformat()
 
         review_id: int | None = None
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             existing = await self._repo.get_review_for_path_by_user(path_id=int(path_id), created_by=str(created_by))
             if existing:
                 await self._repo.update_review(review_id=existing.id, rating=rating_i, text=text, created_at=created_at)
@@ -87,7 +99,7 @@ class PathReviewsService:
                     )
                     review_id = concurrent.id
 
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             created = await self._repo.get_review_by_id(int(review_id or 0))
         if not created:
             raise PathReviewsServiceError(detail="create_failed", status_code=500)
@@ -100,10 +112,18 @@ class PathReviewsService:
             "created_at": created.created_at,
         }
 
+    @staticmethod
+    def _parse_mutation_payload(payload: dict) -> PathReviewMutationPayload:
+        """Parse and validate a path review payload."""
+        try:
+            return PathReviewMutationPayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise PathReviewsServiceError(detail="invalid_payload", status_code=400) from exc
+
     @path_reviews_error_handler()
     async def get_review_by_id(self, *, review_id: int) -> dict | None:
         """Fetch a review by id."""
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             row = await self._repo.get_review_by_id(int(review_id))
         if not row:
             return None
@@ -119,7 +139,7 @@ class PathReviewsService:
     @path_reviews_error_handler()
     async def delete_review(self, *, review_id: int) -> bool:
         """Delete a review by id."""
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             deleted = await self._repo.delete_review(review_id=int(review_id))
         return bool(deleted)
 
@@ -138,7 +158,7 @@ class PathReviewsService:
             seen.add(pid_i)
             unique_ids.append(pid_i)
 
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             summary_map = await self._repo.summaries_for_paths(path_ids=unique_ids)
 
         out: list[dict] = []

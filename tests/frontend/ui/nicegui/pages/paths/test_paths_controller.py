@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
 
@@ -95,6 +96,26 @@ async def test_controller_load_path_detail_bundle_collects_dialog_payloads() -> 
     assert int(bundle.detail.get("id") or 0) == 42
     assert isinstance(bundle.path_reviews, list)
     assert isinstance(bundle.path_recommendations, list)
+    assert bundle.course_review_summary_by_course_id == {}
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_controller_load_path_detail_bundle_tolerates_optional_api_errors() -> None:
+    class _ApiWithOptionalFailures(_FakeApi):
+        async def get(self, path: str, params: dict | None = None):
+            if path in {"/paths/42/reviews", "/paths/42/recommendations", "/courses/reviews/summary"}:
+                raise ApiError(status_code=503, message="backend_unreachable")
+            return await super().get(path, params=params)
+
+    api = _ApiWithOptionalFailures()
+    controller = PathsPageController(api=api)
+
+    bundle = await controller.load_path_detail_bundle(path_id=42)
+
+    assert int(bundle.detail.get("id") or 0) == 42
+    assert bundle.path_reviews == []
+    assert bundle.path_recommendations == []
     assert bundle.course_review_summary_by_course_id == {}
 
 

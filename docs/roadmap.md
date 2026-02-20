@@ -130,11 +130,16 @@
 - [x] Backend clean code: standardize review/recommendation endpoint authorization and not-found handling via shared helpers to reduce duplicated branch logic.
 - [x] Persistence best practice: migrate high-value timestamp-like text columns to typed timezone-aware datetime (`sessions.*`, `tracking.updated_at`) with safe casts and repository compatibility shims.
 - [x] Architecture quality gates: keep docs and architecture guards in lock-step; add CI check that fails on architecture doc/guard drift.
-- [ ] Complexity follow-up: further split `courses/page.py` and `paths/page.py` orchestration blocks into smaller action/section modules to reduce page-level complexity.
-- [ ] Reliability follow-up: replace broad `except Exception` fallbacks in frontend services with typed error handling + structured logging where fallback behavior is intentional.
-- [ ] Reuse follow-up: centralize duplicated review/recommendation summary formatting helpers into shared UI glue utilities and reuse across courses/paths/articles/learning.
-- [ ] Persistence follow-up: continue phased migration of remaining text timestamp columns to typed timezone-aware datetime (users/content/reviews/recommendations/user_paths).
-- [ ] Docs follow-up: resolve remaining backend architecture doc drift (tracking stats auth sequence and related flow notes) to keep diagrams fully implementation-accurate.
+- [x] Complexity follow-up: split `courses/page.py` and `paths/page.py` orchestration blocks into `orchestration.py` helpers (`load`, `filter reset`, `list refresh`) to reduce page-level complexity.
+- [x] Reliability follow-up: replaced broad `except Exception` fallbacks in frontend services/controllers with typed `ApiError` handling + structured context logging where fallback behavior is intentional.
+- [x] Reuse follow-up: centralized duplicated review/recommendation summary formatting helpers into shared utilities and reused across courses/paths/articles/learning.
+- [x] Persistence follow-up: completed phased migration of remaining text timestamp columns to typed timezone-aware datetime (sessions/tracking/users/content/reviews/recommendations/user_paths).
+  - [x] Phase slice: migrated `users.created_at/updated_at/last_login_at` and `user_paths.created_at/updated_at` to `TIMESTAMPTZ` with repository compatibility shims.
+  - [x] Phase slice: migrated `courses.created_at`, `articles.created_at`, and all `*_reviews.created_at` / `*_recommendations.created_at` to `TIMESTAMPTZ` with repository compatibility shims.
+- [x] Docs follow-up: resolved remaining backend architecture doc drift (tracking stats auth sequence, reviews/recommendations coverage, and notifications flow notes) to keep diagrams implementation-accurate.
+- [x] Transaction boundary hardening: introduced shared `session_scope(...)` in backend services to avoid nested transaction failures when services are composed.
+- [x] Typing hardening: started replacing untyped service payload dict handling with pydantic dataclass payloads (courses/paths mutation flows) plus regression tests.
+- [x] Frontend reliability guard: removed broad `except Exception` handlers from page modules and added an architecture test to prevent reintroduction.
 
 ## Phase 11 — Operability + Quality
 

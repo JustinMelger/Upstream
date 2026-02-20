@@ -89,3 +89,24 @@ async def test_update_and_delete_course(db_session):
     assert await courses.get_course_by_id(course_id) is not None
     assert await courses.delete_course(course_id) is True
     assert await courses.get_course_by_id(course_id) is None
+
+
+@pytest.mark.unit
+async def test_create_course_invalid_payload_type_returns_invalid_payload(db_session):
+    """Service-level payload parsing rejects invalid types."""
+    courses = CoursesService(CoursesRepository(db_session))
+    with pytest.raises(CoursesServiceError) as excinfo:
+        await courses.create_course({"title": ["bad"], "description": "desc"})
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_payload"
+
+
+@pytest.mark.unit
+async def test_courses_service_works_inside_existing_transaction_scope(db_session):
+    """Service methods can run safely when caller already started a transaction."""
+    courses = CoursesService(CoursesRepository(db_session))
+    async with db_session.begin():
+        created = await courses.create_course({"title": "Nested Tx", "description": "Nested tx"})
+        listed = await courses.list_courses(query="nested")
+    assert int(created["id"]) > 0
+    assert len(listed) == 1

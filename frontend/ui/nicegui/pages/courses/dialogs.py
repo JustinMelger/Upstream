@@ -7,6 +7,7 @@ from typing import Any
 
 from nicegui import app, ui
 
+from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 
 
@@ -28,7 +29,7 @@ async def open_recommend_course_dialog(
             if str(row.get("created_by") or "") == username:
                 existing_note = str(row.get("note") or "")
                 break
-    except Exception:
+    except ApiError:
         existing_note = ""
 
     with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):

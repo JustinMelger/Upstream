@@ -11,6 +11,7 @@ from backend.core.config import settings
 from backend.core.errors import auth_error_handler, AuthServiceError
 from backend.database.async_repositories.auth import AuthRepository
 from backend.database.models import UserRecord
+from backend.database.tx import session_scope
 
 
 class AuthService:
@@ -98,7 +99,7 @@ class AuthService:
             token = secrets.token_urlsafe(32)
             token_hash = self._hash_token(token)
             try:
-                async with self._repo.session.begin():
+                async with session_scope(self._repo.session):
                     await self._repo.create_session(
                         colleague_id=colleague_id,
                         token_hash=token_hash,
@@ -126,7 +127,7 @@ class AuthService:
             return None
         token_hash = self._hash_token(token)
         now = datetime.now(timezone.utc)
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             row = await self._repo.get_session(token_hash)
             if not row:
                 return None
@@ -150,7 +151,7 @@ class AuthService:
         Returns:
             Number of sessions revoked.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return await self._repo.revoke_sessions(colleague_id)
 
     @auth_error_handler()
@@ -163,7 +164,7 @@ class AuthService:
         Returns:
             User record or None.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return await self._repo.get_user(username)
 
     @auth_error_handler()
@@ -173,7 +174,7 @@ class AuthService:
         Returns:
             True if users exist.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return await self._repo.has_users()
 
     @auth_error_handler()
@@ -190,7 +191,7 @@ class AuthService:
         """
         now = datetime.now(timezone.utc).isoformat()
         password_hash = self._hash_password(password)
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             await self._repo.create_user(username, password_hash, role, now)
         return {"username": username, "role": role}
 
@@ -201,7 +202,7 @@ class AuthService:
         Returns:
             User list.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return await self._repo.list_users()
 
     @auth_error_handler()
@@ -217,7 +218,7 @@ class AuthService:
         """
         now = datetime.now(timezone.utc).isoformat()
         password_hash = self._hash_password(password)
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return await self._repo.update_password(username, password_hash, now)
 
     @auth_error_handler()
@@ -230,7 +231,7 @@ class AuthService:
         Returns:
             Number of rows deleted.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return await self._repo.delete_user(username)
 
     @auth_error_handler()
@@ -252,7 +253,7 @@ class AuthService:
         if not self._verify_password(password, user.password_hash):
             return None
         now = datetime.now(timezone.utc).isoformat()
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             await self._repo.update_last_login(username, now)
         return {"username": user.username, "role": user.role}
 
@@ -268,7 +269,7 @@ class AuthService:
             Number of rows updated.
         """
         now = datetime.now(timezone.utc).isoformat()
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return await self._repo.set_user_disabled(username, disabled, now)
 
     @auth_error_handler()
@@ -279,5 +280,5 @@ class AuthService:
             Number of sessions removed.
         """
         now = datetime.now(timezone.utc).isoformat()
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return await self._repo.purge_expired_sessions(now)

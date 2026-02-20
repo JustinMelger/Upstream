@@ -28,13 +28,17 @@ from frontend.ui.nicegui.pages.paths.actions import (
     clear_path_filter_by_key,
     PathsFilterControls,
     recompute_path_status_filter,
-    reset_path_filter_controls,
     resolve_paths_empty_state,
 )
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.detail_flow import open_path_details_dialog
 from frontend.ui.nicegui.pages.paths.dialogs import build_share_path_dialog, open_edit_path_dialog
 from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values
+from frontend.ui.nicegui.pages.paths.orchestration import (
+    clear_path_filter_values,
+    load_all_paths,
+    refresh_paths_list,
+)
 from frontend.ui.nicegui.pages.paths.reducers import (
     apply_scope_and_status,
     build_status_options,
@@ -47,9 +51,6 @@ from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiSta
 from frontend.ui.nicegui.pages.paths.transitions import (
     apply_optimistic_select,
     apply_optimistic_unselect,
-    begin_paths_load,
-    clear_paths_state_on_load_error,
-    finalize_paths_load,
     rollback_optimistic_selection,
 )
 from frontend.ui.nicegui.pages.paths.ui_glue import (
@@ -164,11 +165,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     msg = f"{msg} · {seeded} course(s) set to Interested"
                 safe_notify(msg, type="positive")
                 paths_list.refresh()
-                try:
-                    await _open_details(path_id)
-                except Exception:
-                    # Keep selection persisted even when opening the dialog fails.
-                    safe_notify("Path selected, but details failed to open", type="warning")
+                await _open_details(path_id)
                 return True
 
             return await run_optimistic_mutation(
@@ -299,23 +296,25 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
             def _refresh_list(*_: Any) -> None:
-                ui_state.visible_count = int(ui_state.page_size)
-                _recompute_facet_options()
-                active_filters.refresh()
-                paths_list.refresh()
+                refresh_paths_list(
+                    ui_state=ui_state,
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_active_filters=active_filters.refresh,
+                    refresh_paths_list_ui=paths_list.refresh,
+                )
 
             def _clear_filter_values() -> None:
-                reset_path_filter_controls(
+                clear_path_filter_values(
                     controls=PathsFilterControls(
                         scope_filter=scope_filter,
                         search_input=q,
                         status_filter=status_filter,
                         sort_filter=sort_filter,
-                    )
+                    ),
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_active_filters=active_filters.refresh,
+                    refresh_paths_list_ui=paths_list.refresh,
                 )
-                _recompute_facet_options()
-                active_filters.refresh()
-                paths_list.refresh()
 
             @guard_ui_action(title="Reset filters failed")
             async def _reset_all() -> None:
@@ -510,34 +509,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             async def _load_all() -> None:
                 """Reload all data for this page."""
-                if ui_state.loading:
-                    return
-                ok = False
-                load_start = begin_paths_load(page_size=ui_state.page_size)
-                ui_state.loading = load_start.loading
-                ui_state.visible_count = load_start.visible_count
-                refresh_btn.disable()
-                meta.text = load_start.meta_text
-                paths_list.refresh()
-                try:
-                    await controller.load_all(state=controller_state)
-                    create_course_ids.options = _course_options(controller_state.courses)
-                    create_course_ids.update()
-                    _recompute_facet_options()
-                    paths_list.refresh()
-                    ok = True
-                except ApiError as exc:
-                    safe_notify(str(exc), type="negative")
-                    clear_paths_state_on_load_error(state=controller_state)
-                    _recompute_facet_options()
-                    paths_list.refresh()
-                finally:
-                    load_done = finalize_paths_load(ok=ok, path_count=len(controller_state.paths))
-                    meta.text = compute_paths_meta_text(path_count=len(controller_state.paths))
-                    ui_state.loading = load_done.loading
-                    ui_state.loaded_once = load_done.loaded_once
-                    refresh_btn.enable()
-                    paths_list.refresh()
+                await load_all_paths(
+                    ui_state=ui_state,
+                    controller_state=controller_state,
+                    controller=controller,
+                    refresh_btn=refresh_btn,
+                    meta=meta,
+                    create_course_ids=create_course_ids,
+                    compute_course_options=_course_options,
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_paths_list_ui=paths_list.refresh,
+                    notify_error=lambda message: safe_notify(message, type="negative"),
+                    compute_meta_text=lambda path_count: compute_paths_meta_text(path_count=path_count),
+                )
 
             def _render_rail() -> None:
                 nonlocal status_filter, refresh_btn

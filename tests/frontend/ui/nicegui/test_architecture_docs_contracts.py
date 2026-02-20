@@ -154,3 +154,15 @@ def test_ui_flow_modules_do_not_call_api_client_methods_directly() -> None:
                     continue
                 if isinstance(node.func.value, ast.Name) and node.func.value.id == "api":
                     raise AssertionError(f"UI flow module should route API calls through controller/service callbacks: {path}")
+
+
+def test_page_package_modules_do_not_use_broad_exception_handlers() -> None:
+    for path in sorted(_PAGES_ROOT.rglob("*.py")):
+        tree = _parse(path)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ExceptHandler):
+                continue
+            if node.type is None:
+                raise AssertionError(f"Broad bare except is not allowed in page modules: {path}")
+            if isinstance(node.type, ast.Name) and node.type.id == "Exception":
+                raise AssertionError(f"Broad except Exception is not allowed in page modules: {path}")

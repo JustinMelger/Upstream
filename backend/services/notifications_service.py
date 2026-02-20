@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from backend.core.errors import error_handler, ServiceError
 from backend.database.async_repositories.notifications import NotificationsRepository
+from backend.database.tx import session_scope
 
 
 class NotificationsServiceError(ServiceError):
@@ -38,7 +39,7 @@ class NotificationsService:
         scope_value = str(scope or "inbox").strip().lower()
         is_team = scope_value == "team"
 
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             course_shares = await self._repo.list_recent_course_share_events(limit=source_limit) if is_team else []
             course_recommendations = await self._repo.list_recent_course_recommendation_events(limit=source_limit)
             path_recommendations = await self._repo.list_recent_path_recommendation_events(limit=source_limit)

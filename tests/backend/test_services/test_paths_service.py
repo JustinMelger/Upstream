@@ -48,3 +48,24 @@ async def test_update_and_delete_path(db_session):
     assert updated["courses"] == []
 
     assert await paths.delete_path(path["id"]) is True
+
+
+@pytest.mark.unit
+async def test_create_path_invalid_payload_type_returns_invalid_payload(db_session):
+    """Service-level payload parsing rejects invalid types."""
+    paths = PathsService(PathsRepository(db_session))
+    with pytest.raises(PathsServiceError) as excinfo:
+        await paths.create_path({"name": ["bad"], "course_ids": []})
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_payload"
+
+
+@pytest.mark.unit
+async def test_paths_service_works_inside_existing_transaction_scope(db_session):
+    """Service methods can run safely when caller already started a transaction."""
+    paths = PathsService(PathsRepository(db_session))
+    async with db_session.begin():
+        created = await paths.create_path({"name": "Nested Path", "course_ids": []})
+        listed = await paths.list_paths()
+    assert int(created["id"]) > 0
+    assert any(str(row.get("name") or "") == "Nested Path" for row in listed)

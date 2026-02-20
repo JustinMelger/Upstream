@@ -20,18 +20,21 @@ flowchart LR
     Courses[Course Service]
     Paths[Path Service]
     Tracking[Tracking Service]
+    Notifications[Notifications Service]
   end
 
   UI --> Auth
   UI --> Courses
   UI --> Paths
   UI --> Tracking
+  UI --> Notifications
 
   DB[(Postgres)]
   Auth --> DB
   Courses --> DB
   Paths --> DB
   Tracking --> DB
+  Notifications --> DB
 ```
 
 ## Auth Architecture
@@ -162,13 +165,20 @@ erDiagram
 
 ### Tracking service
 - Track per-user course progress (interested / in_progress / completed).
-- Recent activity and stats (per-user and team).
-- Admin-only team-wide stats.
+- Recent activity and stats with explicit auth rules:
+  - `GET /tracking?colleague_id=X`: self always allowed, other users require admin.
+  - `GET /tracking/stats?colleague_id=X`: self always allowed, other users require admin.
+  - `GET /tracking/stats` without `colleague_id`: team totals, admin only.
+  - `GET /tracking/stats/users` and `GET /tracking/recent`: admin only.
 
 ### Articles service
 - Allow colleagues to share links (title, URL, optional tags).
 - Browse/search colleague-submitted links.
-- Authenticated users can create articles.
+- Authenticated users can create articles and review article links.
+
+### Notifications service
+- Aggregates share/recommend/review events into activity feed payloads.
+- Supports mailbox-style scopes: `inbox` (personal) and `team` (team-wide timeline).
 
 ## API Error Handling
 
@@ -219,10 +229,18 @@ sequenceDiagram
 classDiagram
   class CoursesRouter {
     +GET /courses
+    +GET /courses/reviews/summary
+    +GET /courses/recommendations/summary
     +GET /courses/:course_id
     +POST /courses
     +PUT /courses/:course_id
     +DELETE /courses/:course_id
+    +GET /courses/:course_id/reviews
+    +POST /courses/:course_id/reviews
+    +DELETE /courses/:course_id/reviews/:review_id
+    +GET /courses/:course_id/recommendations
+    +POST /courses/:course_id/recommendations
+    +DELETE /courses/:course_id/recommendations/:recommendation_id
   }
 
   class CoursesService {
@@ -241,6 +259,20 @@ classDiagram
     +delete_course(course_id): int
   }
 
+  class CourseReviewsService {
+    +list_reviews(course_id): list[dict]
+    +create_review(course_id, payload, created_by): dict
+    +delete_review(review_id): bool
+    +summaries(course_ids): list[dict]
+  }
+
+  class CourseRecommendationsService {
+    +list_recommendations(course_id): list[dict]
+    +create_recommendation(course_id, payload, created_by): dict
+    +delete_recommendation(recommendation_id): bool
+    +summaries(course_ids): list[dict]
+  }
+
   class SQLCoursesRepository {
   }
 
@@ -251,6 +283,8 @@ classDiagram
 
   CoursesRouter --> AuthService : require_session + admin checks
   CoursesRouter --> CoursesService : CRUD
+  CoursesRouter --> CourseReviewsService : reviews
+  CoursesRouter --> CourseRecommendationsService : recommendations
   CoursesService --> CoursesRepository : persistence
   SQLCoursesRepository ..|> CoursesRepository
 ```
@@ -274,7 +308,24 @@ erDiagram
     TIMESTAMP created_at
     STRING created_by
   }
+  COURSE_REVIEWS {
+    INTEGER id
+    INTEGER course_id
+    INTEGER rating
+    STRING text
+    STRING created_by
+    TIMESTAMP created_at
+  }
+  COURSE_RECOMMENDATIONS {
+    INTEGER id
+    INTEGER course_id
+    STRING note
+    STRING created_by
+    TIMESTAMP created_at
+  }
 ```
+
+`search_document` is computed in `CoursesService` and returned in API payloads; it is not persisted as a physical database column.
 
 ## Paths Architecture
 
@@ -315,6 +366,8 @@ sequenceDiagram
 classDiagram
   class PathsRouter {
     +GET /paths
+    +GET /paths/reviews/summary
+    +GET /paths/recommendations/summary
     +GET /paths/:path_id
     +POST /paths
     +PUT /paths/:path_id
@@ -323,6 +376,12 @@ classDiagram
     +POST /paths/:path_id/unselect
     +POST /paths/:path_id/status
     +GET /paths/selected/list
+    +GET /paths/:path_id/reviews
+    +POST /paths/:path_id/reviews
+    +DELETE /paths/:path_id/reviews/:review_id
+    +GET /paths/:path_id/recommendations
+    +POST /paths/:path_id/recommendations
+    +DELETE /paths/:path_id/recommendations/:recommendation_id
   }
 
   class PathsService {
@@ -338,6 +397,20 @@ classDiagram
     +remove_user_path(user, path_id): int
     +update_user_path_status(user, path_id, status): int
     +list_user_paths(user): list[dict]
+  }
+
+  class PathReviewsService {
+    +list_reviews(path_id): list[dict]
+    +create_review(path_id, payload, created_by): dict
+    +delete_review(review_id): bool
+    +summaries(path_ids): list[dict]
+  }
+
+  class PathRecommendationsService {
+    +list_recommendations(path_id): list[dict]
+    +create_recommendation(path_id, payload, created_by): dict
+    +delete_recommendation(recommendation_id): bool
+    +summaries(path_ids): list[dict]
   }
 
   class PathsRepository {
@@ -371,6 +444,8 @@ classDiagram
   PathsRouter --> AuthService : require_session + admin checks
   PathsRouter --> PathsService : CRUD
   PathsRouter --> UserPathsService : selection + status
+  PathsRouter --> PathReviewsService : reviews
+  PathsRouter --> PathRecommendationsService : recommendations
   PathsService --> PathsRepository : persistence
   SQLPathsRepository ..|> PathsRepository
   UserPathsService --> UserPathsRepository : persistence
@@ -401,6 +476,21 @@ erDiagram
     TIMESTAMP updated_at
     STRING status
   }
+  PATH_REVIEWS {
+    INTEGER id
+    INTEGER path_id
+    INTEGER rating
+    STRING text
+    STRING created_by
+    TIMESTAMP created_at
+  }
+  PATH_RECOMMENDATIONS {
+    INTEGER id
+    INTEGER path_id
+    STRING note
+    STRING created_by
+    TIMESTAMP created_at
+  }
 ```
 
 ## Tracking Architecture
@@ -427,14 +517,37 @@ sequenceDiagram
   DB-->>Tracking: ok
   API-->>UI: tracking payload
 
-  User->>UI: View team stats (admin)
+  User->>UI: View tracking stats
   UI->>API: GET /tracking/stats
-  API->>Auth: require_session + is_admin
-  Auth-->>API: authorized
-  API->>Tracking: stats_all()
-  Tracking->>DB: SELECT counts by status
-  DB-->>Tracking: rows
-  API-->>UI: stats payload
+  API->>Auth: require_session
+  alt colleague_id provided
+    alt colleague_id == current_user
+      API->>Tracking: stats_for_colleague(current_user)
+      Tracking->>DB: SELECT counts by status for user
+      DB-->>Tracking: rows
+      API-->>UI: stats payload
+    else colleague_id != current_user
+      API->>Auth: is_admin(current_user)
+      alt admin
+        API->>Tracking: stats_for_colleague(colleague_id)
+        Tracking->>DB: SELECT counts by status for user
+        DB-->>Tracking: rows
+        API-->>UI: stats payload
+      else not admin
+        API-->>UI: 403 admin_required
+      end
+    end
+  else no colleague_id
+    API->>Auth: is_admin(current_user)
+    alt admin
+      API->>Tracking: stats_all()
+      Tracking->>DB: SELECT counts by status for team
+      DB-->>Tracking: rows
+      API-->>UI: stats payload
+    else not admin
+      API-->>UI: 403 admin_required
+    end
+  end
 ```
 
 ### Tracking Domain Overview
@@ -508,6 +621,53 @@ erDiagram
 - `POST /articles/{article_id}/reviews`: Create/update current user's review.
 - `DELETE /articles/{article_id}/reviews/{review_id}`: Delete review (owner/admin).
 
+### Articles Domain Overview
+
+```mermaid
+classDiagram
+  class ArticlesRouter {
+    +GET /articles
+    +POST /articles
+    +GET /articles/reviews/summary
+    +GET /articles/:article_id/reviews
+    +POST /articles/:article_id/reviews
+    +DELETE /articles/:article_id/reviews/:review_id
+  }
+
+  class ArticlesService {
+    +list_articles(query, tag): list[dict]
+    +create_article(payload, created_by): dict
+    +get_article_by_id(article_id): dict|None
+  }
+
+  class ArticleReviewsService {
+    +list_reviews(article_id): list[dict]
+    +create_review(article_id, payload, created_by): dict
+    +delete_review(review_id): bool
+    +summaries(article_ids): list[dict]
+  }
+
+  class ArticlesRepository {
+    +list_articles(query, tag): list[ArticleRecord]
+    +create_article(title, url, tags, created_by, created_at): int
+    +get_article_by_id(article_id): ArticleRecord|None
+  }
+
+  class ArticleReviewsRepository {
+    +list_for_article(article_id): list[ArticleReviewRecord]
+    +create_review(article_id, rating, text, created_by, created_at): int
+    +get_review_for_article_by_user(article_id, created_by): ArticleReviewRecord|None
+    +update_review(review_id, rating, text, created_at): int
+    +delete_review(review_id): int
+    +summaries_for_articles(article_ids): dict
+  }
+
+  ArticlesRouter --> ArticlesService : links CRUD
+  ArticlesRouter --> ArticleReviewsService : reviews
+  ArticlesService --> ArticlesRepository : persistence
+  ArticleReviewsService --> ArticleReviewsRepository : persistence
+```
+
 ### Articles Data Model
 
 ```mermaid
@@ -521,4 +681,31 @@ erDiagram
     STRING created_by
     TIMESTAMP created_at
   }
+  ARTICLE_REVIEWS {
+    INTEGER id
+    INTEGER article_id
+    INTEGER rating
+    STRING text
+    STRING created_by
+    TIMESTAMP created_at
+  }
 ```
+
+## Notifications Architecture
+
+### Notifications Endpoints
+
+- `GET /notifications/activity?scope=inbox|team&limit=...`
+
+### Notifications Flow Notes
+
+- Router enforces authenticated session.
+- Service composes activity from repository reads of:
+  - course shares
+  - course recommendations
+  - path recommendations
+  - course reviews
+  - path reviews
+  - article reviews
+- `scope=inbox`: mailbox-style feed for the current user (excludes own events).
+- `scope=team`: team-wide timeline feed.

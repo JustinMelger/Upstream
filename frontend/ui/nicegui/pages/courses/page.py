@@ -9,7 +9,7 @@ from nicegui import app, ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
@@ -21,12 +21,12 @@ from frontend.ui.nicegui.core.navigation_intents import (
     pop_course_storage_intent,
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.courses.actions import (
     build_course_card_actions,
     clear_course_filter_by_key,
     CoursesFilterControls,
     recompute_course_facet_controls,
-    reset_course_filter_controls,
 )
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
 from frontend.ui.nicegui.pages.courses.detail_flow import open_course_details_dialog
@@ -36,7 +36,13 @@ from frontend.ui.nicegui.pages.courses.dialogs import (
     open_edit_course_dialog,
     open_recommend_course_dialog,
 )
-from frontend.ui.nicegui.pages.courses.filters import build_list_query_params, normalize_courses_filter_values
+from frontend.ui.nicegui.pages.courses.filters import normalize_courses_filter_values
+from frontend.ui.nicegui.pages.courses.orchestration import (
+    clear_course_filter_values,
+    load_courses,
+    refresh_courses_list,
+    reload_tracking_only,
+)
 from frontend.ui.nicegui.pages.courses.reducers import (
     build_count_options,
     build_status_options as _build_status_options,
@@ -57,16 +63,12 @@ from frontend.ui.nicegui.pages.courses.state import CoursesPageState, CoursesPag
 from frontend.ui.nicegui.pages.courses.transitions import (
     apply_optimistic_tracking_clear,
     apply_optimistic_tracking_set,
-    begin_courses_load,
-    clear_courses_state_on_load_error,
-    finalize_courses_load,
     rollback_optimistic_tracking,
 )
 from frontend.ui.nicegui.pages.courses.ui_glue import (
     build_active_filter_chips,
     compute_courses_meta_text,
     compute_expanded_visible_count,
-    default_courses_filter_reset_state,
     resolve_tracking_status_value,
 )
 from frontend.ui.nicegui.pages.courses.view_model import map_course_card_view
@@ -80,23 +82,6 @@ def _parse_duration_hours(raw: str) -> float | None:
         return float(s)
     except ValueError:
         return None
-
-
-def _format_review_summary(row: dict[str, Any] | None) -> str:
-    """Format a course review summary row into a compact label."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("review_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    try:
-        avg = float(row.get("avg_rating") or 0.0)
-    except (TypeError, ValueError):
-        avg = 0.0
-    return f"{avg:.1f}/5 ({count})"
 
 
 _parse_iso_datetime = parse_iso_datetime
@@ -198,55 +183,35 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
             async def _load() -> None:
-                if ui_state.loading:
-                    return
-                ok = False
-                load_start = begin_courses_load(page_size=ui_state.page_size)
-                ui_state.loading = load_start.loading
-                ui_state.visible_count = load_start.visible_count
-                refresh_btn.disable()
-                meta.text = load_start.meta_text
-                courses_list.refresh()
-                try:
-                    params = build_list_query_params(
-                        search_value=str(q.value or ""),
-                        provider_value=str(provider_filter.value or ""),
-                        category_value=str(category_filter.value or ""),
-                        level_value=str(level_filter.value or ""),
-                    )
-
-                    bundle = await controller.load_list_bundle(params=params or None)
-                    page_state.courses = list(bundle.courses or [])
-                    page_state.tracking_by_course_id = dict(bundle.tracking_by_course_id or {})
-                    page_state.review_summary_by_course_id = dict(bundle.review_summary_by_course_id or {})
-                    page_state.recommendation_summary_by_course_id = dict(bundle.recommendation_summary_by_course_id or {})
-                    _recompute_facet_options()
-                    courses_list.refresh()
-                    ok = True
-                except ApiError as exc:
-                    safe_notify(str(exc), type="negative")
-                    clear_courses_state_on_load_error(state=page_state)
-                    _recompute_facet_options()
-                    courses_list.refresh()
-                finally:
-                    load_done = finalize_courses_load(ok=ok, course_count=len(page_state.courses))
-                    meta.text = compute_courses_meta_text(course_count=len(page_state.courses))
-                    ui_state.loading = load_done.loading
-                    ui_state.loaded_once = load_done.loaded_once
-                    refresh_btn.enable()
-                    courses_list.refresh()
+                await load_courses(
+                    ui_state=ui_state,
+                    page_state=page_state,
+                    controller=controller,
+                    controls=CoursesFilterControls(
+                        scope_filter=scope_filter,
+                        search_input=q,
+                        provider_filter=provider_filter,
+                        category_filter=category_filter,
+                        level_filter=level_filter,
+                        status_filter=status_filter,
+                        sort_filter=sort_filter,
+                    ),
+                    refresh_btn=refresh_btn,
+                    meta=meta,
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_courses_list_ui=courses_list.refresh,
+                    notify_error=lambda message: safe_notify(message, type="negative"),
+                    compute_meta_text=compute_courses_meta_text,
+                )
 
             async def _reload_tracking_only() -> bool:
-                try:
-                    page_state.tracking_by_course_id = await controller.reload_tracking()
-                except ApiError as exc:
-                    safe_notify(str(exc), type="negative")
-                    page_state.tracking_by_course_id = {}
-                    courses_list.refresh()
-                    return False
-                _recompute_facet_options()
-                courses_list.refresh()
-                return True
+                return await reload_tracking_only(
+                    page_state=page_state,
+                    controller=controller,
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_courses_list_ui=courses_list.refresh,
+                    notify_error=lambda message: safe_notify(message, type="negative"),
+                )
 
             async def _perform_set_tracking(*, course_id: int, status: str) -> bool:
                 await controller.set_tracking_status(course_id=int(course_id), status=str(status))
@@ -335,7 +300,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         cache_scope=str(_scope or ""),
                     ),
                     normalize_course_view_mode=_normalize_course_view_mode,
-                    format_review_summary=_format_review_summary,
+                    format_review_summary=lambda row: format_review_summary(row, style="fraction"),
                     format_short_date=_format_short_date,
                 )
 
@@ -467,14 +432,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     )
 
             def _refresh_list(*_: Any) -> None:
-                ui_state.visible_count = int(ui_state.page_size)
-                _recompute_facet_options()
-                active_filters.refresh()
-                courses_list.refresh()
+                refresh_courses_list(
+                    ui_state=ui_state,
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_active_filters=active_filters.refresh,
+                    refresh_courses_list_ui=courses_list.refresh,
+                )
 
             def _clear_filter_values() -> None:
-                reset = default_courses_filter_reset_state()
-                reset_course_filter_controls(
+                clear_course_filter_values(
                     controls=CoursesFilterControls(
                         scope_filter=scope_filter,
                         search_input=q,
@@ -484,10 +450,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         status_filter=status_filter,
                         sort_filter=sort_filter,
                     ),
-                    reset_state=reset,
+                    refresh_active_filters=active_filters.refresh,
+                    refresh_courses_list_ui=courses_list.refresh,
                 )
-                active_filters.refresh()
-                courses_list.refresh()
 
             @guard_ui_action(title="Reset filters failed")
             async def _reset_all() -> None:

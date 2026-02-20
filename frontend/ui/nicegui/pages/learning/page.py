@@ -20,6 +20,7 @@ from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
 from frontend.ui.nicegui.pages.learning.actions import (
     dismiss_recommended_course,
     dismiss_recommended_path,
@@ -48,36 +49,6 @@ def _progress_for_path_detail(
 ) -> tuple[int, int, float]:
     """Compute (completed, total, ratio) for a path based on course tracking."""
     return compute_path_progress(detail=detail, tracking_by_course_id=tracking_by_course_id)
-
-
-def _review_summary_label(row: dict[str, Any] | None) -> str:
-    """Format review summary as '★ 4.2 (12)'."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("review_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    try:
-        avg = float(row.get("avg_rating") or 0.0)
-    except (TypeError, ValueError):
-        avg = 0.0
-    return f"★ {avg:.1f} ({count})"
-
-
-def _recommendation_summary_label(row: dict[str, Any] | None) -> str:
-    """Format recommendation summary as '↗ N rec'."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("recommendation_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    return f"↗ {count} rec"
 
 
 def _next_uncompleted_course_from_selected_paths(
@@ -246,8 +217,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                     render_shared_tab(
                         shared_vm=shared_vm,
-                        review_summary_label=_review_summary_label,
-                        recommendation_summary_label=_recommendation_summary_label,
+                        review_summary_label=lambda row: format_review_summary(row, style="star"),
+                        recommendation_summary_label=format_recommendation_summary,
                         nav_actions=nav_actions,
                         feature_articles=bool(settings.feature_articles),
                         on_open_articles=lambda: ui.navigate.to("/articles"),
@@ -289,7 +260,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     next_course=next_course,
                     first_course_review_action=first_course_review_action,
                     first_path_review_action=first_path_review_action,
-                    review_summary_label=_review_summary_label,
+                    review_summary_label=lambda row: format_review_summary(row, style="star"),
                     tracking_label_fn=tracking_label,
                     tracking_chip_class_fn=tracking_chip_class,
                     resolve_status_value=resolve_tracking_status_value,
