@@ -8,7 +8,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.ai_curator.controller import AiCuratorPageController
@@ -136,7 +136,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             async def _generate() -> None:
                 g = str(goal.value or "").strip()
                 if not g:
-                    ui.notify("Goal is required.", type="negative")
+                    safe_notify("Goal is required.", type="negative")
                     return
                 if state.generating:
                     return
@@ -165,10 +165,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             @guard_ui_action(title="Apply plan failed")
             async def _apply() -> None:
                 if not is_admin:
-                    ui.notify("Admin required to apply a draft.", type="negative")
+                    safe_notify("Admin required to apply a draft.", type="negative")
                     return
                 if not state.draft_courses:
-                    ui.notify("Generate a draft first.", type="negative")
+                    safe_notify("Generate a draft first.", type="negative")
                     return
                 if state.applying:
                     return
@@ -184,7 +184,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         path_description=str(path_description.value or ""),
                         select_for_me=bool(select_for_me.value),
                     )
-                    ui.notify("Draft applied: courses + path created.", type="positive")
+                    safe_notify("Draft applied: courses + path created.", type="positive")
                     done = finalize_apply()
                     meta.text = done.meta_text
                 except Exception:

@@ -11,7 +11,7 @@ from frontend.ui.nicegui.components.path_detail_sections import (
     render_path_detail_learning_section,
 )
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
 from frontend.ui.nicegui.pages.paths.view_model import (
@@ -89,7 +89,7 @@ async def open_path_details_dialog(
                 if url:
                     ui.navigate.to(url, new_tab=True)
                     return
-                ui.notify("Next course has no URL yet", type="warning")
+                safe_notify("Next course has no URL yet", type="warning")
 
             render_path_detail_learning_section(
                 total_courses=total_courses,

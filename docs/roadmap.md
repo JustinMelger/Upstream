@@ -131,6 +131,7 @@
 - [ ] Activity feed UX v2: improve article deep-linking to open the specific item context.
 - [ ] Activity feed UX v2: group burst events and rank high-signal events higher (e.g., ratings on your shared content).
 - [ ] Observability: add frontend telemetry for core actions (share/select/review/complete) and page-level error tracking.
+- [ ] Notification resilience hardening: enrich `safe_notify` logs with action/page context, add optional strict mode for dev/test, and add regression tests for deleted-slot notification paths.
 - [ ] Accessibility pass: keyboard navigation, visible focus states, ARIA labels for icon-only actions, and contrast audit fixes.
 - [ ] Resilience UX: network/offline banner, retry affordances, and standardized section-level error states.
 - [ ] Performance: short-TTL client caching for hot reads (`/tracking`, review summaries), batched detail fetches, and fewer full reloads after mutations.

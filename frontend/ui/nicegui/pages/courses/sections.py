@@ -158,68 +158,65 @@ def render_course_card(
 ) -> None:
     """Render one course card including action menu and status control."""
     with ui.card().classes(f"w-full lp-course-card lp-card--hover{card_vm.card_class_suffix}"):
-        with ui.row().classes("items-start justify-between w-full"):
-            with ui.column().classes("gap-1"):
-                title = str(course_row.get("title") or "")
-                with ui.element("div").classes("lp-card-topright"):
-                    if card_vm.is_new:
-                        ui.label("New").classes("lp-chip lp-chip--sky")
-                    elif card_vm.is_updated:
-                        ui.label("Updated").classes("lp-chip lp-chip--teal")
-                    if card_vm.rating_badge:
-                        ui.label(card_vm.rating_badge).classes("lp-meta-chip")
-                    if card_vm.recommendation_badge:
-                        ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
-                    with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
-                        ui.menu_item("Review", actions.on_review)
-                        ui.menu_item("Recommend", actions.on_recommend)
-                        if has_url:
-                            ui.menu_item("Copy link", actions.on_copy_link)
-                        if can_edit:
-                            ui.menu_item("Edit", actions.on_edit)
-                            ui.menu_item("Delete", actions.on_delete)
+        title = str(course_row.get("title") or "")
+        with ui.element("div").classes("lp-card-topright"):
+            if card_vm.is_new:
+                ui.label("New").classes("lp-chip lp-chip--sky")
+            elif card_vm.is_updated:
+                ui.label("Updated").classes("lp-chip lp-chip--teal")
+            if card_vm.rating_badge:
+                ui.label(card_vm.rating_badge).classes("lp-meta-chip")
+            if card_vm.recommendation_badge:
+                ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
+            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                ui.menu_item("Review", actions.on_review)
+                ui.menu_item("Recommend", actions.on_recommend)
+                if has_url:
+                    ui.menu_item("Copy link", actions.on_copy_link)
+                if can_edit:
+                    ui.menu_item("Edit", actions.on_edit)
+                    ui.menu_item("Delete", actions.on_delete)
 
-                ui.label(title).classes("text-lg font-semibold")
-                shared_by = card_vm.shared_by
-                if shared_by:
-                    ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
-                if str(course_row.get("description") or "").strip():
-                    ui.label(str(course_row.get("description") or "")).classes("text-sm text-gray-600")
-                with ui.row().classes("items-center gap-2 flex-wrap"):
-                    chips: list[str] = []
-                    if str(course_row.get("provider") or "").strip():
-                        chips.append(str(course_row.get("provider") or "").strip())
-                    if str(course_row.get("category") or "").strip():
-                        chips.append(str(course_row.get("category") or "").strip())
-                    if str(course_row.get("language") or "").strip():
-                        chips.append(str(course_row.get("language") or "").strip())
+        ui.label(title).classes("text-lg font-semibold")
+        shared_by = card_vm.shared_by
+        if shared_by:
+            ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
+        if str(course_row.get("description") or "").strip():
+            ui.label(str(course_row.get("description") or "")).classes("text-sm text-gray-600")
+        with ui.row().classes("items-center gap-2 flex-wrap"):
+            chips: list[str] = []
+            if str(course_row.get("provider") or "").strip():
+                chips.append(str(course_row.get("provider") or "").strip())
+            if str(course_row.get("category") or "").strip():
+                chips.append(str(course_row.get("category") or "").strip())
+            if str(course_row.get("language") or "").strip():
+                chips.append(str(course_row.get("language") or "").strip())
 
-                    max_chips = 2
-                    for chip in chips[:max_chips]:
-                        ui.label(chip).classes("lp-meta-chip")
-                    if len(chips) > max_chips:
-                        ui.label(f"+{len(chips) - max_chips}").classes("lp-meta-chip")
+            max_chips = 2
+            for chip in chips[:max_chips]:
+                ui.label(chip).classes("lp-meta-chip")
+            if len(chips) > max_chips:
+                ui.label(f"+{len(chips) - max_chips}").classes("lp-meta-chip")
 
-                    ui.label(card_vm.tracking_label_text).classes(card_vm.tracking_chip_cls)
+            ui.label(card_vm.tracking_label_text).classes(card_vm.tracking_chip_cls)
 
-            with ui.column().classes("items-end gap-2"):
-                with ui.row().classes("items-center gap-2"):
-                    ui.button("", icon="visibility", on_click=actions.on_view).props("outline dense").tooltip("View")
+        with ui.row().classes("items-center gap-2 mt-2"):
+            ui.button("", icon="visibility", on_click=actions.on_view).props("outline dense").tooltip("View")
 
-                    current_status = str((tracked_row or {}).get("status") or "")
-                    options_map = {
-                        "": "Not tracked",
-                        **{k: v for k, v in TRACKING_STATUS_OPTIONS},
-                    }
-                    render_tracking_status_select(
-                        course_id=int(course_row.get("id") or 0),
-                        current_status=current_status,
-                        options_map=options_map,
-                        is_tracked_course=is_tracked_course,
-                        resolve_status_value=resolve_status_value,
-                        on_set_status=on_set_status,
-                        on_clear_status=on_clear_status,
-                    )
+            current_status = str((tracked_row or {}).get("status") or "")
+            options_map = {
+                "": "Not tracked",
+                **{k: v for k, v in TRACKING_STATUS_OPTIONS},
+            }
+            render_tracking_status_select(
+                course_id=int(course_row.get("id") or 0),
+                current_status=current_status,
+                options_map=options_map,
+                is_tracked_course=is_tracked_course,
+                resolve_status_value=resolve_status_value,
+                on_set_status=on_set_status,
+                on_clear_status=on_clear_status,
+            )
 
 
 def render_courses_empty_state(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from frontend.ui.nicegui.core import errors as core_errors
 from frontend.ui.nicegui.pages.learning import sections as learning_sections
 from frontend.ui.nicegui.pages.learning.ui_glue import resolve_tracking_status_value
 
@@ -51,6 +52,7 @@ async def test_render_tracking_status_select_rolls_back_on_set_error(monkeypatch
     select = _FakeSelect(value="interested")
     fake_ui = _FakeUi(select=select)
     monkeypatch.setattr(learning_sections, "ui", fake_ui)
+    monkeypatch.setattr(core_errors, "ui", fake_ui)
 
     async def _set_status(_cid: int, _value: str) -> None:
         raise RuntimeError("boom")
@@ -84,6 +86,7 @@ async def test_render_tracking_status_select_rejects_invalid_and_restores_previo
     select = _FakeSelect(value="in_progress")
     fake_ui = _FakeUi(select=select)
     monkeypatch.setattr(learning_sections, "ui", fake_ui)
+    monkeypatch.setattr(core_errors, "ui", fake_ui)
 
     async def _set_status(_cid: int, _value: str) -> None:
         raise AssertionError("should not be called")

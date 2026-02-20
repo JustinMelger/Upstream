@@ -6,7 +6,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container
 from frontend.ui.nicegui.core.api_client import ApiClient
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.login.controller import LoginPageController
 from frontend.ui.nicegui.pages.login.state import LoginPageState
@@ -48,7 +48,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             return
                         u, p = normalize_credentials(username=str(username.value or ""), password=str(password.value or ""))
                         if not credentials_valid(username=u, password=p):
-                            ui.notify("Username and password are required.", type="warning")
+                            safe_notify("Username and password are required.", type="warning")
                             return
                         start = begin_login_submit()
                         state.loading = start.loading

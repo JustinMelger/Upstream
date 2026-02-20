@@ -8,6 +8,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.core.errors import safe_notify
 
 
 _ALLOWED_TRACKING_STATUSES = {"interested", "in_progress", "completed"}
@@ -41,7 +42,7 @@ def render_tracking_status_select(
                 fallback_value=str(_select.value or ""),
             )
             if value and value not in _ALLOWED_TRACKING_STATUSES:
-                ui.notify(f"Invalid status: {value}", type="negative")
+                safe_notify(f"Invalid status: {value}", type="negative")
                 _select.value = previous_value
                 _select.update()
                 return

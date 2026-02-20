@@ -8,7 +8,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.admin_users.controller import AdminUsersPageController
@@ -83,18 +83,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 password = str(new_password.value or "").strip()
                 role = str(new_role.value or "user").strip()
                 if not username or not password:
-                    ui.notify("Username and password are required.", type="negative")
+                    safe_notify("Username and password are required.", type="negative")
                     return
                 try:
                     await controller.create_user(username=username, password=password, role=role)
-                    ui.notify("User created.", type="positive")
+                    safe_notify("User created.", type="positive")
                     new_username.value = ""
                     new_password.value = ""
                     new_role.value = "user"
                     await _load_users()
                 except ApiError as exc:
                     if exc.status_code == 409:
-                        ui.notify("User already exists.", type="negative")
+                        safe_notify("User already exists.", type="negative")
                         return
                     raise
 
@@ -111,17 +111,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 username = str(reset_username.value or "").strip()
                 password = str(reset_password.value or "").strip()
                 if not username or not password:
-                    ui.notify("Username and new password are required.", type="negative")
+                    safe_notify("Username and new password are required.", type="negative")
                     return
                 try:
                     await controller.reset_password(username=username, password=password)
-                    ui.notify("Password updated.", type="positive")
+                    safe_notify("Password updated.", type="positive")
                     reset_username.value = ""
                     reset_password.value = ""
                     await _load_users()
                 except ApiError as exc:
                     if exc.status_code == 404:
-                        ui.notify("User not found.", type="negative")
+                        safe_notify("User not found.", type="negative")
                         return
                     raise
 
@@ -137,20 +137,20 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             async def _delete_user() -> None:
                 username = str(delete_username.value or "").strip()
                 if not username:
-                    ui.notify("Username is required.", type="negative")
+                    safe_notify("Username is required.", type="negative")
                     return
                 if not bool(confirm_delete.value):
-                    ui.notify("Confirm delete to continue.", type="negative")
+                    safe_notify("Confirm delete to continue.", type="negative")
                     return
                 try:
                     await controller.delete_user(username=username)
-                    ui.notify("User deleted.", type="positive")
+                    safe_notify("User deleted.", type="positive")
                     delete_username.value = ""
                     confirm_delete.value = False
                     await _load_users()
                 except ApiError as exc:
                     if exc.status_code == 404:
-                        ui.notify("User not found.", type="negative")
+                        safe_notify("User not found.", type="negative")
                         return
                     raise
 
@@ -166,18 +166,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             async def _set_disabled() -> None:
                 username = str(disable_username.value or "").strip()
                 if not username:
-                    ui.notify("Username is required.", type="negative")
+                    safe_notify("Username is required.", type="negative")
                     return
                 disabled = str(disable_action.value or "disable") == "disable"
                 try:
                     await controller.set_disabled(username=username, disabled=disabled)
-                    ui.notify("User updated.", type="positive")
+                    safe_notify("User updated.", type="positive")
                     disable_username.value = ""
                     disable_action.value = "disable"
                     await _load_users()
                 except ApiError as exc:
                     if exc.status_code == 404:
-                        ui.notify("User not found.", type="negative")
+                        safe_notify("User not found.", type="negative")
                         return
                     raise
 

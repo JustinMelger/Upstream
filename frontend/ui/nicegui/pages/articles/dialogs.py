@@ -8,7 +8,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.services.articles_service import parse_tags
 
 
@@ -33,7 +33,7 @@ def build_share_article_dialog(
                     "tags": str(new_tags.value or ""),
                 }
                 await on_submit(payload)
-                ui.notify("Shared", type="positive")
+                safe_notify("Shared", type="positive")
                 share_dialog.close()
 
             ui.button("Share", on_click=_submit_share)

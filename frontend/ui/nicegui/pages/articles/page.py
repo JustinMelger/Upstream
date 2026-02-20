@@ -11,7 +11,7 @@ from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import format_date
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
@@ -145,7 +145,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 _recompute_facets(needle=needle)
                 ok = True
             except ApiError as exc:
-                ui.notify(str(exc), type="negative")
+                safe_notify(str(exc), type="negative")
                 clear_articles_state_on_load_error(state=state)
                 needle = str(q.value or "").strip()
                 _recompute_facets(needle=needle)

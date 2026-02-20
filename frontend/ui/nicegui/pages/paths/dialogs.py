@@ -7,7 +7,7 @@ from typing import Any
 
 from nicegui import app, ui
 
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 
 
 def build_share_path_dialog(
@@ -43,15 +43,15 @@ def build_share_path_dialog(
 
             def _save_draft() -> None:
                 app.storage.user[path_draft_key] = _path_draft_payload()
-                ui.notify("Draft saved", type="positive")
+                safe_notify("Draft saved", type="positive")
 
             def _load_draft() -> None:
                 draft = app.storage.user.get(path_draft_key)
                 if not isinstance(draft, dict):
-                    ui.notify("No saved draft found", type="warning")
+                    safe_notify("No saved draft found", type="warning")
                     return
                 _apply_path_draft(draft)
-                ui.notify("Draft loaded", type="positive")
+                safe_notify("Draft loaded", type="positive")
 
             @guard_ui_action(title="Share path failed")
             async def _create_submit() -> None:
@@ -62,7 +62,7 @@ def build_share_path_dialog(
                 }
                 await on_submit(payload)
                 app.storage.user.pop(path_draft_key, None)
-                ui.notify("Path shared", type="positive")
+                safe_notify("Path shared", type="positive")
                 create_dialog.close()
 
             ui.button("Save draft", on_click=_save_draft).props("outline")
@@ -165,7 +165,7 @@ async def open_edit_path_dialog(
                     "course_ids": ordered_course_ids,
                 }
                 await on_save(payload)
-                ui.notify("Path updated", type="positive")
+                safe_notify("Path updated", type="positive")
                 edit_dialog.close()
                 if detail_dialog is not None:
                     detail_dialog.close()

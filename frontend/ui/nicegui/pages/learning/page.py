@@ -17,7 +17,7 @@ from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tra
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.datetime_utils import format_date
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions
@@ -204,7 +204,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         f"{len(list(state.data.get('selected_paths') or []))} selected paths"
                     )
             except ApiError as exc:
-                ui.notify(str(exc), type="negative")
+                safe_notify(str(exc), type="negative")
                 state.data = {}
                 meta.text = "Failed to load"
             finally:
