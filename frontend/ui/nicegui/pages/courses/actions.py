@@ -8,6 +8,8 @@ import json
 
 from nicegui import ui
 
+from frontend.ui.nicegui.core.errors import safe_notify
+
 
 @dataclass(slots=True)
 class CourseCardActions:
@@ -24,7 +26,7 @@ class CourseCardActions:
 def copy_course_link(*, url: str) -> None:
     """Copy a course URL to clipboard."""
     ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(str(url or ''))});")
-    ui.notify("Link copied", type="positive")
+    safe_notify("Link copied", type="positive")
 
 
 def build_course_card_actions(

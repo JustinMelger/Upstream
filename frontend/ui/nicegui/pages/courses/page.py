@@ -11,7 +11,7 @@ from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation_intents import get_course_intent, pop_course_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -257,7 +257,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses_list.refresh()
                     ok = True
                 except ApiError as exc:
-                    ui.notify(str(exc), type="negative")
+                    safe_notify(str(exc), type="negative")
                     clear_courses_state_on_load_error(state=page_state)
                     _recompute_facet_options()
                     courses_list.refresh()
@@ -273,7 +273,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 try:
                     page_state.tracking_by_course_id = await controller.reload_tracking()
                 except ApiError as exc:
-                    ui.notify(str(exc), type="negative")
+                    safe_notify(str(exc), type="negative")
                     page_state.tracking_by_course_id = {}
                     courses_list.refresh()
                     return False
@@ -293,7 +293,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     await api.post("/tracking", {"course_id": course_id, "status": status})
                     ok = await _reload_tracking_only()
                     if ok:
-                        ui.notify("Updated status", type="positive")
+                        safe_notify("Updated status", type="positive")
                         return True
                     rollback_optimistic_tracking(state=page_state, snapshot=snapshot)
                     courses_list.refresh()
@@ -311,7 +311,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     await api.post("/tracking/delete", {"course_id": course_id})
                     ok = await _reload_tracking_only()
                     if ok:
-                        ui.notify("Removed status", type="positive")
+                        safe_notify("Removed status", type="positive")
                         return True
                     rollback_optimistic_tracking(state=page_state, snapshot=snapshot)
                     courses_list.refresh()

@@ -7,7 +7,7 @@ from typing import Any
 
 from nicegui import app, ui
 
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 
 
 async def open_recommend_course_dialog(
@@ -39,7 +39,7 @@ async def open_recommend_course_dialog(
             @guard_ui_action(title="Recommend failed")
             async def _save() -> None:
                 await save_recommendation(int(course_id), str(note.value or "").strip())
-                ui.notify("Recommendation saved", type="positive")
+                safe_notify("Recommendation saved", type="positive")
                 dialog.close()
                 await on_saved()
 
@@ -108,25 +108,25 @@ def build_share_course_dialog(
 
             def _save_draft() -> None:
                 app.storage.user[course_draft_key] = _course_draft_payload()
-                ui.notify("Draft saved", type="positive")
+                safe_notify("Draft saved", type="positive")
 
             def _load_draft() -> None:
                 draft = app.storage.user.get(course_draft_key)
                 if not isinstance(draft, dict):
-                    ui.notify("No saved draft found", type="warning")
+                    safe_notify("No saved draft found", type="warning")
                     return
                 _apply_course_draft(draft)
-                ui.notify("Draft loaded", type="positive")
+                safe_notify("Draft loaded", type="positive")
 
             @guard_ui_action(title="Share course failed")
             async def _create_submit() -> None:
                 dh_raw = str(create_duration_hours.value or "")
                 dh = parse_duration_hours(dh_raw)
                 if dh_raw.strip() and dh is None:
-                    ui.notify("Duration hours must be a number", type="negative")
+                    safe_notify("Duration hours must be a number", type="negative")
                     return
                 if not str(create_description.value or "").strip():
-                    ui.notify("Description is required", type="negative")
+                    safe_notify("Description is required", type="negative")
                     return
 
                 payload = {
@@ -143,7 +143,7 @@ def build_share_course_dialog(
                 }
                 await on_submit(payload)
                 app.storage.user.pop(course_draft_key, None)
-                ui.notify("Course shared", type="positive")
+                safe_notify("Course shared", type="positive")
                 create_dialog.close()
 
             ui.button("Save draft", on_click=_save_draft).props("outline")
@@ -202,10 +202,10 @@ def open_edit_course_dialog(
                 dh_raw = str(duration_hours.value or "")
                 dh = parse_duration_hours(dh_raw)
                 if dh_raw.strip() and dh is None:
-                    ui.notify("Duration hours must be a number", type="negative")
+                    safe_notify("Duration hours must be a number", type="negative")
                     return
                 if not str(description.value or "").strip():
-                    ui.notify("Description is required", type="negative")
+                    safe_notify("Description is required", type="negative")
                     return
 
                 payload = {
@@ -221,7 +221,7 @@ def open_edit_course_dialog(
                     "url": str(url.value or ""),
                 }
                 await on_save(int(course_id), payload)
-                ui.notify("Course updated", type="positive")
+                safe_notify("Course updated", type="positive")
                 dialog.close()
 
             ui.button("Save", on_click=_save)
@@ -244,7 +244,7 @@ async def open_delete_course_dialog(
             @guard_ui_action(title="Delete course failed")
             async def _delete() -> None:
                 await on_delete(int(course_id))
-                ui.notify("Course deleted", type="positive")
+                safe_notify("Course deleted", type="positive")
                 dialog.close()
 
             ui.button("Delete", on_click=_delete).props("color=negative")

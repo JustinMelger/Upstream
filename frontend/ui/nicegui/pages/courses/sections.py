@@ -8,6 +8,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.pages.courses.ui_glue import ActiveFilterChip
 
 
@@ -130,7 +131,7 @@ def render_tracking_status_select(
                     await on_clear_status(_cid)
                 return
             if value not in _ALLOWED_TRACKING_STATUSES:
-                ui.notify(f"Invalid status: {value}", type="negative")
+                safe_notify(f"Invalid status: {value}", type="negative")
                 return
             _select.value = value
             _select.update()

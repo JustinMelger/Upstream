@@ -6,7 +6,7 @@ from typing import Any, Awaitable, Callable
 
 from nicegui import ui
 
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 
 
 def render_reviews_panel(
@@ -53,7 +53,7 @@ def render_reviews_panel(
             my_review_label.text = "Add a review"
         _notify_changed()
         reviews_list.refresh()
-        ui.notify(delete_success_text, type="positive")
+        safe_notify(delete_success_text, type="positive")
 
     @ui.refreshable
     def reviews_list() -> None:
@@ -124,7 +124,7 @@ def render_reviews_panel(
         _notify_changed()
         my_review_label.text = "Your review" if _find_my_review() else "Add a review"
         reviews_list.refresh()
-        ui.notify(save_success_text, type="positive")
+        safe_notify(save_success_text, type="positive")
 
     with ui.row().classes("justify-end mt-2"):
         ui.button(save_label, on_click=_submit_review).props("outline")
