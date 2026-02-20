@@ -55,6 +55,7 @@ def build_learning_tab_view(
     dismissed_recommended_path_ids: set[int],
 ) -> LearningTabView:
     """Build typed learning-tab projection from raw page data payload."""
+
     def _valid_int_id(value: Any) -> int | None:
         try:
             parsed = int(value or 0)

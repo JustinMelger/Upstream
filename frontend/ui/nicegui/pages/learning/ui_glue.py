@@ -21,10 +21,7 @@ def compute_next_visibility(
 def compute_meta_text(*, data: dict[str, Any], view: str, feature_articles: bool) -> str:
     """Build top-bar meta text for either learning or shared view."""
     if str(view or "") == "shared":
-        text = (
-            f"{len(list(data.get('shared_courses') or []))} courses · "
-            f"{len(list(data.get('shared_paths') or []))} paths"
-        )
+        text = f"{len(list(data.get('shared_courses') or []))} courses · {len(list(data.get('shared_paths') or []))} paths"
         if feature_articles:
             text += f" · {len(list(data.get('shared_articles') or []))} articles"
         return text
