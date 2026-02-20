@@ -40,7 +40,5 @@ async def test_home_controller_load_overview_for_admin_team_uses_team_endpoints(
     out = await c.load_overview(username="admin", is_admin=True, mode_value="team")
     assert out.snapshot_stats == {"interested": 10, "in_progress": 4, "completed": 6}
     assert out.team_stats_by_user == [{"colleague_id": "alice", "completed": 2}]
-    assert calls == [
-        ("/tracking/stats", None),
-        ("/tracking/stats/users", None),
-    ]
+    assert len(calls) == 2
+    assert set(calls) == {("/tracking/stats", None), ("/tracking/stats/users", None)}

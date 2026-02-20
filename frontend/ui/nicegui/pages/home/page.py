@@ -58,36 +58,35 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if state.loading:
                     state.pending_reload = True
                     return
-                load_start = begin_home_load()
-                state.loading = load_start.loading
-                state.pending_reload = False
-                refresh_btn.disable()
-                meta.text = load_start.meta_text
-                dashboard.refresh()
-
-                ok = False
-                try:
-                    bundle = await controller.load_overview(
-                        username=username,
-                        is_admin=is_admin,
-                        mode_value=str(mode.value) if mode is not None else "mine",
-                    )
-                    state.snapshot_stats = dict(bundle.snapshot_stats or {})
-                    state.team_stats_by_user = list(bundle.team_stats_by_user or [])
-                    ok = True
-                except Exception as exc:  # ApiError already stringifies nicely, but keep this generic.
-                    ui.notify(str(exc), type="negative")
-                    state.snapshot_stats = {}
-                    state.team_stats_by_user = []
-                finally:
-                    load_done = finalize_home_load(ok=ok)
-                    state.loading = load_done.loading
-                    meta.text = load_done.meta_text
-                    refresh_btn.enable()
+                state.pending_reload = True
+                while state.pending_reload:
+                    state.pending_reload = False
+                    load_start = begin_home_load()
+                    state.loading = load_start.loading
+                    refresh_btn.disable()
+                    meta.text = load_start.meta_text
                     dashboard.refresh()
-                    if state.pending_reload:
-                        state.pending_reload = False
-                        await _load_overview()
+
+                    ok = False
+                    try:
+                        bundle = await controller.load_overview(
+                            username=username,
+                            is_admin=is_admin,
+                            mode_value=str(mode.value) if mode is not None else "mine",
+                        )
+                        state.snapshot_stats = dict(bundle.snapshot_stats or {})
+                        state.team_stats_by_user = list(bundle.team_stats_by_user or [])
+                        ok = True
+                    except Exception as exc:  # ApiError already stringifies nicely, but keep this generic.
+                        ui.notify(str(exc), type="negative")
+                        state.snapshot_stats = {}
+                        state.team_stats_by_user = []
+                    finally:
+                        load_done = finalize_home_load(ok=ok)
+                        state.loading = load_done.loading
+                        meta.text = load_done.meta_text
+                        refresh_btn.enable()
+                        dashboard.refresh()
 
             @ui.refreshable
             def dashboard() -> None:

@@ -34,18 +34,14 @@ class HomePageController:
         user = str(username or "")
         mode = str(mode_value or "mine")
         if is_admin and mode == "team":
-            stats_task = self._api.get("/tracking/stats")
+            stats_payload, team_payload_raw = await asyncio.gather(
+                self._api.get("/tracking/stats"),
+                self._api.get("/tracking/stats/users"),
+            )
+            team_payload = list(team_payload_raw or [])
         else:
-            stats_task = self._api.get("/tracking/stats", params={"colleague_id": user})
-
-        team_task: asyncio.Future[Any] | asyncio.Task[Any] | None = None
-        if is_admin and mode == "team":
-            team_task = asyncio.create_task(self._api.get("/tracking/stats/users"))
-
-        stats_payload = await stats_task
-        team_payload: list[dict[str, Any]] = []
-        if team_task is not None:
-            team_payload = list(await team_task or [])
+            stats_payload = await self._api.get("/tracking/stats", params={"colleague_id": user})
+            team_payload: list[dict[str, Any]] = []
 
         return HomeOverviewBundle(
             snapshot_stats=dict(stats_payload or {}),
