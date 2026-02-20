@@ -1,13 +1,7 @@
-"""AI Curator page for the NiceGUI frontend.
-
-This page calls `POST /ai/plan` to generate a *draft* path + ordered draft
-courses. The draft is previewed and can be edited/reordered before an admin
-applies it (creates courses + a path) via the existing admin endpoints.
-"""
+"""AI Curator page for the NiceGUI frontend."""
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from nicegui import ui
@@ -17,6 +11,9 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.pages.ai_curator.controller import AiCuratorPageController
+from frontend.ui.nicegui.pages.ai_curator.state import AiCuratorPageState
+from frontend.ui.nicegui.pages.ai_curator.transitions import begin_apply, begin_generate, finalize_apply, finalize_generate
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -34,6 +31,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             return
 
         is_admin = str(user.get("role") or "") == "admin"
+        controller = AiCuratorPageController(api=api)
+        state = AiCuratorPageState()
 
         render_shell(title="AI Curator", store=store, api=api)
         with render_container():
@@ -42,23 +41,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             goal = ui.input("Goal").props("clearable").classes("w-full")
             meta = ui.label("").classes("text-sm text-gray-600")
 
-            loading = False
-            draft_courses: list[dict[str, Any]] = []
-
-            # Draft path fields (editable).
             path_name = ui.input("Draft path name").props("clearable").classes("w-full")
             path_description = ui.textarea("Draft path description").props("autogrow").classes("w-full")
-
             select_for_me = ui.checkbox("Select created path for me (after apply)", value=True)
 
             @ui.refreshable
             def courses_preview() -> None:
                 with ui.column().classes("w-full gap-3"):
-                    if not draft_courses:
+                    if not state.draft_courses:
                         ui.label("No draft yet. Enter a goal and click Generate.").classes("text-sm text-gray-600")
                         return
 
-                    for idx, c in enumerate(list(draft_courses)):
+                    for idx, c in enumerate(list(state.draft_courses)):
                         title = str(c.get("title") or "")
                         description = str(c.get("description") or "")
                         provider = str(c.get("provider") or "")
@@ -81,30 +75,33 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     def _move_up(i: int = idx) -> None:
                                         if i <= 0:
                                             return
-                                        draft_courses[i - 1], draft_courses[i] = draft_courses[i], draft_courses[i - 1]
+                                        state.draft_courses[i - 1], state.draft_courses[i] = (
+                                            state.draft_courses[i],
+                                            state.draft_courses[i - 1],
+                                        )
                                         courses_preview.refresh()
 
                                     def _move_down(i: int = idx) -> None:
-                                        if i >= len(draft_courses) - 1:
+                                        if i >= len(state.draft_courses) - 1:
                                             return
-                                        draft_courses[i + 1], draft_courses[i] = draft_courses[i], draft_courses[i + 1]
+                                        state.draft_courses[i + 1], state.draft_courses[i] = (
+                                            state.draft_courses[i],
+                                            state.draft_courses[i + 1],
+                                        )
                                         courses_preview.refresh()
 
                                     def _remove(i: int = idx) -> None:
-                                        if 0 <= i < len(draft_courses):
-                                            draft_courses.pop(i)
+                                        if 0 <= i < len(state.draft_courses):
+                                            state.draft_courses.pop(i)
                                             courses_preview.refresh()
 
                                     def _edit(i: int = idx) -> None:
-                                        current = draft_courses[i]
+                                        current = state.draft_courses[i]
                                         with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(700px,95vw)]"):
                                             ui.label("Edit draft course").classes("text-xl font-semibold")
                                             t = ui.input("Title", value=str(current.get("title") or "")).classes("w-full")
                                             d = (
-                                                ui.textarea(
-                                                    "Description",
-                                                    value=str(current.get("description") or ""),
-                                                )
+                                                ui.textarea("Description", value=str(current.get("description") or ""))
                                                 .props("autogrow")
                                                 .classes("w-full")
                                             )
@@ -137,30 +134,32 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @guard_ui_action(title="Plan generation failed")
             async def _generate() -> None:
-                nonlocal loading, draft_courses
                 g = str(goal.value or "").strip()
                 if not g:
                     ui.notify("Goal is required.", type="negative")
                     return
-                if loading:
+                if state.generating:
                     return
-                loading = True
+                start = begin_generate()
+                state.generating = start.generating
                 generate_btn.disable()
                 apply_btn.disable()
-                meta.text = "Generating draft..."
+                meta.text = start.meta_text
                 try:
-                    plan = await api.post("/ai/plan", {"goal": g})
-                    path = dict(plan.get("path") or {})
-                    draft_courses = list(plan.get("courses") or [])
-
+                    path, courses = await controller.generate_plan(goal=g)
+                    state.draft_courses = list(courses or [])
                     path_name.value = str(path.get("name") or "")
                     path_description.value = str(path.get("description") or "")
                     courses_preview.refresh()
-                    meta.text = f"Draft ready ({len(draft_courses)} courses)"
+                    done = finalize_generate(count=len(state.draft_courses))
+                    meta.text = done.meta_text
+                except Exception:
+                    meta.text = "Generation failed"
+                    raise
                 finally:
-                    loading = False
+                    state.generating = False
                     generate_btn.enable()
-                    if is_admin and draft_courses:
+                    if is_admin and state.draft_courses and not state.applying:
                         apply_btn.enable()
 
             @guard_ui_action(title="Apply plan failed")
@@ -168,43 +167,31 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if not is_admin:
                     ui.notify("Admin required to apply a draft.", type="negative")
                     return
-                if not draft_courses:
+                if not state.draft_courses:
                     ui.notify("Generate a draft first.", type="negative")
                     return
+                if state.applying:
+                    return
 
+                start = begin_apply()
+                state.applying = start.applying
                 apply_btn.disable()
+                meta.text = start.meta_text
                 try:
-                    meta.text = "Creating courses..."
-
-                    created_ids: list[int] = []
-                    for c in draft_courses:
-                        payload = {
-                            "title": str(c.get("title") or "").strip(),
-                            "description": str(c.get("description") or "").strip(),
-                            "provider": str(c.get("provider") or "").strip(),
-                            "category": str(c.get("category") or "").strip(),
-                            "level": str(c.get("level") or "").strip(),
-                            "duration_hours": c.get("duration_hours"),
-                            "url": str(c.get("url") or "").strip(),
-                        }
-                        course = await api.post("/courses", payload)
-                        created_ids.append(int(course.get("id") or 0))
-
-                    meta.text = "Creating path..."
-                    path_payload = {
-                        "name": str(path_name.value or "").strip(),
-                        "description": str(path_description.value or "").strip(),
-                        "course_ids": created_ids,
-                    }
-                    created_path = await api.post("/paths", path_payload)
-                    path_id = int(created_path.get("id") or 0)
-
-                    if select_for_me.value and path_id:
-                        await api.post(f"/paths/{path_id}/select", {})
-
+                    await controller.apply_plan(
+                        draft_courses=state.draft_courses,
+                        path_name=str(path_name.value or ""),
+                        path_description=str(path_description.value or ""),
+                        select_for_me=bool(select_for_me.value),
+                    )
                     ui.notify("Draft applied: courses + path created.", type="positive")
-                    meta.text = "Done"
+                    done = finalize_apply()
+                    meta.text = done.meta_text
+                except Exception:
+                    meta.text = "Apply failed"
+                    raise
                 finally:
+                    state.applying = False
                     apply_btn.enable()
 
             with ui.row().classes("items-center gap-2"):

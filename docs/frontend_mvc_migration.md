@@ -46,6 +46,7 @@ Status:
 - `home`: complete (package conversion + controller/state + sections/transitions extraction complete; architecture/controller/transition tests added)
 - `activity`: complete (package conversion + controller/state + route-init + transitions + ui-glue + sections extraction complete; architecture/controller/route-init/transition/glue tests added)
 - `admin_users`: complete (package conversion + controller/state + transitions + sections/ui-glue extraction complete; architecture/controller/transition/glue tests added)
+- `ai_curator`: complete (package conversion + controller/state + transitions + ui-glue extraction complete; architecture/controller/transition/glue tests added)
 
 Phase 4: Roll out by page priority
 
