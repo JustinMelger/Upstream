@@ -7,6 +7,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.services.courses_service import (
+    clear_course_detail_cache,
     load_courses_and_tracking,
     load_recommendation_summaries,
     load_review_summaries,
@@ -52,3 +53,7 @@ class CoursesPageController:
         rows = await load_recommendation_summaries(api=self._api, course_ids=[int(course_id)])
         row = rows.get(int(course_id))
         return dict(row) if isinstance(row, dict) else None
+
+    def clear_course_detail_cache(self, *, course_id: int, cache_scope: str = "") -> None:
+        """Invalidate cached course-detail payloads for one course/user scope."""
+        clear_course_detail_cache(course_id=int(course_id), cache_scope=str(cache_scope or ""))

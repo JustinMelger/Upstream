@@ -48,6 +48,44 @@ Migration details (template + phased implementation plan):
 
 - `docs/frontend_mvc_migration.md`
 
+## Phase 10D Implementation Notes
+
+The current implementation now standardizes several frontend patterns across pages:
+
+- Shared core helpers:
+  - `frontend/ui/nicegui/core/navigation.py`
+    - Centralized deep-link and tab URL builders (courses/paths/learning/activity).
+  - `frontend/ui/nicegui/core/navigation_intents.py`
+    - Unified in-memory + UI-storage intent helpers (`set/get/pop`).
+  - `frontend/ui/nicegui/core/mutation_flow.py`
+    - Standard optimistic mutation flow (`apply -> refresh -> perform -> rollback on fail -> success hook`).
+
+- Shared UI components:
+  - `frontend/ui/nicegui/components/pagination.py`
+    - Reusable load-more footer used by list/card pages.
+  - Existing section components (`paths_sections`, course/article sections) now host more of the repeated topbar/filter composition.
+
+- Page package structure:
+  - `page.py`: UI composition + event binding only.
+  - `controller.py`: page orchestration against services/API.
+  - `actions.py`: UI callback/handler helpers extracted from nested page closures.
+  - `filters.py`: pure filter normalization/query payload shaping.
+  - `ui_glue.py`: pure presentation/state glue helpers (meta text, visible-count math, chip descriptors).
+  - `state.py` / `view_model.py`: typed mutable state and view projections.
+
+- Performance/caching:
+  - `frontend/ui/nicegui/services/courses_service.py`
+    - Short-TTL cache for course detail dialog payloads (`/courses/{id}`, reviews, recommendations).
+    - Cache key is scoped (`cache_scope`, `course_id`) to avoid cross-user leakage.
+  - Cache invalidation points:
+    - Review save/delete in `frontend/ui/nicegui/pages/courses/detail_flow.py`.
+    - Recommendation save flow in `frontend/ui/nicegui/pages/courses/page.py`.
+
+- Import-cycle guard:
+  - `frontend/ui/nicegui/pages/__init__.py` no longer eagerly imports all pages.
+  - `frontend/ui/nicegui/pages/ai_curator/__init__.py` uses a lazy `register(...)` proxy.
+  - This keeps service-layer tests import-safe when run in isolation.
+
 ## NiceGUI Sequence
 
 ```mermaid

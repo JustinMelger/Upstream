@@ -333,6 +333,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         page_state.recommendation_summary_by_course_id[int(_course_id)] = row
                     else:
                         page_state.recommendation_summary_by_course_id.pop(int(_course_id), None)
+                    controller.clear_course_detail_cache(course_id=int(_course_id), cache_scope=str(username or ""))
                     courses_list.refresh()
 
                 await open_recommend_course_dialog(

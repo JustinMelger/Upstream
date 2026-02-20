@@ -26,7 +26,7 @@ async def open_course_details_dialog(
     format_short_date: Callable[[Any], str],
 ) -> None:
     """Open course details dialog with reviews and recommendation metadata."""
-    bundle = await load_course_detail_bundle(api=api, course_id=int(course_id))
+    bundle = await load_course_detail_bundle(api=api, course_id=int(course_id), cache_scope=str(username or ""))
     course = dict(bundle.course or {})
     reviews = list(bundle.reviews or [])
     recommendations = list(bundle.recommendations or [])
@@ -128,12 +128,12 @@ async def open_course_details_dialog(
                 f"/courses/{course_id}/reviews",
                 {"rating": int(rating), "text": str(text or "")},
             )
-            clear_course_detail_cache(course_id=int(course_id))
+            clear_course_detail_cache(course_id=int(course_id), cache_scope=str(username or ""))
             return out
 
         async def _delete_review(review_id: int) -> bool:
             await api.delete(f"/courses/{course_id}/reviews/{int(review_id)}")
-            clear_course_detail_cache(course_id=int(course_id))
+            clear_course_detail_cache(course_id=int(course_id), cache_scope=str(username or ""))
             return True
 
         render_reviews_panel(

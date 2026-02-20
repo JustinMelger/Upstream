@@ -100,8 +100,12 @@ async def test_load_course_detail_bundle_uses_ttl_cache_and_expires() -> None:
     def _now() -> float:
         return float(now["t"])
 
-    first = await courses_service.load_course_detail_bundle(api=api, course_id=7, now_fn=_now, ttl_seconds=20.0)
-    second = await courses_service.load_course_detail_bundle(api=api, course_id=7, now_fn=_now, ttl_seconds=20.0)
+    first = await courses_service.load_course_detail_bundle(
+        api=api, course_id=7, cache_scope="alice", now_fn=_now, ttl_seconds=20.0
+    )
+    second = await courses_service.load_course_detail_bundle(
+        api=api, course_id=7, cache_scope="alice", now_fn=_now, ttl_seconds=20.0
+    )
     assert first.course["title"] == "FastAPI"
     assert second.course["title"] == "FastAPI"
     assert api.calls.count("/courses/7") == 1
@@ -109,7 +113,7 @@ async def test_load_course_detail_bundle_uses_ttl_cache_and_expires() -> None:
     assert api.calls.count("/courses/7/recommendations") == 1
 
     now["t"] = 121.0
-    await courses_service.load_course_detail_bundle(api=api, course_id=7, now_fn=_now, ttl_seconds=20.0)
+    await courses_service.load_course_detail_bundle(api=api, course_id=7, cache_scope="alice", now_fn=_now, ttl_seconds=20.0)
     assert api.calls.count("/courses/7") == 2
 
 
@@ -118,9 +122,21 @@ async def test_load_course_detail_bundle_uses_ttl_cache_and_expires() -> None:
 async def test_load_course_detail_bundle_cache_can_be_invalidated() -> None:
     courses_service.clear_course_detail_cache()
     api = _FakeDetailApi()
-    await courses_service.load_course_detail_bundle(api=api, course_id=7)
-    await courses_service.load_course_detail_bundle(api=api, course_id=7)
+    await courses_service.load_course_detail_bundle(api=api, course_id=7, cache_scope="alice")
+    await courses_service.load_course_detail_bundle(api=api, course_id=7, cache_scope="alice")
     assert api.calls.count("/courses/7") == 1
-    courses_service.clear_course_detail_cache(course_id=7)
-    await courses_service.load_course_detail_bundle(api=api, course_id=7)
+    courses_service.clear_course_detail_cache(course_id=7, cache_scope="alice")
+    await courses_service.load_course_detail_bundle(api=api, course_id=7, cache_scope="alice")
+    assert api.calls.count("/courses/7") == 2
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_load_course_detail_bundle_is_scoped_per_user() -> None:
+    courses_service.clear_course_detail_cache()
+    api = _FakeDetailApi()
+    await courses_service.load_course_detail_bundle(api=api, course_id=7, cache_scope="alice")
+    await courses_service.load_course_detail_bundle(api=api, course_id=7, cache_scope="alice")
+    await courses_service.load_course_detail_bundle(api=api, course_id=7, cache_scope="bob")
+    # one backend fetch for alice scope + one backend fetch for bob scope
     assert api.calls.count("/courses/7") == 2
