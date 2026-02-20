@@ -1,3 +1,13 @@
+## [0.8.1](https://github.com/JustinMelger/learning-platform/compare/v0.8.0...v0.8.1) (2026-02-20)
+
+
+### Bug Fixes
+
+* **course:** fix runtime error when selecting a course ([3d4d7b9](https://github.com/JustinMelger/learning-platform/commit/3d4d7b94fc3ea05f8e5234ce636a060930ee3435))
+* **course:** fix runtime error when selecting a course + layout rendering incorrect ([d0de582](https://github.com/JustinMelger/learning-platform/commit/d0de58294d2fae2a2b0fa771ec5310b224c60555))
+* **paths:** fix runtime error when tracking a path ([c65f6e2](https://github.com/JustinMelger/learning-platform/commit/c65f6e232a4b322afafe1860ad3bf885c0c39690))
+* **paths:** fix runtime error when tracking a path ([3b18948](https://github.com/JustinMelger/learning-platform/commit/3b18948813a32d5c15de0bac466e08886d13de2b))
+
 # [0.8.0](https://github.com/JustinMelger/learning-platform/compare/v0.7.0...v0.8.0) (2026-02-18)
 
 
