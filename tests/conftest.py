@@ -8,6 +8,7 @@ from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
 import pytest
 from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine, AsyncSession, create_async_engine
 
 from alembic import command
@@ -15,6 +16,37 @@ from backend.database.session import get_session as app_get_session
 
 
 DEFAULT_DATABASE_URL = "postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform"
+DB_RESET_MAX_RETRIES = 5
+
+
+def _is_deadlock_error(exc: DBAPIError) -> bool:
+    """Detect PostgreSQL deadlock errors emitted via asyncpg/sqlalchemy."""
+    orig = getattr(exc, "orig", None)
+    sqlstate = getattr(orig, "sqlstate", None)
+    if sqlstate == "40P01":
+        return True
+    return "deadlock detected" in str(exc).lower()
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Ensure every test is classified for marker-based runs.
+
+    Rules:
+    - Keep explicit `unit`/`integration` markers as-is.
+    - Mark architecture guard tests as `architecture`.
+    - Default other unclassified tests to `unit`.
+    """
+    for item in items:
+        marker_names = {marker.name for marker in item.iter_markers()}
+        if "unit" in marker_names or "integration" in marker_names:
+            continue
+        nodeid = item.nodeid.lower()
+        is_architecture = "architecture" in nodeid or "test_page_package_" in nodeid
+        if is_architecture:
+            item.add_marker(pytest.mark.architecture)
+        else:
+            item.add_marker(pytest.mark.unit)
+
 
 os.environ.setdefault("DATABASE_URL", DEFAULT_DATABASE_URL)
 os.environ.setdefault("SESSION_DAYS", "30")
@@ -121,25 +153,33 @@ async def db_reset(
     engine: AsyncEngine,
 ) -> AsyncIterator[None]:
     """Keep DB-backed tests isolated by truncating all tables between tests."""
-    async with engine.begin() as conn:
-        result = await conn.execute(
-            text(
-                "SELECT table_schema, table_name "
-                "FROM information_schema.tables "
-                "WHERE table_type = 'BASE TABLE' "
-                "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
-                "AND table_name != 'alembic_version' "
-                "ORDER BY table_schema, table_name"
-            )
-        )
-        tables = [(str(row[0]), str(row[1])) for row in result.all()]
-        if tables:
+    for attempt in range(DB_RESET_MAX_RETRIES):
+        try:
+            async with engine.begin() as conn:
+                result = await conn.execute(
+                    text(
+                        "SELECT table_schema, table_name "
+                        "FROM information_schema.tables "
+                        "WHERE table_type = 'BASE TABLE' "
+                        "AND table_schema NOT IN ('pg_catalog', 'information_schema') "
+                        "AND table_name != 'alembic_version' "
+                        "ORDER BY table_schema, table_name"
+                    )
+                )
+                tables = [(str(row[0]), str(row[1])) for row in result.all()]
+                if tables:
 
-            def _qi(identifier: str) -> str:
-                return '"' + identifier.replace('"', '""') + '"'
+                    def _qi(identifier: str) -> str:
+                        return '"' + identifier.replace('"', '""') + '"'
 
-            qualified = ", ".join(f"{_qi(schema)}.{_qi(name)}" for schema, name in tables)
-            await conn.execute(text(f"TRUNCATE TABLE {qualified} RESTART IDENTITY CASCADE"))
+                    qualified = ", ".join(f"{_qi(schema)}.{_qi(name)}" for schema, name in tables)
+                    await conn.execute(text(f"TRUNCATE TABLE {qualified} RESTART IDENTITY CASCADE"))
+            break
+        except DBAPIError as exc:
+            is_last_attempt = attempt + 1 >= DB_RESET_MAX_RETRIES
+            if not _is_deadlock_error(exc) or is_last_attempt:
+                raise
+            await asyncio.sleep(0.05 * (2**attempt))
     yield
 
 
