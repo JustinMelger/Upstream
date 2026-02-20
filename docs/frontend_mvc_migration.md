@@ -45,6 +45,7 @@ Status:
 - `articles`: complete (package conversion + controller/state + dialogs/actions + sections/ui-glue + reducers/transitions extraction complete; architecture/controller/action/glue/reducer/transition tests added)
 - `home`: complete (package conversion + controller/state + sections/transitions extraction complete; architecture/controller/transition tests added)
 - `activity`: complete (package conversion + controller/state + route-init + transitions + ui-glue + sections extraction complete; architecture/controller/route-init/transition/glue tests added)
+- `admin_users`: complete (package conversion + controller/state + transitions + sections/ui-glue extraction complete; architecture/controller/transition/glue tests added)
 
 Phase 4: Roll out by page priority
 

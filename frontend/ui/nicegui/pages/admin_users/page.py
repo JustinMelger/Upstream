@@ -8,36 +8,14 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
-from frontend.ui.nicegui.core.datetime_utils import format_time
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-
-
-_format_time = format_time
-
-
-def _user_row(u: dict[str, Any]) -> dict[str, Any]:
-    """Map a backend user payload into a table row."""
-    return {
-        "username": u.get("username") or "",
-        "role": u.get("role") or "",
-        "created_at": _format_time(str(u.get("created_at") or "")),
-        "updated_at": _format_time(str(u.get("updated_at") or "")),
-        "last_login_at": _format_time(str(u.get("last_login_at") or "")),
-        "disabled": "Yes" if u.get("disabled") else "No",
-    }
-
-
-def _filter_users(users: list[dict[str, Any]] | None, needle: str) -> list[dict[str, Any]]:
-    """Filter users by substring match on username or role."""
-    all_users = list(users or [])
-    if not needle:
-        return all_users
-    n = needle.strip().lower()
-    if not n:
-        return all_users
-    return [u for u in all_users if n in str(u.get("username") or "").lower() or n in str(u.get("role") or "").lower()]
+from frontend.ui.nicegui.pages.admin_users.controller import AdminUsersPageController
+from frontend.ui.nicegui.pages.admin_users.sections import USERS_TABLE_COLUMNS
+from frontend.ui.nicegui.pages.admin_users.state import AdminUsersPageState
+from frontend.ui.nicegui.pages.admin_users.transitions import begin_admin_users_load, finalize_admin_users_load
+from frontend.ui.nicegui.pages.admin_users.ui_glue import _filter_users, _user_row
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -53,42 +31,38 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         if await require_user(store, api, require_admin=True) is None:
             return
 
+        controller = AdminUsersPageController(api=api)
+        state = AdminUsersPageState()
+
         render_shell(title="Admin", store=store, api=api)
         with render_container():
             ui.label("Manage users and admin settings.").classes("text-sm text-gray-600")
 
-            users: list[dict[str, Any]] = []
-
             search = ui.input("Search users").props("clearable").classes("w-full")
 
             with ui.card().classes("lp-card w-full"):
-                table = ui.table(
-                    columns=[
-                        {"name": "username", "label": "Username", "field": "username"},
-                        {"name": "role", "label": "Role", "field": "role"},
-                        {"name": "created_at", "label": "Created at", "field": "created_at"},
-                        {"name": "updated_at", "label": "Updated at", "field": "updated_at"},
-                        {"name": "last_login_at", "label": "Last login", "field": "last_login_at"},
-                        {"name": "disabled", "label": "Disabled", "field": "disabled"},
-                    ],
-                    rows=[],
-                    row_key="username",
-                ).classes("w-full")
+                table = ui.table(columns=USERS_TABLE_COLUMNS, rows=[], row_key="username").classes("w-full")
 
             def _apply_filter() -> None:
-                filtered = _filter_users(users, str(search.value or ""))
+                filtered = _filter_users(state.users, str(search.value or ""))
                 table.rows = [_user_row(u) for u in filtered]
                 table.update()
 
             @guard_ui_action(title="Load users failed")
             async def _load_users() -> None:
-                nonlocal users
+                if state.loading:
+                    return
+                load_start = begin_admin_users_load()
+                state.loading = load_start.loading
                 try:
-                    users = list(await api.get("/auth/users") or [])
+                    rows = await controller.list_users()
+                    load_done = finalize_admin_users_load(rows=rows)
+                    state.users = list(load_done.users)
                 except ApiError:
-                    users = []
+                    state.users = []
                     raise
                 finally:
+                    state.loading = False
                     _apply_filter()
 
             search.on("update:model-value", lambda *_: _apply_filter())
@@ -112,7 +86,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ui.notify("Username and password are required.", type="negative")
                     return
                 try:
-                    await api.post("/auth/users", {"username": username, "password": password, "role": role})
+                    await controller.create_user(username=username, password=password, role=role)
                     ui.notify("User created.", type="positive")
                     new_username.value = ""
                     new_password.value = ""
@@ -140,7 +114,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ui.notify("Username and new password are required.", type="negative")
                     return
                 try:
-                    await api.post("/auth/users/reset", {"username": username, "password": password})
+                    await controller.reset_password(username=username, password=password)
                     ui.notify("Password updated.", type="positive")
                     reset_username.value = ""
                     reset_password.value = ""
@@ -169,7 +143,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ui.notify("Confirm delete to continue.", type="negative")
                     return
                 try:
-                    await api.delete(f"/auth/users/{username}")
+                    await controller.delete_user(username=username)
                     ui.notify("User deleted.", type="positive")
                     delete_username.value = ""
                     confirm_delete.value = False
@@ -196,7 +170,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     return
                 disabled = str(disable_action.value or "disable") == "disable"
                 try:
-                    await api.post("/auth/users/disable", {"username": username, "disabled": disabled})
+                    await controller.set_disabled(username=username, disabled=disabled)
                     ui.notify("User updated.", type="positive")
                     disable_username.value = ""
                     disable_action.value = "disable"
