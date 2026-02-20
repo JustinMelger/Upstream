@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.paths_controller import PathsPageController, PathsPageState
+from frontend.ui.nicegui.pages.paths.controller import PathsPageController
+from frontend.ui.nicegui.pages.paths.state import PathsPageState
 
 
 class _FakeApi:
