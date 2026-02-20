@@ -20,6 +20,39 @@ class ArticlesFilterControls:
     refresh_btn: Any
 
 
+@dataclass
+class ArticlesTopbarControls:
+    """Topbar controls rendered for articles page."""
+
+    search_input: Any
+    sort_filter: Any
+    meta: Any
+
+
+def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
+    """Render articles topbar and return controls."""
+    with ui.row().classes("lp-topbar"):
+        search_input = ui.input("Search articles").props("clearable debounce=300").style("flex: 1")
+        with ui.row().classes("items-center gap-2").style("margin-left: auto"):
+            ui.button("Share", on_click=on_share).props("dense")
+            sort_filter = (
+                ui.select(
+                    {
+                        "": "Recommended",
+                        "newest": "Newest",
+                        "title_az": "Title A–Z",
+                        "author_az": "Author A–Z",
+                    },
+                    value="",
+                    label=None,
+                )
+                .props("dense")
+                .style("min-width: 180px")
+            )
+            meta = ui.label("").classes("lp-topbar-meta")
+    return ArticlesTopbarControls(search_input=search_input, sort_filter=sort_filter, meta=meta)
+
+
 def render_filters_rail(
     *,
     on_refresh: Any,

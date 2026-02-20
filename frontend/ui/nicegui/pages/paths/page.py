@@ -9,6 +9,7 @@ from nicegui import app, ui
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.path_card import render_path_card
+from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.paths_sections import render_paths_filter_rail, render_paths_topbar
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
@@ -475,17 +476,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         )
 
                     if total > len(shown_page):
-                        with ui.row().classes("items-center justify-center mt-2"):
+                        def _load_more() -> None:
+                            ui_state.visible_count = compute_expanded_visible_count(
+                                current_visible=int(ui_state.visible_count),
+                                total_count=int(total),
+                                page_size=int(ui_state.page_size),
+                            )
+                            paths_list.refresh()
 
-                            def _load_more() -> None:
-                                ui_state.visible_count = compute_expanded_visible_count(
-                                    current_visible=int(ui_state.visible_count),
-                                    total_count=int(total),
-                                    page_size=int(ui_state.page_size),
-                                )
-                                paths_list.refresh()
-
-                            ui.button(f"Load more ({len(shown_page)}/{total})", on_click=_load_more).props("outline")
+                        render_load_more_footer(
+                            shown_page_count=len(shown_page),
+                            shown_total_count=total,
+                            on_load_more=_load_more,
+                        )
 
             async def _load_all() -> None:
                 """Reload all data for this page."""

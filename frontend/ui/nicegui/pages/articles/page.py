@@ -9,6 +9,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
+from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import format_date
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
@@ -22,6 +23,7 @@ from frontend.ui.nicegui.pages.articles.reducers import compute_facet_state, der
 from frontend.ui.nicegui.pages.articles.sections import (
     render_active_filter_chips,
     render_article_card,
+    render_articles_topbar,
     render_articles_empty_state,
     render_filters_rail,
 )
@@ -181,25 +183,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             )
 
         with render_container():
-            with ui.row().classes("lp-topbar"):
-                q = ui.input("Search articles").props("clearable debounce=300").style("flex: 1")
-                with ui.row().classes("items-center gap-2").style("margin-left: auto"):
-                    ui.button("Share", on_click=_open_share_dialog).props("dense")
-                    sort_filter = (
-                        ui.select(
-                            {
-                                "": "Recommended",
-                                "newest": "Newest",
-                                "title_az": "Title A–Z",
-                                "author_az": "Author A–Z",
-                            },
-                            value="",
-                            label=None,
-                        )
-                        .props("dense")
-                        .style("min-width: 180px")
-                    )
-                    meta = ui.label("").classes("lp-topbar-meta")
+            topbar = render_articles_topbar(on_share=_open_share_dialog)
+            q = topbar.search_input
+            sort_filter = topbar.sort_filter
+            meta = topbar.meta
 
             def _render_rail() -> None:
                 nonlocal tag_filter, author_filter, refresh_btn
@@ -296,17 +283,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         )
 
                     if total > len(shown_page):
-                        with ui.row().classes("items-center justify-center mt-2"):
+                        def _load_more() -> None:
+                            state.visible_count = compute_expanded_visible_count(
+                                current_visible=int(state.visible_count),
+                                total_count=total,
+                                page_size=state.page_size,
+                            )
+                            articles_list.refresh()
 
-                            def _load_more() -> None:
-                                state.visible_count = compute_expanded_visible_count(
-                                    current_visible=int(state.visible_count),
-                                    total_count=total,
-                                    page_size=state.page_size,
-                                )
-                                articles_list.refresh()
-
-                            ui.button(f"Load more ({len(shown_page)}/{total})", on_click=_load_more).props("outline")
+                        render_load_more_footer(
+                            shown_page_count=len(shown_page),
+                            shown_total_count=total,
+                            on_load_more=_load_more,
+                        )
 
             def _render_main() -> None:
                 active_filters()

@@ -115,7 +115,7 @@
 - [x] Frontend clean code: enforce page boundary (pages = UI composition/event binding; move API orchestration to services/use-cases).
 - [x] Frontend clean code: introduce typed page state/view-model objects to reduce large closure state (`nonlocal`) usage.
 - [x] Frontend clean code: extract large nested handlers into domain action modules (`learning_actions`, `courses_actions`, `paths_actions`).
-- [ ] Frontend clean code: componentize repeated page sections (top bar, filter rail, card sections, load-more footer).
+- [x] Frontend clean code: componentize repeated page sections (top bar, filter rail, card sections, load-more footer).
 - [ ] Frontend clean code: reduce page-module size/complexity (`courses.py`, `paths.py`, `learning.py`) by splitting into focused UI sections and action modules.
 - [x] Frontend clean code: centralize deep-link and intent navigation logic in a shared navigation helper.
 - [x] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.

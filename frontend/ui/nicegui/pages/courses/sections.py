@@ -7,6 +7,7 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.pages.courses.ui_glue import ActiveFilterChip
@@ -21,6 +22,54 @@ class CoursesFilterControls:
     level_filter: Any
     status_filter: Any
     refresh_btn: Any
+
+
+@dataclass
+class CoursesTopbarControls:
+    """Topbar controls rendered for courses page."""
+
+    search_input: Any
+    scope_filter: Any
+    sort_filter: Any
+    meta: Any
+
+
+def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbarControls:
+    """Render courses topbar and return controls."""
+    with ui.row().classes("lp-topbar"):
+        search_input = ui.input("Search courses").props("clearable debounce=300").style("flex: 1")
+        with ui.row().classes("items-center gap-2").style("margin-left: auto"):
+            ui.button("Share", on_click=on_share).props("dense")
+            scope_filter = (
+                ui.radio(
+                    {"all": "All", "tracked": "Tracked"},
+                    value=initial_scope,
+                )
+                .props("inline dense")
+                .classes("text-sm")
+            )
+            sort_filter = (
+                ui.select(
+                    {
+                        "": "Recommended",
+                        "top_rated": "Top rated",
+                        "most_reviewed": "Most reviewed",
+                        "newest": "Recently added",
+                        "title_az": "Title A–Z",
+                    },
+                    value="",
+                    label=None,
+                )
+                .props("dense")
+                .style("min-width: 180px")
+            )
+            meta = ui.label("").classes("lp-topbar-meta")
+    return CoursesTopbarControls(
+        search_input=search_input,
+        scope_filter=scope_filter,
+        sort_filter=sort_filter,
+        meta=meta,
+    )
 
 
 _ALLOWED_TRACKING_STATUSES = {"interested", "in_progress", "completed"}
@@ -261,10 +310,8 @@ def render_load_more_control(
     on_load_more: Any,
 ) -> None:
     """Render the load-more control for paginated list rendering."""
-    if shown_total_count <= shown_page_count:
-        return
-    with ui.row().classes("items-center justify-center mt-2"):
-        ui.button(
-            f"Load more ({shown_page_count}/{shown_total_count})",
-            on_click=on_load_more,
-        ).props("outline")
+    render_load_more_footer(
+        shown_page_count=int(shown_page_count),
+        shown_total_count=int(shown_total_count),
+        on_load_more=on_load_more,
+    )

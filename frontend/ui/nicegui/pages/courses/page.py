@@ -47,6 +47,7 @@ from frontend.ui.nicegui.pages.courses.route_init import intent_matches_course, 
 from frontend.ui.nicegui.pages.courses.sections import (
     render_active_filter_chips,
     render_course_card,
+    render_courses_topbar,
     render_courses_empty_state,
     render_filters_rail,
     render_load_more_control,
@@ -144,37 +145,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 nav_intent=nav_intent if isinstance(nav_intent, dict) else None,
             )
 
-            with ui.row().classes("lp-topbar"):
-                q = ui.input("Search courses").props("clearable debounce=300").style("flex: 1")
-                with ui.row().classes("items-center gap-2").style("margin-left: auto"):
-                    ui.button("Share", on_click=lambda: _open_create_dialog()).props("dense")
-                    scope_filter = (
-                        ui.radio(
-                            {"all": "All", "tracked": "Tracked"},
-                            value=route_init.initial_scope,
-                        )
-                        .props("inline dense")
-                        .classes("text-sm")
-                    )
-                    sort_filter = (
-                        ui.select(
-                            {
-                                "": "Recommended",
-                                "top_rated": "Top rated",
-                                "most_reviewed": "Most reviewed",
-                                "newest": "Recently added",
-                                "title_az": "Title A–Z",
-                            },
-                            value="",
-                            label=None,
-                        )
-                        .props("dense")
-                        .style("min-width: 180px")
-                    )
-                    # Late-bind to avoid "defined later" ordering issues.
-                    sort_filter.on("update:model-value", lambda *_: _refresh_list())
-                    scope_filter.on("update:model-value", lambda *_: _refresh_list())
-                    meta = ui.label("").classes("lp-topbar-meta")
+            topbar = render_courses_topbar(
+                initial_scope=route_init.initial_scope,
+                on_share=lambda: _open_create_dialog(),
+            )
+            q = topbar.search_input
+            scope_filter = topbar.scope_filter
+            sort_filter = topbar.sort_filter
+            meta = topbar.meta
+            # Late-bind to avoid "defined later" ordering issues.
+            sort_filter.on("update:model-value", lambda *_: _refresh_list())
+            scope_filter.on("update:model-value", lambda *_: _refresh_list())
 
             provider_filter: Any = None
             category_filter: Any = None
