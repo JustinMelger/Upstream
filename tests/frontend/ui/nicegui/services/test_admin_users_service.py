@@ -56,4 +56,3 @@ async def test_admin_users_service_delete_user_url_encodes_username() -> None:
 
     await admin_users_service.delete_user(api=_Api(), username="a/b user")  # type: ignore[arg-type]
     assert calls == ["/auth/users/a%2Fb%20user"]
-

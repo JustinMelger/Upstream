@@ -46,4 +46,3 @@ async def apply_plan(
     if select_for_me and path_id > 0:
         await api.post(f"/paths/{path_id}/select", {})
     return path_id
-

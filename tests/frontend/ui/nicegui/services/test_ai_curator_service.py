@@ -94,4 +94,3 @@ async def test_ai_curator_service_apply_plan_raises_on_invalid_created_path_id()
             path_description="D1",
             select_for_me=False,
         )
-

@@ -33,4 +33,3 @@ async def delete_user(*, api: ApiClient, username: str) -> None:
 async def set_disabled(*, api: ApiClient, username: str, disabled: bool) -> None:
     """Disable/enable a user."""
     await api.post("/auth/users/disable", {"username": str(username), "disabled": bool(disabled)})
-
