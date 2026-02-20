@@ -29,7 +29,7 @@ from frontend.ui.nicegui.pages.paths.reducers import (
     sort_paths,
 )
 from frontend.ui.nicegui.pages.paths.route_init import intent_matches_path, resolve_paths_route_init
-from frontend.ui.nicegui.pages.paths.state import PathsPageState
+from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
 from frontend.ui.nicegui.pages.paths.transitions import (
     apply_optimistic_select,
     apply_optimistic_unselect,
@@ -99,11 +99,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         is_admin = str(user.get("role") or "") == "admin"
         controller = PathsPageController(api=api)
         controller_state = PathsPageState()
-
-        loading = False
-        loaded_once = False
-        page_size = 10
-        visible_count = page_size
+        ui_state = PathsPageUiState()
 
         async def _reload_selected() -> bool:
             """Reload selected path rows (used after select/unselect/status updates)."""
@@ -276,8 +272,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 status_filter.update()
 
             def _refresh_list(*_: Any) -> None:
-                nonlocal visible_count
-                visible_count = page_size
+                ui_state.visible_count = int(ui_state.page_size)
                 _recompute_facet_options()
                 active_filters.refresh()
                 paths_list.refresh()
@@ -365,7 +360,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @ui.refreshable
             def paths_list() -> None:
-                nonlocal visible_count
                 normalized = normalize_paths_filter_values(
                     scope_value=str(scope_filter.value or "all"),
                     search_value=str(q.value or ""),
@@ -388,7 +382,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
                 with ui.column().classes("w-full gap-3"):
-                    if loading or not loaded_once:
+                    if ui_state.loading or not ui_state.loaded_once:
                         render_card_skeletons(count=4)
                         return
 
@@ -420,7 +414,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         return
 
                     total = len(shown)
-                    shown_page = shown[: max(0, int(visible_count))]
+                    shown_page = shown[: max(0, int(ui_state.visible_count))]
                     for p in shown_page:
                         pid = int(p.get("id") or 0)
                         selected = controller_state.selected_by_id.get(pid)
@@ -490,11 +484,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         with ui.row().classes("items-center justify-center mt-2"):
 
                             def _load_more() -> None:
-                                nonlocal visible_count
-                                visible_count = compute_expanded_visible_count(
-                                    current_visible=int(visible_count),
+                                ui_state.visible_count = compute_expanded_visible_count(
+                                    current_visible=int(ui_state.visible_count),
                                     total_count=int(total),
-                                    page_size=int(page_size),
+                                    page_size=int(ui_state.page_size),
                                 )
                                 paths_list.refresh()
 
@@ -502,15 +495,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             async def _load_all() -> None:
                 """Reload all data for this page."""
-                nonlocal loading
-                nonlocal loaded_once
-                nonlocal visible_count
-                if loading:
+                if ui_state.loading:
                     return
                 ok = False
-                load_start = begin_paths_load(page_size=page_size)
-                loading = load_start.loading
-                visible_count = load_start.visible_count
+                load_start = begin_paths_load(page_size=ui_state.page_size)
+                ui_state.loading = load_start.loading
+                ui_state.visible_count = load_start.visible_count
                 refresh_btn.disable()
                 meta.text = load_start.meta_text
                 paths_list.refresh()
@@ -529,8 +519,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 finally:
                     load_done = finalize_paths_load(ok=ok, path_count=len(controller_state.paths))
                     meta.text = compute_paths_meta_text(path_count=len(controller_state.paths))
-                    loading = load_done.loading
-                    loaded_once = load_done.loaded_once
+                    ui_state.loading = load_done.loading
+                    ui_state.loaded_once = load_done.loaded_once
                     refresh_btn.enable()
                     paths_list.refresh()
 

@@ -21,6 +21,16 @@ class PathsPageState:
 
 
 @dataclass(slots=True)
+class PathsPageUiState:
+    """UI-only mutable state for pagination/loading controls."""
+
+    page_size: int = 10
+    visible_count: int = 10
+    loading: bool = False
+    loaded_once: bool = False
+
+
+@dataclass(slots=True)
 class PathDetailBundle:
     """Preloaded payloads for the path details dialog."""
 
