@@ -3,9 +3,9 @@ from __future__ import annotations
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import SessionRecord, UserRecord
 from backend.database.orm_models import Session as SessionModel, User as UserModel
-from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 
 
 class AuthRepository(RepositoryDateTimeCodec):

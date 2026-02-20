@@ -35,6 +35,26 @@ async def test_upsert_invalid_status(db_session):
 
 
 @pytest.mark.unit
+async def test_tracking_invalid_payload_type_returns_invalid_payload(db_session):
+    """Service-level payload parsing rejects invalid tracking payload types."""
+    tracking = TrackingService(TrackingRepository(db_session))
+    with pytest.raises(TrackingServiceError) as excinfo:
+        await tracking.upsert_tracking("user1", {"bad": 1}, "interested")  # type: ignore[arg-type]
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_payload"
+
+
+@pytest.mark.unit
+async def test_tracking_recent_activity_invalid_limit_payload_returns_invalid_payload(db_session):
+    """Service-level payload parsing rejects invalid recent-activity limit types."""
+    tracking = TrackingService(TrackingRepository(db_session))
+    with pytest.raises(TrackingServiceError) as excinfo:
+        await tracking.list_recent_activity(limit={"bad": 1})  # type: ignore[arg-type]
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_payload"
+
+
+@pytest.mark.unit
 async def test_stats_and_remove(db_session):
     """Tracking stats aggregate per user and overall."""
     courses = CoursesService(CoursesRepository(db_session))

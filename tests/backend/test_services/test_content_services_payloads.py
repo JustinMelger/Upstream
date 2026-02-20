@@ -1,4 +1,5 @@
 import pytest
+
 from backend.database.async_repositories.article_reviews import ArticleReviewsRepository
 from backend.database.async_repositories.articles import ArticlesRepository
 from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
@@ -7,19 +8,13 @@ from backend.database.async_repositories.courses import CoursesRepository
 from backend.database.async_repositories.path_recommendations import PathRecommendationsRepository
 from backend.database.async_repositories.path_reviews import PathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository
-from backend.services.article_reviews_service import ArticleReviewsService
-from backend.services.article_reviews_service import ArticleReviewsServiceError
-from backend.services.articles_service import ArticlesService
-from backend.services.articles_service import ArticlesServiceError
-from backend.services.course_recommendations_service import CourseRecommendationsService
-from backend.services.course_recommendations_service import CourseRecommendationsServiceError
-from backend.services.course_reviews_service import CourseReviewsService
-from backend.services.course_reviews_service import CourseReviewsServiceError
+from backend.services.article_reviews_service import ArticleReviewsService, ArticleReviewsServiceError
+from backend.services.articles_service import ArticlesService, ArticlesServiceError
+from backend.services.course_recommendations_service import CourseRecommendationsService, CourseRecommendationsServiceError
+from backend.services.course_reviews_service import CourseReviewsService, CourseReviewsServiceError
 from backend.services.courses_service import CoursesService
-from backend.services.path_recommendations_service import PathRecommendationsService
-from backend.services.path_recommendations_service import PathRecommendationsServiceError
-from backend.services.path_reviews_service import PathReviewsService
-from backend.services.path_reviews_service import PathReviewsServiceError
+from backend.services.path_recommendations_service import PathRecommendationsService, PathRecommendationsServiceError
+from backend.services.path_reviews_service import PathReviewsService, PathReviewsServiceError
 from backend.services.paths_service import PathsService
 
 

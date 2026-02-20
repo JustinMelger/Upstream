@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pydantic import ValidationError
+from pydantic.dataclasses import dataclass
+
 from backend.core.errors import error_handler, ServiceError
 from backend.database.async_repositories.notifications import NotificationsRepository
 from backend.database.tx import session_scope
@@ -10,6 +13,15 @@ class NotificationsServiceError(ServiceError):
 
     def __init__(self, *, detail: str, status_code: int = 500) -> None:
         super().__init__(detail=detail, status_code=status_code)
+
+
+@dataclass
+class NotificationActivityQuery:
+    """Typed service-layer payload for activity feed queries."""
+
+    current_user: str | None = None
+    limit: int | str | None = 30
+    scope: str | None = "inbox"
 
 
 def notifications_error_handler(
@@ -34,9 +46,21 @@ class NotificationsService:
     @notifications_error_handler()
     async def list_activity(self, *, current_user: str, limit: int = 30, scope: str = "inbox") -> list[dict]:
         """Return activity rows for inbox or team timeline scope."""
-        safe_limit = max(1, min(int(limit or 30), 100))
+        data = self._parse_activity_query(
+            {
+                "current_user": current_user,
+                "limit": limit,
+                "scope": scope,
+            }
+        )
+        username = str(data.current_user or "").strip()
+        if not username:
+            raise NotificationsServiceError(detail="invalid_payload", status_code=400)
+        safe_limit = max(1, min(int(data.limit or 30), 100))
         source_limit = max(20, safe_limit * 4)
-        scope_value = str(scope or "inbox").strip().lower()
+        scope_value = str(data.scope or "inbox").strip().lower()
+        if scope_value not in {"inbox", "team"}:
+            scope_value = "inbox"
         is_team = scope_value == "team"
 
         async with session_scope(self._repo.session):
@@ -60,7 +84,6 @@ class NotificationsService:
             )
 
         events: list[dict] = []
-        username = str(current_user or "").strip()
 
         for row in course_shares:
             actor = str(row.get("created_by") or "").strip()
@@ -263,3 +286,11 @@ class NotificationsService:
         events = [row for row in deduped.values() if str(row.get("event_id") or "").strip()]
         events.sort(key=lambda row: (str(row.get("created_at") or ""), str(row.get("event_id") or "")), reverse=True)
         return events[:safe_limit]
+
+    @staticmethod
+    def _parse_activity_query(payload: dict) -> NotificationActivityQuery:
+        """Parse and validate the activity feed query payload."""
+        try:
+            return NotificationActivityQuery(**dict(payload or {}))
+        except ValidationError as exc:
+            raise NotificationsServiceError(detail="invalid_payload", status_code=400) from exc
