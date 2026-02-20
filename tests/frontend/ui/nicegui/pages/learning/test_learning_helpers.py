@@ -7,7 +7,7 @@ from datetime import timezone
 import pytest
 
 from frontend.ui.nicegui.core import datetime_utils
-from frontend.ui.nicegui.pages.learning.page import _build_course_navigation_url, _build_path_navigation_url
+from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
 from frontend.ui.nicegui.services.paths_service import compute_path_progress
 
 
@@ -47,5 +47,5 @@ def test_compute_path_progress_counts_completed() -> None:
 
 @pytest.mark.unit
 def test_learning_navigation_urls_include_id_and_view() -> None:
-    assert _build_course_navigation_url(course_id=42, view="reviews") == "/courses?tab=tracked&course_id=42&view=reviews"
-    assert _build_path_navigation_url(path_id=7, view="full") == "/paths?tab=selected&path_id=7&view=full"
+    assert build_courses_deep_link(course_id=42, view="reviews") == "/courses?tab=tracked&course_id=42&view=reviews"
+    assert build_paths_deep_link(path_id=7, view="full") == "/paths?tab=selected&path_id=7&view=full"

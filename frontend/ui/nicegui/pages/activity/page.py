@@ -10,6 +10,7 @@ from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.navigation import build_activity_tab_link
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.activity.controller import ActivityPageController
 from frontend.ui.nicegui.pages.activity.route_init import resolve_activity_tab
@@ -90,7 +91,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             @guard_ui_action(title="Switch tab failed")
             async def _on_tab_change(*_args: Any) -> None:
                 current = str(tab_filter.value or "inbox")
-                ui.navigate.to(f"/activity?tab={current}")
+                ui.navigate.to(build_activity_tab_link(tab=current))
                 await _load()
 
             tab_filter.on("update:model-value", _on_tab_change)

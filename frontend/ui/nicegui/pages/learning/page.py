@@ -19,6 +19,7 @@ from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.datetime_utils import format_date
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
@@ -80,16 +81,6 @@ def _recommendation_summary_label(row: dict[str, Any] | None) -> str:
     if count <= 0:
         return ""
     return f"↗ {count} rec"
-
-
-def _build_course_navigation_url(*, course_id: int, view: str) -> str:
-    """Build stable course details navigation URL."""
-    return f"/courses?tab=tracked&course_id={int(course_id)}&view={str(view or 'full')}"
-
-
-def _build_path_navigation_url(*, path_id: int, view: str) -> str:
-    """Build stable path details navigation URL."""
-    return f"/paths?tab=selected&path_id={int(path_id)}&view={str(view or 'full')}"
 
 
 def _next_uncompleted_course_from_selected_paths(
@@ -161,11 +152,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         controller = LearningPageController(api=api)
         nav_actions = LearningNavigationActions(
             username=username,
-            build_course_navigation_url=lambda course_id, view: _build_course_navigation_url(
+            build_course_navigation_url=lambda course_id, view: build_courses_deep_link(
                 course_id=int(course_id),
                 view=str(view),
             ),
-            build_path_navigation_url=lambda path_id, view: _build_path_navigation_url(
+            build_path_navigation_url=lambda path_id, view: build_paths_deep_link(
                 path_id=int(path_id),
                 view=str(view),
             ),

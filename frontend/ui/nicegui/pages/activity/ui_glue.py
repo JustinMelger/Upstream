@@ -6,6 +6,7 @@ from datetime import timezone
 from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
+from frontend.ui.nicegui.core.navigation import build_activity_target_link
 
 
 def format_when(value: Any) -> str:
@@ -18,14 +19,7 @@ def format_when(value: Any) -> str:
 
 def target_url(*, target_type: str, target_id: int) -> str:
     """Resolve Activity Open-button route for target entity."""
-    kind = str(target_type or "")
-    if kind == "course":
-        return f"/courses?course_id={int(target_id)}"
-    if kind == "path":
-        return f"/paths?path_id={int(target_id)}"
-    if kind == "article":
-        return "/articles"
-    return "/learning"
+    return build_activity_target_link(target_type=str(target_type), target_id=int(target_id))
 
 
 def coerce_target_id(value: Any) -> int | None:

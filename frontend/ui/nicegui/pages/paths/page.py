@@ -15,6 +15,7 @@ from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation_intents import get_path_intent, pop_path_intent
+from frontend.ui.nicegui.core.navigation_intents import get_path_storage_intent, pop_path_storage_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.paths.actions import build_path_card_actions
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
@@ -236,7 +237,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             # Top bar (search + primary action + sort + count).
             request = getattr(ui.context.client, "request", None)
-            intent = app.storage.user.get("paths_open_intent")
+            intent = get_path_storage_intent(storage_user=app.storage.user)
             nav_intent = get_path_intent(username=username)
             route_init = resolve_paths_route_init(
                 request=request,
@@ -542,6 +543,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             if route_init.initial_path_id > 0:
                 await _open_details(route_init.initial_path_id, view_mode=route_init.initial_dialog_mode)
                 if intent_matches_path(intent if isinstance(intent, dict) else None, route_init.initial_path_id):
-                    app.storage.user.pop("paths_open_intent", None)
+                    pop_path_storage_intent(storage_user=app.storage.user)
                 if intent_matches_path(nav_intent if isinstance(nav_intent, dict) else None, route_init.initial_path_id):
                     pop_path_intent(username=username)
