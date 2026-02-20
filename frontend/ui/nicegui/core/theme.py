@@ -323,7 +323,7 @@ def apply_theme() -> None:
             backdrop-filter: none;
           }
           .lp-card-title {
-            font-size: 1.42rem;
+            font-size: 1.24rem;
           }
           .lp-card-body {
             font-size: 0.98rem;
@@ -339,7 +339,7 @@ def apply_theme() -> None:
 
         .lp-card-title {
           font-family: var(--lp-font-display);
-          font-size: var(--lp-type-xl);
+          font-size: clamp(1.28rem, 1.7vw, 1.6rem);
           line-height: 1.16;
           letter-spacing: 0.01em;
         }
