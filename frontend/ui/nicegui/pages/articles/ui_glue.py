@@ -52,3 +52,13 @@ def build_active_filter_chips(
     if sort_key:
         chips.append(ActiveFilterChip(key="sort", label=f"Sort: {str(sort_options.get(sort_key) or sort_key)}"))
     return chips
+
+
+def compute_articles_meta_text(*, article_count: int) -> str:
+    """Build the top-bar list meta text."""
+    return f"{int(article_count)} articles"
+
+
+def compute_expanded_visible_count(*, current_visible: int, total_count: int, page_size: int) -> int:
+    """Return next visible count for load-more pagination."""
+    return min(int(total_count), int(current_visible) + int(page_size))

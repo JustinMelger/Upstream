@@ -23,7 +23,7 @@ def _imports_for(path: Path) -> set[str]:
 
 @pytest.mark.unit
 def test_articles_pure_modules_do_not_import_nicegui() -> None:
-    for filename in ["actions.py", "controller.py", "reducers.py", "state.py", "transitions.py", "ui_glue.py"]:
+    for filename in ["actions.py", "controller.py", "filters.py", "reducers.py", "state.py", "transitions.py", "ui_glue.py"]:
         imports = _imports_for(_ARTICLES_DIR / filename)
         assert "nicegui" not in imports
         assert not any(name.startswith("nicegui.") for name in imports)
@@ -32,6 +32,7 @@ def test_articles_pure_modules_do_not_import_nicegui() -> None:
 @pytest.mark.unit
 def test_articles_page_imports_controller_and_state() -> None:
     imports = _imports_for(_ARTICLES_DIR / "page.py")
+    assert "frontend.ui.nicegui.pages.articles.filters" in imports
     assert "frontend.ui.nicegui.pages.articles.reducers" in imports
     assert "frontend.ui.nicegui.pages.articles.sections" in imports
     assert "frontend.ui.nicegui.pages.articles.ui_glue" in imports

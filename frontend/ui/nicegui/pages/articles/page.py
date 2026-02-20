@@ -17,6 +17,7 @@ from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
 from frontend.ui.nicegui.pages.articles.dialogs import build_share_article_dialog, open_article_details_dialog
+from frontend.ui.nicegui.pages.articles.filters import normalize_articles_filter_values
 from frontend.ui.nicegui.pages.articles.reducers import compute_facet_state, derive_shown_articles
 from frontend.ui.nicegui.pages.articles.sections import (
     render_active_filter_chips,
@@ -30,7 +31,11 @@ from frontend.ui.nicegui.pages.articles.transitions import (
     clear_articles_state_on_load_error,
     finalize_articles_load,
 )
-from frontend.ui.nicegui.pages.articles.ui_glue import build_active_filter_chips
+from frontend.ui.nicegui.pages.articles.ui_glue import (
+    build_active_filter_chips,
+    compute_articles_meta_text,
+    compute_expanded_visible_count,
+)
 from frontend.ui.nicegui.services.articles_service import (
     article_is_new,
     parse_tags,
@@ -86,13 +91,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             if tag_filter is None or author_filter is None:
                 return
 
-            tag_v = str(tag_filter.value or "")
-            author_v = str(author_filter.value or "")
+            normalized = normalize_articles_filter_values(
+                search_value=needle,
+                tag_value=str(tag_filter.value or ""),
+                author_value=str(author_filter.value or ""),
+                sort_value=str(sort_filter.value or "") if sort_filter is not None else "",
+            )
             tag_options, author_options, next_tag, next_author = compute_facet_state(
                 articles=state.articles,
-                needle=needle,
-                selected_tag=tag_v,
-                selected_author=author_v,
+                needle=normalized.search,
+                selected_tag=normalized.tag,
+                selected_author=normalized.author,
             )
             tag_filter.options = tag_options
             author_filter.options = author_options
@@ -153,7 +162,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 load_done = finalize_articles_load(ok=ok, article_count=len(state.articles))
                 state.loading = load_done.loading
                 state.loaded_once = load_done.loaded_once
-                meta.text = load_done.meta_text
+                meta.text = compute_articles_meta_text(article_count=len(state.articles))
                 refresh_btn.enable()
                 active_filters.refresh()
                 articles_list.refresh()
@@ -230,17 +239,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @ui.refreshable
             def articles_list() -> None:
-                needle = str(q.value or "")
-                tag_v = str(tag_filter.value or "") if tag_filter is not None else ""
-                author_v = str(author_filter.value or "") if author_filter is not None else ""
-                sort_v = str(sort_filter.value or "") if sort_filter is not None else ""
+                normalized = normalize_articles_filter_values(
+                    search_value=str(q.value or ""),
+                    tag_value=str(tag_filter.value or "") if tag_filter is not None else "",
+                    author_value=str(author_filter.value or "") if author_filter is not None else "",
+                    sort_value=str(sort_filter.value or "") if sort_filter is not None else "",
+                )
 
                 shown = derive_shown_articles(
                     articles=state.articles,
-                    needle=needle,
-                    tag_value=tag_v,
-                    author_value=author_v,
-                    sort_value=sort_v,
+                    needle=normalized.search,
+                    tag_value=normalized.tag,
+                    author_value=normalized.author,
+                    sort_value=normalized.sort,
                 )
 
                 with ui.column().classes("w-full gap-3"):
@@ -249,7 +260,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         return
 
                     if not shown:
-                        any_filters = any([str(q.value or "").strip(), tag_v.strip(), author_v.strip()])
+                        any_filters = any([normalized.search, normalized.tag, normalized.author])
                         render_articles_empty_state(
                             has_articles=bool(state.articles),
                             any_filters=bool(any_filters),
@@ -288,7 +299,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         with ui.row().classes("items-center justify-center mt-2"):
 
                             def _load_more() -> None:
-                                state.visible_count = min(total, int(state.visible_count) + state.page_size)
+                                state.visible_count = compute_expanded_visible_count(
+                                    current_visible=int(state.visible_count),
+                                    total_count=total,
+                                    page_size=state.page_size,
+                                )
                                 articles_list.refresh()
 
                             ui.button(f"Load more ({len(shown_page)}/{total})", on_click=_load_more).props("outline")
