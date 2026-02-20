@@ -7,40 +7,42 @@ from frontend.ui.nicegui.pages.ai_curator.controller import AiCuratorPageControl
 
 @pytest.mark.unit
 @pytest.mark.anyio
-async def test_ai_curator_controller_generate_plan_normalizes_rows() -> None:
-    calls: list[tuple[str, dict]] = []
+async def test_ai_curator_controller_generate_plan_normalizes_rows(monkeypatch: pytest.MonkeyPatch) -> None:
+    from frontend.ui.nicegui.pages.ai_curator import controller as ai_curator_controller
 
-    class _Api:
-        async def post(self, path: str, payload: dict):  # noqa: ANN001
-            calls.append((path, payload))
-            return {
-                "path": {"name": "Path A", "description": "desc"},
-                "courses": [{"title": "C1", "provider": "P1"}, "bad"],
-            }
+    calls: list[tuple[str, str, object]] = []
 
-    c = AiCuratorPageController(api=_Api())  # type: ignore[arg-type]
+    async def _generate_plan(*, api, goal: str):  # noqa: ANN001
+        calls.append(("generate", goal, api))
+        return {"name": "Path A", "description": "desc"}, [{"title": "C1", "provider": "P1"}]
+
+    monkeypatch.setattr(ai_curator_controller, "generate_plan", _generate_plan)
+
+    marker_api = object()
+    c = AiCuratorPageController(api=marker_api)  # type: ignore[arg-type]
     path, courses = await c.generate_plan(goal="Build API")
+
     assert path == {"name": "Path A", "description": "desc"}
     assert len(courses) == 1
     assert courses[0]["title"] == "C1"
-    assert calls == [("/ai/plan", {"goal": "Build API"})]
+    assert calls == [("generate", "Build API", marker_api)]
 
 
 @pytest.mark.unit
 @pytest.mark.anyio
-async def test_ai_curator_controller_apply_plan_creates_courses_path_and_selects() -> None:
-    calls: list[tuple[str, str, dict]] = []
+async def test_ai_curator_controller_apply_plan_creates_courses_path_and_selects(monkeypatch: pytest.MonkeyPatch) -> None:
+    from frontend.ui.nicegui.pages.ai_curator import controller as ai_curator_controller
 
-    class _Api:
-        async def post(self, path: str, payload: dict):  # noqa: ANN001
-            calls.append(("POST", path, payload))
-            if path == "/courses":
-                return {"id": 11 if len([c for c in calls if c[1] == "/courses"]) == 1 else 12}
-            if path == "/paths":
-                return {"id": 7}
-            return {}
+    calls: list[tuple[str, int, str, bool, object]] = []
 
-    c = AiCuratorPageController(api=_Api())  # type: ignore[arg-type]
+    async def _apply_plan(*, api, draft_courses, path_name: str, path_description: str, select_for_me: bool):  # noqa: ANN001
+        calls.append(("apply", len(list(draft_courses or [])), path_name, select_for_me, api))
+        return 7
+
+    monkeypatch.setattr(ai_curator_controller, "apply_plan", _apply_plan)
+
+    marker_api = object()
+    c = AiCuratorPageController(api=marker_api)  # type: ignore[arg-type]
     out = await c.apply_plan(
         draft_courses=[
             {"title": "A", "description": "", "provider": "P", "category": "X", "level": "L", "url": ""},
@@ -50,23 +52,23 @@ async def test_ai_curator_controller_apply_plan_creates_courses_path_and_selects
         path_description="D1",
         select_for_me=True,
     )
+
     assert out == 7
-    assert calls[0][1] == "/courses"
-    assert calls[1][1] == "/courses"
-    assert calls[2] == ("POST", "/paths", {"name": "P1", "description": "D1", "course_ids": [11, 12]})
-    assert calls[3] == ("POST", "/paths/7/select", {})
+    assert calls == [("apply", 2, "P1", True, marker_api)]
 
 
 @pytest.mark.unit
 @pytest.mark.anyio
-async def test_ai_curator_controller_apply_plan_raises_on_invalid_created_course_id() -> None:
-    class _Api:
-        async def post(self, path: str, payload: dict):  # noqa: ANN001
-            if path == "/courses":
-                return {"id": 0}
-            return {}
+async def test_ai_curator_controller_apply_plan_raises_on_invalid_created_course_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from frontend.ui.nicegui.pages.ai_curator import controller as ai_curator_controller
 
-    c = AiCuratorPageController(api=_Api())  # type: ignore[arg-type]
+    async def _apply_plan(**_kwargs):  # noqa: ANN003
+        raise RuntimeError("invalid_created_course_id")
+
+    monkeypatch.setattr(ai_curator_controller, "apply_plan", _apply_plan)
+    c = AiCuratorPageController(api=object())  # type: ignore[arg-type]
     with pytest.raises(RuntimeError, match="invalid_created_course_id"):
         await c.apply_plan(
             draft_courses=[{"title": "A"}],
@@ -78,16 +80,16 @@ async def test_ai_curator_controller_apply_plan_raises_on_invalid_created_course
 
 @pytest.mark.unit
 @pytest.mark.anyio
-async def test_ai_curator_controller_apply_plan_raises_on_invalid_created_path_id() -> None:
-    class _Api:
-        async def post(self, path: str, payload: dict):  # noqa: ANN001
-            if path == "/courses":
-                return {"id": 11}
-            if path == "/paths":
-                return {"id": 0}
-            return {}
+async def test_ai_curator_controller_apply_plan_raises_on_invalid_created_path_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from frontend.ui.nicegui.pages.ai_curator import controller as ai_curator_controller
 
-    c = AiCuratorPageController(api=_Api())  # type: ignore[arg-type]
+    async def _apply_plan(**_kwargs):  # noqa: ANN003
+        raise RuntimeError("invalid_created_path_id")
+
+    monkeypatch.setattr(ai_curator_controller, "apply_plan", _apply_plan)
+    c = AiCuratorPageController(api=object())  # type: ignore[arg-type]
     with pytest.raises(RuntimeError, match="invalid_created_path_id"):
         await c.apply_plan(
             draft_courses=[{"title": "A"}],
