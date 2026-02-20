@@ -43,3 +43,24 @@ async def test_admin_users_controller_mutation_calls() -> None:
         ("DELETE", "/auth/users/u1", None),
         ("POST", "/auth/users/disable", {"username": "u1", "disabled": True}),
     ]
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_admin_users_controller_delete_user_url_encodes_username() -> None:
+    calls: list[str] = []
+
+    class _Api:
+        async def get(self, *_args, **_kwargs):  # noqa: ANN001
+            return []
+
+        async def post(self, *_args, **_kwargs):  # noqa: ANN001
+            return {}
+
+        async def delete(self, path: str):  # noqa: ANN001
+            calls.append(path)
+            return {}
+
+    c = AdminUsersPageController(api=_Api())  # type: ignore[arg-type]
+    await c.delete_user(username="a/b user")
+    assert calls == ["/auth/users/a%2Fb%20user"]

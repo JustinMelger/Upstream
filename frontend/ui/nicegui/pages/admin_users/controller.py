@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
 from frontend.ui.nicegui.core.api_client import ApiClient
 
@@ -28,7 +29,8 @@ class AdminUsersPageController:
 
     async def delete_user(self, *, username: str) -> None:
         """Delete a user."""
-        await self._api.delete(f"/auth/users/{username}")
+        encoded = quote(str(username or "").strip(), safe="")
+        await self._api.delete(f"/auth/users/{encoded}")
 
     async def set_disabled(self, *, username: str, disabled: bool) -> None:
         """Disable/enable a user."""

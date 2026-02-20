@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+
 USERS_TABLE_COLUMNS: list[dict[str, str]] = [
     {"name": "username", "label": "Username", "field": "username"},
     {"name": "role", "label": "Role", "field": "role"},

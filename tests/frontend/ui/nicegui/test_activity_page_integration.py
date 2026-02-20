@@ -61,9 +61,7 @@ class _FakeUi:
         self.routes: dict[str, Any] = {}
         self.last_radio: _FakeElement | None = None
         self.navigate = SimpleNamespace(to=lambda _path: None)
-        self.context = SimpleNamespace(
-            client=SimpleNamespace(request=SimpleNamespace(query_params={"tab": "inbox"}))
-        )
+        self.context = SimpleNamespace(client=SimpleNamespace(request=SimpleNamespace(query_params={"tab": "inbox"})))
 
     def page(self, path: str):
         def _decorator(fn):

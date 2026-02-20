@@ -6,6 +6,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import format_time
 
+
 _format_time = format_time
 
 

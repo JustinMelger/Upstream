@@ -9,6 +9,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.pages.activity.ui_glue import coerce_target_id, format_when
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,9 +22,9 @@ def render_empty_activity(*, current_tab: str) -> None:
                 "color: var(--lp-muted)"
             )
         else:
-            ui.label("When teammates review or recommend your shared content, updates will appear here.").classes("text-sm").style(
-                "color: var(--lp-muted)"
-            )
+            ui.label("When teammates review or recommend your shared content, updates will appear here.").classes(
+                "text-sm"
+            ).style("color: var(--lp-muted)")
 
 
 def render_activity_error(*, message: str) -> None:
