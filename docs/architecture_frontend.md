@@ -22,7 +22,7 @@ We use a lightweight MVC variant for NiceGUI pages:
   - Typed page state objects (for example `PathsPageState`).
   - Backend/domain payloads returned by API/services.
 - View:
-  - Page modules (`frontend/ui/nicegui/pages/*.py`) for composition + event binding.
+  - Page modules (`frontend/ui/nicegui/pages/<domain>/page.py`) for composition + event binding.
   - Reusable sections/components (`frontend/ui/nicegui/components/*.py`).
 - Controller:
   - Page-specific controller modules (`*_controller.py`) that orchestrate page workflows.
@@ -33,6 +33,7 @@ Rules:
 - Keep business/domain rules in backend services.
 - Keep frontend controllers focused on UI workflow orchestration.
 - Keep page modules thin and avoid large closure/nonlocal state when a typed model can be used.
+- Page package `__init__.py` should export `register` only; tests should import helper functions from their source modules.
 
 Reference implementation (current):
 
@@ -124,13 +125,13 @@ Notes:
 Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 
 - `/login`: Authenticate and create a session.
-- `/`: Home/Dashboard (personal overview + quick links).
+- `/`: Redirect to `/learning`.
 - `/courses`: Browse/search courses.
-- `/courses/my`: Personal course tracking ("My Courses").
 - `/paths`: Browse learning paths.
-- `/paths/my`: Selected paths and progress ("My Paths").
+- `/learning`: Personal learning workspace (tracked/shared/recommended).
+- `/activity`: Inbox + team activity feed.
 - `/articles`: Share and browse colleague-submitted links ("Articles").
-- `/me`: Personal overview across domains ("My learning").
+- `/insights`: Statistics/overview page.
 - `/admin/users`: User management (admin only).
 
 Notes:

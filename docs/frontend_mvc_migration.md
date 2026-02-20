@@ -56,10 +56,12 @@ Phase 4: Roll out by page priority
 3. `learning` (complete; keep stable as secondary reference)
 4. Smaller pages only as needed
 
-Phase 5: Clean up and enforce
+Phase 5: Clean up and enforce (complete)
 
-- Remove deprecated compatibility shims after migration windows.
-- Add a lightweight checklist to PR reviews: Page = composition/bindings only; Controller = workflow orchestration; Model = typed state + transition helpers; Components = reusable view sections.
+- Compatibility shim cleanup complete: page package exports are now `register`-only.
+- Tests import helper functions from their source modules (for example `pages/*/page.py` or `helpers_compat.py`) rather than package re-exports.
+- Added enforcement guard in tests to keep package export surface minimal.
+- PR checklist: Page = composition/bindings only; Controller = workflow orchestration; Model = typed state + transition helpers; Components = reusable view sections.
 
 ## Reference Implementation: Paths
 
@@ -97,6 +99,5 @@ Migration recipe (apply to next page, e.g. `courses`):
 
 Next:
 
-- Stabilize `paths` as the reference implementation.
-- Complete final `courses/page.py` composition cleanup and parity checks.
-- Begin applying the same extractor pattern to `learning`.
+- Maintain architecture boundaries and test guardrails as new features are added.
+- Add/expand page-level integration tests for critical flows when behavior changes.
