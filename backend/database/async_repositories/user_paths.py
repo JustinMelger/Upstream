@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import case, delete, func, select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.models import SelectedPathRecord
@@ -18,6 +19,11 @@ class UserPathsRepository:
         """
         self.session = session
 
+    async def path_exists(self, path_id: int) -> bool:
+        """Return whether a path id exists."""
+        result = await self.session.execute(select(PathModel.id).where(PathModel.id == int(path_id)).limit(1))
+        return result.scalar_one_or_none() is not None
+
     async def add_user_path(self, colleague_id: str, path_id: int, now: str) -> int:
         """Add a path selection for a user.
 
@@ -29,8 +35,27 @@ class UserPathsRepository:
         Returns:
             Number of rows inserted (1 on success).
         """
-        self.session.add(UserPathModel(colleague_id=colleague_id, path_id=path_id, created_at=now))
-        await self.session.flush()
+        stmt = (
+            insert(UserPathModel)
+            .values(
+                colleague_id=colleague_id,
+                path_id=path_id,
+                created_at=now,
+                updated_at=now,
+                status="interested",
+            )
+            .on_conflict_do_update(
+                index_elements=[UserPathModel.colleague_id, UserPathModel.path_id],
+                set_={
+                    "updated_at": now,
+                    "status": case(
+                        (UserPathModel.status.is_(None), "interested"),
+                        else_=UserPathModel.status,
+                    ),
+                },
+            )
+        )
+        await self.session.execute(stmt)
         return 1
 
     async def list_user_paths(self, colleague_id: str) -> list[SelectedPathRecord]:

@@ -76,6 +76,11 @@ async def test_path_lifecycle_and_selection(app_client):
     assert select.status_code == 200
     assert select.json()["path_id"] == str(path_id)
 
+    selected_after_select = await app_client.get("/paths/selected/list", headers={"X-Session-Token": token})
+    assert selected_after_select.status_code == 200
+    selected_match = [item for item in selected_after_select.json() if item["id"] == path_id]
+    assert selected_match and selected_match[0]["status"] == "interested"
+
     status = await app_client.post(
         f"/paths/{path_id}/status",
         json={"status": "in_progress"},
@@ -96,6 +101,75 @@ async def test_path_lifecycle_and_selection(app_client):
     delete = await app_client.delete(f"/paths/{path_id}", headers={"X-Session-Token": alice_token})
     assert delete.status_code == 200
     assert delete.json()["deleted"] is True
+
+
+@pytest.mark.integration
+async def test_select_path_is_idempotent_and_keeps_interested_status(app_client):
+    """Selecting the same path multiple times keeps one selected row with interested status."""
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Idempotent Selection Course")
+    create = await app_client.post(
+        "/paths",
+        json={"name": "Idempotent Selection Path", "description": "desc", "course_ids": [course_id]},
+        headers={"X-Session-Token": token},
+    )
+    assert create.status_code == 200
+    path_id = int(create.json()["id"])
+
+    first = await app_client.post(f"/paths/{path_id}/select", headers={"X-Session-Token": token})
+    assert first.status_code == 200
+    second = await app_client.post(f"/paths/{path_id}/select", headers={"X-Session-Token": token})
+    assert second.status_code == 200
+
+    selected = await app_client.get("/paths/selected/list", headers={"X-Session-Token": token})
+    assert selected.status_code == 200
+    rows = [item for item in selected.json() if int(item.get("id") or 0) == path_id]
+    assert len(rows) == 1
+    assert rows[0]["status"] == "interested"
+
+
+@pytest.mark.integration
+async def test_select_missing_path_returns_not_found(app_client):
+    """Selecting a non-existent path returns 404 with standard error payload."""
+    token = await _login_admin(app_client)
+    response = await app_client.post("/paths/999999/select", headers={"X-Session-Token": token})
+    assert response.status_code == 404
+    body = response.json()
+    assert body.get("status") == "error"
+    assert body.get("message") == "not_found"
+
+
+@pytest.mark.integration
+async def test_reselect_path_preserves_existing_selected_status(app_client):
+    """Re-selecting a selected path must not overwrite an explicit path status."""
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Reselect Preserve Status Course")
+    create = await app_client.post(
+        "/paths",
+        json={"name": "Reselect Preserve Status Path", "description": "desc", "course_ids": [course_id]},
+        headers={"X-Session-Token": token},
+    )
+    assert create.status_code == 200
+    path_id = int(create.json()["id"])
+
+    first = await app_client.post(f"/paths/{path_id}/select", headers={"X-Session-Token": token})
+    assert first.status_code == 200
+
+    set_status = await app_client.post(
+        f"/paths/{path_id}/status",
+        json={"status": "completed"},
+        headers={"X-Session-Token": token},
+    )
+    assert set_status.status_code == 200
+
+    second = await app_client.post(f"/paths/{path_id}/select", headers={"X-Session-Token": token})
+    assert second.status_code == 200
+
+    selected = await app_client.get("/paths/selected/list", headers={"X-Session-Token": token})
+    assert selected.status_code == 200
+    rows = [item for item in selected.json() if int(item.get("id") or 0) == path_id]
+    assert len(rows) == 1
+    assert rows[0]["status"] == "completed"
 
 
 @pytest.mark.integration

@@ -12,7 +12,7 @@ from frontend.ui.nicegui.components.path_card import render_path_card
 from frontend.ui.nicegui.components.paths_sections import render_paths_filter_rail, render_paths_topbar
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation_intents import get_path_intent, pop_path_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -100,14 +100,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         page_size = 10
         visible_count = page_size
 
-        async def _reload_selected() -> None:
+        async def _reload_selected() -> bool:
             """Reload selected path rows (used after select/unselect/status updates)."""
             try:
                 await controller.reload_selected(state=controller_state)
+                return True
             except ApiError as exc:
-                ui.notify(str(exc), type="negative")
-                controller_state.selected_by_id = {}
-                return
+                safe_notify(str(exc), type="negative")
+                return False
 
         async def _reload_tracking() -> None:
             """Reload the current user's tracking map (used to compute path progress)."""
@@ -131,10 +131,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         @guard_ui_action(title="Select failed")
         async def _select(path_id: int) -> bool:
             snapshot = apply_optimistic_select(state=controller_state, path_id=int(path_id))
-            paths_list.refresh()
             try:
                 seeded, detail = await controller.select_path(path_id=int(path_id), state=controller_state)
-                await _reload_selected()
+                reloaded = await _reload_selected()
+                if not reloaded:
+                    safe_notify("Path selected, but selected list failed to refresh", type="warning")
                 if isinstance(detail, dict):
                     controller_state.selected_detail_by_path_id[int(path_id)] = detail
                 else:
@@ -147,9 +148,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 msg = "Path added to My learning"
                 if seeded > 0:
                     msg = f"{msg} · {seeded} course(s) set to Interested"
-                ui.notify(msg, type="positive")
+                safe_notify(msg, type="positive")
                 paths_list.refresh()
-                await _open_details(path_id)
+                try:
+                    await _open_details(path_id)
+                except Exception:
+                    # Keep selection persisted even when opening the dialog fails.
+                    safe_notify("Path selected, but details failed to open", type="warning")
                 return True
             except Exception:
                 rollback_optimistic_selection(state=controller_state, snapshot=snapshot)
@@ -159,10 +164,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         @guard_ui_action(title="Unselect failed")
         async def _unselect(path_id: int) -> bool:
             snapshot = apply_optimistic_unselect(state=controller_state, path_id=int(path_id))
-            paths_list.refresh()
             try:
                 await controller.unselect_path(path_id=int(path_id))
-                await _reload_selected()
+                reloaded = await _reload_selected()
+                if not reloaded:
+                    safe_notify("Path untracked, but selected list failed to refresh", type="warning")
                 controller_state.selected_detail_by_path_id.pop(int(path_id), None)
                 paths_list.refresh()
                 return True
@@ -175,7 +181,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         async def _delete_path(path_id: int) -> None:
             await controller.delete_path(path_id=int(path_id))
             await _load_all()
-            ui.notify("Path deleted", type="positive")
+            safe_notify("Path deleted", type="positive")
 
         async def _open_edit(*, path_id: int, detail: dict[str, Any], detail_dialog: ui.dialog | None) -> None:
             """Open an edit dialog for a path (owner/admin only, enforced by backend)."""
@@ -505,7 +511,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     paths_list.refresh()
                     ok = True
                 except ApiError as exc:
-                    ui.notify(str(exc), type="negative")
+                    safe_notify(str(exc), type="negative")
                     clear_paths_state_on_load_error(state=controller_state)
                     _recompute_facet_options()
                     paths_list.refresh()

@@ -21,6 +21,7 @@ async def test_add_list_remove_user_paths(db_session):
     selected = await user_paths.list_user_paths("user1")
     assert len(selected) == 1
     assert selected[0]["name"] == "Starter"
+    assert selected[0]["status"] == "interested"
 
     removed = await user_paths.remove_user_path("user1", path_id)
     assert removed == 1
@@ -41,3 +42,30 @@ async def test_update_user_path_status(db_session):
         await user_paths.update_user_path_status("user1", path_id, "bad_status")
     assert excinfo.value.status_code == 400
     assert str(excinfo.value.detail) == "invalid_status"
+
+
+@pytest.mark.unit
+async def test_add_user_path_missing_path_raises_not_found(db_session):
+    """Selecting a missing path returns domain 404 error."""
+    user_paths = UserPathsService(UserPathsRepository(db_session))
+
+    with pytest.raises(UserPathsServiceError) as excinfo:
+        await user_paths.add_user_path("user1", 999999)
+    assert excinfo.value.status_code == 404
+    assert str(excinfo.value.detail) == "not_found"
+
+
+@pytest.mark.unit
+async def test_add_user_path_is_idempotent_and_keeps_existing_status(db_session):
+    """Selecting an already selected path should not overwrite explicit status."""
+    paths = PathsService(PathsRepository(db_session))
+    user_paths = UserPathsService(UserPathsRepository(db_session))
+    path_id = (await paths.create_path({"name": "Idempotent Keep Status", "course_ids": []}))["id"]
+
+    await user_paths.add_user_path("user1", path_id)
+    await user_paths.update_user_path_status("user1", path_id, "completed")
+    await user_paths.add_user_path("user1", path_id)
+
+    selected = await user_paths.list_user_paths("user1")
+    assert len(selected) == 1
+    assert selected[0]["status"] == "completed"
