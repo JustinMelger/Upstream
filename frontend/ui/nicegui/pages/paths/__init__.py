@@ -1,14 +1,6 @@
 """Paths page package (MVC layout)."""
 
-from frontend.ui.nicegui.pages.paths.page import (
-    _normalize_path_view_mode,
-    _path_matches_state,
-    register,
-)
+from frontend.ui.nicegui.pages.paths.page import register
 
 
-__all__ = [
-    "register",
-    "_normalize_path_view_mode",
-    "_path_matches_state",
-]
+__all__ = ["register"]
