@@ -107,6 +107,12 @@ async def select_path_and_seed_tracking(
     return seeded, detail
 
 
+async def unselect_path(*, api: ApiClient, path_id: int) -> bool:
+    """Unselect a path for the current user."""
+    await api.post(f"/paths/{int(path_id)}/unselect", {})
+    return True
+
+
 async def load_paths_page_data(
     *,
     api: ApiClient,

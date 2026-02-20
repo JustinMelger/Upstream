@@ -23,8 +23,6 @@ from frontend.ui.nicegui.pages import (
     learning,
     login,
     paths,
-    placeholders,
-    timeline,
 )
 
 
@@ -39,7 +37,6 @@ def create_app() -> None:
     home.register(store=store, api=api)
     learning.register(store=store, api=api)
     activity.register(store=store, api=api)
-    timeline.register(store=store, api=api)
     if settings.feature_ai_curator:
         ai_curator.register(store=store, api=api)
     courses.register(store=store, api=api)
@@ -47,7 +44,6 @@ def create_app() -> None:
     if settings.feature_articles:
         articles.register(store=store, api=api)
     admin_users.register(store=store, api=api)
-    placeholders.register(store=store, api=api)
 
 
 def main() -> None:

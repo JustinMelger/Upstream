@@ -15,13 +15,19 @@ lint:
 unit:
 	DATABASE_URL={{DATABASE_URL}} uv run pytest -m unit
 
+architecture:
+	DATABASE_URL={{DATABASE_URL}} uv run pytest -m architecture
+
+frontend-arch-guards:
+	uv run pytest tests/frontend/ui/nicegui/test_page_package_exports.py tests/frontend/ui/nicegui/test_page_package_layout.py
+
 integration:
 	DATABASE_URL={{DATABASE_URL}} uv run pytest -m integration
 
 audit:
 	uv run pip-audit
 
-test: lint audit unit integration
+test: lint audit unit architecture integration
 
 watch:
 	docker compose -f docker-compose.watch.yml watch

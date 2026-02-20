@@ -108,32 +108,58 @@
 - [x] Copy/wording shift: complete UI label migration from admin CRUD (“New course/path”) to social contribution (“Share course/path”) now that ownership/permissions is live.
 
 ### Phase 10D — P2 Frontend Architecture/Clean Code
-- [ ] Frontend architecture alignment: move My Learning tracking mutations (`set/clear`) into service/use-case layer so page stays UI-only.
-- [ ] Frontend architecture alignment: extract remaining Paths orchestration (select/unselect + selected detail/tracking refresh flow) into `paths_service.py` use-cases.
-- [ ] Frontend architecture alignment: remove temporary page-level service shims (e.g., `_load_paths_page_data` compat wrapper) and call service layer directly.
-- [ ] Frontend architecture alignment: add `admin_users_service.py` and `ai_curator_service.py` to keep page modules focused on UI composition/event binding.
-- [ ] Frontend clean code: enforce page boundary (pages = UI composition/event binding; move API orchestration to services/use-cases).
-- [ ] Frontend clean code: introduce typed page state/view-model objects to reduce large closure state (`nonlocal`) usage.
-- [ ] Frontend clean code: extract large nested handlers into domain action modules (`learning_actions`, `courses_actions`, `paths_actions`).
-- [ ] Frontend clean code: componentize repeated page sections (top bar, filter rail, card sections, load-more footer).
-- [ ] Frontend clean code: centralize deep-link and intent navigation logic in a shared navigation helper.
-- [ ] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.
-- [ ] Frontend clean code: add remaining service modules (`admin_users_service.py`, `ai_curator_service.py`) for architecture parity.
-- [ ] Frontend clean code: increase service/use-case unit tests to cover extracted orchestration logic.
-- [ ] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
+- [x] Frontend architecture alignment: move My Learning tracking mutations (`set/clear`) into service/use-case layer so page stays UI-only.
+- [x] Frontend architecture alignment: extract remaining Paths orchestration (select/unselect + selected detail/tracking refresh flow) into `paths_service.py` use-cases.
+- [x] Frontend architecture alignment: remove temporary page-level service shims (e.g., `_load_paths_page_data` compat wrapper) and call service layer directly.
+- [x] Frontend architecture alignment: add `admin_users_service.py` and `ai_curator_service.py` to keep page modules focused on UI composition/event binding.
+- [x] Frontend clean code: enforce page boundary (pages = UI composition/event binding; move API orchestration to services/use-cases).
+- [x] Frontend clean code: introduce typed page state/view-model objects to reduce large closure state (`nonlocal`) usage.
+- [x] Frontend clean code: extract large nested handlers into domain action modules (`learning_actions`, `courses_actions`, `paths_actions`).
+- [x] Frontend clean code: componentize repeated page sections (top bar, filter rail, card sections, load-more footer).
+- [x] Frontend clean code: reduce page-module size/complexity (`courses.py`, `paths.py`, `learning.py`) by splitting into focused UI sections and action modules.
+- [x] Frontend clean code: centralize deep-link and intent navigation logic in a shared navigation helper.
+- [x] Frontend clean code: standardize mutation flow (optimistic update + rollback + notification + targeted refresh) across pages.
+- [x] Frontend clean code: add lightweight page-state reducers/helpers to tame `nonlocal` sprawl and make state transitions explicit/testable.
+- [x] Frontend clean code: increase service/use-case unit tests to cover extracted orchestration logic.
+- [x] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 
 ## Phase 11 — Operability + Quality
+
+### Phase 11A — UX & Visual System
+- [ ] Styling system refresh: define shared design tokens (spacing, typography scale, radii, shadows, semantic colors) and apply globally.
+- [ ] Styling system refresh: refine color system (keep blue identity, increase surface contrast steps, strengthen semantic accents for primary/success/warning/error).
+- [ ] Styling system refresh: run a layout rhythm/density pass across topbars, filter rails, cards, dialogs, and section spacing.
+- [ ] Styling/layout refresh: improve perceived page width (collapsible filter rail, wider content container, responsive drawer-mode filters on narrower desktop/tablet).
+- [ ] Styling system refresh: standardize interaction states (hover/focus/active/disabled), improve contrast/focus visibility, and add subtle motion polish.
+- [ ] UX polish: strengthen card hierarchy (title/meta/chip priority), reduce action-row noise, and standardize primary vs secondary actions.
+- [ ] UX polish: make filter UX progressive (top 2-3 always visible, remaining filters behind “More filters”).
+- [ ] UX polish: unify empty/loading/error states across core pages with consistent CTA patterns.
+- [ ] UX typography: apply a consistent type scale and weights across topbars, cards, rails, and dialogs.
+- [ ] UX productivity: keep key list controls visible on scroll (sticky topbar/list controls where appropriate).
+- [ ] Motion polish: add subtle transitions for refreshes, filter expand/collapse, and card state updates.
+- [ ] Course media UX: support embedded course videos when source is YouTube (validated URL parsing, safe embed iframe, and fallback external link).
+
+### Phase 11B — Activity Feed UX v2
 - [ ] Activity feed UX v2: add filters (`All`, `Recommendations`, `Ratings`, `Courses`, `Paths`, `Articles`).
 - [ ] Activity feed UX v2: add unread state + mailbox badge + “Mark all read”.
 - [ ] Activity feed UX v2: add relative timestamps with absolute time on hover.
 - [ ] Activity feed UX v2: add pagination/“Load more” for older events.
 - [ ] Activity feed UX v2: improve article deep-linking to open the specific item context.
 - [ ] Activity feed UX v2: group burst events and rank high-signal events higher (e.g., ratings on your shared content).
+
+### Phase 11C — Reliability & Accessibility
+- [ ] Notification resilience hardening: enrich `safe_notify` logs with action/page context, add optional strict mode for dev/test, and add regression tests for deleted-slot notification paths.
 - [ ] Observability: add frontend telemetry for core actions (share/select/review/complete) and page-level error tracking.
+- [ ] Accessibility UX: improve keyboard navigation and focus management for menus, dropdowns, dialogs, and card actions.
 - [ ] Accessibility pass: keyboard navigation, visible focus states, ARIA labels for icon-only actions, and contrast audit fixes.
 - [ ] Resilience UX: network/offline banner, retry affordances, and standardized section-level error states.
 - [ ] Performance: short-TTL client caching for hot reads (`/tracking`, review summaries), batched detail fetches, and fewer full reloads after mutations.
+
+### Phase 11D — Quality Gates & Test Stability
 - [ ] Quality gates: add visual regression checks for key pages and smoke e2e flows (login, track course, review, select path).
+- [ ] Test reliability: isolate backend integration test auth/session state per test (or per module) to remove intermittent `401/404/500` flakiness.
+- [x] Docs sync: update `docs/architecture_frontend.md` to match current IA/routes (`My learning`, `Insights`, mailbox activity) and current service/page boundaries.
+- [ ] Docs sync: update `docs/architecture_backend.md` course/recommendation/review model details (`description`, `learning_outcomes`, `prerequisites`, `language`, `search_document`) and current service flows.
 
 ## Phase 12 — Analytics + Data Durability
 - [ ] Colleague profiles with interest/completion tracking.

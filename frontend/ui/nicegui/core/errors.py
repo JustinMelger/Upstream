@@ -54,6 +54,14 @@ def _message_for_exception(exc: Exception) -> str:
     return str(exc) or "Unexpected error"
 
 
+def safe_notify(message: str, *, type: str = "info") -> None:  # noqa: A002
+    """Best-effort UI notification that tolerates missing/deleted UI context."""
+    try:
+        ui.notify(message, type=type)
+    except Exception:
+        logger.warning("Unable to show notification; UI context is no longer available")
+
+
 def notify_error(exc: Exception, *, title: str | None = None) -> None:
     """Show an error notification for an exception.
 
@@ -63,7 +71,7 @@ def notify_error(exc: Exception, *, title: str | None = None) -> None:
     """
     msg = _message_for_exception(exc)
     text = f"{title}: {msg}" if title else msg
-    ui.notify(text, type="negative")
+    safe_notify(text, type="negative")
 
 
 def guard_ui_action(

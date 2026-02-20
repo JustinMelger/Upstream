@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
+import time
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
@@ -19,6 +21,66 @@ def index_tracking_by_course_id(rows: list[dict[str, Any]] | None) -> dict[int, 
             continue
         out[int(raw)] = r
     return out
+
+
+@dataclass(slots=True)
+class CourseDetailBundle:
+    """Cached payloads used by course detail dialog rendering."""
+
+    course: dict[str, Any]
+    reviews: list[dict[str, Any]]
+    recommendations: list[dict[str, Any]]
+
+
+_COURSE_DETAIL_CACHE: dict[tuple[str, int], tuple[float, CourseDetailBundle]] = {}
+_COURSE_DETAIL_CACHE_TTL_SECONDS = 20.0
+
+
+def clear_course_detail_cache(*, course_id: int | None = None, cache_scope: str = "") -> None:
+    """Clear cached course detail payloads."""
+    if course_id is None:
+        if str(cache_scope or ""):
+            scope = str(cache_scope or "")
+            keys = [key for key in _COURSE_DETAIL_CACHE.keys() if key[0] == scope]
+            for key in keys:
+                _COURSE_DETAIL_CACHE.pop(key, None)
+        else:
+            _COURSE_DETAIL_CACHE.clear()
+        return
+    _COURSE_DETAIL_CACHE.pop((str(cache_scope or ""), int(course_id)), None)
+
+
+async def load_course_detail_bundle(
+    *,
+    api: ApiClient,
+    course_id: int,
+    cache_scope: str = "",
+    now_fn: Any = time.monotonic,
+    ttl_seconds: float = _COURSE_DETAIL_CACHE_TTL_SECONDS,
+) -> CourseDetailBundle:
+    """Load detail dialog payloads with short-TTL caching."""
+    cid = int(course_id)
+    scope = str(cache_scope or "")
+    cache_key = (scope, cid)
+    now = float(now_fn())
+    cached = _COURSE_DETAIL_CACHE.get(cache_key)
+    if isinstance(cached, tuple) and len(cached) == 2:
+        expiry, payload = cached
+        if float(expiry) > now:
+            return payload
+
+    course, reviews_payload, recommendations_payload = await asyncio.gather(
+        api.get(f"/courses/{cid}"),
+        api.get(f"/courses/{cid}/reviews"),
+        api.get(f"/courses/{cid}/recommendations"),
+    )
+    bundle = CourseDetailBundle(
+        course=dict(course or {}),
+        reviews=list(reviews_payload or []),
+        recommendations=list(recommendations_payload or []),
+    )
+    _COURSE_DETAIL_CACHE[cache_key] = (now + float(ttl_seconds), bundle)
+    return bundle
 
 
 async def load_courses_and_tracking(

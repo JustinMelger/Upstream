@@ -34,6 +34,8 @@ class UserPathsService:
         """
         now = datetime.now(timezone.utc).isoformat()
         async with self._repo.session.begin():
+            if not await self._repo.path_exists(path_id):
+                raise UserPathsServiceError(detail="not_found", status_code=404)
             await self._repo.add_user_path(colleague_id, path_id, now)
         return {"colleague_id": colleague_id, "path_id": str(path_id), "created_at": now}
 

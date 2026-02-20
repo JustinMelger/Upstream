@@ -6,11 +6,85 @@ NiceGUI is event-driven and component-oriented, so a class-based or function-bas
 
 Recommended separation:
 
-- Pages: route handlers that compose UI and bind events.
-- UI components: reusable widgets (tables, forms, dialogs).
-- Frontend services: domain-specific “use cases” that orchestrate API calls and UI state updates.
+- Pages (View): route handlers that compose UI and bind events.
+- Page state (Model): typed state objects owned by each page/controller pair.
+- Page controllers (Controller): page-level orchestration and mutation flows.
+- UI components (View): reusable widgets (tables, forms, dialogs, sections).
+- Frontend services: domain-specific “use cases” used by controllers.
 - API client: typed wrapper that handles base URL, `X-Session-Token` injection, and error mapping.
 - Session store: single place to manage login state, token persistence, and current-user metadata.
+
+## Lightweight MVC Pattern
+
+We use a lightweight MVC variant for NiceGUI pages:
+
+- Model:
+  - Typed page state objects (for example `PathsPageState`).
+  - Backend/domain payloads returned by API/services.
+- View:
+  - Page modules (`frontend/ui/nicegui/pages/<domain>/page.py`) for composition + event binding.
+  - Reusable sections/components (`frontend/ui/nicegui/components/*.py`).
+- Controller:
+  - Page-specific controller modules (`*_controller.py`) that orchestrate page workflows.
+  - Controllers call frontend services and `ApiClient`, but do not render UI.
+
+Rules:
+
+- Keep business/domain rules in backend services.
+- Keep frontend controllers focused on UI workflow orchestration.
+- Keep page modules thin and avoid large closure/nonlocal state when a typed model can be used.
+- Page package `__init__.py` should export `register` only; tests should import helper functions from their source modules.
+
+Reference implementation (current):
+
+- `frontend/ui/nicegui/pages/paths/page.py` (View composition + bindings)
+- `frontend/ui/nicegui/pages/paths/controller.py` (Controller orchestration)
+- `frontend/ui/nicegui/pages/paths/state.py` (Model)
+- `frontend/ui/nicegui/components/path_card.py`
+- `frontend/ui/nicegui/components/path_detail_sections.py`
+- `frontend/ui/nicegui/components/paths_sections.py`
+
+Migration details (template + phased implementation plan):
+
+- `docs/frontend_mvc_migration.md`
+
+## Phase 10D Implementation Notes
+
+The current implementation now standardizes several frontend patterns across pages:
+
+- Shared core helpers:
+  - `frontend/ui/nicegui/core/navigation.py`
+    - Centralized deep-link and tab URL builders (courses/paths/learning/activity).
+  - `frontend/ui/nicegui/core/navigation_intents.py`
+    - Unified in-memory + UI-storage intent helpers (`set/get/pop`).
+  - `frontend/ui/nicegui/core/mutation_flow.py`
+    - Standard optimistic mutation flow (`apply -> refresh -> perform -> rollback on fail -> success hook`).
+
+- Shared UI components:
+  - `frontend/ui/nicegui/components/pagination.py`
+    - Reusable load-more footer used by list/card pages.
+  - Existing section components (`paths_sections`, course/article sections) now host more of the repeated topbar/filter composition.
+
+- Page package structure:
+  - `page.py`: UI composition + event binding only.
+  - `controller.py`: page orchestration against services/API.
+  - `actions.py`: UI callback/handler helpers extracted from nested page closures.
+  - `filters.py`: pure filter normalization/query payload shaping.
+  - `ui_glue.py`: pure presentation/state glue helpers (meta text, visible-count math, chip descriptors).
+  - `state.py` / `view_model.py`: typed mutable state and view projections.
+
+- Performance/caching:
+  - `frontend/ui/nicegui/services/courses_service.py`
+    - Short-TTL cache for course detail dialog payloads (`/courses/{id}`, reviews, recommendations).
+    - Cache key is scoped (`cache_scope`, `course_id`) to avoid cross-user leakage.
+  - Cache invalidation points:
+    - Review save/delete in `frontend/ui/nicegui/pages/courses/detail_flow.py`.
+    - Recommendation save flow in `frontend/ui/nicegui/pages/courses/page.py`.
+
+- Import-cycle guard:
+  - `frontend/ui/nicegui/pages/__init__.py` no longer eagerly imports all pages.
+  - `frontend/ui/nicegui/pages/ai_curator/__init__.py` uses a lazy `register(...)` proxy.
+  - This keeps service-layer tests import-safe when run in isolation.
 
 ## NiceGUI Sequence
 
@@ -80,7 +154,8 @@ classDiagram
 Notes:
 
 - Pages should stay thin (UI composition + event handlers).
-- Frontend services should contain “workflow logic” (for example refresh lists after mutations).
+- Controllers should contain page-flow orchestration (for example refresh lists after mutations).
+- Frontend services should contain shared domain use-cases called by controllers.
 - `ApiClient` should be the only place that knows about HTTP and error envelopes.
 
 ## Pages And Routes
@@ -88,13 +163,13 @@ Notes:
 Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 
 - `/login`: Authenticate and create a session.
-- `/`: Home/Dashboard (personal overview + quick links).
+- `/`: Redirect to `/learning`.
 - `/courses`: Browse/search courses.
-- `/courses/my`: Personal course tracking ("My Courses").
 - `/paths`: Browse learning paths.
-- `/paths/my`: Selected paths and progress ("My Paths").
+- `/learning`: Personal learning workspace (tracked/shared/recommended).
+- `/activity`: Inbox + team activity feed.
 - `/articles`: Share and browse colleague-submitted links ("Articles").
-- `/me`: Personal overview across domains ("My learning").
+- `/insights`: Statistics/overview page.
 - `/admin/users`: User management (admin only).
 
 Notes:
