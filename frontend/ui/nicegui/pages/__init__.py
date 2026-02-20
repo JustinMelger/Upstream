@@ -14,8 +14,6 @@ from frontend.ui.nicegui.pages import (
     learning,
     login,
     paths,
-    placeholders,
-    timeline,
 )
 
 
@@ -29,6 +27,4 @@ __all__ = [
     "learning",
     "login",
     "paths",
-    "placeholders",
-    "timeline",
 ]

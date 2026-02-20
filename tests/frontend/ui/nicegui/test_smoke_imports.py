@@ -26,10 +26,9 @@ def test_pages_expose_register_callable() -> None:
         learning,
         login,
         paths,
-        placeholders,
     )
 
-    for mod in [ai_curator, admin_users, courses, home, learning, login, paths, placeholders]:
+    for mod in [ai_curator, admin_users, courses, home, learning, login, paths]:
         assert callable(getattr(mod, "register", None))
 
 
