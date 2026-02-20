@@ -18,6 +18,16 @@ async def test_notifications_activity_invalid_payload_type_returns_invalid_paylo
 
 
 @pytest.mark.unit
+async def test_notifications_activity_invalid_scope_returns_invalid_payload(db_session):
+    """Service-level payload parsing rejects unsupported scope values."""
+    notifications = NotificationsService(NotificationsRepository(db_session))
+    with pytest.raises(NotificationsServiceError) as excinfo:
+        await notifications.list_activity(current_user="alice", limit=30, scope="invalid")
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_payload"
+
+
+@pytest.mark.unit
 def test_notifications_finalize_events_dedupes_sorts_and_limits() -> None:
     """Finalization keeps newest deduped rows and applies limit."""
     events = [

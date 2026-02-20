@@ -32,7 +32,7 @@ dev = [
 line-length = 128
 
 [tool.ruff.lint]
-select = ["I"]
+select = ["I", "F821"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["backend", "frontend"]

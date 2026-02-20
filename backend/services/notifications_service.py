@@ -92,7 +92,7 @@ class NotificationsService:
         source_limit = max(20, safe_limit * 4)
         scope_value = str(data.scope or "inbox").strip().lower()
         if scope_value not in {"inbox", "team"}:
-            scope_value = "inbox"
+            raise NotificationsServiceError(detail="invalid_payload", status_code=400)
         is_team = scope_value == "team"
 
         async with session_scope(self._repo.session):

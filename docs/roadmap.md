@@ -148,6 +148,32 @@
 - [x] Transaction boundary decoupling: remove reliance on SQLAlchemy transaction internals in `session_scope`; adopt explicit app-level transaction ownership (request-scoped unit-of-work/dependency) and keep services transaction-agnostic.
 - [x] Transaction reliability guard: add focused tests for explicit transaction vs implicit request transaction behavior (commit/rollback semantics) without inspecting ORM internal transaction-origin fields.
 - [x] Notifications domain typing: replace stringly-typed activity event dict assembly with a typed `ActivityEvent` model (dataclass/TypedDict + enum-like constants) and central event builder utilities.
+- [x] Frontend controller boundary hardening: enforce that `pages/*/controller.py` modules do not import NiceGUI UI primitives (`nicegui.ui`) and remain UI-framework agnostic.
+- [x] Frontend controller/view split: move remaining action orchestration closures from `courses/page.py` and `paths/page.py` into controller/use-case functions to reduce page modules to composition/binding.
+  - [x] Phase slice: extracted `paths` select/unselect side-effect orchestration from `paths/page.py` into `paths/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `paths` create/update/delete + recommendation-summary refresh flows from `paths/page.py` into `paths/orchestration.py` and removed nested page closures.
+  - [x] Phase slice: removed `paths/page.py` thin forwarding wrappers (`_create_submit`, `_open_edit`) by wiring share/edit flows directly to orchestration/dialog callbacks.
+  - [x] Phase slice: extracted `courses` tracking/recommendation-refresh side-effect orchestration from `courses/page.py` into `courses/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `courses` create/update/delete mutation-reload flows from `courses/page.py` into `courses/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: removed remaining nested recommendation-refresh closure in `courses/page.py` by wiring `on_saved` directly to orchestration helper (`functools.partial`).
+  - [x] Phase slice: extracted `courses` details-dialog callback wiring from `courses/page.py` into `courses/detail_flow.py` (`open_course_details_flow`) with focused unit coverage.
+  - [x] Phase slice: removed `courses/page.py` delete-confirm wrappers by routing dialog-driven delete flow through orchestration adapters (`open_delete_course_confirmation`, `perform_delete_course_from_dialog`).
+  - [x] Phase slice: removed `courses/page.py` thin share/edit forwarding wrappers by wiring create/update flows directly to orchestration callbacks.
+  - [x] Phase slice: extracted `articles` list-load lifecycle (`loading/meta/success/failure/facet-refresh`) from `articles/page.py` into `articles/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `articles` share-create + reload flow from `articles/page.py` into `articles/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `articles` filter refresh/reset list orchestration from `articles/page.py` into `articles/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `articles` facet-controls recompute + active-filter clear-by-key logic from `articles/page.py` into `articles/actions.py` with focused unit coverage.
+  - [x] Phase slice: extracted `articles` details-dialog callback orchestration from `articles/page.py` into `articles/detail_flow.py` with focused unit coverage.
+  - [x] Phase slice: removed remaining nested reset-filter closures from `articles/page.py` via typed control reset helper (`articles/actions.py`) wired through orchestration.
+  - [x] Phase slice: removed `_recompute_facets` closure from `articles/page.py` via explicit-search facet helper in `articles/actions.py` and rewired load/reset/refresh call sites.
+  - [x] Phase slice: removed nested active-filter clear closure from `articles/page.py` by introducing reusable `clear+refresh` action helper with focused unit coverage.
+  - [x] Phase slice: introduced `build_articles_facet_controls(...)` helper to deduplicate repeated control-bundle construction in `articles/page.py` and removed stale imports.
+  - [x] Phase slice: centralized `articles/page.py` facet-control bundle creation behind one local helper to reduce repeated inline wiring across load/reset/refresh callbacks.
+- [x] Frontend view-model boundary: require `page.py` card rendering paths to consume typed view-model mappers (no inline shape coercion in page modules).
+  - [x] Phase slice: added architecture guard asserting key page modules (`courses`, `paths`, `articles`, `learning`) import and call their page-local view-model mapper/builders.
+  - [x] Phase slice: introduced `articles/view_model.py` and migrated article-card display coercion from `articles/page.py` into typed mapper.
+- [x] Frontend complexity guard: add architecture checks that flag oversized page modules and force extraction into `controller.py`/`orchestration.py`/`sections.py`.
+  - [x] Phase slice: added frontend architecture test capping major page module size (guardrail: <= 550 LOC for `courses`, `paths`, `articles`, `learning` page modules).
 
 ## Phase 11 — Operability + Quality
 

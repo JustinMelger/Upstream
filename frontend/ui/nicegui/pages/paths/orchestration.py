@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.pages.paths.actions import PathsFilterControls, reset_path_filter_controls
+from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
 from frontend.ui.nicegui.pages.paths.transitions import (
     begin_paths_load,
@@ -40,6 +42,111 @@ def clear_path_filter_values(
     recompute_facet_options()
     refresh_active_filters()
     refresh_paths_list_ui()
+
+
+async def run_select_path_flow(
+    *,
+    path_id: int,
+    controller: PathsPageController,
+    state: PathsPageState,
+    reload_selected: Callable[[], Awaitable[bool]],
+    ensure_selected_detail: Callable[[int], Awaitable[None]],
+    reload_tracking: Callable[[], Awaitable[None]],
+    on_scope_selected: Callable[[], None],
+    notify: Callable[[str, str], None],
+    refresh_paths_list_ui: Callable[[], None],
+    open_details: Callable[[int], Awaitable[None]],
+) -> bool:
+    """Execute path-selection side effects outside the page module."""
+    seeded, detail = await controller.select_path(path_id=int(path_id), state=state)
+    reloaded = await reload_selected()
+    if not reloaded:
+        notify("Path selected, but selected list failed to refresh", "warning")
+    if isinstance(detail, dict):
+        state.selected_detail_by_path_id[int(path_id)] = detail
+    else:
+        await ensure_selected_detail(int(path_id))
+    if seeded > 0:
+        await reload_tracking()
+    on_scope_selected()
+    msg = "Path added to My learning"
+    if seeded > 0:
+        msg = f"{msg} · {seeded} course(s) set to Interested"
+    notify(msg, "positive")
+    refresh_paths_list_ui()
+    await open_details(int(path_id))
+    return True
+
+
+async def run_unselect_path_flow(
+    *,
+    path_id: int,
+    controller: PathsPageController,
+    state: PathsPageState,
+    reload_selected: Callable[[], Awaitable[bool]],
+    notify: Callable[[str, str], None],
+    refresh_paths_list_ui: Callable[[], None],
+) -> bool:
+    """Execute path-unselection side effects outside the page module."""
+    await controller.unselect_path(path_id=int(path_id))
+    reloaded = await reload_selected()
+    if not reloaded:
+        notify("Path untracked, but selected list failed to refresh", "warning")
+    state.selected_detail_by_path_id.pop(int(path_id), None)
+    refresh_paths_list_ui()
+    return True
+
+
+async def refresh_path_recommendation_summary(
+    *,
+    path_id: int,
+    controller: PathsPageController,
+    state: PathsPageState,
+    refresh_paths_list_ui: Callable[[], None],
+) -> None:
+    """Refresh recommendation summary map entry for a single path."""
+    row = await controller.load_recommendation_summary_for_path(path_id=int(path_id))
+    if isinstance(row, dict):
+        state.path_recommendation_summary_by_id[int(path_id)] = row
+    else:
+        state.path_recommendation_summary_by_id.pop(int(path_id), None)
+    refresh_paths_list_ui()
+
+
+async def perform_create_path(
+    *,
+    payload: dict[str, Any],
+    controller: PathsPageController,
+    reload_page: Callable[[], Awaitable[None]],
+) -> None:
+    """Create a path, then reload page data."""
+    await controller.create_path(payload=dict(payload or {}))
+    await reload_page()
+
+
+async def perform_update_path(
+    *,
+    path_id: int,
+    payload: dict[str, Any],
+    controller: PathsPageController,
+    reload_page: Callable[[], Awaitable[None]],
+    refresh_paths_list_ui: Callable[[], None],
+) -> None:
+    """Update a path, then reload page data and refresh list UI."""
+    await controller.update_path(path_id=int(path_id), payload=dict(payload or {}))
+    await reload_page()
+    refresh_paths_list_ui()
+
+
+async def perform_delete_path(
+    *,
+    path_id: int,
+    controller: PathsPageController,
+    reload_page: Callable[[], Awaitable[None]],
+) -> None:
+    """Delete a path, then reload page data."""
+    await controller.delete_path(path_id=int(path_id))
+    await reload_page()
 
 
 async def load_all_paths(

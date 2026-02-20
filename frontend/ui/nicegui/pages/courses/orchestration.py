@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.pages.courses.actions import CoursesFilterControls, reset_course_filter_controls
@@ -117,3 +118,123 @@ async def reload_tracking_only(
     recompute_facet_options()
     refresh_courses_list_ui()
     return True
+
+
+async def perform_set_tracking(
+    *,
+    course_id: int,
+    status: str,
+    controller: Any,
+    page_state: CoursesPageState,
+    recompute_facet_options: Callable[[], None],
+    refresh_courses_list_ui: Callable[[], None],
+    notify_error: Callable[[str], None],
+) -> bool:
+    """Persist tracking status and refresh tracking-only page state."""
+    await controller.set_tracking_status(course_id=int(course_id), status=str(status))
+    return await reload_tracking_only(
+        page_state=page_state,
+        controller=controller,
+        recompute_facet_options=recompute_facet_options,
+        refresh_courses_list_ui=refresh_courses_list_ui,
+        notify_error=notify_error,
+    )
+
+
+async def perform_clear_tracking(
+    *,
+    course_id: int,
+    controller: Any,
+    page_state: CoursesPageState,
+    recompute_facet_options: Callable[[], None],
+    refresh_courses_list_ui: Callable[[], None],
+    notify_error: Callable[[str], None],
+) -> bool:
+    """Clear tracking status and refresh tracking-only page state."""
+    await controller.clear_tracking_status(course_id=int(course_id))
+    return await reload_tracking_only(
+        page_state=page_state,
+        controller=controller,
+        recompute_facet_options=recompute_facet_options,
+        refresh_courses_list_ui=refresh_courses_list_ui,
+        notify_error=notify_error,
+    )
+
+
+async def refresh_course_recommendation_summary(
+    *,
+    course_id: int,
+    username: str,
+    controller: Any,
+    page_state: CoursesPageState,
+    refresh_courses_list_ui: Callable[[], None],
+) -> None:
+    """Refresh recommendation summary map entry for a single course."""
+    row = await controller.load_recommendation_summary_for_course(course_id=int(course_id))
+    if isinstance(row, dict):
+        page_state.recommendation_summary_by_course_id[int(course_id)] = row
+    else:
+        page_state.recommendation_summary_by_course_id.pop(int(course_id), None)
+    controller.clear_course_detail_cache(course_id=int(course_id), cache_scope=str(username or ""))
+    refresh_courses_list_ui()
+
+
+async def perform_create_course(
+    *,
+    payload: dict[str, Any],
+    controller: Any,
+    reload_page: Callable[[], Awaitable[None]],
+) -> None:
+    """Create a course, then reload page data."""
+    await controller.create_course(payload=dict(payload or {}))
+    await reload_page()
+
+
+async def perform_update_course(
+    *,
+    course_id: int,
+    payload: dict[str, Any],
+    controller: Any,
+    reload_page: Callable[[], Awaitable[None]],
+) -> None:
+    """Update a course, then reload page data."""
+    await controller.update_course(course_id=int(course_id), payload=dict(payload or {}))
+    await reload_page()
+
+
+async def perform_delete_course(
+    *,
+    course_id: int,
+    controller: Any,
+    reload_page: Callable[[], Awaitable[None]],
+) -> None:
+    """Delete a course, then reload page data."""
+    await controller.delete_course(course_id=int(course_id))
+    await reload_page()
+
+
+async def perform_delete_course_from_dialog(
+    course_id: int,
+    *,
+    controller: Any,
+    reload_page: Callable[[], Awaitable[None]],
+) -> None:
+    """Adapter for dialog callbacks that pass positional course_id."""
+    await perform_delete_course(
+        course_id=int(course_id),
+        controller=controller,
+        reload_page=reload_page,
+    )
+
+
+async def open_delete_course_confirmation(
+    course_id: int,
+    *,
+    open_delete_dialog: Callable[..., Awaitable[None]],
+    on_delete_course: Callable[[int], Awaitable[None]],
+) -> None:
+    """Open delete-confirm dialog for a course with injected callbacks."""
+    await open_delete_dialog(
+        course_id=int(course_id),
+        on_delete=on_delete_course,
+    )

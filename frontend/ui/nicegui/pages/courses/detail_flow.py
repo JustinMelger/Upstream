@@ -8,6 +8,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.courses.state import CoursesPageState
 
 
@@ -145,3 +146,42 @@ async def open_course_details_dialog(
             ui.button("Close", on_click=dialog.close).props("outline")
 
     dialog.open()
+
+
+async def open_course_details_flow(
+    *,
+    course_id: int,
+    focus_reviews: bool,
+    username: str,
+    is_admin: bool,
+    state: CoursesPageState,
+    controller: Any,
+    normalize_course_view_mode: Callable[[bool], str],
+    format_short_date: Callable[[Any], str],
+) -> None:
+    """Open the course details dialog using controller/state callback wiring."""
+    await open_course_details_dialog(
+        course_id=int(course_id),
+        focus_reviews=focus_reviews,
+        username=username,
+        is_admin=is_admin,
+        state=state,
+        load_detail_bundle=lambda _cid, _scope: controller.load_course_detail_bundle(
+            course_id=int(_cid),
+            cache_scope=str(_scope or ""),
+        ),
+        save_review=lambda _cid, _rating, _text, _scope: controller.save_course_review(
+            course_id=int(_cid),
+            rating=int(_rating),
+            text=str(_text or ""),
+            cache_scope=str(_scope or ""),
+        ),
+        delete_review=lambda _cid, _review_id, _scope: controller.delete_course_review(
+            course_id=int(_cid),
+            review_id=int(_review_id),
+            cache_scope=str(_scope or ""),
+        ),
+        normalize_course_view_mode=normalize_course_view_mode,
+        format_review_summary=lambda row: format_review_summary(row, style="fraction"),
+        format_short_date=format_short_date,
+    )

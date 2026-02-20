@@ -28,6 +28,18 @@ def _imports_for(path: Path) -> set[str]:
     return out
 
 
+def _calls_function_named(path: Path, name: str) -> bool:
+    tree = _parse(path)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if isinstance(node.func, ast.Name) and node.func.id == name:
+            return True
+        if isinstance(node.func, ast.Attribute) and node.func.attr == name:
+            return True
+    return False
+
+
 def _decorated_routes(path: Path) -> set[str]:
     tree = _parse(path)
     routes: set[str] = set()
@@ -156,6 +168,14 @@ def test_ui_flow_modules_do_not_call_api_client_methods_directly() -> None:
                     raise AssertionError(f"UI flow module should route API calls through controller/service callbacks: {path}")
 
 
+def test_controller_modules_do_not_import_nicegui_ui_primitives() -> None:
+    for path in sorted(_PAGES_ROOT.glob("*/controller.py")):
+        imports = _imports_for(path)
+        assert "nicegui" not in imports, f"controller should not import nicegui directly: {path}"
+        assert "nicegui.ui" not in imports, f"controller should not import nicegui.ui: {path}"
+        assert "nicegui.app" not in imports, f"controller should not import nicegui.app: {path}"
+
+
 def test_page_package_modules_do_not_use_broad_exception_handlers() -> None:
     for path in sorted(_PAGES_ROOT.rglob("*.py")):
         tree = _parse(path)
@@ -166,3 +186,44 @@ def test_page_package_modules_do_not_use_broad_exception_handlers() -> None:
                 raise AssertionError(f"Broad bare except is not allowed in page modules: {path}")
             if isinstance(node.type, ast.Name) and node.type.id == "Exception":
                 raise AssertionError(f"Broad except Exception is not allowed in page modules: {path}")
+
+
+def test_card_pages_use_view_model_mappers() -> None:
+    """Guard view-model boundary: page modules should call page-local view-model mappers."""
+    expected: dict[Path, tuple[str, tuple[str, ...]]] = {
+        Path("frontend/ui/nicegui/pages/courses/page.py"): (
+            "frontend.ui.nicegui.pages.courses.view_model",
+            ("map_course_card_view",),
+        ),
+        Path("frontend/ui/nicegui/pages/paths/page.py"): (
+            "frontend.ui.nicegui.pages.paths.view_model",
+            ("map_path_card_view",),
+        ),
+        Path("frontend/ui/nicegui/pages/articles/page.py"): (
+            "frontend.ui.nicegui.pages.articles.view_model",
+            ("map_article_card_view",),
+        ),
+        Path("frontend/ui/nicegui/pages/learning/page.py"): (
+            "frontend.ui.nicegui.pages.learning.view_model",
+            ("build_learning_tab_view", "build_shared_tab_view"),
+        ),
+    }
+    for page_path, (module_name, mapper_names) in expected.items():
+        imports = _imports_for(page_path)
+        assert module_name in imports, f"Expected {page_path} to import {module_name}"
+        for mapper_name in mapper_names:
+            assert _calls_function_named(page_path, mapper_name), f"Expected {page_path} to call {mapper_name}"
+
+
+def test_large_page_modules_stay_below_size_guardrail() -> None:
+    """Keep large page modules from regressing while migration continues."""
+    max_lines = 550
+    guarded_pages = [
+        Path("frontend/ui/nicegui/pages/courses/page.py"),
+        Path("frontend/ui/nicegui/pages/paths/page.py"),
+        Path("frontend/ui/nicegui/pages/articles/page.py"),
+        Path("frontend/ui/nicegui/pages/learning/page.py"),
+    ]
+    for page_path in guarded_pages:
+        line_count = len(page_path.read_text(encoding="utf-8").splitlines())
+        assert line_count <= max_lines, f"{page_path} is {line_count} lines (> {max_lines}); extract to package modules"

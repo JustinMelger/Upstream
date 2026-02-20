@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timezone
+from functools import partial
 from typing import Any
 
 from nicegui import app, ui
@@ -21,7 +22,6 @@ from frontend.ui.nicegui.core.navigation_intents import (
     pop_course_storage_intent,
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.courses.actions import (
     build_course_card_actions,
     clear_course_filter_by_key,
@@ -29,7 +29,7 @@ from frontend.ui.nicegui.pages.courses.actions import (
     recompute_course_facet_controls,
 )
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
-from frontend.ui.nicegui.pages.courses.detail_flow import open_course_details_dialog
+from frontend.ui.nicegui.pages.courses.detail_flow import open_course_details_flow
 from frontend.ui.nicegui.pages.courses.dialogs import (
     build_share_course_dialog,
     open_delete_course_dialog,
@@ -40,6 +40,13 @@ from frontend.ui.nicegui.pages.courses.filters import normalize_courses_filter_v
 from frontend.ui.nicegui.pages.courses.orchestration import (
     clear_course_filter_values,
     load_courses,
+    open_delete_course_confirmation,
+    perform_clear_tracking,
+    perform_create_course,
+    perform_delete_course_from_dialog,
+    perform_set_tracking,
+    perform_update_course,
+    refresh_course_recommendation_summary,
     refresh_courses_list,
     reload_tracking_only,
 )
@@ -213,14 +220,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     notify_error=lambda message: safe_notify(message, type="negative"),
                 )
 
-            async def _perform_set_tracking(*, course_id: int, status: str) -> bool:
-                await controller.set_tracking_status(course_id=int(course_id), status=str(status))
-                return await _reload_tracking_only()
-
-            async def _perform_clear_tracking(*, course_id: int) -> bool:
-                await controller.clear_tracking_status(course_id=int(course_id))
-                return await _reload_tracking_only()
-
             @guard_ui_action(title="Update status failed")
             async def _set_tracking(course_id: int, status: str) -> bool:
                 return await run_optimistic_mutation(
@@ -229,7 +228,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         course_id=int(course_id),
                         status=str(status),
                     ),
-                    perform_mutation=lambda: _perform_set_tracking(course_id=int(course_id), status=str(status)),
+                    perform_mutation=lambda: perform_set_tracking(
+                        course_id=int(course_id),
+                        status=str(status),
+                        controller=controller,
+                        page_state=page_state,
+                        recompute_facet_options=_recompute_facet_options,
+                        refresh_courses_list_ui=courses_list.refresh,
+                        notify_error=lambda message: safe_notify(message, type="negative"),
+                    ),
                     rollback=lambda snapshot: rollback_optimistic_tracking(state=page_state, snapshot=snapshot),
                     refresh_ui=courses_list.refresh,
                     on_success=lambda: safe_notify("Updated status", type="positive"),
@@ -239,82 +246,44 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             async def _clear_tracking(course_id: int) -> bool:
                 return await run_optimistic_mutation(
                     apply_optimistic=lambda: apply_optimistic_tracking_clear(state=page_state, course_id=int(course_id)),
-                    perform_mutation=lambda: _perform_clear_tracking(course_id=int(course_id)),
+                    perform_mutation=lambda: perform_clear_tracking(
+                        course_id=int(course_id),
+                        controller=controller,
+                        page_state=page_state,
+                        recompute_facet_options=_recompute_facet_options,
+                        refresh_courses_list_ui=courses_list.refresh,
+                        notify_error=lambda message: safe_notify(message, type="negative"),
+                    ),
                     rollback=lambda snapshot: rollback_optimistic_tracking(state=page_state, snapshot=snapshot),
                     refresh_ui=courses_list.refresh,
                     on_success=lambda: safe_notify("Removed status", type="positive"),
                 )
 
-            async def _create_submit(payload: dict[str, Any]) -> None:
-                await controller.create_course(payload=payload)
-                await _load()
-
             _open_create_dialog = build_share_course_dialog(
                 username=username,
                 parse_duration_hours=_parse_duration_hours,
-                on_submit=_create_submit,
+                on_submit=lambda payload: perform_create_course(
+                    payload=payload,
+                    controller=controller,
+                    reload_page=_load,
+                ),
             )
-
-            async def _save_edit(course_id: int, payload: dict[str, Any]) -> None:
-                await controller.update_course(course_id=int(course_id), payload=payload)
-                await _load()
-
-            def _render_edit_course_dialog(course: dict[str, Any]) -> None:
-                open_edit_course_dialog(
-                    course=course,
-                    parse_duration_hours=_parse_duration_hours,
-                    on_save=_save_edit,
-                )
-
-            async def _delete_course_and_reload(course_id: int) -> None:
-                await controller.delete_course(course_id=int(course_id))
-                await _load()
-
-            async def _confirm_delete_course(course_id: int) -> None:
-                await open_delete_course_dialog(
-                    course_id=int(course_id),
-                    on_delete=_delete_course_and_reload,
-                )
 
             @guard_ui_action(title="Load course details failed")
             async def _open_details(course_id: int, *, focus_reviews: bool = False) -> None:
-                await open_course_details_dialog(
+                await open_course_details_flow(
                     course_id=int(course_id),
                     focus_reviews=focus_reviews,
                     username=username,
                     is_admin=is_admin,
                     state=page_state,
-                    load_detail_bundle=lambda _cid, _scope: controller.load_course_detail_bundle(
-                        course_id=int(_cid),
-                        cache_scope=str(_scope or ""),
-                    ),
-                    save_review=lambda _cid, _rating, _text, _scope: controller.save_course_review(
-                        course_id=int(_cid),
-                        rating=int(_rating),
-                        text=str(_text or ""),
-                        cache_scope=str(_scope or ""),
-                    ),
-                    delete_review=lambda _cid, _review_id, _scope: controller.delete_course_review(
-                        course_id=int(_cid),
-                        review_id=int(_review_id),
-                        cache_scope=str(_scope or ""),
-                    ),
+                    controller=controller,
                     normalize_course_view_mode=_normalize_course_view_mode,
-                    format_review_summary=lambda row: format_review_summary(row, style="fraction"),
                     format_short_date=_format_short_date,
                 )
 
             @guard_ui_action(title="Recommend failed")
             async def _open_recommend_dialog(course_id: int) -> None:
-                async def _refresh_course_recommendation_summary(_course_id: int) -> None:
-                    row = await controller.load_recommendation_summary_for_course(course_id=int(_course_id))
-                    if isinstance(row, dict):
-                        page_state.recommendation_summary_by_course_id[int(_course_id)] = row
-                    else:
-                        page_state.recommendation_summary_by_course_id.pop(int(_course_id), None)
-                    controller.clear_course_detail_cache(course_id=int(_course_id), cache_scope=str(username or ""))
-                    courses_list.refresh()
-
                 await open_recommend_course_dialog(
                     course_id=int(course_id),
                     username=username,
@@ -323,7 +292,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         course_id=int(_cid),
                         note=str(_note or ""),
                     ),
-                    on_saved=lambda _cid=int(course_id): _refresh_course_recommendation_summary(_cid),
+                    on_saved=partial(
+                        refresh_course_recommendation_summary,
+                        course_id=int(course_id),
+                        username=username,
+                        controller=controller,
+                        page_state=page_state,
+                        refresh_courses_list_ui=courses_list.refresh,
+                    ),
                 )
 
             @ui.refreshable
@@ -394,8 +370,24 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             course_row=c,
                             on_open_details=lambda _cid, _focus_reviews: _open_details(_cid, focus_reviews=_focus_reviews),
                             on_open_recommend=_open_recommend_dialog,
-                            on_open_edit=_render_edit_course_dialog,
-                            on_confirm_delete=_confirm_delete_course,
+                            on_open_edit=lambda course: open_edit_course_dialog(
+                                course=course,
+                                parse_duration_hours=_parse_duration_hours,
+                                on_save=partial(
+                                    perform_update_course,
+                                    controller=controller,
+                                    reload_page=_load,
+                                ),
+                            ),
+                            on_confirm_delete=partial(
+                                open_delete_course_confirmation,
+                                open_delete_dialog=open_delete_course_dialog,
+                                on_delete_course=partial(
+                                    perform_delete_course_from_dialog,
+                                    controller=controller,
+                                    reload_page=_load,
+                                ),
+                            ),
                         )
 
                         card_vm = map_course_card_view(
