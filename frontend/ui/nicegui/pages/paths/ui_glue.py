@@ -40,6 +40,11 @@ def collect_active_filter_chips(
     return chips
 
 
-def next_visible_count(*, current: int, total: int, page_size: int) -> int:
+def compute_paths_meta_text(*, path_count: int) -> str:
+    """Build the top-bar list meta text."""
+    return f"{int(path_count)} paths"
+
+
+def compute_expanded_visible_count(*, current_visible: int, total_count: int, page_size: int) -> int:
     """Return next visible count for load-more pagination."""
-    return min(int(total), int(current) + int(page_size))
+    return min(int(total_count), int(current_visible) + int(page_size))

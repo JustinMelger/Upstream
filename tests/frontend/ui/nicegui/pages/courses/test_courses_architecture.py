@@ -25,6 +25,7 @@ def _imports_for(path: Path) -> set[str]:
 def test_courses_pure_modules_do_not_import_nicegui() -> None:
     pure_modules = [
         "controller.py",
+        "filters.py",
         "reducers.py",
         "route_init.py",
         "state.py",
@@ -42,6 +43,7 @@ def test_courses_pure_modules_do_not_import_nicegui() -> None:
 def test_courses_page_uses_page_package_modules_for_logic() -> None:
     imports = _imports_for(_COURSES_DIR / "page.py")
     assert "frontend.ui.nicegui.pages.courses.controller" in imports
+    assert "frontend.ui.nicegui.pages.courses.filters" in imports
     assert "frontend.ui.nicegui.pages.courses.reducers" in imports
     assert "frontend.ui.nicegui.pages.courses.route_init" in imports
     assert "frontend.ui.nicegui.pages.courses.transitions" in imports

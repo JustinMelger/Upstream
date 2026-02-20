@@ -14,3 +14,13 @@ class CoursesPageState:
     tracking_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     review_summary_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     recommendation_summary_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class CoursesPageUiState:
+    """UI-only mutable state for pagination/loading controls."""
+
+    page_size: int = 10
+    visible_count: int = 10
+    loading: bool = False
+    loaded_once: bool = False

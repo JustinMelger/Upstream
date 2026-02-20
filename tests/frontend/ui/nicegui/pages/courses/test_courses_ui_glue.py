@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from frontend.ui.nicegui.pages.courses.ui_glue import (
     build_active_filter_chips,
+    compute_courses_meta_text,
+    compute_expanded_visible_count,
     default_courses_filter_reset_state,
     resolve_tracking_status_value,
 )
@@ -59,3 +61,13 @@ def test_default_courses_filter_reset_state_resets_scope_and_all_fields() -> Non
     assert reset.level == ""
     assert reset.status == ""
     assert reset.sort == ""
+
+
+def test_compute_courses_meta_text() -> None:
+    assert compute_courses_meta_text(course_count=0) == "0 courses"
+    assert compute_courses_meta_text(course_count=12) == "12 courses"
+
+
+def test_compute_expanded_visible_count_caps_total() -> None:
+    assert compute_expanded_visible_count(current_visible=10, total_count=25, page_size=10) == 20
+    assert compute_expanded_visible_count(current_visible=20, total_count=25, page_size=10) == 25

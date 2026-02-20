@@ -40,6 +40,16 @@ def default_courses_filter_reset_state() -> CoursesFilterResetState:
     )
 
 
+def compute_courses_meta_text(*, course_count: int) -> str:
+    """Build the top-bar list meta text."""
+    return f"{int(course_count)} courses"
+
+
+def compute_expanded_visible_count(*, current_visible: int, total_count: int, page_size: int) -> int:
+    """Return next visible card count for load-more behavior."""
+    return min(int(total_count), int(current_visible) + int(page_size))
+
+
 def build_active_filter_chips(
     *,
     scope_value: str,

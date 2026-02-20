@@ -20,6 +20,7 @@ from frontend.ui.nicegui.pages.paths.actions import build_path_card_actions
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.detail_flow import open_path_details_dialog
 from frontend.ui.nicegui.pages.paths.dialogs import build_share_path_dialog, open_edit_path_dialog
+from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values
 from frontend.ui.nicegui.pages.paths.reducers import (
     apply_scope_and_status,
     build_status_options,
@@ -37,7 +38,11 @@ from frontend.ui.nicegui.pages.paths.transitions import (
     finalize_paths_load,
     rollback_optimistic_selection,
 )
-from frontend.ui.nicegui.pages.paths.ui_glue import collect_active_filter_chips, next_visible_count
+from frontend.ui.nicegui.pages.paths.ui_glue import (
+    collect_active_filter_chips,
+    compute_expanded_visible_count,
+    compute_paths_meta_text,
+)
 from frontend.ui.nicegui.pages.paths.view_model import (
     map_path_card_view,
 )
@@ -253,15 +258,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 """Recompute status facet options with counts based on the current local filters."""
                 if status_filter is None:
                     return
-                scope_v = str(scope_filter.value or "all")
-                needle = str(q.value or "").strip().lower()
+                normalized = normalize_paths_filter_values(
+                    scope_value=str(scope_filter.value or "all"),
+                    search_value=str(q.value or ""),
+                    status_value=str(status_filter.value or ""),
+                    sort_value=str(sort_filter.value or ""),
+                )
                 counts = compute_status_counts(
                     paths=controller_state.paths,
                     selected_by_id=controller_state.selected_by_id,
-                    scope_value=scope_v,
-                    needle=needle,
+                    scope_value=normalized.scope,
+                    needle=normalized.search,
                 )
-                status_filter.options = build_status_options(scope_value=scope_v, counts=counts)
+                status_filter.options = build_status_options(scope_value=normalized.scope, counts=counts)
                 if status_filter.value and status_filter.value not in status_filter.options:
                     status_filter.value = ""
                 status_filter.update()
@@ -357,21 +366,23 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             @ui.refreshable
             def paths_list() -> None:
                 nonlocal visible_count
-                needle = str(q.value or "").strip().lower()
-                status_v = str(status_filter.value or "").strip()
-                sort_v = str(sort_filter.value or "").strip()
-                scope_v = str(scope_filter.value or "all")
-                shown = filter_paths_by_needle(controller_state.paths, needle)
+                normalized = normalize_paths_filter_values(
+                    scope_value=str(scope_filter.value or "all"),
+                    search_value=str(q.value or ""),
+                    status_value=str(status_filter.value or "").strip(),
+                    sort_value=str(sort_filter.value or "").strip(),
+                )
+                shown = filter_paths_by_needle(controller_state.paths, normalized.search)
                 shown = apply_scope_and_status(
                     paths=shown,
                     selected_by_id=controller_state.selected_by_id,
-                    scope_value=scope_v,
-                    status_value=status_v,
+                    scope_value=normalized.scope,
+                    status_value=normalized.status,
                     path_matches_state=_path_matches_state,
                 )
                 shown = sort_paths(
                     paths=shown,
-                    sort_value=sort_v,
+                    sort_value=normalized.sort,
                     path_review_summary_by_id=controller_state.path_review_summary_by_id,
                     parse_iso_datetime=parse_iso_datetime,
                 )
@@ -383,7 +394,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                     if not shown:
                         any_filters = any([str(q.value or "").strip(), str(status_filter.value or "").strip()])
-                        if scope_v == "selected" and not any_filters:
+                        if normalized.scope == "selected" and not any_filters:
                             ui.label("No selected paths yet.").classes("text-sm").style("color: var(--lp-muted)")
                             ui.label("Browse paths and select one to start tracking.").classes("text-sm").style(
                                 "color: var(--lp-muted)"
@@ -480,9 +491,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                             def _load_more() -> None:
                                 nonlocal visible_count
-                                visible_count = next_visible_count(
-                                    current=int(visible_count),
-                                    total=int(total),
+                                visible_count = compute_expanded_visible_count(
+                                    current_visible=int(visible_count),
+                                    total_count=int(total),
                                     page_size=int(page_size),
                                 )
                                 paths_list.refresh()
@@ -517,7 +528,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     paths_list.refresh()
                 finally:
                     load_done = finalize_paths_load(ok=ok, path_count=len(controller_state.paths))
-                    meta.text = load_done.meta_text
+                    meta.text = compute_paths_meta_text(path_count=len(controller_state.paths))
                     loading = load_done.loading
                     loaded_once = load_done.loaded_once
                     refresh_btn.enable()

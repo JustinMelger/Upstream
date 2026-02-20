@@ -24,6 +24,7 @@ from frontend.ui.nicegui.pages.courses.dialogs import (
     open_edit_course_dialog,
     open_recommend_course_dialog,
 )
+from frontend.ui.nicegui.pages.courses.filters import build_list_query_params, normalize_courses_filter_values
 from frontend.ui.nicegui.pages.courses.reducers import (
     build_count_options,
     build_status_options as _build_status_options,
@@ -39,7 +40,7 @@ from frontend.ui.nicegui.pages.courses.sections import (
     render_filters_rail,
     render_load_more_control,
 )
-from frontend.ui.nicegui.pages.courses.state import CoursesPageState
+from frontend.ui.nicegui.pages.courses.state import CoursesPageState, CoursesPageUiState
 from frontend.ui.nicegui.pages.courses.transitions import (
     apply_optimistic_tracking_clear,
     apply_optimistic_tracking_set,
@@ -50,6 +51,8 @@ from frontend.ui.nicegui.pages.courses.transitions import (
 )
 from frontend.ui.nicegui.pages.courses.ui_glue import (
     build_active_filter_chips,
+    compute_courses_meta_text,
+    compute_expanded_visible_count,
     default_courses_filter_reset_state,
     resolve_tracking_status_value,
 )
@@ -119,8 +122,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         with render_container():
             page_state = CoursesPageState()
-            page_size = 10
-            visible_count = page_size
+            ui_state = CoursesPageUiState()
 
             request = getattr(ui.context.client, "request", None)
             intent = app.storage.user.get("courses_open_intent")
@@ -163,9 +165,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     scope_filter.on("update:model-value", lambda *_: _refresh_list())
                     meta = ui.label("").classes("lp-topbar-meta")
 
-            loading = False
-            loaded_once = False
-
             provider_filter: Any = None
             category_filter: Any = None
             level_filter: Any = None
@@ -180,20 +179,24 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 """
 
                 needle = str(q.value or "").strip().lower()
-                scope_v = str(scope_filter.value or "all")
-                provider_v = str(provider_filter.value or "").strip().lower()
-                category_v = str(category_filter.value or "").strip().lower()
-                level_v = str(level_filter.value or "").strip().lower()
-                status_v = str(status_filter.value or "").strip()
+                normalized = normalize_courses_filter_values(
+                    scope_value=str(scope_filter.value or "all"),
+                    search_value=str(q.value or ""),
+                    provider_value=str(provider_filter.value or ""),
+                    category_value=str(category_filter.value or ""),
+                    level_value=str(level_filter.value or ""),
+                    status_value=str(status_filter.value or ""),
+                    sort_value=str(sort_filter.value or ""),
+                )
                 provider_counts, category_counts, level_counts, status_counts = compute_facet_counts(
                     courses=page_state.courses,
                     tracking_by_course_id=page_state.tracking_by_course_id,
-                    scope_value=scope_v,
-                    needle=needle,
-                    provider_value=provider_v,
-                    category_value=category_v,
-                    level_value=level_v,
-                    status_value=status_v,
+                    scope_value=normalized.scope,
+                    needle=normalized.search,
+                    provider_value=normalized.provider,
+                    category_value=normalized.category,
+                    level_value=normalized.level,
+                    status_value=normalized.status,
                 )
 
                 # Preserve current selections even if they have a 0-count after other filters.
@@ -227,26 +230,22 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 status_filter.update()
 
             async def _load() -> None:
-                nonlocal loading, loaded_once, visible_count
-                if loading:
+                if ui_state.loading:
                     return
                 ok = False
-                load_start = begin_courses_load(page_size=page_size)
-                loading = load_start.loading
-                visible_count = load_start.visible_count
+                load_start = begin_courses_load(page_size=ui_state.page_size)
+                ui_state.loading = load_start.loading
+                ui_state.visible_count = load_start.visible_count
                 refresh_btn.disable()
                 meta.text = load_start.meta_text
                 courses_list.refresh()
                 try:
-                    params: dict[str, Any] = {}
-                    if q.value:
-                        params["q"] = str(q.value)
-                    if provider_filter.value:
-                        params["provider"] = str(provider_filter.value)
-                    if category_filter.value:
-                        params["category"] = str(category_filter.value)
-                    if level_filter.value:
-                        params["level"] = str(level_filter.value)
+                    params = build_list_query_params(
+                        search_value=str(q.value or ""),
+                        provider_value=str(provider_filter.value or ""),
+                        category_value=str(category_filter.value or ""),
+                        level_value=str(level_filter.value or ""),
+                    )
 
                     bundle = await controller.load_list_bundle(params=params or None)
                     page_state.courses = list(bundle.courses or [])
@@ -263,9 +262,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses_list.refresh()
                 finally:
                     load_done = finalize_courses_load(ok=ok, course_count=len(page_state.courses))
-                    meta.text = load_done.meta_text
-                    loading = load_done.loading
-                    loaded_once = load_done.loaded_once
+                    meta.text = compute_courses_meta_text(course_count=len(page_state.courses))
+                    ui_state.loading = load_done.loading
+                    ui_state.loaded_once = load_done.loaded_once
                     refresh_btn.enable()
                     courses_list.refresh()
 
@@ -381,33 +380,34 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @ui.refreshable
             def courses_list() -> None:
-                nonlocal visible_count
-                needle = str(q.value or "").strip().lower()
-                provider_v = str(provider_filter.value or "").strip().lower()
-                category_v = str(category_filter.value or "").strip().lower()
-                level_v = str(level_filter.value or "").strip().lower()
-                status_v = str(status_filter.value or "")
-                sort_v = str(sort_filter.value or "")
-                scope_v = str(scope_filter.value or "all")
+                normalized = normalize_courses_filter_values(
+                    scope_value=str(scope_filter.value or "all"),
+                    search_value=str(q.value or ""),
+                    provider_value=str(provider_filter.value or ""),
+                    category_value=str(category_filter.value or ""),
+                    level_value=str(level_filter.value or ""),
+                    status_value=str(status_filter.value or ""),
+                    sort_value=str(sort_filter.value or ""),
+                )
                 shown = filter_courses(
                     courses=list(page_state.courses),
                     tracking_by_course_id=page_state.tracking_by_course_id,
-                    scope_value=scope_v,
-                    needle=needle,
-                    provider_value=provider_v,
-                    category_value=category_v,
-                    level_value=level_v,
-                    status_value=status_v,
+                    scope_value=normalized.scope,
+                    needle=normalized.search,
+                    provider_value=normalized.provider,
+                    category_value=normalized.category,
+                    level_value=normalized.level,
+                    status_value=normalized.status,
                 )
                 shown = sort_courses(
                     courses=shown,
-                    sort_value=sort_v,
+                    sort_value=normalized.sort,
                     review_summary_by_course_id=page_state.review_summary_by_course_id,
                     parse_iso_datetime=_parse_iso_datetime,
                 )
 
                 with ui.column().classes("w-full gap-3"):
-                    if loading or not loaded_once:
+                    if ui_state.loading or not ui_state.loaded_once:
                         render_card_skeletons(count=4)
                         return
 
@@ -422,7 +422,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ]
                         )
                         render_courses_empty_state(
-                            scope_value=scope_v,
+                            scope_value=normalized.scope,
                             any_filters=bool(any_filters),
                             has_any_courses=bool(page_state.courses),
                             on_browse_all=lambda: setattr(scope_filter, "value", "all") or _refresh_list(),
@@ -433,7 +433,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         return
 
                     shown_total = len(shown)
-                    shown_page = shown[: max(0, int(visible_count))]
+                    shown_page = shown[: max(0, int(ui_state.visible_count))]
 
                     for c in shown_page:
                         course_id = int(c.get("id") or 0)
@@ -470,8 +470,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         )
 
                     def _load_more() -> None:
-                        nonlocal visible_count
-                        visible_count = min(shown_total, int(visible_count) + page_size)
+                        ui_state.visible_count = compute_expanded_visible_count(
+                            current_visible=int(ui_state.visible_count),
+                            total_count=shown_total,
+                            page_size=int(ui_state.page_size),
+                        )
                         courses_list.refresh()
 
                     render_load_more_control(
@@ -481,8 +484,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     )
 
             def _refresh_list(*_: Any) -> None:
-                nonlocal visible_count
-                visible_count = page_size
+                ui_state.visible_count = int(ui_state.page_size)
                 _recompute_facet_options()
                 active_filters.refresh()
                 courses_list.refresh()
