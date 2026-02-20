@@ -32,7 +32,13 @@ from frontend.ui.nicegui.pages.learning.sections import (
     render_tracked_courses_section,
 )
 from frontend.ui.nicegui.pages.learning.state import LearningPageState
-from frontend.ui.nicegui.pages.learning.ui_glue import compute_next_visibility, resolve_tracking_status_value
+from frontend.ui.nicegui.pages.learning.ui_glue import (
+    compute_expanded_visible_count,
+    compute_meta_text,
+    compute_next_visibility,
+    resolve_tracking_status_value,
+)
+from frontend.ui.nicegui.pages.learning.view_model import build_learning_tab_view, build_shared_tab_view
 from frontend.ui.nicegui.services.paths_service import compute_path_progress
 
 
@@ -188,21 +194,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     username=username,
                     include_articles=bool(settings.feature_articles),
                 )
-                if str(view_filter.value or "") == "shared":
-                    meta.text = (
-                        f"{len(list(state.data.get('shared_courses') or []))} courses · "
-                        f"{len(list(state.data.get('shared_paths') or []))} paths"
-                        + (
-                            f" · {len(list(state.data.get('shared_articles') or []))} articles"
-                            if settings.feature_articles
-                            else ""
-                        )
-                    )
-                else:
-                    meta.text = (
-                        f"{len(list(state.data.get('tracked_courses') or []))} tracked courses · "
-                        f"{len(list(state.data.get('selected_paths') or []))} selected paths"
-                    )
+                meta.text = compute_meta_text(
+                    data=state.data,
+                    view=str(view_filter.value or ""),
+                    feature_articles=bool(settings.feature_articles),
+                )
             except ApiError as exc:
                 safe_notify(str(exc), type="negative")
                 state.data = {}
@@ -258,30 +254,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     return
 
                 if str(view_filter.value or "learning") == "shared":
-                    shared_courses = list(state.data.get("shared_courses") or [])
-                    shared_paths = list(state.data.get("shared_paths") or [])
-                    shared_articles = list(state.data.get("shared_articles") or [])
-                    shared_course_review_summary_by_id: dict[int, dict[str, Any]] = dict(
-                        state.data.get("shared_course_review_summary_by_id") or {}
-                    )
-                    shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]] = dict(
-                        state.data.get("shared_course_recommendation_summary_by_id") or {}
-                    )
-                    shared_path_review_summary_by_id: dict[int, dict[str, Any]] = dict(
-                        state.data.get("shared_path_review_summary_by_id") or {}
-                    )
-                    shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]] = dict(
-                        state.data.get("shared_path_recommendation_summary_by_id") or {}
-                    )
+                    shared_vm = build_shared_tab_view(data=state.data)
 
                     render_shared_content(
-                        shared_courses=shared_courses,
-                        shared_paths=shared_paths,
-                        shared_articles=shared_articles,
-                        shared_course_review_summary_by_id=shared_course_review_summary_by_id,
-                        shared_course_recommendation_summary_by_id=shared_course_recommendation_summary_by_id,
-                        shared_path_review_summary_by_id=shared_path_review_summary_by_id,
-                        shared_path_recommendation_summary_by_id=shared_path_recommendation_summary_by_id,
+                        shared_courses=shared_vm.shared_courses,
+                        shared_paths=shared_vm.shared_paths,
+                        shared_articles=shared_vm.shared_articles,
+                        shared_course_review_summary_by_id=shared_vm.shared_course_review_summary_by_id,
+                        shared_course_recommendation_summary_by_id=shared_vm.shared_course_recommendation_summary_by_id,
+                        shared_path_review_summary_by_id=shared_vm.shared_path_review_summary_by_id,
+                        shared_path_recommendation_summary_by_id=shared_vm.shared_path_recommendation_summary_by_id,
                         review_summary_label=_review_summary_label,
                         recommendation_summary_label=_recommendation_summary_label,
                         on_view_course=nav_actions.make_course_view_action,
@@ -295,32 +277,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     return
 
                 # Learning view.
-                tracked_courses = list(state.data.get("tracked_courses") or [])
-                tracking_by_course_id: dict[int, dict[str, Any]] = dict(state.data.get("tracking_by_course_id") or {})
-                selected_paths = list(state.data.get("selected_paths") or [])
-                path_details_by_id: dict[int, dict[str, Any]] = dict(state.data.get("path_details_by_id") or {})
-                course_review_summary_by_id: dict[int, dict[str, Any]] = dict(
-                    state.data.get("course_review_summary_by_id") or {}
+                learning_vm = build_learning_tab_view(
+                    data=state.data,
+                    dismissed_recommended_course_ids=state.dismissed_recommended_course_ids,
+                    dismissed_recommended_path_ids=state.dismissed_recommended_path_ids,
                 )
-                path_review_summary_by_id: dict[int, dict[str, Any]] = dict(state.data.get("path_review_summary_by_id") or {})
-                pending_course_review_ids = sorted({int(i) for i in list(state.data.get("pending_course_review_ids") or [])})
-                pending_path_review_ids = sorted({int(i) for i in list(state.data.get("pending_path_review_ids") or [])})
-                recommended_courses = [
-                    r
-                    for r in list(state.data.get("recommended_courses_for_you") or [])
-                    if isinstance(r, dict) and int(r.get("course_id") or 0) not in state.dismissed_recommended_course_ids
-                ]
-                recommended_paths = [
-                    r
-                    for r in list(state.data.get("recommended_paths_for_you") or [])
-                    if isinstance(r, dict) and int(r.get("path_id") or 0) not in state.dismissed_recommended_path_ids
-                ]
 
                 ui.label("Learning").classes("text-lg font-semibold mt-2")
 
                 render_recommended_section(
-                    recommended_courses=recommended_courses,
-                    recommended_paths=recommended_paths,
+                    recommended_courses=learning_vm.recommended_courses,
+                    recommended_paths=learning_vm.recommended_paths,
                     on_save_recommended_course=_save_recommended_course,
                     on_save_recommended_path=_save_recommended_path,
                     on_dismiss_recommended_course=lambda _cid: (
@@ -334,14 +301,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
                 next_course = _next_uncompleted_course_from_selected_paths(
-                    selected_paths=selected_paths,
-                    path_details_by_id=path_details_by_id,
-                    tracking_by_course_id=tracking_by_course_id,
+                    selected_paths=learning_vm.selected_paths,
+                    path_details_by_id=learning_vm.path_details_by_id,
+                    tracking_by_course_id=learning_vm.tracking_by_course_id,
                 )
                 if next_course is None:
                     fallback = _next_from_tracked_courses(
-                        tracked_courses=tracked_courses,
-                        tracking_by_course_id=tracking_by_course_id,
+                        tracked_courses=learning_vm.tracked_courses,
+                        tracking_by_course_id=learning_vm.tracking_by_course_id,
                     )
                     if fallback is not None:
                         next_course = {"path_id": 0, "path_name": "", "course": fallback}
@@ -352,22 +319,24 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     )
 
                 first_course_review_action: Any = lambda: None
-                if pending_course_review_ids:
-                    first_course_review_action = nav_actions.make_course_review_action(int(pending_course_review_ids[0]))
+                if learning_vm.pending_course_review_ids:
+                    first_course_review_action = nav_actions.make_course_review_action(
+                        int(learning_vm.pending_course_review_ids[0])
+                    )
                 first_path_review_action: Any = lambda: None
-                if pending_path_review_ids:
-                    first_path_review_action = nav_actions.make_path_review_action(int(pending_path_review_ids[0]))
+                if learning_vm.pending_path_review_ids:
+                    first_path_review_action = nav_actions.make_path_review_action(int(learning_vm.pending_path_review_ids[0]))
                 render_review_nudges_section(
-                    pending_course_review_ids=pending_course_review_ids,
-                    pending_path_review_ids=pending_path_review_ids,
+                    pending_course_review_ids=learning_vm.pending_course_review_ids,
+                    pending_path_review_ids=learning_vm.pending_path_review_ids,
                     on_open_first_course_review=first_course_review_action,
                     on_open_first_path_review=first_path_review_action,
                 )
 
                 render_tracked_courses_section(
-                    tracked_courses=tracked_courses,
-                    tracking_by_course_id=tracking_by_course_id,
-                    course_review_summary_by_id=course_review_summary_by_id,
+                    tracked_courses=learning_vm.tracked_courses,
+                    tracking_by_course_id=learning_vm.tracking_by_course_id,
+                    course_review_summary_by_id=learning_vm.course_review_summary_by_id,
                     tracked_visible=state.tracked_visible,
                     review_summary_label=_review_summary_label,
                     tracking_label_fn=tracking_label,
@@ -379,42 +348,45 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     on_clear_status=_clear_tracking_status,
                     on_browse_courses=lambda: ui.navigate.to("/courses"),
                 )
-                if len(tracked_courses) > state.tracked_visible:
+                if len(learning_vm.tracked_courses) > state.tracked_visible:
 
                     def _more_tracked() -> None:
-                        state.tracked_visible = min(
-                            len(tracked_courses),
-                            int(state.tracked_visible) + state.page_size,
+                        state.tracked_visible = compute_expanded_visible_count(
+                            current_visible=int(state.tracked_visible),
+                            total_count=len(learning_vm.tracked_courses),
+                            page_size=state.page_size,
                         )
                         content.refresh()
 
-                    ui.button(f"Load more ({state.tracked_visible}/{len(tracked_courses)})", on_click=_more_tracked).props(
-                        "outline dense"
-                    )
+                    ui.button(
+                        f"Load more ({state.tracked_visible}/{len(learning_vm.tracked_courses)})",
+                        on_click=_more_tracked,
+                    ).props("outline dense")
 
                 render_selected_paths_section(
-                    selected_paths=selected_paths,
+                    selected_paths=learning_vm.selected_paths,
                     selected_visible=state.selected_visible,
-                    path_details_by_id=path_details_by_id,
-                    tracking_by_course_id=tracking_by_course_id,
-                    path_review_summary_by_id=path_review_summary_by_id,
+                    path_details_by_id=learning_vm.path_details_by_id,
+                    tracking_by_course_id=learning_vm.tracking_by_course_id,
+                    path_review_summary_by_id=learning_vm.path_review_summary_by_id,
                     progress_for_path_detail=_progress_for_path_detail,
                     review_summary_label=_review_summary_label,
                     on_view_path=nav_actions.make_path_view_action,
                     on_review_path=nav_actions.make_path_review_action,
                     on_browse_paths=lambda: ui.navigate.to("/paths"),
                 )
-                if len(selected_paths) > state.selected_visible:
+                if len(learning_vm.selected_paths) > state.selected_visible:
 
                     def _more_selected() -> None:
-                        state.selected_visible = min(
-                            len(selected_paths),
-                            int(state.selected_visible) + state.page_size,
+                        state.selected_visible = compute_expanded_visible_count(
+                            current_visible=int(state.selected_visible),
+                            total_count=len(learning_vm.selected_paths),
+                            page_size=state.page_size,
                         )
                         content.refresh()
 
                     ui.button(
-                        f"Load more ({state.selected_visible}/{len(selected_paths)})",
+                        f"Load more ({state.selected_visible}/{len(learning_vm.selected_paths)})",
                         on_click=_more_selected,
                     ).props("outline dense")
 

@@ -23,7 +23,7 @@ def _imports_for(path: Path) -> set[str]:
 
 @pytest.mark.unit
 def test_learning_pure_modules_do_not_import_nicegui() -> None:
-    for filename in ["controller.py", "route_init.py", "state.py", "ui_glue.py"]:
+    for filename in ["controller.py", "route_init.py", "state.py", "ui_glue.py", "view_model.py"]:
         imports = _imports_for(_LEARNING_DIR / filename)
         assert "nicegui" not in imports
         assert not any(name.startswith("nicegui.") for name in imports)
@@ -38,6 +38,7 @@ def test_learning_page_imports_controller_and_state() -> None:
     assert "frontend.ui.nicegui.pages.learning.state" in imports
     assert "frontend.ui.nicegui.pages.learning.sections" in imports
     assert "frontend.ui.nicegui.pages.learning.ui_glue" in imports
+    assert "frontend.ui.nicegui.pages.learning.view_model" in imports
     assert "frontend.ui.nicegui.services.learning_service" not in imports
 
 

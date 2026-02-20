@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.learning.ui_glue import compute_next_visibility, resolve_tracking_status_value
+from frontend.ui.nicegui.pages.learning.ui_glue import (
+    compute_expanded_visible_count,
+    compute_meta_text,
+    compute_next_visibility,
+    resolve_tracking_status_value,
+)
 
 
 def test_resolve_tracking_status_value_accepts_direct_value() -> None:
@@ -39,3 +44,21 @@ def test_compute_next_visibility_preserves_when_not_reset() -> None:
     )
     assert tracked == 48
     assert selected == 24
+
+
+def test_compute_meta_text_for_shared_and_learning_views() -> None:
+    data = {
+        "shared_courses": [{"id": 1}],
+        "shared_paths": [{"id": 2}],
+        "shared_articles": [{"id": 3}],
+        "tracked_courses": [{"id": 10}, {"id": 11}],
+        "selected_paths": [{"id": 20}],
+    }
+    assert compute_meta_text(data=data, view="shared", feature_articles=True) == "1 courses · 1 paths · 1 articles"
+    assert compute_meta_text(data=data, view="shared", feature_articles=False) == "1 courses · 1 paths"
+    assert compute_meta_text(data=data, view="learning", feature_articles=True) == "2 tracked courses · 1 selected paths"
+
+
+def test_compute_expanded_visible_count_caps_at_total() -> None:
+    assert compute_expanded_visible_count(current_visible=10, total_count=22, page_size=5) == 15
+    assert compute_expanded_visible_count(current_visible=20, total_count=22, page_size=5) == 22
