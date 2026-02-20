@@ -41,14 +41,15 @@ Phase 3: Standardize state transitions
 Status:
 - `paths`: complete
 - `courses`: complete (package conversion + route init + state + controller + reducers + view-model + dialogs/actions + detail-flow + transitions + ui-glue + sections extraction complete, including filters/status-control, course-card, empty-state, and pagination UI blocks; architecture tests added)
-- `learning`: in progress (package conversion + controller/state + actions + route-init + sections + ui-glue extraction complete for core flows; final helper extraction and parity cleanup remains)
+- `learning`: complete (package conversion + controller/state + actions + route-init + sections + ui-glue extraction complete for core flows; architecture/controller/route-init/glue tests added)
 - `articles`: complete (package conversion + controller/state + dialogs/actions + sections/ui-glue + reducers/transitions extraction complete; architecture/controller/action/glue/reducer/transition tests added)
+- `home`: complete (package conversion + controller/state + sections/transitions extraction complete; architecture/controller/transition tests added)
 
 Phase 4: Roll out by page priority
 
 1. `paths` (reference implementation; complete and stabilize)
-2. `learning` (next highest orchestration complexity)
-3. `courses` (complete; keep stable as secondary reference)
+2. `courses` (complete; keep stable as secondary reference)
+3. `learning` (complete; keep stable as secondary reference)
 4. Smaller pages only as needed
 
 Phase 5: Clean up and enforce
