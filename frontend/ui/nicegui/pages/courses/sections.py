@@ -34,10 +34,11 @@ class CoursesTopbarControls:
     search_input: Any
     scope_filter: Any
     sort_filter: Any
+    filters_btn: Any
     meta: Any
 
 
-def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbarControls:
+def render_courses_topbar(*, initial_scope: str, on_share: Any, on_open_filters: Any) -> CoursesTopbarControls:
     """Render courses topbar and return controls."""
     with ui.row().classes("lp-topbar lp-sticky-controls lp-courses-toolbar"):
         search_input = (
@@ -75,6 +76,8 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbar
                 .classes("lp-topbar-secondary-control")
             )
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+            filters_btn = ui.button("Filters", on_click=on_open_filters).props("dense outline").classes("lp-topbar-share")
+        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             ui.button("Share", on_click=on_share).props("dense outline").classes("lp-topbar-share")
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
@@ -82,6 +85,7 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbar
         search_input=search_input,
         scope_filter=scope_filter,
         sort_filter=sort_filter,
+        filters_btn=filters_btn,
         meta=meta,
     )
 
@@ -280,7 +284,9 @@ def render_course_card(
                     if card_vm.recommendation_badge:
                         ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
                 if str(course_row.get("description") or "").strip():
-                    ui.label(str(course_row.get("description") or "")).classes("text-sm text-gray-600 lp-card-body lp-course-summary")
+                    ui.label(str(course_row.get("description") or "")).classes(
+                        "text-sm text-gray-600 lp-card-body lp-course-summary"
+                    )
                 with ui.row().classes("items-center gap-2 flex-wrap lp-card-taxonomy"):
                     chips: list[str] = []
                     if str(course_row.get("provider") or "").strip():
@@ -348,10 +354,109 @@ def render_course_card(
 
         if bool(is_preview_open) and str(preview_embed_url or "").strip():
             with ui.element("div").classes("lp-video-wrap"):
-                render_youtube_embed(str(preview_embed_url))
+                ui.html(render_youtube_embed(str(preview_embed_url)), sanitize=False)
             source_url = str(course_row.get("url") or "").strip()
             if source_url:
                 ui.link("Open source video", source_url).props("target=_blank").classes("text-xs")
+
+
+def render_courses_catalog(
+    *,
+    shown_page: list[dict[str, Any]],
+    render_course_item: Any,
+    featured_title: str = "Featured course",
+    featured_subtitle: str = "Top result from your current filters",
+    collection_title: str = "Browse collection",
+) -> None:
+    """Render featured + streaming-rail catalog sections for the current page slice."""
+    featured_course = shown_page[0] if shown_page else None
+    remaining_courses = shown_page[1:] if len(shown_page) > 1 else []
+
+    if featured_course:
+        with ui.column().classes("w-full gap-2 lp-courses-section"):
+            ui.label(str(featured_title)).classes("lp-courses-section-title")
+            ui.label(str(featured_subtitle)).classes("lp-courses-section-subtitle")
+            with ui.element("div").classes("lp-courses-grid"):
+                render_course_item(
+                    featured_course,
+                    item_classes="lp-courses-grid-item lp-courses-grid-item--featured",
+                )
+
+    if not remaining_courses:
+        return
+
+    grouped_by_category: dict[str, list[dict[str, Any]]] = {}
+    for row in remaining_courses:
+        category_key = str(row.get("category") or "").strip() or "General"
+        grouped_by_category.setdefault(category_key, []).append(row)
+
+    with ui.column().classes("w-full gap-3 lp-courses-section"):
+        ui.label(str(collection_title)).classes("lp-courses-collection-title")
+        for row_idx, (category_name, rows) in enumerate(grouped_by_category.items()):
+            rail_id = f"lp-courses-rail-{row_idx}"
+            left_btn_id = f"{rail_id}-left"
+            right_btn_id = f"{rail_id}-right"
+            with ui.column().classes("w-full gap-2"):
+                with ui.row().classes("items-center justify-between w-full lp-courses-row-head"):
+                    ui.label(category_name).classes("lp-courses-row-title")
+                    with ui.row().classes("items-center gap-2 lp-courses-rail-controls"):
+                        ui.button(
+                            icon="chevron_left",
+                            on_click=lambda _rid=rail_id: ui.run_javascript(
+                                (
+                                    "(() => {"
+                                    f"const el = document.getElementById('{_rid}');"
+                                    "if (el) { el.scrollBy({ left: -460, behavior: 'smooth' }); }"
+                                    "})();"
+                                )
+                            ),
+                        ).props(f'dense flat round id="{left_btn_id}"').classes("lp-rail-nav-btn")
+                        ui.button(
+                            icon="chevron_right",
+                            on_click=lambda _rid=rail_id: ui.run_javascript(
+                                (
+                                    "(() => {"
+                                    f"const el = document.getElementById('{_rid}');"
+                                    "if (el) { el.scrollBy({ left: 460, behavior: 'smooth' }); }"
+                                    "})();"
+                                )
+                            ),
+                        ).props(f'dense flat round id="{right_btn_id}"').classes("lp-rail-nav-btn")
+                with ui.element("div").classes("lp-courses-rail").props(f'id="{rail_id}"'):
+                    for c in rows:
+                        render_course_item(c, item_classes="lp-courses-rail-item")
+            _bind_rail_arrow_visibility(
+                rail_id=rail_id,
+                left_btn_id=left_btn_id,
+                right_btn_id=right_btn_id,
+            )
+
+
+def _bind_rail_arrow_visibility(*, rail_id: str, left_btn_id: str, right_btn_id: str) -> None:
+    """Bind arrow visibility and edge behavior for one horizontal course rail."""
+    ui.run_javascript(
+        (
+            "(() => {"
+            f"const rail = document.getElementById('{rail_id}');"
+            f"const left = document.getElementById('{left_btn_id}');"
+            f"const right = document.getElementById('{right_btn_id}');"
+            "if (!rail || !left || !right) return;"
+            "const update = () => {"
+            "  const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);"
+            "  const x = Math.max(0, rail.scrollLeft);"
+            "  if (maxScroll <= 2) { left.style.display = 'none'; right.style.display = 'none'; return; }"
+            "  left.style.display = x <= 2 ? 'none' : '';"
+            "  right.style.display = x >= (maxScroll - 2) ? 'none' : '';"
+            "};"
+            "if (!rail.dataset.lpBound) {"
+            "  rail.addEventListener('scroll', update, { passive: true });"
+            "  window.addEventListener('resize', update);"
+            "  rail.dataset.lpBound = '1';"
+            "}"
+            "setTimeout(update, 0);"
+            "})();"
+        )
+    )
 
 
 def render_courses_empty_state(

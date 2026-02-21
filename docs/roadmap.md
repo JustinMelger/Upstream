@@ -204,6 +204,11 @@
 - [ ] Modernization Sprint 1 (structure): finalize typography scale + spacing rhythm + single component language (cards/buttons/chips/inputs) across all core pages.
 - [ ] Modernization Sprint 2 (interaction): add cohesive motion system (120-200ms transitions, list stagger, filter/sort state transitions) and stronger inline feedback patterns.
 - [ ] Modernization Sprint 3 (product feel): refine surface/depth system (contrast steps/shadows), emphasize social signals (owner/recommendation/review context), and complete accessibility/focus polish.
+- [x] Catalog IA/layout system: keep one shared list-page skeleton (topbar + filter pattern + featured/rails/list composition) across Courses/Articles/Paths to preserve familiarity.
+- [x] Catalog visual variants: define per-page style variants (Courses/Articles/Paths) with shared base tokens and page-specific accent tokens (surface blend, chips, highlights).
+- [ ] Content-type hierarchy pass (in progress): tune card information priority per domain (Courses: progression/status; Articles: author/date/editorial metadata; Paths: milestones/progress sequencing).
+- [ ] Page identity pass (in progress): add page-specific section language and hero treatments (without changing interaction model) so catalog pages feel distinct but consistent.
+- [ ] Theming architecture hardening (in progress): introduce a variant-driven theme API and add tests/guards to prevent layout drift or ad-hoc per-page CSS forks.
 
 ### Phase 11B — Activity Feed UX v2
 - [ ] Activity feed UX v2: add filters (`All`, `Recommendations`, `Ratings`, `Courses`, `Paths`, `Articles`).

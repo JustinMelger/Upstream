@@ -55,7 +55,7 @@ def test_paths_page_uses_page_package_modules_for_logic() -> None:
 
 @pytest.mark.unit
 def test_paths_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"actions.py", "detail_flow.py", "dialogs.py", "page.py"}
+    expected_ui_modules = {"actions.py", "detail_flow.py", "dialogs.py", "page.py", "sections.py"}
     for path in sorted(_PATHS_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)

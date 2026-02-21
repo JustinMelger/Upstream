@@ -5,8 +5,6 @@ from __future__ import annotations
 import re
 from urllib.parse import parse_qs, urlparse
 
-from nicegui import ui
-
 
 _YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
@@ -49,19 +47,16 @@ def youtube_thumbnail_fallback_url(video_id: str) -> str:
     return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
 
 
-def render_youtube_embed(embed_url: str, *, title: str = "Course video preview") -> None:
-    """Render a YouTube iframe embed for a trusted embed URL."""
+def render_youtube_embed(embed_url: str, *, title: str = "Course video preview") -> str:
+    """Return YouTube iframe HTML for a trusted embed URL."""
     safe_url = str(embed_url or "").strip()
     safe_title = str(title or "Course video preview")
     if not safe_url:
-        return
-    ui.html(
-        (
-            f'<iframe src="{safe_url}" '
-            f'title="{safe_title}" '
-            'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" '
-            "allowfullscreen "
-            'referrerpolicy="strict-origin-when-cross-origin"></iframe>'
-        ),
-        sanitize=False,
+        return ""
+    return (
+        f'<iframe src="{safe_url}" '
+        f'title="{safe_title}" '
+        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" '
+        "allowfullscreen "
+        'referrerpolicy="strict-origin-when-cross-origin"></iframe>'
     )

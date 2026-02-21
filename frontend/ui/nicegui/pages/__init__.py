@@ -13,6 +13,7 @@ __all__ = [
     "activity",
     "articles",
     "courses",
+    "explore",
     "home",
     "learning",
     "login",

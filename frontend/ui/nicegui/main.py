@@ -19,6 +19,7 @@ from frontend.ui.nicegui.pages import (
     ai_curator,
     articles,
     courses,
+    explore,
     home,
     learning,
     login,
@@ -35,6 +36,7 @@ def create_app() -> None:
 
     login.register(store=store, api=api)
     home.register(store=store, api=api)
+    explore.register(store=store, api=api)
     learning.register(store=store, api=api)
     activity.register(store=store, api=api)
     if settings.feature_ai_curator:

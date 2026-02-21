@@ -36,7 +36,7 @@ def render_path_card(
     track_toggle_label: str,
 ) -> None:
     """Render a single path card."""
-    with ui.card().classes(f"w-full lp-accent-card lp-card--hover{card_class_suffix}"):
+    with ui.card().classes(f"w-full lp-accent-card lp-card--hover lp-path-card{card_class_suffix}"):
         with ui.element("div").classes("lp-card-topright"):
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
@@ -67,7 +67,7 @@ def render_path_card(
             ui.label(f"{completed}/{total_courses} completed").classes("text-sm").style("color: var(--lp-muted)")
             ui.linear_progress(progress, show_value=False).classes("w-full")
             with ui.row().classes("items-center gap-2"):
-                ui.label(milestone).classes(milestone_class)
+                ui.label(milestone).classes(f"{milestone_class} lp-path-milestone")
                 ui.label(impact).classes("text-xs").style("color: var(--lp-muted)")
             if next_title:
                 ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")

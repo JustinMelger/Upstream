@@ -74,7 +74,7 @@ async def open_course_details_dialog(
             if video_id:
                 ui.label("Preview").classes("text-xs").style("color: var(--lp-muted)")
                 with ui.element("div").classes("lp-video-wrap"):
-                    render_youtube_embed(youtube_embed_url(video_id))
+                    ui.html(render_youtube_embed(youtube_embed_url(video_id)), sanitize=False)
 
             if recommendations:
                 rec_by = sorted(

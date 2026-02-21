@@ -29,6 +29,7 @@ def test_all_page_modules_expose_register() -> None:
         pages.ai_curator,
         pages.articles,
         pages.courses,
+        pages.explore,
         pages.home,
         pages.learning,
         pages.login,

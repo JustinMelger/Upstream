@@ -9,6 +9,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.feedback import render_empty_block
+from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.pages.articles.ui_glue import ActiveFilterChip
 
 
@@ -143,7 +144,7 @@ def render_article_card(
     title = str(article_row.get("title") or "").strip()
     url = str(article_row.get("url") or "").strip()
 
-    with ui.card().classes("w-full lp-card lp-card--hover"):
+    with ui.card().classes("w-full lp-card lp-card--hover lp-article-card"):
         with ui.element("div").classes("lp-card-topright"):
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
@@ -152,7 +153,7 @@ def render_article_card(
         if url:
             ui.link(url, url).props("target=_blank").classes("text-sm")
 
-        ui.label(subtitle_text).classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
+        ui.label(subtitle_text).classes("text-xs lp-card-subtitle lp-article-meta-line").style("color: var(--lp-muted)")
 
         if tags:
             with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
@@ -161,8 +162,29 @@ def render_article_card(
                 if len(tags) > 10:
                     ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
         if summary_text:
-            ui.label(summary_text).classes("lp-meta-chip")
+            ui.label(summary_text).classes("lp-meta-chip lp-article-summary-chip")
 
         with ui.row().classes("items-center gap-2 mt-2") as actions_row:
             actions_row.classes("lp-card-actions")
             render_view_review_actions(on_view=view_action, on_review=review_action, review_tooltip="Reviews")
+
+
+def render_articles_catalog(
+    *,
+    shown_page: list[dict[str, Any]],
+    total_count: int,
+    render_article_item: Any,
+    on_load_more: Any,
+) -> None:
+    """Render article cards for the current page and an optional load-more footer."""
+    for article in list(shown_page or []):
+        render_article_item(article)
+
+    if int(total_count) <= len(list(shown_page or [])):
+        return
+
+    render_load_more_footer(
+        shown_page_count=len(list(shown_page or [])),
+        shown_total_count=int(total_count),
+        on_load_more=on_load_more,
+    )

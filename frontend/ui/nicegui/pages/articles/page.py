@@ -6,9 +6,9 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
+from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
+from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
@@ -33,6 +33,7 @@ from frontend.ui.nicegui.pages.articles.reducers import derive_shown_articles
 from frontend.ui.nicegui.pages.articles.sections import (
     render_active_filter_chips,
     render_article_card,
+    render_articles_catalog,
     render_articles_empty_state,
     render_articles_topbar,
     render_filters_rail,
@@ -139,7 +140,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 state=state,
             )
 
-        with render_container():
+        with render_catalog_scope(variant="articles").classes("lp-container"):
             topbar = render_articles_topbar(on_share=_open_share_dialog)
             q = topbar.search_input
             sort_filter = topbar.sort_filter
@@ -209,21 +210,25 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         )
                         return
 
+                    with ui.column().classes("w-full gap-1 lp-courses-section"):
+                        ui.label("Latest reads").classes("lp-courses-section-title")
+                        ui.label("Shared resources from your team").classes("lp-courses-section-subtitle")
+
                     total = len(shown)
                     shown_page = shown[: max(0, int(state.visible_count))]
 
-                    for a in shown_page:
-                        article_id = int(a.get("id") or 0)
+                    def _render_article_item(article_row: dict[str, Any]) -> None:
+                        article_id = int(article_row.get("id") or 0)
                         card_vm = map_article_card_view(
-                            article_row=a,
+                            article_row=article_row,
                             review_summary_row=state.review_summary_by_article_id.get(article_id),
                         )
                         actions = build_article_card_actions(
-                            article_row=a,
+                            article_row=article_row,
                             on_open_details=lambda _a, _focus: _open_details(_a, focus_reviews=bool(_focus)),
                         )
                         render_article_card(
-                            article_row=a,
+                            article_row=article_row,
                             is_new=card_vm.is_new,
                             tags=card_vm.tags,
                             summary_text=card_vm.summary_text,
@@ -232,23 +237,27 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             review_action=actions.on_review,
                         )
 
-                    if total > len(shown_page):
-
-                        def _load_more() -> None:
-                            state.visible_count = compute_expanded_visible_count(
-                                current_visible=int(state.visible_count),
-                                total_count=total,
-                                page_size=state.page_size,
-                            )
-                            articles_list.refresh()
-
-                        render_load_more_footer(
-                            shown_page_count=len(shown_page),
-                            shown_total_count=total,
-                            on_load_more=_load_more,
+                    def _load_more() -> None:
+                        state.visible_count = compute_expanded_visible_count(
+                            current_visible=int(state.visible_count),
+                            total_count=total,
+                            page_size=state.page_size,
                         )
+                        articles_list.refresh()
+
+                    render_articles_catalog(
+                        shown_page=shown_page,
+                        total_count=total,
+                        render_article_item=_render_article_item,
+                        on_load_more=_load_more,
+                    )
 
             def _render_main() -> None:
+                render_catalog_hero(
+                    eyebrow="Editorial stream",
+                    title="Read what your team is sharing now",
+                    subtitle="Scan trusted links fast, then open details when you want deeper context.",
+                )
                 active_filters()
                 articles_list()
 

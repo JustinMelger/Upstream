@@ -7,8 +7,9 @@ from typing import Any
 
 import pytest
 
+from frontend.ui.nicegui.components import catalog_hero as catalog_hero_components, layout as layout_components
 from frontend.ui.nicegui.core import errors as core_errors
-from frontend.ui.nicegui.pages.paths import page as paths_page
+from frontend.ui.nicegui.pages.paths import page as paths_page, sections as paths_sections
 
 
 class _FakeElement:
@@ -125,6 +126,9 @@ class _FakeUi:
 async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     monkeypatch.setattr(paths_page, "ui", fake_ui)
+    monkeypatch.setattr(layout_components, "ui", fake_ui)
+    monkeypatch.setattr(catalog_hero_components, "ui", fake_ui)
+    monkeypatch.setattr(paths_sections, "ui", fake_ui)
     monkeypatch.setattr(core_errors, "ui", fake_ui)
     monkeypatch.setattr(paths_page, "app", SimpleNamespace(storage=SimpleNamespace(user={})))
 
@@ -229,6 +233,9 @@ async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch:
 async def test_paths_select_keeps_optimistic_state_when_selected_reload_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     monkeypatch.setattr(paths_page, "ui", fake_ui)
+    monkeypatch.setattr(layout_components, "ui", fake_ui)
+    monkeypatch.setattr(catalog_hero_components, "ui", fake_ui)
+    monkeypatch.setattr(paths_sections, "ui", fake_ui)
     monkeypatch.setattr(core_errors, "ui", fake_ui)
     monkeypatch.setattr(paths_page, "app", SimpleNamespace(storage=SimpleNamespace(user={})))
 

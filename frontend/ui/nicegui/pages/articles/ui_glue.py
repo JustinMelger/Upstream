@@ -58,7 +58,7 @@ def build_active_filter_chips(
     return chips
 
 
-def compute_articles_meta_text(*, article_count: int) -> str:
+def compute_articles_meta_text(article_count: int) -> str:
     """Build the top-bar list meta text."""
     return f"{int(article_count)} articles"
 

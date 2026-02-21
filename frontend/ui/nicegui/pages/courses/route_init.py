@@ -58,3 +58,18 @@ def intent_matches_course(intent: dict[str, Any] | None, course_id: int) -> bool
         return int(intent.get("course_id") or 0) == int(course_id)
     except (TypeError, ValueError):
         return False
+
+
+def consume_course_intents_for_opened_course(
+    *,
+    storage_intent: dict[str, Any] | None,
+    nav_intent: dict[str, Any] | None,
+    course_id: int,
+    pop_storage_intent: Any,
+    pop_nav_intent: Any,
+) -> None:
+    """Consume matching storage/nav intents for an opened course id."""
+    if intent_matches_course(storage_intent, int(course_id)):
+        pop_storage_intent()
+    if intent_matches_course(nav_intent, int(course_id)):
+        pop_nav_intent()

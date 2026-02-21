@@ -7,7 +7,8 @@ from typing import Any
 
 from nicegui import app, ui
 
-from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
+from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
+from frontend.ui.nicegui.components.layout import render_catalog_scope, render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.path_card import render_path_card
@@ -54,6 +55,11 @@ from frontend.ui.nicegui.pages.paths.reducers import (
     sort_paths,
 )
 from frontend.ui.nicegui.pages.paths.route_init import intent_matches_path, resolve_paths_route_init
+from frontend.ui.nicegui.pages.paths.sections import (
+    render_paths_active_filter_chips,
+    render_paths_collection_intro,
+    render_paths_empty_state,
+)
 from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
 from frontend.ui.nicegui.pages.paths.transitions import (
     apply_optimistic_select,
@@ -220,7 +226,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 on_paths_refresh=paths_list.refresh,
             )
 
-        with render_container():
+        with render_catalog_scope(variant="paths").classes("lp-container"):
             status_filter: Any = None
             refresh_btn: Any = None
             sort_filter: Any = None
@@ -305,12 +311,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @ui.refreshable
             def active_filters() -> None:
-                def _chip(label: str, on_clear: Any) -> None:
-                    with ui.row().classes("items-center"):
-                        with ui.element("div").classes("lp-filter-chip"):
-                            ui.label(label)
-                            ui.button("×", on_click=on_clear).props("dense flat")
-
                 chips = collect_active_filter_chips(
                     scope_value=str(scope_filter.value or ""),
                     search_value=str(q.value or ""),
@@ -320,26 +320,21 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     sort_options=dict(sort_filter.options or {}),
                 )
 
-                if not chips:
-                    return
-
-                with ui.row().classes("items-center gap-2 w-full"):
-                    for chip in chips:
-                        _chip(
-                            chip.label,
-                            lambda key=chip.key: (
-                                clear_path_filter_by_key(
-                                    key=key,
-                                    controls=PathsFilterControls(
-                                        scope_filter=scope_filter,
-                                        search_input=q,
-                                        status_filter=status_filter,
-                                        sort_filter=sort_filter,
-                                    ),
-                                )
-                                and _refresh_list()
+                render_paths_active_filter_chips(
+                    chips=chips,
+                    on_clear_key=lambda key: (
+                        clear_path_filter_by_key(
+                            key=str(key),
+                            controls=PathsFilterControls(
+                                scope_filter=scope_filter,
+                                search_input=q,
+                                status_filter=status_filter,
+                                sort_filter=sort_filter,
                             ),
                         )
+                        and _refresh_list()
+                    ),
+                )
 
             @ui.refreshable
             def paths_list() -> None:
@@ -376,31 +371,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         has_any_filters=bool(any_filters),
                         has_any_paths=bool(controller_state.paths),
                     )
-                    if empty_state != "has_rows":
-                        if empty_state == "selected_empty":
-                            ui.label("No selected paths yet.").classes("text-sm").style("color: var(--lp-muted)")
-                            ui.label("Browse paths and select one to start tracking.").classes("text-sm").style(
-                                "color: var(--lp-muted)"
-                            )
-                            with ui.row().classes("items-center gap-2"):
-                                ui.button(
-                                    "Browse all paths",
-                                    on_click=lambda: setattr(scope_filter, "value", "all") or _refresh_list(),
-                                ).props("outline")
-                                ui.button("Refresh", on_click=_load_all).props("outline")
-                            return
-                        if empty_state == "catalog_empty":
-                            ui.label("No paths yet.").classes("text-sm").style("color: var(--lp-muted)")
-                            ui.label("Share the first path to get started.").classes("text-sm").style("color: var(--lp-muted)")
-                            with ui.row().classes("items-center gap-2"):
-                                ui.button("Share a path", on_click=_open_create_dialog).props("outline")
-                                ui.button("Browse courses", on_click=lambda: ui.navigate.to("/courses")).props("outline")
-                            return
-                        ui.label("No paths match your filters.").classes("text-sm").style("color: var(--lp-muted)")
-                        with ui.row().classes("items-center gap-2"):
-                            ui.button("Reset all", on_click=_reset_all).props("outline")
-                            ui.button("Refresh", on_click=_load_all).props("outline")
+                    if render_paths_empty_state(
+                        empty_state=empty_state,
+                        on_browse_all=lambda: setattr(scope_filter, "value", "all") or _refresh_list(),
+                        on_refresh=_load_all,
+                        on_share=_open_create_dialog,
+                        on_browse_courses=lambda: ui.navigate.to("/courses"),
+                        on_reset_all=_reset_all,
+                    ):
                         return
+
+                    render_paths_collection_intro()
 
                     total = len(shown)
                     shown_page = shown[: max(0, int(ui_state.visible_count))]
@@ -527,6 +508,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
             def _render_main() -> None:
+                render_catalog_hero(
+                    eyebrow="Roadmap mode",
+                    title="Follow structured learning paths",
+                    subtitle="Move milestone by milestone and keep long-term goals visible.",
+                )
                 active_filters()
                 paths_list()
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 """Shared layout components for the NiceGUI frontend."""
 
 from collections.abc import Callable
+from typing import Literal
 
 from nicegui import ui
 
@@ -11,6 +12,9 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.session_store import SessionStore
+
+
+CatalogVariant = Literal["default", "courses", "articles", "paths", "explore"]
 
 
 def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
@@ -39,6 +43,10 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                     home_item = ui.menu_item("Insights", on_click=lambda: ui.navigate.to("/insights"))
                     if _is_active("/insights"):
                         home_item.classes("lp-nav-active")
+
+                    explore_item = ui.menu_item("Explore", on_click=lambda: ui.navigate.to("/explore"))
+                    if _is_active("/explore"):
+                        explore_item.classes("lp-nav-active")
 
                     learning_item = ui.menu_item("My learning", on_click=lambda: ui.navigate.to("/learning"))
                     if _is_active("/learning"):
@@ -105,3 +113,9 @@ def render_split_layout(*, rail: Callable[[], None], main: Callable[[], None], r
                 rail()
         with ui.element("div").classes("lp-main"):
             main()
+
+
+def render_catalog_scope(*, variant: CatalogVariant) -> ui.element:
+    """Render a catalog theme scope so list pages can share layout but vary visual identity."""
+    normalized: CatalogVariant = variant if variant in {"default", "courses", "articles", "paths", "explore"} else "default"
+    return ui.element("section").classes(f"lp-catalog-scope lp-catalog--{normalized}")

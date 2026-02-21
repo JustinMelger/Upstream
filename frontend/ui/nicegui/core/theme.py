@@ -61,9 +61,17 @@ def apply_theme() -> None:
 
           --lp-primary: #4f98d4;
           --lp-primary-strong: #74b0e4;
+          --lp-primary-shadow: rgba(88, 166, 232, 0.32);
           --lp-success: #34d399;
           --lp-warning: #fbbf24;
           --lp-danger: #fb7185;
+          --lp-page-accent: var(--lp-primary);
+          --lp-page-accent-strong: var(--lp-primary-strong);
+          --lp-page-accent-soft: rgba(88, 166, 232, 0.24);
+          --lp-page-glow-1: rgba(88, 166, 232, 0.16);
+          --lp-page-glow-2: rgba(52, 211, 153, 0.1);
+          --lp-page-surface: rgba(16, 25, 40, 0.82);
+          --lp-section-title: rgba(220, 225, 235, 0.86);
 
           --lp-shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.24);
           --lp-shadow-md: 0 16px 40px rgba(0, 0, 0, 0.34);
@@ -161,6 +169,132 @@ def apply_theme() -> None:
           gap: var(--lp-space-4);
         }
 
+        .lp-catalog-scope {
+          width: min(var(--lp-max-content), calc(100vw - var(--lp-page-pad-x)));
+          margin: var(--lp-space-5) auto 72px;
+          gap: var(--lp-space-4);
+          position: relative;
+          isolation: isolate;
+        }
+
+        .lp-catalog-scope::before {
+          content: "";
+          position: absolute;
+          inset: -22px -16px;
+          z-index: -1;
+          pointer-events: none;
+          border-radius: 28px;
+          background:
+            radial-gradient(780px 420px at 8% 14%, var(--lp-page-glow-1), transparent 58%),
+            radial-gradient(700px 360px at 88% 26%, var(--lp-page-glow-2), transparent 62%);
+          opacity: 0.95;
+        }
+
+        .lp-catalog-scope.lp-catalog--courses {
+          --lp-page-accent: #4f98d4;
+          --lp-page-accent-strong: #74b0e4;
+          --lp-page-accent-soft: rgba(88, 166, 232, 0.26);
+          --lp-page-glow-1: rgba(88, 166, 232, 0.18);
+          --lp-page-glow-2: rgba(52, 211, 153, 0.1);
+          --lp-page-surface: rgba(16, 25, 40, 0.82);
+          --lp-primary: #4f98d4;
+          --lp-primary-strong: #74b0e4;
+          --lp-primary-shadow: rgba(88, 166, 232, 0.32);
+          --lp-section-title: rgba(220, 225, 235, 0.9);
+        }
+
+        .lp-catalog-scope.lp-catalog--articles {
+          --lp-page-accent: #1ba0aa;
+          --lp-page-accent-strong: #39c2cb;
+          --lp-page-accent-soft: rgba(57, 194, 203, 0.24);
+          --lp-page-glow-1: rgba(57, 194, 203, 0.15);
+          --lp-page-glow-2: rgba(248, 180, 76, 0.1);
+          --lp-page-surface: rgba(14, 25, 37, 0.8);
+          --lp-primary: #1ba0aa;
+          --lp-primary-strong: #39c2cb;
+          --lp-primary-shadow: rgba(57, 194, 203, 0.3);
+          --lp-section-title: rgba(217, 236, 239, 0.9);
+        }
+
+        .lp-catalog-scope.lp-catalog--paths {
+          --lp-page-accent: #2da395;
+          --lp-page-accent-strong: #4bc0b2;
+          --lp-page-accent-soft: rgba(75, 192, 178, 0.24);
+          --lp-page-glow-1: rgba(75, 192, 178, 0.17);
+          --lp-page-glow-2: rgba(88, 166, 232, 0.11);
+          --lp-page-surface: rgba(14, 27, 34, 0.82);
+          --lp-primary: #2da395;
+          --lp-primary-strong: #4bc0b2;
+          --lp-primary-shadow: rgba(75, 192, 178, 0.3);
+          --lp-section-title: rgba(218, 239, 233, 0.9);
+        }
+
+        .lp-catalog-scope.lp-catalog--explore {
+          --lp-page-accent: #4f98d4;
+          --lp-page-accent-strong: #74b0e4;
+          --lp-page-accent-soft: rgba(88, 166, 232, 0.24);
+          --lp-page-glow-1: rgba(88, 166, 232, 0.14);
+          --lp-page-glow-2: rgba(45, 175, 150, 0.14);
+          --lp-page-surface: rgba(16, 25, 40, 0.8);
+          --lp-primary: #4f98d4;
+          --lp-primary-strong: #74b0e4;
+          --lp-primary-shadow: rgba(88, 166, 232, 0.32);
+          --lp-section-title: rgba(220, 225, 235, 0.88);
+        }
+
+        .lp-catalog-hero {
+          position: relative;
+          overflow: hidden;
+          padding: 14px 16px;
+          border-radius: 18px;
+          border: 1px solid color-mix(in srgb, var(--lp-page-accent-soft) 52%, rgba(186, 204, 227, 0.16));
+          background:
+            radial-gradient(130% 130% at 8% 8%, color-mix(in srgb, var(--lp-page-accent-soft) 76%, transparent), transparent 58%),
+            linear-gradient(145deg, rgba(17, 28, 44, 0.84), rgba(14, 24, 39, 0.76));
+          box-shadow: var(--lp-shadow-sm);
+        }
+
+        .lp-catalog-hero::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: linear-gradient(
+            110deg,
+            rgba(255, 255, 255, 0.07) 0%,
+            rgba(255, 255, 255, 0.02) 24%,
+            transparent 44%,
+            transparent 100%
+          );
+          opacity: 0.5;
+        }
+
+        .lp-catalog-hero-eyebrow {
+          font-size: var(--lp-type-xs);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          font-weight: 700;
+          opacity: 0.86;
+          color: color-mix(in srgb, var(--lp-page-accent-strong) 76%, rgba(220, 225, 235, 0.92));
+        }
+
+        .lp-catalog-hero-title {
+          margin-top: 2px;
+          font-family: var(--lp-font-display);
+          font-size: clamp(1.08rem, 1.4vw, 1.34rem);
+          line-height: 1.2;
+          font-weight: 700;
+          color: rgba(241, 245, 249, 0.97);
+        }
+
+        .lp-catalog-hero-subtitle {
+          margin-top: 4px;
+          max-width: 78ch;
+          font-size: 0.92rem;
+          line-height: 1.46;
+          color: rgba(221, 230, 240, 0.84);
+        }
+
         .lp-topbar {
           width: 100%;
           display: flex;
@@ -229,6 +363,13 @@ def apply_theme() -> None:
           box-shadow: var(--lp-shadow-sm);
         }
 
+        .lp-catalog-scope .lp-sticky-controls {
+          background:
+            radial-gradient(120% 130% at 6% 10%, var(--lp-page-accent-soft), transparent 58%),
+            linear-gradient(180deg, rgba(16, 25, 40, 0.9), rgba(15, 24, 39, 0.78));
+          border-color: color-mix(in srgb, var(--lp-page-accent-soft) 55%, rgba(186, 204, 227, 0.12));
+        }
+
         .lp-split {
           display: flex;
           gap: var(--lp-space-6);
@@ -246,6 +387,13 @@ def apply_theme() -> None:
           border-radius: 22px;
           backdrop-filter: blur(12px);
           box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+        }
+
+        .lp-catalog-scope .lp-rail {
+          background:
+            radial-gradient(140% 140% at 10% 8%, color-mix(in srgb, var(--lp-page-accent-soft) 48%, transparent), transparent 64%),
+            rgba(15, 24, 39, 0.58);
+          border-color: color-mix(in srgb, var(--lp-page-accent-soft) 42%, rgba(186, 204, 227, 0.1));
         }
 
         .lp-rail-content {
@@ -285,6 +433,105 @@ def apply_theme() -> None:
           max-width: none;
         }
 
+        .lp-courses-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: var(--lp-space-3);
+          align-items: stretch;
+        }
+
+        .lp-courses-grid-item {
+          min-width: 0;
+          display: flex;
+        }
+
+        .lp-courses-grid-item .lp-course-card {
+          width: 100%;
+          min-height: 264px;
+        }
+
+        .lp-courses-section {
+          margin-top: 2px;
+        }
+
+        .lp-courses-section-title {
+          font-family: var(--lp-font-display);
+          font-size: var(--lp-type-sm);
+          letter-spacing: 0.03em;
+          text-transform: uppercase;
+          color: var(--lp-section-title);
+          font-weight: 700;
+        }
+
+        .lp-courses-section-subtitle {
+          font-size: var(--lp-type-xs);
+          color: rgba(220, 225, 235, 0.68);
+        }
+
+        .lp-courses-collection-title {
+          font-family: var(--lp-font-display);
+          font-size: clamp(1.18rem, 1.5vw, 1.42rem);
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          color: rgba(238, 242, 249, 0.94);
+          margin-top: 2px;
+        }
+
+        .lp-courses-row-title {
+          font-family: var(--lp-font-display);
+          font-size: 1.06rem;
+          font-weight: 700;
+          letter-spacing: 0.015em;
+          color: rgba(226, 234, 244, 0.9);
+        }
+
+        .lp-courses-row-head {
+          margin-top: 2px;
+        }
+
+        .lp-courses-rail-controls {
+          opacity: 0.92;
+        }
+
+        .lp-courses-rail {
+          display: grid;
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(360px, 39vw);
+          gap: var(--lp-space-3);
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-snap-type: x proximity;
+          padding-bottom: 4px;
+          scrollbar-width: thin;
+        }
+
+        .lp-rail-nav-btn {
+          border: 1px solid rgba(186, 204, 227, 0.18);
+          background: rgba(15, 24, 39, 0.7);
+          color: rgba(235, 241, 249, 0.92);
+        }
+
+        .lp-rail-nav-btn:hover {
+          border-color: rgba(186, 204, 227, 0.34);
+          background: rgba(21, 34, 54, 0.86);
+        }
+
+        .lp-catalog-scope .lp-rail-nav-btn:hover {
+          border-color: color-mix(in srgb, var(--lp-page-accent-soft) 65%, rgba(186, 204, 227, 0.34));
+          background: color-mix(in srgb, var(--lp-page-accent-soft) 28%, rgba(21, 34, 54, 0.86));
+        }
+
+        .lp-courses-rail-item {
+          min-width: 0;
+          display: flex;
+          scroll-snap-align: start;
+        }
+
+        .lp-courses-rail-item .lp-course-card {
+          width: 100%;
+          min-height: 244px;
+        }
+
         .lp-courses-toolbar-controls {
           display: inline-flex;
           align-items: center;
@@ -317,6 +564,19 @@ def apply_theme() -> None:
           :root {
             --lp-page-pad-x: 28px;
             --lp-rail-width: 276px;
+          }
+        }
+
+        @media (min-width: 1320px) {
+          .lp-courses-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--lp-space-4);
+          }
+          .lp-courses-grid-item--featured {
+            grid-column: 1 / -1;
+          }
+          .lp-courses-grid-item--featured .lp-course-card {
+            min-height: 304px;
           }
         }
 
@@ -357,6 +617,9 @@ def apply_theme() -> None:
           }
           .lp-course-thumb--side {
             width: min(100%, 360px);
+          }
+          .lp-courses-rail {
+            grid-auto-columns: minmax(320px, 82vw);
           }
         }
 
@@ -405,6 +668,51 @@ def apply_theme() -> None:
           box-shadow: var(--lp-shadow-sm);
         }
 
+        .lp-catalog--articles .lp-card {
+          background:
+            radial-gradient(110% 92% at 88% 10%, var(--lp-page-glow-1), transparent 62%),
+            linear-gradient(145deg, rgba(20, 34, 46, 0.78), rgba(15, 26, 36, 0.74)) !important;
+          border-color: rgba(162, 214, 220, 0.2);
+          border-radius: 18px;
+        }
+
+        .lp-catalog--articles .lp-article-card .lp-card-title {
+          padding-right: 104px;
+          line-height: 1.26;
+        }
+
+        .lp-catalog--articles .lp-article-card .lp-card-subtitle.lp-article-meta-line {
+          font-size: 0.8rem;
+          letter-spacing: 0.025em;
+          opacity: 0.92;
+        }
+
+        .lp-catalog--articles .lp-article-card .lp-article-summary-chip {
+          border-style: dashed;
+          color: rgba(222, 239, 241, 0.92);
+        }
+
+        .lp-catalog--paths .lp-accent-card {
+          background:
+            radial-gradient(120% 96% at 88% 10%, var(--lp-page-glow-1), transparent 62%),
+            linear-gradient(145deg, rgba(16, 35, 42, 0.8), rgba(13, 27, 32, 0.76)) !important;
+          border-color: rgba(133, 214, 204, 0.22);
+        }
+
+        .lp-catalog--paths .lp-path-card .lp-card-title {
+          font-size: clamp(1.08rem, 1.24vw, 1.34rem);
+          padding-right: 200px;
+        }
+
+        .lp-catalog--paths .lp-path-card .lp-card-body {
+          max-width: 70ch;
+        }
+
+        .lp-catalog--paths .lp-path-card .lp-path-milestone {
+          border-color: rgba(117, 228, 203, 0.34);
+          background: rgba(85, 206, 181, 0.14);
+        }
+
         .lp-card-title {
           font-family: var(--lp-font-display);
           font-size: clamp(1.12rem, 1.28vw, 1.4rem);
@@ -412,6 +720,13 @@ def apply_theme() -> None:
           font-weight: 600;
           letter-spacing: 0.01em;
           margin-bottom: 4px;
+          padding-right: clamp(132px, 16vw, 196px);
+        }
+
+        .lp-catalog--articles .lp-card-title {
+          font-size: clamp(1.02rem, 1.1vw, 1.24rem);
+          font-weight: 600;
+          letter-spacing: 0.008em;
         }
 
         .lp-card-subtitle {
@@ -543,9 +858,9 @@ def apply_theme() -> None:
 
         .lp-course-card--surface {
           background:
-            radial-gradient(110% 85% at 82% 6%, rgba(116, 176, 228, 0.12), transparent 62%),
-            radial-gradient(120% 90% at 8% 100%, rgba(45, 175, 150, 0.075), transparent 68%),
-            linear-gradient(140deg, rgba(24, 35, 52, 0.76), rgba(18, 29, 44, 0.64));
+            radial-gradient(110% 85% at 82% 6%, var(--lp-page-glow-1), transparent 62%),
+            radial-gradient(120% 90% at 8% 100%, var(--lp-page-glow-2), transparent 68%),
+            linear-gradient(140deg, rgba(24, 35, 52, 0.76), var(--lp-page-surface));
           border: 1px solid rgba(186, 204, 227, 0.16);
         }
 
@@ -822,12 +1137,12 @@ def apply_theme() -> None:
         }
 
         .q-btn--standard {
-          background: linear-gradient(180deg, rgba(88, 166, 232, 0.88), rgba(79, 152, 212, 0.68)) !important;
+          background: linear-gradient(180deg, var(--lp-primary-strong), var(--lp-primary)) !important;
           color: #f8fbff !important;
         }
 
         .q-btn--standard:hover {
-          box-shadow: 0 8px 20px rgba(88, 166, 232, 0.32);
+          box-shadow: 0 8px 20px var(--lp-primary-shadow);
         }
 
         :is(button, .q-btn, .q-field__control, .q-item, a, input, textarea, select):focus-visible {
@@ -849,6 +1164,15 @@ def apply_theme() -> None:
           background: rgba(7, 16, 32, 0.94) !important;
           border: 1px solid var(--lp-border-strong) !important;
           box-shadow: var(--lp-shadow-lg) !important;
+        }
+
+        .lp-courses-filter-drawer {
+          width: min(92vw, 360px);
+          min-height: 72vh;
+          border-radius: 18px !important;
+          display: flex;
+          flex-direction: column;
+          gap: var(--lp-space-3);
         }
 
         body .q-menu,

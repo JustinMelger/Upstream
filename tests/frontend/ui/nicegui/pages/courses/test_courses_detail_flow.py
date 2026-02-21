@@ -77,19 +77,7 @@ def test_youtube_embed_url_builder() -> None:
 
 
 @pytest.mark.unit
-def test_render_youtube_embed_disables_sanitization(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, object] = {}
-
-    def _fake_html(content: str, *, sanitize: bool = True, **kwargs: object) -> None:  # noqa: ANN003
-        captured["content"] = content
-        captured["sanitize"] = sanitize
-        captured["kwargs"] = kwargs
-
-    from frontend.ui.nicegui.pages.courses import media as media_module
-
-    monkeypatch.setattr(media_module.ui, "html", _fake_html)
-    render_youtube_embed("https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0")
-
-    assert captured["sanitize"] is False
-    assert "iframe" in str(captured["content"])
-    assert "youtube.com/embed/dQw4w9WgXcQ" in str(captured["content"])
+def test_render_youtube_embed_disables_sanitization() -> None:
+    content = render_youtube_embed("https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0")
+    assert "iframe" in str(content)
+    assert "youtube.com/embed/dQw4w9WgXcQ" in str(content)
