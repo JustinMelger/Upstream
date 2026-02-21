@@ -16,7 +16,16 @@ if [[ -z "${base_ref}" ]]; then
 fi
 
 git fetch --no-tags --depth=1 origin "${base_ref}"
-changed_files="$(git diff --name-only "origin/${base_ref}...HEAD")"
+
+# Prefer merge-base diff (PR semantic), but gracefully degrade in shallow/edge CI histories
+# where `origin/<base>...HEAD` has no merge base.
+merge_base="$(git merge-base "origin/${base_ref}" HEAD 2>/dev/null || true)"
+if [[ -n "${merge_base}" ]]; then
+  changed_files="$(git diff --name-only "${merge_base}..HEAD")"
+else
+  echo "architecture-sync: no merge base for origin/${base_ref} and HEAD; using direct base-vs-head diff fallback"
+  changed_files="$(git diff --name-only "origin/${base_ref}" HEAD)"
+fi
 
 if [[ -z "${changed_files}" ]]; then
   echo "architecture-sync: no changed files detected"
