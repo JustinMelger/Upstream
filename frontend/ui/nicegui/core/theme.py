@@ -303,6 +303,8 @@ def apply_theme() -> None:
           }
           .lp-course-thumb--side {
             margin-left: 0;
+            margin-right: 0;
+            margin-top: 0;
             width: min(100%, 360px);
           }
         }
@@ -358,7 +360,7 @@ def apply_theme() -> None:
         }
 
         .lp-course-thumb {
-          width: min(100%, 300px);
+          width: min(100%, 276px);
           display: block;
           aspect-ratio: 16 / 9;
           object-fit: cover;
@@ -370,7 +372,7 @@ def apply_theme() -> None:
 
         .lp-course-card-main {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: space-between;
           gap: 14px;
           width: 100%;
@@ -383,7 +385,8 @@ def apply_theme() -> None:
 
         .lp-course-thumb--side {
           margin-left: auto;
-          margin-top: 0;
+          margin-right: 64px;
+          margin-top: 30px;
           margin-bottom: 0;
           flex: 0 0 auto;
         }
