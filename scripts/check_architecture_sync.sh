@@ -17,15 +17,35 @@ fi
 
 git fetch --no-tags --depth=1 origin "${base_ref}"
 
-# Prefer merge-base diff (PR semantic), but gracefully degrade in shallow/edge CI histories
-# where `origin/<base>...HEAD` has no merge base.
+# Prefer merge-base diff (PR semantic). In shallow/edge CI histories, attempt to
+# deepen history before deciding the check cannot run reliably.
 merge_base="$(git merge-base "origin/${base_ref}" HEAD 2>/dev/null || true)"
-if [[ -n "${merge_base}" ]]; then
-  changed_files="$(git diff --name-only "${merge_base}..HEAD")"
-else
-  echo "architecture-sync: no merge base for origin/${base_ref} and HEAD; using direct base-vs-head diff fallback"
-  changed_files="$(git diff --name-only "origin/${base_ref}" HEAD)"
+if [[ -z "${merge_base}" ]]; then
+  echo "architecture-sync: no merge base yet; attempting deeper fetch"
+  git fetch --no-tags --deepen=200 origin "${base_ref}" || true
+  head_ref="${GITHUB_HEAD_REF:-}"
+  if [[ -n "${head_ref}" ]]; then
+    git fetch --no-tags --deepen=200 origin "${head_ref}" || true
+  fi
+  merge_base="$(git merge-base "origin/${base_ref}" HEAD 2>/dev/null || true)"
 fi
+
+if [[ -z "${merge_base}" ]]; then
+  is_shallow="$(git rev-parse --is-shallow-repository 2>/dev/null || echo false)"
+  if [[ "${is_shallow}" == "true" ]]; then
+    echo "architecture-sync: repository is shallow; attempting unshallow fetch"
+    git fetch --no-tags --prune --unshallow || true
+    git fetch --no-tags origin "${base_ref}" || true
+    merge_base="$(git merge-base "origin/${base_ref}" HEAD 2>/dev/null || true)"
+  fi
+fi
+
+if [[ -z "${merge_base}" ]]; then
+  echo "architecture-sync: unable to determine merge base for reliable PR diff; skipping drift check"
+  exit 0
+fi
+
+changed_files="$(git diff --name-only "${merge_base}..HEAD")"
 
 if [[ -z "${changed_files}" ]]; then
   echo "architecture-sync: no changed files detected"
