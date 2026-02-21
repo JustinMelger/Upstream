@@ -39,11 +39,14 @@ class CoursesTopbarControls:
 
 def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbarControls:
     """Render courses topbar and return controls."""
-    with ui.row().classes("lp-topbar lp-sticky-controls"):
+    with ui.row().classes("lp-topbar lp-sticky-controls lp-courses-toolbar"):
         search_input = (
-            ui.input("Search courses").props("clearable debounce=300 dense").classes("lp-topbar-search").style("flex: 1")
+            ui.input("Search courses")
+            .props("clearable debounce=300 dense")
+            .classes("lp-topbar-search lp-courses-search")
+            .style("flex: 1")
         )
-        with ui.row().classes("items-center gap-2 lp-topbar-group").style("margin-left: auto"):
+        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             ui.label("View").classes("lp-topbar-group-label")
             scope_filter = (
                 ui.radio(
@@ -51,9 +54,9 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbar
                     value=initial_scope,
                 )
                 .props("inline dense")
-                .classes("text-sm")
+                .classes("text-sm lp-topbar-secondary-control")
             )
-        with ui.row().classes("items-center gap-2 lp-topbar-group"):
+        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             ui.label("Sort").classes("lp-topbar-group-label")
             sort_filter = (
                 ui.select(
@@ -69,11 +72,12 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any) -> CoursesTopbar
                 )
                 .props("dense")
                 .style("min-width: 180px")
+                .classes("lp-topbar-secondary-control")
             )
-        with ui.row().classes("items-center gap-2 lp-topbar-group"):
-            ui.button("Share", on_click=on_share).props("dense")
-        with ui.row().classes("items-center gap-2 lp-topbar-group"):
-            meta = ui.label("").classes("lp-topbar-meta lp-topbar-count")
+        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+            ui.button("Share", on_click=on_share).props("dense outline").classes("lp-topbar-share")
+        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+            meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
     return CoursesTopbarControls(
         search_input=search_input,
         scope_filter=scope_filter,
@@ -117,12 +121,12 @@ def render_filters_rail(
     on_filters_changed: Any,
 ) -> CoursesFilterControls:
     """Render filter rail and return created control handles."""
-    with ui.row().classes("items-center justify-between w-full"):
+    with ui.row().classes("items-center justify-between w-full lp-filters-head"):
         ui.label("Filters").classes("text-md font-semibold")
         with ui.row().classes("items-center gap-2"):
             refresh_btn = ui.button("Refresh", on_click=on_refresh).props("outline dense")
 
-    ui.label("Tip: use filters to narrow results.").classes("text-xs").style("color: var(--lp-muted)")
+    ui.label("Tip: use filters to narrow results.").classes("text-xs lp-filters-tip").style("color: var(--lp-muted)")
 
     provider_filter = (
         ui.select({"": "Any provider"}, label="Provider", value="").props("dense").classes("w-full lp-filter-select")
@@ -244,7 +248,7 @@ def render_course_card(
             return
         await on_set_status(cid, "interested")
 
-    with ui.card().classes(f"w-full lp-course-card lp-card--hover{card_vm.card_class_suffix}"):
+    with ui.card().classes(f"w-full lp-course-card lp-course-card--surface lp-card--hover{card_vm.card_class_suffix}"):
         title = str(course_row.get("title") or "")
         with ui.element("div").classes("lp-card-topright"):
             if card_vm.is_new:
@@ -252,6 +256,7 @@ def render_course_card(
             elif card_vm.is_updated:
                 ui.label("Updated").classes("lp-chip lp-chip--teal")
             with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                ui.menu_item("Details", actions.on_view)
                 ui.menu_item("Review", actions.on_review)
                 ui.menu_item("Recommend", actions.on_recommend)
                 if has_video_preview:
@@ -263,8 +268,8 @@ def render_course_card(
                     ui.menu_item("Delete", actions.on_delete)
 
         thumbnail_url = str(getattr(card_vm, "thumbnail_url", "") or "").strip()
-        with ui.row().classes("lp-course-card-main"):
-            with ui.column().classes("lp-course-card-content"):
+        with ui.row().classes("lp-course-card-main no-wrap"):
+            with ui.column().classes("lp-course-card-content lp-course-card-stack"):
                 ui.label(title).classes("text-lg font-semibold lp-card-title")
                 shared_by = card_vm.shared_by
                 with ui.row().classes("items-center gap-2 flex-wrap lp-social-strip"):
@@ -275,8 +280,8 @@ def render_course_card(
                     if card_vm.recommendation_badge:
                         ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
                 if str(course_row.get("description") or "").strip():
-                    ui.label(str(course_row.get("description") or "")).classes("text-sm text-gray-600 lp-card-body")
-                with ui.row().classes("items-center gap-2 flex-wrap"):
+                    ui.label(str(course_row.get("description") or "")).classes("text-sm text-gray-600 lp-card-body lp-course-summary")
+                with ui.row().classes("items-center gap-2 flex-wrap lp-card-taxonomy"):
                     chips: list[str] = []
                     if str(course_row.get("provider") or "").strip():
                         chips.append(str(course_row.get("provider") or "").strip())
@@ -297,7 +302,6 @@ def render_course_card(
                     actions_row.classes("lp-card-actions")
                     primary_label = "Continue" if str((tracked_row or {}).get("status") or "").strip() else "Track"
                     ui.button(primary_label, on_click=_on_primary_action).props("dense")
-                    ui.button("", icon="visibility", on_click=actions.on_view).props("outline dense").tooltip("Details")
                     if has_video_preview:
                         preview_label = "Hide preview" if bool(is_preview_open) else "Preview"
                         ui.button(preview_label, on_click=on_toggle_preview).props("outline dense")
@@ -318,28 +322,29 @@ def render_course_card(
                     )
 
             if thumbnail_url:
-                thumbnail_fallback_url = str(getattr(card_vm, "thumbnail_fallback_url", "") or "").strip()
-                safe_src = html.escape(thumbnail_url, quote=True)
-                if thumbnail_fallback_url:
-                    safe_fallback = html.escape(thumbnail_fallback_url, quote=True)
-                    ui.html(
-                        (
-                            '<img class="lp-course-thumb lp-course-thumb--side" '
-                            f'src="{safe_src}" '
-                            f"onerror=\"this.onerror=null;this.src='{safe_fallback}';\" "
-                            'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
-                        ),
-                        sanitize=False,
-                    )
-                else:
-                    ui.html(
-                        (
-                            '<img class="lp-course-thumb lp-course-thumb--side" '
-                            f'src="{safe_src}" '
-                            'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
-                        ),
-                        sanitize=False,
-                    )
+                with ui.element("div").classes("lp-course-media-slot"):
+                    thumbnail_fallback_url = str(getattr(card_vm, "thumbnail_fallback_url", "") or "").strip()
+                    safe_src = html.escape(thumbnail_url, quote=True)
+                    if thumbnail_fallback_url:
+                        safe_fallback = html.escape(thumbnail_fallback_url, quote=True)
+                        ui.html(
+                            (
+                                '<img class="lp-course-thumb lp-course-thumb--side" '
+                                f'src="{safe_src}" '
+                                f"onerror=\"this.onerror=null;this.src='{safe_fallback}';\" "
+                                'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
+                            ),
+                            sanitize=False,
+                        )
+                    else:
+                        ui.html(
+                            (
+                                '<img class="lp-course-thumb lp-course-thumb--side" '
+                                f'src="{safe_src}" '
+                                'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
+                            ),
+                            sanitize=False,
+                        )
 
         if bool(is_preview_open) and str(preview_embed_url or "").strip():
             with ui.element("div").classes("lp-video-wrap"):
