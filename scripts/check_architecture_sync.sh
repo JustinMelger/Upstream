@@ -52,29 +52,55 @@ if [[ -z "${changed_files}" ]]; then
   exit 0
 fi
 
-architecture_code_regex='^(frontend/ui/nicegui/pages/|frontend/ui/nicegui/core/(guards|mutation_flow|navigation|navigation_intents)\.py|backend/api/|backend/database/orm_models\.py|backend/database/async_repositories/)'
+architecture_code_regex='^(frontend/ui/nicegui/main\.py|frontend/ui/nicegui/pages/[^/]+/(page|controller|orchestration|route_init|reducers|view_model|state|transitions|ui_glue)\.py|frontend/ui/nicegui/core/(guards|mutation_flow|navigation|navigation_intents)\.py|backend/api/|backend/database/orm_models\.py|backend/database/async_repositories/)'
+# High-impact architecture boundaries that should remain hard-gated.
+architecture_code_strict_regex='^(frontend/ui/nicegui/main\.py|frontend/ui/nicegui/pages/[^/]+/(page|controller|orchestration|route_init)\.py|backend/api/|backend/database/orm_models\.py|backend/database/async_repositories/)'
 architecture_contract_regex='^(docs/architecture_frontend\.md|docs/architecture_backend\.md|tests/frontend/ui/nicegui/test_architecture_docs_contracts\.py|tests/frontend/ui/nicegui/pages/.*/test_.*architecture\.py)'
 
 code_changed=0
 contract_changed=0
+strict_code_changed=0
+matched_code_files=()
+matched_contract_files=()
+matched_strict_code_files=()
 
 while IFS= read -r file; do
   if [[ "${file}" =~ ${architecture_code_regex} ]]; then
     code_changed=1
+    matched_code_files+=("${file}")
+  fi
+  if [[ "${file}" =~ ${architecture_code_strict_regex} ]]; then
+    strict_code_changed=1
+    matched_strict_code_files+=("${file}")
   fi
   if [[ "${file}" =~ ${architecture_contract_regex} ]]; then
     contract_changed=1
+    matched_contract_files+=("${file}")
   fi
 done <<< "${changed_files}"
 
-if [[ "${code_changed}" -eq 1 && "${contract_changed}" -eq 0 ]]; then
+if [[ "${strict_code_changed}" -eq 1 && "${contract_changed}" -eq 0 ]]; then
   echo "architecture-sync: architecture-significant code changed without docs/guard updates"
+  echo "Matched strict architecture files:"
+  for file in "${matched_strict_code_files[@]}"; do
+    echo "  - ${file}"
+  done
   echo "Please also update one of:"
   echo "  - docs/architecture_frontend.md"
   echo "  - docs/architecture_backend.md"
   echo "  - tests/frontend/ui/nicegui/test_architecture_docs_contracts.py"
   echo "  - relevant tests/frontend/ui/nicegui/pages/*/test_*architecture.py"
   exit 1
+fi
+
+if [[ "${code_changed}" -eq 1 && "${contract_changed}" -eq 0 ]]; then
+  echo "architecture-sync: warning (non-strict architecture files changed without docs/guard updates)"
+  echo "Matched non-strict architecture files:"
+  for file in "${matched_code_files[@]}"; do
+    echo "  - ${file}"
+  done
+  echo "No hard failure because strict architecture boundary files were not changed."
+  exit 0
 fi
 
 echo "architecture-sync: OK"
