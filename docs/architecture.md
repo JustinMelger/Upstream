@@ -12,3 +12,4 @@ This project uses a simple three‑tier layout:
 
 - Backend details: `docs/architecture_backend.md`
 - Frontend details (NiceGUI): `docs/architecture_frontend.md`
+- Contributor one-pager (architecture + coding standards): `docs/architecture_standards.md`

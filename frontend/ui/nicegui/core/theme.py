@@ -298,6 +298,13 @@ def apply_theme() -> None:
           .lp-main {
             max-width: 100%;
           }
+          .lp-course-card-main {
+            flex-direction: column-reverse;
+          }
+          .lp-course-thumb--side {
+            margin-left: 0;
+            width: min(100%, 360px);
+          }
         }
 
         @media (max-width: 640px) {
@@ -348,6 +355,37 @@ def apply_theme() -> None:
           font-size: var(--lp-type-xs);
           font-weight: 500;
           letter-spacing: 0.02em;
+        }
+
+        .lp-course-thumb {
+          width: min(100%, 300px);
+          display: block;
+          aspect-ratio: 16 / 9;
+          object-fit: cover;
+          border-radius: var(--lp-radius-md);
+          border: 1px solid rgba(186, 204, 227, 0.28);
+          box-shadow: var(--lp-shadow-sm);
+          margin-bottom: 10px;
+        }
+
+        .lp-course-card-main {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          width: 100%;
+        }
+
+        .lp-course-card-content {
+          min-width: 0;
+          flex: 1 1 auto;
+        }
+
+        .lp-course-thumb--side {
+          margin-left: auto;
+          margin-top: 0;
+          margin-bottom: 0;
+          flex: 0 0 auto;
         }
 
         .lp-card-body {

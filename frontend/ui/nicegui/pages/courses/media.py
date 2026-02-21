@@ -39,6 +39,16 @@ def youtube_embed_url(video_id: str) -> str:
     return f"https://www.youtube.com/embed/{video_id}?rel=0"
 
 
+def youtube_thumbnail_url(video_id: str) -> str:
+    """Build a stable YouTube thumbnail URL for a known-valid video id."""
+    return f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+
+
+def youtube_thumbnail_fallback_url(video_id: str) -> str:
+    """Build fallback YouTube thumbnail URL for host-level failures."""
+    return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
+
 def render_youtube_embed(embed_url: str, *, title: str = "Course video preview") -> None:
     """Render a YouTube iframe embed for a trusted embed URL."""
     safe_url = str(embed_url or "").strip()

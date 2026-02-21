@@ -43,4 +43,3 @@ def render_error_block(
         if retry_label and on_retry is not None:
             with ui.row().classes("items-center gap-2 mt-2"):
                 ui.button(str(retry_label), on_click=on_retry).props("outline dense")
-

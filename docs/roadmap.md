@@ -191,6 +191,14 @@
 - [ ] Motion polish: add subtle transitions for refreshes, filter expand/collapse, and card state updates.
 - [x] motion + micro-interaction foundation (card enter/stagger feel, richer button/chip hover-press states, and subtle control transitions).
 - [x] Course media UX: support embedded course videos when source is YouTube (validated URL parsing, safe embed iframe, and fallback external link).
+- [ ] Card consistency pass: enforce one shared course card skeleton (title/meta/chips/actions/media slots) so all cards keep identical spacing and scan rhythm.
+- [ ] Action hierarchy pass: simplify card action row to one clear primary CTA + one secondary action + status control; move lower-priority actions into overflow.
+- [ ] Topbar clarity pass: rebalance control weight by prioritizing search and visually grouping view/sort/share/count as secondary controls.
+- [ ] Filter rail density pass: reduce rail visual weight (contrast/width) so content remains primary while preserving filter discoverability.
+- [ ] Media placement polish: standardize thumbnail alignment/offset rules relative to top-right card controls (`New`/menu) and card content baseline.
+- [ ] Modernization Sprint 1 (structure): finalize typography scale + spacing rhythm + single component language (cards/buttons/chips/inputs) across all core pages.
+- [ ] Modernization Sprint 2 (interaction): add cohesive motion system (120-200ms transitions, list stagger, filter/sort state transitions) and stronger inline feedback patterns.
+- [ ] Modernization Sprint 3 (product feel): refine surface/depth system (contrast steps/shadows), emphasize social signals (owner/recommendation/review context), and complete accessibility/focus polish.
 
 ### Phase 11B — Activity Feed UX v2
 - [ ] Activity feed UX v2: add filters (`All`, `Recommendations`, `Ratings`, `Courses`, `Paths`, `Articles`).

@@ -8,7 +8,14 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 
 ## Docs
 - Architecture: [docs/architecture.md](docs/architecture.md)
+- Architecture & coding standards (one-pager): [docs/architecture_standards.md](docs/architecture_standards.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)
+
+## Prerequisites
+- Python 3.13
+- `uv`
+- `just`
+- Docker + Docker Compose (for local Postgres / containerized run)
 
 ## Run locally (Docker)
 ### Quick start
@@ -45,19 +52,49 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 3. Start the UI (in a new terminal):
    - `just ui`
 4. Open the UI:
-    - `http://localhost:8080`
+   - `http://localhost:8080`
+
+## Contributor quick start
+1. Install dependencies:
+   - `uv sync --group dev`
+2. Start Postgres + migrate:
+   - `just db-init`
+3. Start backend:
+   - `just backend`
+4. Start UI (new terminal):
+   - `just ui`
+
+Optional:
+- Start backend + UI together after DB init: `just dev`
+
+## Development commands
+- Format: `just fmt`
+- Lint: `just lint`
+- Unit tests: `just unit`
+- Integration tests: `just integration`
+- Architecture tests: `just architecture`
+- Full local gate: `just test`
+- Frontend architecture guards: `just frontend-arch-guards`
+- Architecture docs sync guard: `just architecture-sync-check`
 
 ## Pages
-- Home (Dashboard): progress snapshot, path progress, recent activity, featured paths, and recently added courses.
-- Courses: browse + add/remove to My Courses (admins can edit/delete).
-- My Courses: update status and remove tracked courses.
-- Paths: browse and add to My Paths (admins can edit/delete and set order).
-- My Paths: manage selected paths and update course status.
-- Admin: create user accounts (admin only).
+- Insights (`/insights`): team-level progress and contribution visibility.
+- My learning (`/learning`): personal execution view (tracked/selected/recommended/shared items).
+- Activity (`/activity`): mailbox-style activity feed (personal + team activity tab).
+- Courses (`/courses`): browse/share/review/recommend courses and manage tracking status.
+- Paths (`/paths`): browse/share/select/review/recommend paths and update path status.
+- Articles (`/articles`): share and review knowledge links.
+- Admin (`/admin/users`): user management (admin only).
 
 ## Login (username + password)
 - First login bootstraps an admin user (if no users exist yet) using the bootstrap credentials.
-- Admins can create additional user accounts from the Dashboard.
+- Admins can create additional user accounts from the Admin page.
+
+## Feature snapshot
+- Social learning flows: share/review/recommend courses and paths.
+- Activity mailbox and team activity view.
+- My learning execution view (`Learning` and `Shared` tabs).
+- AI draft planner endpoint (`POST /ai/plan`) for proposed learning plans.
 
 ## Conventional commits
 We use Conventional Commits for automated release notes.
@@ -79,21 +116,19 @@ Examples:
 
 ## API endpoints (read-first)
 - `GET /health`
-- `POST /auth/login`
-- `GET /auth/me`
-- `POST /auth/logout`
-- `GET /courses`
-- `GET /courses/{id}`
-- `GET /paths`
-- `GET /paths/{id}`
-- `GET /tracking?colleague_id=...`
-- `POST /tracking`
-- `POST /tracking/delete`
-- `GET /tracking/stats?colleague_id=...`
-- `POST /paths/{id}/select`
-- `POST /paths/{id}/unselect`
-- `GET /articles`
-- `POST /articles`
+
+Endpoint families:
+- Auth/session: `/auth/*`
+- Courses (+ reviews/recommendations): `/courses/*`
+- Paths (+ select/status + reviews/recommendations): `/paths/*`
+- Articles (+ reviews): `/articles/*`
+- Tracking/stats: `/tracking/*`
+- Notifications/activity: `/notifications/*`
+- AI draft planning: `/ai/*`
+
+OpenAPI docs:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
 Admin-only:
 - `POST /auth/users`
@@ -115,15 +150,40 @@ Owner/admin-only (creator or admin):
 - Users can create courses and paths; they can edit/delete only the ones they created.
 
 ## Tracking
-- Set status per course: `interested`, `in_progress`, or `completed` (My Courses or My Paths).
-- Remove a tracked course from My Courses if needed.
+- Set status per course: `interested`, `in_progress`, or `completed`.
+- Tracking is managed from `Courses`, `Paths` details, and `My learning`.
 
 ## Paths
 - Create learning paths by selecting courses and ordering them.
-- Add a path to My Paths from the Paths page.
-- Update per-course status inside My Paths.
+- Select a path from the Paths page.
+- Update per-path status (`not_selected`, `selected`, `completed`) and per-course tracking status.
 - Delete paths you created (admins can delete any).
 
 ## Data
 - Schema is managed via Alembic migrations (`just migrate`).
 - The API starts with an empty database. Use the admin endpoints to create data.
+
+## Example `.env`
+```env
+DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
+BACKEND_URL=http://127.0.0.1:8000
+SESSION_DAYS=7
+BOOTSTRAP_ADMIN_USERNAME=admin
+BOOTSTRAP_ADMIN_PASSWORD=change-me
+NICEGUI_STORAGE_SECRET=change-me-too
+```
+
+## Troubleshooting
+- Migrations fail / schema mismatch:
+  - Run `just db-init` (or `just db-up` + `just migrate`).
+- UI cannot reach API:
+  - Verify backend is on `http://127.0.0.1:8000` and `BACKEND_URL` matches.
+- Login bootstrap not working:
+  - Ensure database is empty and bootstrap env vars are set.
+- Port conflict:
+  - Check/stop processes on ports `8000` (API) and `8080` (UI).
+
+## Production notes
+- Use a managed Postgres instance and run Alembic migrations during deploy.
+- Keep secrets in environment/secret manager (never commit credentials).
+- Disable bootstrap admin credentials after initial setup.
