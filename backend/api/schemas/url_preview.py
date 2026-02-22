@@ -21,4 +21,3 @@ class UrlPreviewMetadataResponse(APIModel):
     suggested_provider: str = ""
     suggested_category: str = ""
     suggested_tags: list[str] = []
-

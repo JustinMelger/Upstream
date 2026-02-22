@@ -10,7 +10,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
-from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS, tracking_label
+from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.pages.courses.media import render_youtube_embed
 from frontend.ui.nicegui.pages.courses.ui_glue import ActiveFilterChip

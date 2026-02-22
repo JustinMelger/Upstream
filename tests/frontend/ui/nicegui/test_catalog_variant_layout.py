@@ -11,6 +11,7 @@ pytestmark = pytest.mark.architecture
 
 _THEME_FILE = Path("frontend/ui/nicegui/core/theme.py")
 
+
 def _parse(path: Path) -> ast.Module:
     return ast.parse(path.read_text(encoding="utf-8"))
 

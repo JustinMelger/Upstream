@@ -32,6 +32,7 @@ from backend.services.tracking_service import TrackingService
 from backend.services.url_preview_service import UrlPreviewService
 from backend.services.user_paths_service import UserPathsService
 
+
 _URL_PREVIEW_SERVICE = UrlPreviewService()
 
 

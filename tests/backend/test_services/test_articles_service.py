@@ -1,9 +1,9 @@
 import pytest
 
-from backend.database.async_repositories.auth import AuthRepository
 from backend.database.async_repositories.articles import ArticlesRepository
-from backend.services.auth_service import AuthService
+from backend.database.async_repositories.auth import AuthRepository
 from backend.services.articles_service import ArticlesService
+from backend.services.auth_service import AuthService
 
 
 pytestmark = pytest.mark.anyio

@@ -40,7 +40,9 @@ def render_paths_empty_state(
 
     if empty_state == "catalog_empty":
         ui.label("No path library yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Share the first roadmap to define structured learning journeys.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("Share the first roadmap to define structured learning journeys.").classes("text-sm").style(
+            "color: var(--lp-muted)"
+        )
         with ui.row().classes("items-center gap-2"):
             ui.button("Share a path", on_click=on_share).props("outline")
             ui.button("Browse courses", on_click=on_browse_courses).props("outline")

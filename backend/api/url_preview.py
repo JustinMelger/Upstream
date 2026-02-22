@@ -16,4 +16,3 @@ async def resolve_url_metadata(
 ):
     """Resolve URL metadata and autofill suggestions for share dialogs."""
     return await previews.resolve_metadata(source_url=str(payload.url or ""))
-

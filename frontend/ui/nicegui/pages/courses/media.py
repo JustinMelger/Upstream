@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import re
-from urllib.parse import quote
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 
 _YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
