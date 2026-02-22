@@ -227,11 +227,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if not shown_courses and not shown_articles:
                     with ui.column().classes("w-full gap-2 lp-courses-section"):
                         if not state.loaded_once:
-                            ui.label("Loading failed").classes("lp-courses-section-title")
-                            ui.label("Could not load Explore content. Try refresh.").classes("lp-courses-section-subtitle")
+                            ui.label("Discovery feed unavailable").classes("lp-courses-section-title")
+                            ui.label("Explore could not load right now. Refresh to retry.").classes("lp-courses-section-subtitle")
                         else:
-                            ui.label("No results").classes("lp-courses-section-title")
-                            ui.label("Try adjusting search or filters.").classes("lp-courses-section-subtitle")
+                            ui.label("No matches in Explore").classes("lp-courses-section-title")
+                            ui.label("Adjust search scope or filters to discover more content.").classes("lp-courses-section-subtitle")
                     return
 
                 def _render_course_item(course: dict[str, Any], *, item_classes: str) -> None:
@@ -303,6 +303,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             tags=vm.tags,
                             summary_text=vm.summary_text,
                             subtitle_text=vm.subtitle_text,
+                            thumbnail_url=vm.thumbnail_url,
                             view_action=actions.on_view,
                             review_action=actions.on_review,
                         )

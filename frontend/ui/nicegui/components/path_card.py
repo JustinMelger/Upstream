@@ -56,21 +56,25 @@ def render_path_card(
                     ui.menu_item("Delete", on_delete)
 
         ui.label(path_row.get("name") or "").classes("text-lg font-semibold lp-card-title")
-        if str(path_row.get("description") or "").strip():
-            ui.label(path_row.get("description") or "").classes("text-sm text-gray-600 lp-card-body")
         with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
             if shared_by:
                 ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
             ui.label(tracking_label_text).classes(tracking_chip_cls)
 
         if total_courses > 0:
-            ui.label(f"{completed}/{total_courses} completed").classes("text-sm").style("color: var(--lp-muted)")
-            ui.linear_progress(progress, show_value=False).classes("w-full")
-            with ui.row().classes("items-center gap-2"):
+            with ui.row().classes("items-center justify-between w-full"):
+                ui.label("Path progress").classes("text-xs lp-path-progress-label")
+                ui.label(f"{completed}/{total_courses} completed").classes("text-sm lp-path-progress-count").style(
+                    "color: var(--lp-muted)"
+                )
+            ui.linear_progress(progress, show_value=False).classes("w-full lp-path-progress-bar")
+            with ui.row().classes("items-center gap-2 lp-path-milestone-row"):
                 ui.label(milestone).classes(f"{milestone_class} lp-path-milestone")
                 ui.label(impact).classes("text-xs").style("color: var(--lp-muted)")
             if next_title:
                 ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
+        if str(path_row.get("description") or "").strip():
+            ui.label(path_row.get("description") or "").classes("text-sm text-gray-600 lp-card-body lp-path-description")
 
         with ui.row().classes("items-center gap-2 mt-2") as actions_row:
             actions_row.classes("lp-card-actions")

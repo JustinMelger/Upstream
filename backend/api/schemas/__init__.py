@@ -68,6 +68,7 @@ from backend.api.schemas.tracking import (
     TrackingStatsByUserItem,
     TrackingUpsertRequest,
 )
+from backend.api.schemas.url_preview import UrlPreviewMetadataRequest, UrlPreviewMetadataResponse
 
 
 __all__ = [
@@ -134,4 +135,6 @@ __all__ = [
     "TrackingRecordPayload",
     "TrackingDeleteResponse",
     "TrackingStatsByUserItem",
+    "UrlPreviewMetadataRequest",
+    "UrlPreviewMetadataResponse",
 ]

@@ -10,7 +10,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
-from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS, tracking_label
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.pages.courses.media import render_youtube_embed
 from frontend.ui.nicegui.pages.courses.ui_glue import ActiveFilterChip
@@ -287,6 +287,8 @@ def render_course_card(
                     ui.label(str(course_row.get("description") or "")).classes(
                         "text-sm text-gray-600 lp-card-body lp-course-summary"
                     )
+                current_status = str((tracked_row or {}).get("status") or "").strip()
+                ui.label(f"Status: {tracking_label(current_status)}").classes("lp-course-status-line")
                 with ui.row().classes("items-center gap-2 flex-wrap lp-card-taxonomy"):
                     chips: list[str] = []
                     if str(course_row.get("provider") or "").strip():
@@ -302,7 +304,7 @@ def render_course_card(
                     if len(chips) > max_chips:
                         ui.label(f"+{len(chips) - max_chips}").classes("lp-meta-chip lp-meta-chip--quiet")
 
-                    ui.label(card_vm.tracking_label_text).classes(card_vm.tracking_chip_cls)
+                    ui.label(card_vm.tracking_label_text).classes(f"{card_vm.tracking_chip_cls} lp-course-status-chip")
 
                 with ui.row().classes("items-center gap-2 mt-2") as actions_row:
                     actions_row.classes("lp-card-actions")
@@ -331,11 +333,14 @@ def render_course_card(
                 with ui.element("div").classes("lp-course-media-slot"):
                     thumbnail_fallback_url = str(getattr(card_vm, "thumbnail_fallback_url", "") or "").strip()
                     safe_src = html.escape(thumbnail_url, quote=True)
+                    thumb_class = "lp-course-thumb lp-course-thumb--side"
+                    if not bool(has_video_preview):
+                        thumb_class += " lp-course-thumb--contain"
                     if thumbnail_fallback_url:
                         safe_fallback = html.escape(thumbnail_fallback_url, quote=True)
                         ui.html(
                             (
-                                '<img class="lp-course-thumb lp-course-thumb--side" '
+                                f'<img class="{thumb_class}" '
                                 f'src="{safe_src}" '
                                 f"onerror=\"this.onerror=null;this.src='{safe_fallback}';\" "
                                 'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
@@ -345,7 +350,7 @@ def render_course_card(
                     else:
                         ui.html(
                             (
-                                '<img class="lp-course-thumb lp-course-thumb--side" '
+                                f'<img class="{thumb_class}" '
                                 f'src="{safe_src}" '
                                 'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
                             ),
@@ -472,8 +477,8 @@ def render_courses_empty_state(
     """Render empty-state variants for courses list."""
     if scope_value == "tracked" and not any_filters:
         render_empty_block(
-            title="No tracked courses yet.",
-            description="Browse courses and set a status to start tracking.",
+            title="No active learning queue yet.",
+            description="Browse courses and mark one as Interested or In progress to start momentum.",
             primary_label="Browse all courses",
             on_primary=on_browse_all,
             secondary_label="Refresh",
@@ -483,8 +488,8 @@ def render_courses_empty_state(
 
     if (not has_any_courses) and (not any_filters):
         render_empty_block(
-            title="No courses yet.",
-            description="Share the first course to get started.",
+            title="No course library yet.",
+            description="Share the first course and seed the learning catalog.",
             primary_label="Share a course",
             on_primary=on_share,
             secondary_label="Refresh",
@@ -493,8 +498,8 @@ def render_courses_empty_state(
         return
 
     render_empty_block(
-        title="No courses match your filters.",
-        description="Try resetting filters to broaden results." if any_filters else "",
+        title="No learning matches this filter set.",
+        description="Reset filters to widen the course pipeline." if any_filters else "",
         primary_label="Reset all",
         on_primary=on_reset_all,
         secondary_label="Refresh",

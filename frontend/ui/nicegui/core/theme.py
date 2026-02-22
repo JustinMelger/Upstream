@@ -608,7 +608,17 @@ def apply_theme() -> None:
           .lp-course-card-main {
             flex-direction: column-reverse;
           }
+          .lp-article-card-main {
+            flex-direction: column-reverse;
+          }
           .lp-course-media-slot {
+            width: 100%;
+            margin-left: 0;
+            padding-right: 0;
+            padding-top: 0;
+            justify-content: flex-start;
+          }
+          .lp-article-media-slot {
             width: 100%;
             margin-left: 0;
             padding-right: 0;
@@ -677,7 +687,7 @@ def apply_theme() -> None:
         }
 
         .lp-catalog--articles .lp-article-card .lp-card-title {
-          padding-right: 104px;
+          padding-right: 112px;
           line-height: 1.26;
         }
 
@@ -685,6 +695,18 @@ def apply_theme() -> None:
           font-size: 0.8rem;
           letter-spacing: 0.025em;
           opacity: 0.92;
+        }
+
+        .lp-catalog--articles .lp-article-card .lp-article-byline {
+          font-weight: 700;
+          color: rgba(223, 243, 246, 0.95) !important;
+          letter-spacing: 0.02em;
+        }
+
+        .lp-catalog--articles .lp-article-card .lp-article-date {
+          color: rgba(187, 213, 218, 0.9) !important;
+          letter-spacing: 0.018em;
+          opacity: 0.9;
         }
 
         .lp-catalog--articles .lp-article-card .lp-article-summary-chip {
@@ -711,6 +733,30 @@ def apply_theme() -> None:
         .lp-catalog--paths .lp-path-card .lp-path-milestone {
           border-color: rgba(117, 228, 203, 0.34);
           background: rgba(85, 206, 181, 0.14);
+        }
+
+        .lp-catalog--paths .lp-path-card .lp-path-progress-label {
+          text-transform: uppercase;
+          letter-spacing: 0.055em;
+          font-weight: 700;
+          color: rgba(167, 223, 214, 0.9);
+        }
+
+        .lp-catalog--paths .lp-path-card .lp-path-progress-count {
+          font-weight: 600;
+          color: rgba(217, 239, 235, 0.92) !important;
+        }
+
+        .lp-catalog--paths .lp-path-card .lp-path-progress-bar .q-linear-progress__track {
+          background: rgba(75, 192, 178, 0.22) !important;
+        }
+
+        .lp-catalog--paths .lp-path-card .lp-path-progress-bar .q-linear-progress__model {
+          background: linear-gradient(90deg, rgba(87, 208, 187, 0.92), rgba(73, 182, 206, 0.88)) !important;
+        }
+
+        .lp-catalog--paths .lp-path-card .lp-path-description {
+          opacity: 0.9;
         }
 
         .lp-card-title {
@@ -779,6 +825,40 @@ def apply_theme() -> None:
           align-items: flex-start;
         }
 
+        .lp-article-card-main {
+          display: flex;
+          flex-wrap: nowrap;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 18px;
+          width: 100%;
+        }
+
+        .lp-article-card-content {
+          min-width: 0;
+          flex: 1 1 auto;
+          gap: var(--lp-space-2);
+          padding-right: var(--lp-space-2);
+          padding-top: 2px;
+          padding-bottom: 2px;
+        }
+
+        .lp-article-media-slot {
+          width: 276px;
+          margin-left: auto;
+          padding-right: 16px;
+          padding-top: 34px;
+          flex: 0 0 auto;
+          display: flex;
+          justify-content: flex-end;
+          align-items: flex-start;
+        }
+
+        .lp-article-thumb {
+          object-fit: cover;
+          background: rgba(255, 255, 255, 0.02);
+        }
+
         .lp-course-thumb--side {
           margin-left: 0;
           margin-right: 0;
@@ -786,6 +866,12 @@ def apply_theme() -> None:
           margin-bottom: 0;
           width: 276px;
           flex: 0 0 auto;
+        }
+
+        .lp-course-thumb--contain {
+          object-fit: contain;
+          background: transparent;
+          padding: 0;
         }
 
         .lp-course-thumb-placeholder {
@@ -821,6 +907,21 @@ def apply_theme() -> None:
 
         .lp-course-summary {
           opacity: 0.95;
+        }
+
+        .lp-course-status-line {
+          font-size: var(--lp-type-xs);
+          letter-spacing: 0.03em;
+          text-transform: uppercase;
+          font-weight: 700;
+          color: rgba(198, 221, 244, 0.88);
+          margin-top: 2px;
+          margin-bottom: -2px;
+        }
+
+        .lp-course-status-chip {
+          border-color: color-mix(in srgb, var(--lp-page-accent-soft) 70%, rgba(186, 204, 227, 0.3));
+          background: color-mix(in srgb, var(--lp-page-accent-soft) 42%, rgba(255, 255, 255, 0.08));
         }
 
         .lp-card-taxonomy {

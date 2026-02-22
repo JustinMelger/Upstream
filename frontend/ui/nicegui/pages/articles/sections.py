@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import html
 from typing import Any
 
 from nicegui import ui
@@ -114,15 +115,15 @@ def render_articles_empty_state(
     """Render empty states for the articles list."""
     if not has_articles and not any_filters:
         render_empty_block(
-            title="No articles yet.",
-            description="Share the first link to get started.",
+            title="No reading stream yet.",
+            description="Share the first article and start the editorial feed.",
             primary_label="Share an article",
             on_primary=on_share,
         )
         return
 
     render_empty_block(
-        title="No articles match your filters.",
+        title="No reads match this filter set.",
         primary_label="Reset all",
         on_primary=on_reset,
         secondary_label="Refresh",
@@ -137,6 +138,7 @@ def render_article_card(
     tags: list[str],
     summary_text: str,
     subtitle_text: str,
+    thumbnail_url: str,
     view_action: Any,
     review_action: Any,
 ) -> None:
@@ -149,24 +151,43 @@ def render_article_card(
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
 
-        ui.label(title).classes("text-lg font-semibold lp-card-title")
-        if url:
-            ui.link(url, url).props("target=_blank").classes("text-sm")
+        with ui.row().classes("lp-article-card-main no-wrap"):
+            with ui.column().classes("lp-article-card-content"):
+                ui.label(title).classes("text-lg font-semibold lp-card-title")
+                if url:
+                    ui.link(url, url).props("target=_blank").classes("text-sm")
 
-        ui.label(subtitle_text).classes("text-xs lp-card-subtitle lp-article-meta-line").style("color: var(--lp-muted)")
+                subtitle_parts = [part.strip() for part in str(subtitle_text or "").split("·") if str(part).strip()]
+                with ui.row().classes("items-center gap-2 flex-wrap"):
+                    if subtitle_parts:
+                        ui.label(subtitle_parts[0]).classes("text-xs lp-card-subtitle lp-article-byline")
+                    if len(subtitle_parts) > 1:
+                        ui.label(subtitle_parts[1]).classes("text-xs lp-card-subtitle lp-article-date")
 
-        if tags:
-            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
-                for t in tags[:10]:
-                    ui.label(t).classes("lp-meta-chip")
-                if len(tags) > 10:
-                    ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
-        if summary_text:
-            ui.label(summary_text).classes("lp-meta-chip lp-article-summary-chip")
+                if tags:
+                    with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
+                        for t in tags[:10]:
+                            ui.label(t).classes("lp-meta-chip")
+                        if len(tags) > 10:
+                            ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
+                if summary_text:
+                    ui.label(summary_text).classes("lp-meta-chip lp-article-summary-chip")
 
-        with ui.row().classes("items-center gap-2 mt-2") as actions_row:
-            actions_row.classes("lp-card-actions")
-            render_view_review_actions(on_view=view_action, on_review=review_action, review_tooltip="Reviews")
+                with ui.row().classes("items-center gap-2 mt-2") as actions_row:
+                    actions_row.classes("lp-card-actions")
+                    render_view_review_actions(on_view=view_action, on_review=review_action, review_tooltip="Reviews")
+
+            safe_src = html.escape(str(thumbnail_url or "").strip(), quote=True)
+            if safe_src:
+                with ui.element("div").classes("lp-article-media-slot"):
+                    ui.html(
+                        (
+                            '<img class="lp-course-thumb lp-course-thumb--side lp-article-thumb" '
+                            f'src="{safe_src}" '
+                            'alt="Article thumbnail" loading="lazy" referrerpolicy="no-referrer">'
+                        ),
+                        sanitize=False,
+                    )
 
 
 def render_articles_catalog(

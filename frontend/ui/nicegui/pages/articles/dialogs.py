@@ -15,6 +15,7 @@ from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
 def build_share_article_dialog(
     *,
     on_submit: Callable[[dict[str, Any]], Awaitable[None]],
+    on_suggest_from_url: Callable[[str], Awaitable[dict[str, Any]]],
 ) -> Callable[[], None]:
     """Build share dialog and return open callback."""
     share_dialog = ui.dialog()
@@ -22,6 +23,31 @@ def build_share_article_dialog(
         ui.label("Share article").classes("text-xl font-semibold")
         new_title = ui.input("Title").props("clearable").classes("w-full")
         new_url = ui.input("URL").props("clearable").classes("w-full")
+        with ui.row().classes("items-center justify-between w-full -mt-2"):
+            ui.label("Paste a link and auto-suggest title/tags.").classes("text-xs").style("color: var(--lp-muted)")
+
+            @guard_ui_action(title="URL suggestion failed")
+            async def _suggest_from_url() -> None:
+                source_url = str(new_url.value or "").strip()
+                if not source_url:
+                    safe_notify("Enter a URL first", type="warning")
+                    return
+                payload = await on_suggest_from_url(source_url)
+                suggested_title = str(payload.get("title") or "").strip()
+                suggested_tags = list(payload.get("suggested_tags") or [])
+                normalized_url = str(payload.get("normalized_url") or "").strip()
+                if normalized_url:
+                    new_url.value = normalized_url
+                if suggested_title and not str(new_title.value or "").strip():
+                    new_title.value = suggested_title
+                if suggested_tags and not str(new_tags.value or "").strip():
+                    new_tags.value = ", ".join([str(tag).strip() for tag in suggested_tags if str(tag).strip()])
+                if suggested_title or suggested_tags:
+                    safe_notify("Suggestions applied", type="positive")
+                else:
+                    safe_notify("No suggestions found for this URL", type="warning")
+
+            ui.button("Suggest from URL", on_click=_suggest_from_url).props("outline dense")
         new_tags = ui.input("Tags (comma separated)").props("clearable").classes("w-full")
         with ui.row().classes("justify-end mt-4"):
 

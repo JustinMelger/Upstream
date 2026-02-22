@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from urllib.parse import quote
 from urllib.parse import parse_qs, urlparse
 
 
@@ -45,6 +46,20 @@ def youtube_thumbnail_url(video_id: str) -> str:
 def youtube_thumbnail_fallback_url(video_id: str) -> str:
     """Build fallback YouTube thumbnail URL for host-level failures."""
     return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
+
+def website_favicon_url(source_url: str | None) -> str:
+    """Build a generic favicon URL for non-video websites."""
+    raw = str(source_url or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw)
+    if str(parsed.scheme or "").lower() not in {"http", "https"}:
+        return ""
+    host = str(parsed.hostname or "").strip().lower()
+    if not host:
+        return ""
+    return f"https://www.google.com/s2/favicons?domain={quote(host)}&sz=256"
 
 
 def render_youtube_embed(embed_url: str, *, title: str = "Course video preview") -> str:

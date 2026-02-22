@@ -178,19 +178,24 @@
 ## Phase 11 — Operability + Quality
 
 ### Phase 11A — UX & Visual System
+
+#### Phase 11A.1 — Design System Foundations
 - [x] Styling system refresh: define shared design tokens (spacing, typography scale, radii, shadows, semantic colors) and apply globally.
 - [x] Styling system refresh: refine color system (keep blue identity, increase surface contrast steps, strengthen semantic accents for primary/success/warning/error).
 - [x] Styling system refresh: run a layout rhythm/density pass across topbars, filter rails, cards, dialogs, and section spacing.
 - [x] Styling/layout refresh: improve perceived page width (collapsible filter rail, wider content container, responsive drawer-mode filters on narrower desktop/tablet).
 - [x] Styling system refresh: standardize interaction states (hover/focus/active/disabled), improve contrast/focus visibility, and add subtle motion polish.
+- [x] UX typography: apply a consistent type scale and weights across topbars, cards, rails, and dialogs.
+- [x] UX productivity: keep key list controls visible on scroll (sticky topbar/list controls where appropriate).
+- [x] Theming architecture hardening: introduce a variant-driven theme API and add tests/guards to prevent layout drift or ad-hoc per-page CSS forks.
+- [ ] Modernization Sprint 1 (structure): finalize typography scale + spacing rhythm + single component language (cards/buttons/chips/inputs) across all core pages.
+
+#### Phase 11A.2 — Catalog Layout & Card UX
+- [x] Catalog IA/layout system: keep one shared list-page skeleton (topbar + filter pattern + featured/rails/list composition) across Courses/Articles/Paths to preserve familiarity.
+- [x] Catalog visual variants: define per-page style variants (Courses/Articles/Paths) with shared base tokens and page-specific accent tokens (surface blend, chips, highlights).
 - [x] UX polish: strengthen card hierarchy (title/meta/chip priority), reduce action-row noise, and standardize primary vs secondary actions.
 - [x] UX polish: make filter UX progressive (top 2-3 always visible, remaining filters behind “More filters”).
 - [x] UX polish: unify empty/loading/error states across core pages with consistent CTA patterns.
-- [x] UX typography: apply a consistent type scale and weights across topbars, cards, rails, and dialogs.
-- [x] UX productivity: keep key list controls visible on scroll (sticky topbar/list controls where appropriate).
-- [ ] Motion polish: add subtle transitions for refreshes, filter expand/collapse, and card state updates.
-- [x] motion + micro-interaction foundation (card enter/stagger feel, richer button/chip hover-press states, and subtle control transitions).
-- [x] Course media UX: support embedded course videos when source is YouTube (validated URL parsing, safe embed iframe, and fallback external link).
 - [ ] Card consistency pass: enforce one shared course card skeleton (title/meta/chips/actions/media slots) so all cards keep identical spacing and scan rhythm.
   - [x] Phase slice: normalized Courses cards to a stable content+media layout with a consistent right media slot and placeholder for non-media courses.
 - [ ] Action hierarchy pass: simplify card action row to one clear primary CTA + one secondary action + status control; move lower-priority actions into overflow.
@@ -199,16 +204,40 @@
   - [x] Phase slice: de-emphasized secondary topbar controls (view/sort/share/count) and tuned visual weight so search remains primary on Courses.
 - [ ] Filter rail density pass: reduce rail visual weight (contrast/width) so content remains primary while preserving filter discoverability.
   - [x] Phase slice: reduced rail width and lowered rail contrast/shadow intensity to shift visual focus back to the content column.
+- [ ] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so primary content cards remain the dominant focal point.
+- [ ] Content-type hierarchy pass (in progress): tune card information priority per domain (Courses: progression/status; Articles: author/date/editorial metadata; Paths: milestones/progress sequencing).
+- [ ] Articles UX follow-up (empty-state composition): avoid hero + empty-card message duplication; introduce a compact empty variant so first-load pages do not feel content-sparse.
+- [ ] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls for faster scan.
+- [ ] Empty-state density polish (Articles): tighten headline/body spacing and reduce vertical whitespace in the empty block while preserving CTA prominence.
+
+#### Phase 11A.3 — Media & Thumbnail Pipeline
+- [x] Course media UX: support embedded course videos when source is YouTube (validated URL parsing, safe embed iframe, and fallback external link).
+- [x] Articles media UX: show source thumbnails on article cards (Articles + Explore) using resolved preview metadata.
+- [x] URL metadata suggestions API: add authenticated `POST /url-preview/metadata` endpoint returning normalized URL + title/description/site name/preview image + suggested provider/category/tags.
+- [x] URL metadata service expansion: extend `UrlPreviewService` with metadata parsing (Open Graph + meta description/keywords + title fallback) and lightweight domain/tag/category heuristics.
+- [x] URL metadata service reuse: inject one shared `UrlPreviewService` instance via API dependencies so preview + metadata caching works across requests.
+- [x] Share dialog autofill (Courses): add “Suggest from URL” action to prefill empty fields (`title`, `description`, `provider`, `category`) and optional topic hints from suggested tags.
+- [x] Share dialog autofill (Articles): add “Suggest from URL” action to prefill empty fields (`title`, `tags`) and normalize source URL before submit.
+- [ ] Share flow UX (Courses/Articles): trigger metadata suggestions automatically on URL paste/blur with debounce, while keeping the manual “Suggest from URL” control.
+- [ ] Share flow UX (Courses/Articles): show inline “suggested vs edited” indicators so users can quickly trust/override autofilled values.
+- [ ] Share flow validation (Courses/Articles): add live URL validation and duplicate checks before submit (existing URL/domain/title-provider hints) with actionable inline messages.
+- [ ] Share flow reliability (Courses/Articles): persist unsent draft form state with autosave + recovery after refresh/navigation and explicit “discard draft” action.
+- [ ] Share flow productivity (Courses/Articles): add one-click “apply all suggestions” and per-field “re-suggest” actions for faster curation.
+- [ ] Share flow safety (Courses/Articles): provide “metadata unavailable” fallback UX with smart placeholders/examples so users can still submit quickly.
+- [ ] Share flow post-submit: show contextual success summary (what was autofilled/saved) and quick follow-up actions (open item, copy link, add review/recommendation).
+- [ ] Course media enrichment: extend thumbnail resolution beyond YouTube using provider APIs/oEmbed first, then metadata scraping fallback (`og:image`/`twitter:image`) with caching and SSRF-safe fetch constraints.
+- [ ] Course + Article URL metadata persistence: persist fetched source metadata on create/update (`preview_image_url`, source title/site/description/canonical URL, `metadata_fetched_at`) with optional manual refresh action; avoid per-list live re-scraping.
+- [ ] Thumbnail quality gate: reject blurry/low-quality preview images via server-side image sharpness checks (e.g., Laplacian variance threshold) and fallback to alternate metadata candidates.
+- [ ] Thumbnail fallback policy: when quality gate or fetch checks reject a source image, use a first-party default branded fallback thumbnail.
 - [ ] Media placement polish: standardize thumbnail alignment/offset rules relative to top-right card controls (`New`/menu) and card content baseline.
   - [x] Phase slice: replaced ad-hoc thumbnail margins with media-slot alignment rules (fixed top/right slot padding), and changed non-media placeholder to compact pill style to remove dead-card space.
-- [ ] Modernization Sprint 1 (structure): finalize typography scale + spacing rhythm + single component language (cards/buttons/chips/inputs) across all core pages.
+
+#### Phase 11A.4 — Page Identity & Motion Polish
+- [ ] Motion polish: add subtle transitions for refreshes, filter expand/collapse, and card state updates.
+- [x] motion + micro-interaction foundation (card enter/stagger feel, richer button/chip hover-press states, and subtle control transitions).
+- [ ] Page identity pass (in progress): add page-specific section language and hero treatments (without changing interaction model) so catalog pages feel distinct but consistent.
 - [ ] Modernization Sprint 2 (interaction): add cohesive motion system (120-200ms transitions, list stagger, filter/sort state transitions) and stronger inline feedback patterns.
 - [ ] Modernization Sprint 3 (product feel): refine surface/depth system (contrast steps/shadows), emphasize social signals (owner/recommendation/review context), and complete accessibility/focus polish.
-- [x] Catalog IA/layout system: keep one shared list-page skeleton (topbar + filter pattern + featured/rails/list composition) across Courses/Articles/Paths to preserve familiarity.
-- [x] Catalog visual variants: define per-page style variants (Courses/Articles/Paths) with shared base tokens and page-specific accent tokens (surface blend, chips, highlights).
-- [ ] Content-type hierarchy pass (in progress): tune card information priority per domain (Courses: progression/status; Articles: author/date/editorial metadata; Paths: milestones/progress sequencing).
-- [ ] Page identity pass (in progress): add page-specific section language and hero treatments (without changing interaction model) so catalog pages feel distinct but consistent.
-- [ ] Theming architecture hardening (in progress): introduce a variant-driven theme API and add tests/guards to prevent layout drift or ad-hoc per-page CSS forks.
 
 ### Phase 11B — Activity Feed UX v2
 - [ ] Activity feed UX v2: add filters (`All`, `Recommendations`, `Ratings`, `Courses`, `Paths`, `Articles`).

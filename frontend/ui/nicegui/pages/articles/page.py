@@ -76,7 +76,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 reload_page=_load,
             )
 
-        _open_share_dialog = build_share_article_dialog(on_submit=_submit_share)
+        _open_share_dialog = build_share_article_dialog(
+            on_submit=_submit_share,
+            on_suggest_from_url=lambda url: controller.suggest_article_from_url(url=str(url or "")),
+        )
 
         def _facet_controls() -> Any:
             return build_articles_facet_controls(
@@ -233,6 +236,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             tags=card_vm.tags,
                             summary_text=card_vm.summary_text,
                             subtitle_text=card_vm.subtitle_text,
+                            thumbnail_url=card_vm.thumbnail_url,
                             view_action=actions.on_view,
                             review_action=actions.on_review,
                         )

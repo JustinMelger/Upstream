@@ -31,23 +31,23 @@ def render_paths_empty_state(
 ) -> bool:
     """Render the matching empty-state block and return whether one was rendered."""
     if empty_state == "selected_empty":
-        ui.label("No selected paths yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Browse paths and select one to start tracking.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("No roadmap selected yet.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("Select a path to start moving milestone by milestone.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Browse all paths", on_click=on_browse_all).props("outline")
             ui.button("Refresh", on_click=on_refresh).props("outline")
         return True
 
     if empty_state == "catalog_empty":
-        ui.label("No paths yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Share the first path to get started.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("No path library yet.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("Share the first roadmap to define structured learning journeys.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Share a path", on_click=on_share).props("outline")
             ui.button("Browse courses", on_click=on_browse_courses).props("outline")
         return True
 
     if empty_state == "filters_empty":
-        ui.label("No paths match your filters.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("No roadmaps match this filter set.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Reset all", on_click=on_reset_all).props("outline")
             ui.button("Refresh", on_click=on_refresh).props("outline")

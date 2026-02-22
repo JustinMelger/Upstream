@@ -10,6 +10,7 @@ from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetim
 from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
 from frontend.ui.nicegui.pages.courses.media import (
     extract_youtube_video_id,
+    website_favicon_url,
     youtube_embed_url,
     youtube_thumbnail_fallback_url,
     youtube_thumbnail_url,
@@ -64,9 +65,11 @@ def map_course_card_view(
     updated_at = parse_iso_datetime(course_row.get("updated_at"))
     is_updated = is_recent(updated_at) and created_at is not None and updated_at is not None and updated_at > created_at
     is_new = (not is_updated) and is_recent(created_at)
-    video_id = extract_youtube_video_id(str(course_row.get("url") or "").strip())
+    source_url = str(course_row.get("url") or "").strip()
+    video_id = extract_youtube_video_id(source_url)
     payload_thumbnail = str(course_row.get("preview_image_url") or "").strip()
     local_thumbnail = youtube_thumbnail_url(video_id) if video_id else ""
+    website_thumbnail = website_favicon_url(source_url) if (not video_id) else ""
     return CourseCardView(
         card_class_suffix=f" lp-course-card--{status}" if status else "",
         is_new=is_new,
@@ -78,7 +81,7 @@ def map_course_card_view(
         tracking_chip_cls=tracking_chip_class((tracked_row or {}).get("status")),
         has_video_preview=bool(video_id),
         video_embed_url=youtube_embed_url(video_id) if video_id else "",
-        thumbnail_url=payload_thumbnail or local_thumbnail,
+        thumbnail_url=payload_thumbnail or local_thumbnail or website_thumbnail,
         thumbnail_fallback_url=(
             youtube_thumbnail_fallback_url(video_id)
             if video_id and (payload_thumbnail == local_thumbnail or not payload_thumbnail)

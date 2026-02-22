@@ -48,6 +48,11 @@ class ArticlesPageController:
         """Create a new article row."""
         return dict(await self._api.post("/articles", dict(payload or {})) or {})
 
+    async def suggest_article_from_url(self, *, url: str) -> dict[str, Any]:
+        """Resolve URL metadata suggestions for the share dialog."""
+        payload = {"url": str(url or "").strip()}
+        return dict(await self._api.post("/url-preview/metadata", payload) or {})
+
     async def load_article_reviews(self, *, article_id: int) -> list[dict[str, Any]]:
         """Load article reviews for details dialog."""
         return list(await self._api.get(f"/articles/{int(article_id)}/reviews") or [])

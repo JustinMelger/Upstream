@@ -29,7 +29,10 @@ from backend.services.path_recommendations_service import PathRecommendationsSer
 from backend.services.path_reviews_service import PathReviewsService
 from backend.services.paths_service import PathsService
 from backend.services.tracking_service import TrackingService
+from backend.services.url_preview_service import UrlPreviewService
 from backend.services.user_paths_service import UserPathsService
+
+_URL_PREVIEW_SERVICE = UrlPreviewService()
 
 
 async def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthService:
@@ -42,6 +45,7 @@ async def get_courses_service(session: AsyncSession = Depends(get_session)) -> C
     return CoursesService(
         SQLCoursesRepository(session),
         recommendations_repo=SQLCourseRecommendationsRepository(session),
+        url_preview_service=_URL_PREVIEW_SERVICE,
     )
 
 
@@ -62,7 +66,15 @@ async def get_tracking_service(session: AsyncSession = Depends(get_session)) -> 
 
 async def get_articles_service(session: AsyncSession = Depends(get_session)) -> ArticlesService:
     """Provide a request-scoped ArticlesService dependency."""
-    return ArticlesService(SQLArticlesRepository(session))
+    return ArticlesService(
+        SQLArticlesRepository(session),
+        url_preview_service=_URL_PREVIEW_SERVICE,
+    )
+
+
+async def get_url_preview_service() -> UrlPreviewService:
+    """Provide a shared URL preview metadata service."""
+    return _URL_PREVIEW_SERVICE
 
 
 async def get_article_reviews_service(session: AsyncSession = Depends(get_session)) -> ArticleReviewsService:

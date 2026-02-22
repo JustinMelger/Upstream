@@ -55,6 +55,7 @@ def build_share_course_dialog(
     username: str,
     parse_duration_hours: Callable[[str], float | None],
     on_submit: Callable[[dict[str, Any]], Awaitable[None]],
+    on_suggest_from_url: Callable[[str], Awaitable[dict[str, Any]]],
 ) -> Callable[[], None]:
     """Build share-course dialog and return an open helper."""
     create_dialog = ui.dialog()
@@ -67,6 +68,42 @@ def build_share_course_dialog(
         create_provider = ui.input("Provider").props("clearable").classes("w-full")
         create_category = ui.input("Category").props("clearable").classes("w-full")
         create_url = ui.input("URL").props("clearable").classes("w-full")
+        with ui.row().classes("items-center justify-between w-full -mt-2"):
+            ui.label("Paste a link and auto-suggest metadata.").classes("text-xs").style("color: var(--lp-muted)")
+
+            @guard_ui_action(title="URL suggestion failed")
+            async def _suggest_from_url() -> None:
+                source_url = str(create_url.value or "").strip()
+                if not source_url:
+                    safe_notify("Enter a URL first", type="warning")
+                    return
+                payload = await on_suggest_from_url(source_url)
+                normalized_url = str(payload.get("normalized_url") or "").strip()
+                suggested_title = str(payload.get("title") or "").strip()
+                suggested_description = str(payload.get("description") or "").strip()
+                suggested_provider = str(payload.get("suggested_provider") or "").strip()
+                suggested_category = str(payload.get("suggested_category") or "").strip()
+                suggested_tags = [str(tag).strip() for tag in list(payload.get("suggested_tags") or []) if str(tag).strip()]
+
+                if normalized_url:
+                    create_url.value = normalized_url
+                if suggested_title and not str(create_title.value or "").strip():
+                    create_title.value = suggested_title
+                if suggested_description and not str(create_description.value or "").strip():
+                    create_description.value = suggested_description
+                if suggested_provider and not str(create_provider.value or "").strip():
+                    create_provider.value = suggested_provider
+                if suggested_category and not str(create_category.value or "").strip():
+                    create_category.value = suggested_category
+                if suggested_tags and not str(create_learning_outcomes.value or "").strip():
+                    create_learning_outcomes.value = "Suggested topics: " + ", ".join(suggested_tags[:6])
+
+                if any([suggested_title, suggested_description, suggested_provider, suggested_category, suggested_tags]):
+                    safe_notify("Suggestions applied", type="positive")
+                else:
+                    safe_notify("No suggestions found for this URL", type="warning")
+
+            ui.button("Suggest from URL", on_click=_suggest_from_url).props("outline dense")
         create_language = ui.input("Language").props("clearable").classes("w-full")
 
         with ui.expansion("More fields").props("dense"):

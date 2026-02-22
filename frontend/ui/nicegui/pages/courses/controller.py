@@ -62,6 +62,11 @@ class CoursesPageController:
         """Create a course."""
         await self._api.post("/courses", dict(payload or {}))
 
+    async def suggest_course_from_url(self, *, url: str) -> dict[str, Any]:
+        """Resolve URL metadata suggestions for the share dialog."""
+        payload = {"url": str(url or "").strip()}
+        return dict(await self._api.post("/url-preview/metadata", payload) or {})
+
     async def update_course(self, *, course_id: int, payload: dict[str, Any]) -> None:
         """Update a course."""
         await self._api.put(f"/courses/{int(course_id)}", dict(payload or {}))

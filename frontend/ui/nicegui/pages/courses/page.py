@@ -249,6 +249,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     controller=controller,
                     reload_page=_load,
                 ),
+                on_suggest_from_url=lambda url: controller.suggest_course_from_url(url=str(url or "")),
             )
 
             @guard_ui_action(title="Load course details failed")
