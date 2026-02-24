@@ -31,11 +31,11 @@
   - [x] Add contextual purpose subtitles under primary page titles (`Home`, `Explore`, `Teams`, `Profile`).
 - [ ] Complete `11E.7` first-time user clarity pass:
   - [x] Add dismissible 3-step first-login intro.
-  - [ ] Ensure each key empty state has exactly one primary action.
-  - [ ] Ensure no primary page loads without an unambiguous next step.
+  - [x] Ensure each key empty state has exactly one primary action.
+  - [x] Ensure no primary page loads without an unambiguous next step.
   - [ ] Run 5 usability tests and log confusion points; fix top 5 before pilot.
 - [ ] Complete open Share-flow UX actions from `11A.3`:
-  - [ ] Trigger URL metadata suggestion on paste/blur with debounce (keep manual suggest button).
-  - [ ] Add inline “suggested vs edited” indicators for autofilled fields.
-  - [ ] Add live URL validation + duplicate hints pre-submit.
-  - [ ] Add post-submit success summary with quick follow-up actions.
+  - [x] Trigger URL metadata suggestion on paste/blur with debounce (keep manual suggest button).
+  - [x] Add inline “suggested vs edited” indicators for autofilled fields.
+  - [x] Add live URL validation + duplicate hints pre-submit.
+  - [x] Add post-submit success summary with quick follow-up actions.

@@ -329,11 +329,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ui.label("Explore could not load right now. Refresh to retry.").classes(
                                 "lp-courses-section-subtitle"
                             )
+                            ui.button("Refresh", on_click=_load).props("outline")
                         else:
                             ui.label("No matches in Explore").classes("lp-courses-section-title")
                             ui.label("Adjust search scope or filters to discover more content.").classes(
                                 "lp-courses-section-subtitle"
                             )
+                            ui.button("Reset filters", on_click=_reset_filters).props("outline")
                     return
 
                 def _render_course_item(course: dict[str, Any], *, item_classes: str) -> None:

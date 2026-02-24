@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
@@ -122,11 +123,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 storage_intent=intent if isinstance(intent, dict) else None,
                 nav_intent=nav_intent if isinstance(nav_intent, dict) else None,
             )
+            _open_create_dialog: Callable[[], None] = lambda: None
+            filters_dialog: Any = None
+
+            def _open_filters_dialog() -> None:
+                if filters_dialog is not None:
+                    filters_dialog.open()
 
             topbar = render_courses_topbar(
                 initial_scope=route_init.initial_scope,
                 on_share=lambda: _open_create_dialog(),
-                on_open_filters=lambda: filters_dialog.open(),
+                on_open_filters=_open_filters_dialog,
             )
             q = topbar.search_input
             scope_filter = topbar.scope_filter
@@ -192,9 +199,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     refresh_btn=refresh_btn,
                     meta=meta,
                     recompute_facet_options=_recompute_facet_options,
-                    refresh_courses_list_ui=courses_list.refresh,
+                    refresh_courses_list_ui=_refresh_courses_list_ui,
                     notify_error=lambda message: safe_notify(message, type="negative"),
-                    compute_meta_text=compute_courses_meta_text,
+                    compute_meta_text=lambda course_count: compute_courses_meta_text(course_count=course_count),
                 )
 
             async def _reload_tracking_only() -> bool:
@@ -202,7 +209,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     page_state=page_state,
                     controller=controller,
                     recompute_facet_options=_recompute_facet_options,
-                    refresh_courses_list_ui=courses_list.refresh,
+                    refresh_courses_list_ui=_refresh_courses_list_ui,
                     notify_error=lambda message: safe_notify(message, type="negative"),
                 )
 
@@ -220,11 +227,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         controller=controller,
                         page_state=page_state,
                         recompute_facet_options=_recompute_facet_options,
-                        refresh_courses_list_ui=courses_list.refresh,
+                        refresh_courses_list_ui=_refresh_courses_list_ui,
                         notify_error=lambda message: safe_notify(message, type="negative"),
                     ),
                     rollback=lambda snapshot: rollback_optimistic_tracking(state=page_state, snapshot=snapshot),
-                    refresh_ui=courses_list.refresh,
+                    refresh_ui=_refresh_courses_list_ui,
                     on_success=lambda: safe_notify("Updated status", type="positive"),
                 )
 
@@ -237,11 +244,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         controller=controller,
                         page_state=page_state,
                         recompute_facet_options=_recompute_facet_options,
-                        refresh_courses_list_ui=courses_list.refresh,
+                        refresh_courses_list_ui=_refresh_courses_list_ui,
                         notify_error=lambda message: safe_notify(message, type="negative"),
                     ),
                     rollback=lambda snapshot: rollback_optimistic_tracking(state=page_state, snapshot=snapshot),
-                    refresh_ui=courses_list.refresh,
+                    refresh_ui=_refresh_courses_list_ui,
                     on_success=lambda: safe_notify("Removed status", type="positive"),
                 )
 
@@ -254,6 +261,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     reload_page=_load,
                 ),
                 on_suggest_from_url=lambda url: controller.suggest_course_from_url(url=str(url or "")),
+                is_duplicate_url=lambda raw_url: any(
+                    str(row.get("url") or "").strip().lower() == str(raw_url or "").strip().lower()
+                    for row in list(page_state.courses or [])
+                    if isinstance(row, dict)
+                ),
             )
 
             @guard_ui_action(title="Load course details failed")
@@ -285,7 +297,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         username=username,
                         controller=controller,
                         page_state=page_state,
-                        refresh_courses_list_ui=courses_list.refresh,
+                        refresh_courses_list_ui=_refresh_courses_list_ui,
                     ),
                 )
 
@@ -332,11 +344,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 str(status_filter.value or "").strip(),
                             ]
                         )
+                        def _browse_all_courses() -> None:
+                            scope_filter.value = "all"
+                            _refresh_list()
+
                         render_courses_empty_state(
                             scope_value=normalized.scope,
                             any_filters=bool(any_filters),
                             has_any_courses=bool(page_state.courses),
-                            on_browse_all=lambda: setattr(scope_filter, "value", "all") or _refresh_list(),
+                            on_browse_all=_browse_all_courses,
                             on_share=lambda: _open_create_dialog(),
                             on_reset_all=_reset_all,
                             on_refresh=_load,
@@ -385,6 +401,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 recommendation_summary_row=page_state.recommendation_summary_by_course_id.get(course_id),
                             )
                             is_preview_open = int(ui_state.preview_course_id or 0) == int(course_id)
+                            def _toggle_preview(selected_course_id: int) -> None:
+                                if int(ui_state.preview_course_id or 0) == int(selected_course_id):
+                                    ui_state.preview_course_id = None
+                                else:
+                                    ui_state.preview_course_id = int(selected_course_id)
+                                courses_list.refresh()
+
                             render_course_card(
                                 course_row=course,
                                 tracked_row=tracked if isinstance(tracked, dict) else None,
@@ -399,14 +422,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 has_video_preview=bool(card_vm.has_video_preview),
                                 is_preview_open=bool(is_preview_open),
                                 preview_embed_url=str(card_vm.video_embed_url or ""),
-                                on_toggle_preview=lambda _cid=course_id: (
-                                    setattr(
-                                        ui_state,
-                                        "preview_course_id",
-                                        None if int(ui_state.preview_course_id or 0) == int(_cid) else int(_cid),
-                                    ),
-                                    courses_list.refresh(),
-                                ),
+                                on_toggle_preview=lambda _cid=course_id: _toggle_preview(int(_cid)),
                             )
 
                     render_courses_catalog(
@@ -431,12 +447,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         on_load_more=_load_more,
                     )
 
+            def _refresh_active_filters_ui() -> None:
+                active_filters.refresh()
+
+            def _refresh_courses_list_ui() -> None:
+                courses_list.refresh()
+
             def _refresh_list(*_: Any) -> None:
                 refresh_courses_list(
                     ui_state=ui_state,
                     recompute_facet_options=_recompute_facet_options,
-                    refresh_active_filters=active_filters.refresh,
-                    refresh_courses_list_ui=courses_list.refresh,
+                    refresh_active_filters=_refresh_active_filters_ui,
+                    refresh_courses_list_ui=_refresh_courses_list_ui,
                 )
 
             def _clear_filter_values() -> None:
@@ -450,8 +472,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         status_filter=status_filter,
                         sort_filter=sort_filter,
                     ),
-                    refresh_active_filters=active_filters.refresh,
-                    refresh_courses_list_ui=courses_list.refresh,
+                    refresh_active_filters=_refresh_active_filters_ui,
+                    refresh_courses_list_ui=_refresh_courses_list_ui,
                 )
 
             @guard_ui_action(title="Reset filters failed")

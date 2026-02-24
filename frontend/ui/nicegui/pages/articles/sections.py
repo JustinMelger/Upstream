@@ -142,8 +142,6 @@ def render_articles_empty_state(
         title="No reads match this filter set.",
         primary_label="Reset all",
         on_primary=on_reset,
-        secondary_label="Refresh",
-        on_secondary=on_refresh,
     )
 
 

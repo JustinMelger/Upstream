@@ -2,20 +2,38 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
 from nicegui import ui
+from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
+from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
+from frontend.ui.nicegui.core.suggestion_utils import suggestion_badge_text
 from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
+
+
+_HTTP_URL_ADAPTER: TypeAdapter[AnyHttpUrl] = TypeAdapter(AnyHttpUrl)
+
+
+def _normalize_http_url(raw: str) -> str:
+    value = str(raw or "").strip()
+    if not value:
+        return ""
+    try:
+        return str(_HTTP_URL_ADAPTER.validate_python(value))
+    except ValidationError:
+        return ""
 
 
 def build_share_article_dialog(
     *,
-    on_submit: Callable[[dict[str, Any]], Awaitable[None]],
+    on_submit: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
     on_suggest_from_url: Callable[[str], Awaitable[dict[str, Any]]],
+    is_duplicate_url: Callable[[str], bool] | None = None,
 ) -> Callable[[], None]:
     """Build share dialog and return open callback."""
     share_dialog = ui.dialog()
@@ -23,14 +41,47 @@ def build_share_article_dialog(
         ui.label("Share article").classes("text-xl font-semibold")
         new_title = ui.input("Title").props("clearable").classes("w-full")
         new_url = ui.input("URL").props("clearable").classes("w-full")
+        title_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+        url_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+        auto_suggest_state: dict[str, int | str] = {"nonce": 0, "last_source": ""}
+        suggested_values: dict[str, str] = {}
+        new_tags = ui.input("Tags (comma separated)").props("clearable").classes("w-full")
+        tags_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+
+        def _refresh_suggestion_hints() -> None:
+            title_suggest_hint.text = suggestion_badge_text(
+                current_value=str(new_title.value or ""),
+                suggested_value=str(suggested_values.get("title") or ""),
+            )
+            tags_suggest_hint.text = suggestion_badge_text(
+                current_value=str(new_tags.value or ""),
+                suggested_value=str(suggested_values.get("tags") or ""),
+            )
+
         with ui.row().classes("items-center justify-between w-full -mt-2"):
             ui.label("Paste a link and auto-suggest title/tags.").classes("text-xs").style("color: var(--lp-muted)")
 
-            @guard_ui_action(title="URL suggestion failed")
-            async def _suggest_from_url() -> None:
+            def _refresh_url_hint() -> bool:
+                normalized = _normalize_http_url(str(new_url.value or ""))
+                if not str(new_url.value or "").strip():
+                    url_hint.text = ""
+                    return True
+                if not normalized:
+                    url_hint.text = "Enter a valid http(s) URL."
+                    return False
+                if is_duplicate_url is not None and is_duplicate_url(normalized):
+                    url_hint.text = "Similar URL already exists in the article stream."
+                    return True
+                url_hint.text = "URL looks good."
+                return True
+
+            async def _suggest_from_url(*, auto_trigger: bool = False) -> None:
                 source_url = str(new_url.value or "").strip()
                 if not source_url:
-                    safe_notify("Enter a URL first", type="warning")
+                    if not auto_trigger:
+                        safe_notify("Enter a URL first", type="warning")
+                    return
+                if auto_trigger and source_url == str(auto_suggest_state.get("last_source") or ""):
                     return
                 payload = await on_suggest_from_url(source_url)
                 suggested_title = str(payload.get("title") or "").strip()
@@ -40,27 +91,104 @@ def build_share_article_dialog(
                     new_url.value = normalized_url
                 if suggested_title and not str(new_title.value or "").strip():
                     new_title.value = suggested_title
+                    suggested_values["title"] = suggested_title
                 if suggested_tags and not str(new_tags.value or "").strip():
                     new_tags.value = ", ".join([str(tag).strip() for tag in suggested_tags if str(tag).strip()])
+                    suggested_values["tags"] = str(new_tags.value or "")
                 if suggested_title or suggested_tags:
                     safe_notify("Suggestions applied", type="positive")
                 else:
                     safe_notify("No suggestions found for this URL", type="warning")
+                auto_suggest_state["last_source"] = normalized_url or source_url
+                _refresh_url_hint()
+                _refresh_suggestion_hints()
 
-            ui.button("Suggest from URL", on_click=_suggest_from_url).props("outline dense")
-        new_tags = ui.input("Tags (comma separated)").props("clearable").classes("w-full")
+            @guard_ui_action(title="URL suggestion failed")
+            async def _suggest_from_url_manual() -> None:
+                await _suggest_from_url(auto_trigger=False)
+
+            async def _suggest_from_url_auto() -> None:
+                await _suggest_from_url(auto_trigger=True)
+
+            def _queue_auto_suggest(*_args: Any) -> None:
+                next_nonce = int(auto_suggest_state.get("nonce") or 0) + 1
+                auto_suggest_state["nonce"] = next_nonce
+
+                async def _run() -> None:
+                    await asyncio.sleep(0.35)
+                    if next_nonce != int(auto_suggest_state.get("nonce") or 0):
+                        return
+                    await _suggest_from_url_auto()
+
+                asyncio.create_task(_run())
+
+            new_url.on("blur", _queue_auto_suggest)
+            new_url.on("paste", _queue_auto_suggest)
+            new_url.on("update:model-value", lambda *_: _refresh_url_hint())
+            new_title.on("update:model-value", lambda *_: _refresh_suggestion_hints())
+            new_tags.on("update:model-value", lambda *_: _refresh_suggestion_hints())
+
+            ui.button("Suggest from URL", on_click=_suggest_from_url_manual).props("outline dense")
+
+        def _open_success_summary(*, created_row: dict[str, Any], autofilled_fields: list[str]) -> None:
+            title = str(created_row.get("title") or "Article")
+            source_url = str(created_row.get("url") or "").strip()
+
+            def _share_another(summary_dialog: Any) -> None:
+                summary_dialog.close()
+                suggested_values.clear()
+                _refresh_suggestion_hints()
+                _open_share_dialog()
+
+            with ui.dialog() as summary_dialog, ui.card().classes("lp-card lp-dialog w-[min(620px,95vw)]"):
+                ui.label("Article shared").classes("text-lg font-semibold")
+                ui.label(f"{title} is now visible in the article stream.").classes("text-sm").style(
+                    "color: var(--lp-muted)"
+                )
+                if autofilled_fields:
+                    ui.label("Autofilled fields: " + ", ".join(autofilled_fields)).classes("text-xs").style(
+                        "color: var(--lp-muted)"
+                    )
+                with ui.row().classes("justify-end mt-4 gap-2"):
+                    if source_url:
+                        ui.button("Open source", on_click=lambda u=source_url: ui.navigate.to(str(u), new_tab=True)).props("outline")
+                        ui.button(
+                            "Copy link",
+                            on_click=lambda u=source_url: copy_text_to_clipboard(text=str(u)),
+                        ).props("outline")
+                    ui.button(
+                        "Share another",
+                        on_click=lambda d=summary_dialog: _share_another(d),
+                    )
+                    ui.button("Done", on_click=summary_dialog.close).props("outline")
+            summary_dialog.open()
+
         with ui.row().classes("justify-end mt-4"):
 
             @guard_ui_action(title="Share failed")
             async def _submit_share() -> None:
+                if not _refresh_url_hint():
+                    safe_notify("Enter a valid URL before sharing", type="negative")
+                    return
                 payload = {
                     "title": str(new_title.value or ""),
                     "url": str(new_url.value or ""),
                     "tags": str(new_tags.value or ""),
                 }
-                await on_submit(payload)
-                safe_notify("Shared", type="positive")
+                created_row = dict(await on_submit(payload) or {})
                 share_dialog.close()
+                autofilled_fields: list[str] = []
+                if suggestion_badge_text(
+                    current_value=str(payload.get("title") or ""),
+                    suggested_value=str(suggested_values.get("title") or ""),
+                ) == "Suggested":
+                    autofilled_fields.append("Title")
+                if suggestion_badge_text(
+                    current_value=str(payload.get("tags") or ""),
+                    suggested_value=str(suggested_values.get("tags") or ""),
+                ) == "Suggested":
+                    autofilled_fields.append("Tags")
+                _open_success_summary(created_row=created_row, autofilled_fields=autofilled_fields)
 
             ui.button("Share", on_click=_submit_share)
             ui.button("Cancel", on_click=share_dialog.close).props("outline")
@@ -69,6 +197,9 @@ def build_share_article_dialog(
         new_title.value = ""
         new_url.value = ""
         new_tags.value = ""
+        suggested_values.clear()
+        _refresh_url_hint()
+        _refresh_suggestion_hints()
         share_dialog.open()
 
     return _open_share_dialog

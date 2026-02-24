@@ -485,8 +485,6 @@ def render_courses_empty_state(
             description="Browse courses and mark one as Interested or In progress to start momentum.",
             primary_label="Browse all courses",
             on_primary=on_browse_all,
-            secondary_label="Refresh",
-            on_secondary=on_refresh,
         )
         return
 
@@ -496,8 +494,6 @@ def render_courses_empty_state(
             description="Share the first course and seed the learning catalog.",
             primary_label="Share a course",
             on_primary=on_share,
-            secondary_label="Refresh",
-            on_secondary=on_refresh,
         )
         return
 
@@ -506,8 +502,6 @@ def render_courses_empty_state(
         description="Reset filters to widen the course pipeline." if any_filters else "",
         primary_label="Reset all",
         on_primary=on_reset_all,
-        secondary_label="Refresh",
-        on_secondary=on_refresh,
     )
 
 

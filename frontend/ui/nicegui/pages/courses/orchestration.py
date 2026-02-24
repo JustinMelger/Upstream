@@ -92,7 +92,7 @@ async def load_courses(
         refresh_courses_list_ui()
     finally:
         load_done = finalize_courses_load(ok=ok, course_count=len(page_state.courses))
-        meta.text = compute_meta_text(course_count=len(page_state.courses))
+        meta.text = compute_meta_text(len(page_state.courses))
         ui_state.loading = load_done.loading
         ui_state.loaded_once = load_done.loaded_once
         refresh_btn.enable()
@@ -184,10 +184,11 @@ async def perform_create_course(
     payload: dict[str, Any],
     controller: Any,
     reload_page: Callable[[], Awaitable[None]],
-) -> None:
+) -> dict[str, Any]:
     """Create a course, then reload page data."""
-    await controller.create_course(payload=dict(payload or {}))
+    created = dict(await controller.create_course(payload=dict(payload or {})) or {})
     await reload_page()
+    return created
 
 
 async def perform_update_course(

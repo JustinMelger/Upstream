@@ -35,7 +35,6 @@ def render_paths_empty_state(
         ui.label("Select a path to start moving milestone by milestone.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Browse all paths", on_click=on_browse_all).props("outline")
-            ui.button("Refresh", on_click=on_refresh).props("outline")
         return True
 
     if empty_state == "catalog_empty":
@@ -45,14 +44,12 @@ def render_paths_empty_state(
         )
         with ui.row().classes("items-center gap-2"):
             ui.button("Share a path", on_click=on_share).props("outline")
-            ui.button("Browse courses", on_click=on_browse_courses).props("outline")
         return True
 
     if empty_state == "filters_empty":
         ui.label("No roadmaps match this filter set.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Reset all", on_click=on_reset_all).props("outline")
-            ui.button("Refresh", on_click=on_refresh).props("outline")
         return True
 
     return False

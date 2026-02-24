@@ -58,9 +58,9 @@ class CoursesPageController:
         """Remove tracking status for one course."""
         await self._api.post("/tracking/delete", {"course_id": int(course_id)})
 
-    async def create_course(self, *, payload: dict[str, Any]) -> None:
+    async def create_course(self, *, payload: dict[str, Any]) -> dict[str, Any]:
         """Create a course."""
-        await self._api.post("/courses", dict(payload or {}))
+        return dict(await self._api.post("/courses", dict(payload or {})) or {})
 
     async def suggest_course_from_url(self, *, url: str) -> dict[str, Any]:
         """Resolve URL metadata suggestions for the share dialog."""

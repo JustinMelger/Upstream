@@ -2,13 +2,30 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
 from nicegui import app, ui
+from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
 from frontend.ui.nicegui.core.api_client import ApiError
+from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
+from frontend.ui.nicegui.core.suggestion_utils import suggestion_badge_text
+
+
+_HTTP_URL_ADAPTER: TypeAdapter[AnyHttpUrl] = TypeAdapter(AnyHttpUrl)
+
+
+def _normalize_http_url(raw: str) -> str:
+    value = str(raw or "").strip()
+    if not value:
+        return ""
+    try:
+        return str(_HTTP_URL_ADAPTER.validate_python(value))
+    except ValidationError:
+        return ""
 
 
 async def open_recommend_course_dialog(
@@ -24,8 +41,6 @@ async def open_recommend_course_dialog(
     try:
         rows = await load_recommendations(int(course_id))
         for row in list(rows or []):
-            if not isinstance(row, dict):
-                continue
             if str(row.get("created_by") or "") == username:
                 existing_note = str(row.get("note") or "")
                 break
@@ -54,8 +69,9 @@ def build_share_course_dialog(
     *,
     username: str,
     parse_duration_hours: Callable[[str], float | None],
-    on_submit: Callable[[dict[str, Any]], Awaitable[None]],
+    on_submit: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
     on_suggest_from_url: Callable[[str], Awaitable[dict[str, Any]]],
+    is_duplicate_url: Callable[[str], bool] | None = None,
 ) -> Callable[[], None]:
     """Build share-course dialog and return an open helper."""
     create_dialog = ui.dialog()
@@ -68,14 +84,55 @@ def build_share_course_dialog(
         create_provider = ui.input("Provider").props("clearable").classes("w-full")
         create_category = ui.input("Category").props("clearable").classes("w-full")
         create_url = ui.input("URL").props("clearable").classes("w-full")
+        title_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+        description_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+        provider_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+        category_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+        url_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+        auto_suggest_state: dict[str, int | str] = {"nonce": 0, "last_source": ""}
+        suggested_values: dict[str, str] = {}
+
+        def _refresh_suggestion_hints() -> None:
+            title_suggest_hint.text = suggestion_badge_text(
+                current_value=str(create_title.value or ""),
+                suggested_value=str(suggested_values.get("title") or ""),
+            )
+            description_suggest_hint.text = suggestion_badge_text(
+                current_value=str(create_description.value or ""),
+                suggested_value=str(suggested_values.get("description") or ""),
+            )
+            provider_suggest_hint.text = suggestion_badge_text(
+                current_value=str(create_provider.value or ""),
+                suggested_value=str(suggested_values.get("provider") or ""),
+            )
+            category_suggest_hint.text = suggestion_badge_text(
+                current_value=str(create_category.value or ""),
+                suggested_value=str(suggested_values.get("category") or ""),
+            )
         with ui.row().classes("items-center justify-between w-full -mt-2"):
             ui.label("Paste a link and auto-suggest metadata.").classes("text-xs").style("color: var(--lp-muted)")
 
-            @guard_ui_action(title="URL suggestion failed")
-            async def _suggest_from_url() -> None:
+            def _refresh_url_hint() -> bool:
+                normalized = _normalize_http_url(str(create_url.value or ""))
+                if not str(create_url.value or "").strip():
+                    url_hint.text = ""
+                    return True
+                if not normalized:
+                    url_hint.text = "Enter a valid http(s) URL."
+                    return False
+                if is_duplicate_url is not None and is_duplicate_url(normalized):
+                    url_hint.text = "Similar URL already exists in the catalog."
+                    return True
+                url_hint.text = "URL looks good."
+                return True
+
+            async def _suggest_from_url(*, auto_trigger: bool = False) -> None:
                 source_url = str(create_url.value or "").strip()
                 if not source_url:
-                    safe_notify("Enter a URL first", type="warning")
+                    if not auto_trigger:
+                        safe_notify("Enter a URL first", type="warning")
+                    return
+                if auto_trigger and source_url == str(auto_suggest_state.get("last_source") or ""):
                     return
                 payload = await on_suggest_from_url(source_url)
                 normalized_url = str(payload.get("normalized_url") or "").strip()
@@ -89,21 +146,55 @@ def build_share_course_dialog(
                     create_url.value = normalized_url
                 if suggested_title and not str(create_title.value or "").strip():
                     create_title.value = suggested_title
+                    suggested_values["title"] = suggested_title
                 if suggested_description and not str(create_description.value or "").strip():
                     create_description.value = suggested_description
+                    suggested_values["description"] = suggested_description
                 if suggested_provider and not str(create_provider.value or "").strip():
                     create_provider.value = suggested_provider
+                    suggested_values["provider"] = suggested_provider
                 if suggested_category and not str(create_category.value or "").strip():
                     create_category.value = suggested_category
+                    suggested_values["category"] = suggested_category
                 if suggested_tags and not str(create_learning_outcomes.value or "").strip():
                     create_learning_outcomes.value = "Suggested topics: " + ", ".join(suggested_tags[:6])
 
+                auto_suggest_state["last_source"] = normalized_url or source_url
                 if any([suggested_title, suggested_description, suggested_provider, suggested_category, suggested_tags]):
                     safe_notify("Suggestions applied", type="positive")
                 else:
                     safe_notify("No suggestions found for this URL", type="warning")
+                _refresh_url_hint()
+                _refresh_suggestion_hints()
 
-            ui.button("Suggest from URL", on_click=_suggest_from_url).props("outline dense")
+            @guard_ui_action(title="URL suggestion failed")
+            async def _suggest_from_url_manual() -> None:
+                await _suggest_from_url(auto_trigger=False)
+
+            async def _suggest_from_url_auto() -> None:
+                await _suggest_from_url(auto_trigger=True)
+
+            def _queue_auto_suggest(*_args: Any) -> None:
+                next_nonce = int(auto_suggest_state.get("nonce") or 0) + 1
+                auto_suggest_state["nonce"] = next_nonce
+
+                async def _run() -> None:
+                    await asyncio.sleep(0.35)
+                    if next_nonce != int(auto_suggest_state.get("nonce") or 0):
+                        return
+                    await _suggest_from_url_auto()
+
+                asyncio.create_task(_run())
+
+            create_url.on("blur", _queue_auto_suggest)
+            create_url.on("paste", _queue_auto_suggest)
+            create_url.on("update:model-value", lambda *_: _refresh_url_hint())
+            create_title.on("update:model-value", lambda *_: _refresh_suggestion_hints())
+            create_description.on("update:model-value", lambda *_: _refresh_suggestion_hints())
+            create_provider.on("update:model-value", lambda *_: _refresh_suggestion_hints())
+            create_category.on("update:model-value", lambda *_: _refresh_suggestion_hints())
+
+            ui.button("Suggest from URL", on_click=_suggest_from_url_manual).props("outline dense")
         create_language = ui.input("Language").props("clearable").classes("w-full")
 
         with ui.expansion("More fields").props("dense"):
@@ -141,6 +232,44 @@ def build_share_course_dialog(
             create_prerequisites.value = str(draft.get("prerequisites") or "")
             create_duration_hours.value = str(draft.get("duration_hours") or "")
             create_url.value = str(draft.get("url") or "")
+            suggested_values.clear()
+            _refresh_suggestion_hints()
+
+        def _open_success_summary(*, created_row: dict[str, Any], autofilled_fields: list[str]) -> None:
+            title = str(created_row.get("title") or "Course")
+            source_url = str(created_row.get("url") or "").strip()
+            course_id = int(created_row.get("id") or 0)
+
+            def _share_another(summary_dialog: Any) -> None:
+                summary_dialog.close()
+                _apply_course_draft({})
+                create_dialog.open()
+
+            with ui.dialog() as summary_dialog, ui.card().classes("lp-card lp-dialog w-[min(640px,95vw)]"):
+                ui.label("Course shared").classes("text-lg font-semibold")
+                ui.label(f"{title} is now in the catalog.").classes("text-sm").style("color: var(--lp-muted)")
+                if autofilled_fields:
+                    ui.label("Autofilled fields: " + ", ".join(autofilled_fields)).classes("text-xs").style(
+                        "color: var(--lp-muted)"
+                    )
+                with ui.row().classes("justify-end mt-4 gap-2"):
+                    if course_id > 0:
+                        ui.button(
+                            "Open details",
+                            on_click=lambda cid=course_id: ui.navigate.to(f"/courses?course_id={int(cid)}"),
+                        ).props("outline")
+                    if source_url:
+                        ui.button("Open source", on_click=lambda u=source_url: ui.navigate.to(str(u), new_tab=True)).props("outline")
+                        ui.button(
+                            "Copy link",
+                            on_click=lambda u=source_url: copy_text_to_clipboard(text=str(u)),
+                        ).props("outline")
+                    ui.button(
+                        "Share another",
+                        on_click=lambda d=summary_dialog: _share_another(d),
+                    )
+                    ui.button("Done", on_click=summary_dialog.close).props("outline")
+            summary_dialog.open()
 
         with ui.row().classes("justify-end mt-4"):
 
@@ -163,6 +292,9 @@ def build_share_course_dialog(
                 if dh_raw.strip() and dh is None:
                     safe_notify("Duration hours must be a number", type="negative")
                     return
+                if not _refresh_url_hint():
+                    safe_notify("Enter a valid URL before sharing", type="negative")
+                    return
                 if not str(create_description.value or "").strip():
                     safe_notify("Description is required", type="negative")
                     return
@@ -179,10 +311,23 @@ def build_share_course_dialog(
                     "duration_hours": dh,
                     "url": str(create_url.value or ""),
                 }
-                await on_submit(payload)
+                created_row = dict(await on_submit(payload) or {})
                 app.storage.user.pop(course_draft_key, None)
-                safe_notify("Course shared", type="positive")
                 create_dialog.close()
+                autofilled_fields: list[str] = []
+                field_labels = {
+                    "title": "Title",
+                    "description": "Description",
+                    "provider": "Provider",
+                    "category": "Category",
+                }
+                for key, label in field_labels.items():
+                    if suggestion_badge_text(
+                        current_value=str(payload.get(key) or ""),
+                        suggested_value=str(suggested_values.get(key) or ""),
+                    ) == "Suggested":
+                        autofilled_fields.append(label)
+                _open_success_summary(created_row=created_row, autofilled_fields=autofilled_fields)
 
             ui.button("Save draft", on_click=_save_draft).props("outline")
             ui.button("Load draft", on_click=_load_draft).props("outline")
@@ -191,6 +336,8 @@ def build_share_course_dialog(
 
     def _open_create_dialog() -> None:
         _apply_course_draft(app.storage.user.get(course_draft_key))
+        _refresh_url_hint()
+        _refresh_suggestion_hints()
         create_dialog.open()
 
     return _open_create_dialog

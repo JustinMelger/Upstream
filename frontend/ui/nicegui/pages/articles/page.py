@@ -74,8 +74,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         refresh_btn: Any = None
         meta: Any = None
 
-        async def _submit_share(payload: dict[str, Any]) -> None:
-            await perform_create_article(
+        async def _submit_share(payload: dict[str, Any]) -> dict[str, Any]:
+            return await perform_create_article(
                 payload=payload,
                 controller=controller,
                 reload_page=_load,
@@ -84,6 +84,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         _open_share_dialog = build_share_article_dialog(
             on_submit=_submit_share,
             on_suggest_from_url=lambda url: controller.suggest_article_from_url(url=str(url or "")),
+            is_duplicate_url=lambda raw_url: any(
+                str(row.get("url") or "").strip().lower() == str(raw_url or "").strip().lower()
+                for row in list(state.articles or [])
+                if isinstance(row, dict)
+            ),
         )
 
         def _facet_controls() -> Any:
@@ -94,6 +99,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 sort_filter=sort_filter,
             )
 
+        def _refresh_active_filters_ui() -> None:
+            active_filters.refresh()
+
+        def _refresh_articles_list_ui() -> None:
+            articles_list.refresh()
+
         def _refresh_list(*_: Any) -> None:
             refresh_articles_list(
                 state=state,
@@ -102,8 +113,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     articles=state.articles,
                     search_value=str(q.value or "").strip(),
                 ),
-                refresh_active_filters=active_filters.refresh,
-                refresh_articles_list_ui=articles_list.refresh,
+                refresh_active_filters=_refresh_active_filters_ui,
+                refresh_articles_list_ui=_refresh_articles_list_ui,
             )
 
         def _reset_filters() -> None:
@@ -115,8 +126,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     articles=state.articles,
                     search_value="",
                 ),
-                refresh_active_filters=active_filters.refresh,
-                refresh_articles_list_ui=articles_list.refresh,
+                refresh_active_filters=_refresh_active_filters_ui,
+                refresh_articles_list_ui=_refresh_articles_list_ui,
             )
 
         @guard_ui_action(title="Load failed")
@@ -131,8 +142,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     articles=state.articles,
                     search_value=str(q.value or "").strip(),
                 ),
-                refresh_active_filters=active_filters.refresh,
-                refresh_articles_list_ui=articles_list.refresh,
+                refresh_active_filters=_refresh_active_filters_ui,
+                refresh_articles_list_ui=_refresh_articles_list_ui,
                 notify_error=lambda message: safe_notify(message, type="negative"),
                 compute_meta_text=compute_articles_meta_text,
             )

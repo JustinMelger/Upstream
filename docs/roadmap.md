@@ -218,13 +218,13 @@
 - [x] URL metadata service reuse: inject one shared `UrlPreviewService` instance via API dependencies so preview + metadata caching works across requests.
 - [x] Share dialog autofill (Courses): add “Suggest from URL” action to prefill empty fields (`title`, `description`, `provider`, `category`) and optional topic hints from suggested tags.
 - [x] Share dialog autofill (Articles): add “Suggest from URL” action to prefill empty fields (`title`, `tags`) and normalize source URL before submit.
-- [ ] Share flow UX (Courses/Articles): trigger metadata suggestions automatically on URL paste/blur with debounce, while keeping the manual “Suggest from URL” control.
-- [ ] Share flow UX (Courses/Articles): show inline “suggested vs edited” indicators so users can quickly trust/override autofilled values.
-- [ ] Share flow validation (Courses/Articles): add live URL validation and duplicate checks before submit (existing URL/domain/title-provider hints) with actionable inline messages.
+- [x] Share flow UX (Courses/Articles): trigger metadata suggestions automatically on URL paste/blur with debounce, while keeping the manual “Suggest from URL” control.
+- [x] Share flow UX (Courses/Articles): show inline “suggested vs edited” indicators so users can quickly trust/override autofilled values.
+- [x] Share flow validation (Courses/Articles): add live URL validation and duplicate checks before submit (existing URL/domain/title-provider hints) with actionable inline messages.
 - [ ] Share flow reliability (Courses/Articles): persist unsent draft form state with autosave + recovery after refresh/navigation and explicit “discard draft” action.
 - [ ] Share flow productivity (Courses/Articles): add one-click “apply all suggestions” and per-field “re-suggest” actions for faster curation.
 - [ ] Share flow safety (Courses/Articles): provide “metadata unavailable” fallback UX with smart placeholders/examples so users can still submit quickly.
-- [ ] Share flow post-submit: show contextual success summary (what was autofilled/saved) and quick follow-up actions (open item, copy link, add review/recommendation).
+- [x] Share flow post-submit: show contextual success summary (what was autofilled/saved) and quick follow-up actions (open item, copy link, add review/recommendation).
 - [ ] Course media enrichment: extend thumbnail resolution beyond YouTube using provider APIs/oEmbed first, then metadata scraping fallback (`og:image`/`twitter:image`) with caching and SSRF-safe fetch constraints.
 - [ ] Course + Article URL metadata persistence: persist fetched source metadata on create/update (`preview_image_url`, source title/site/description/canonical URL, `metadata_fetched_at`) with optional manual refresh action; avoid per-list live re-scraping.
 - [ ] Thumbnail quality gate: reject blurry/low-quality preview images via server-side image sharpness checks (e.g., Laplacian variance threshold) and fallback to alternate metadata candidates.
@@ -314,16 +314,16 @@ Execution sequencing (prioritized):
 
 #### Phase 11E.6 — Terminology Alignment
 - [ ] Rename `My Learning` -> `Home` in copy, routes, and references.
-- [ ] Terminology audit: align `Track` vs `Save` vs `Select` and choose one canonical term per intent.
-- [ ] Terminology audit: align `Shared` vs `Recommended` semantics in UI labels and filters.
+- [x] Terminology audit: align `Track` vs `Save` vs `Select` and choose one canonical term per intent.
+- [x] Terminology audit: align `Shared` vs `Recommended` semantics in UI labels and filters.
 - [ ] Terminology audit: align `Insights` vs `Stats` and reserve `Stats` for analytics surfaces.
-- [ ] Context subtitles: add a short purpose subtitle under each primary page title.
+- [x] Context subtitles: add a short purpose subtitle under each primary page title.
 - [ ] Cross-page consistency: use the same language model across course/path/article cards and detail dialogs.
 
 #### Phase 11E.7 — First-Time User Clarity Pass
-- [ ] Onboarding intro: add lightweight, dismissible 3-step first-login walkthrough.
-- [ ] Empty states: ensure each empty state has exactly one clear primary action.
-- [ ] Next-step clarity: no page should load without an unambiguous next step.
+- [x] Onboarding intro: add lightweight, dismissible 3-step first-login walkthrough.
+- [x] Empty states: ensure each empty state has exactly one clear primary action.
+- [x] Next-step clarity: no page should load without an unambiguous next step.
 - [ ] Usability testing: run 5 first-time-user tests and log confusion points.
 - [ ] Pilot readiness: fix top 5 confusion points before pilot launch.
 

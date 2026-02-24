@@ -53,10 +53,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             def activity_list() -> None:
                 current_tab = str(tab_filter.value or "inbox")
                 if state.error_message:
-                    render_activity_error(message=state.error_message)
+                    render_activity_error(message=state.error_message, on_retry=_load)
                     return
                 if not state.events:
-                    render_empty_activity(current_tab=current_tab)
+                    render_empty_activity(current_tab=current_tab, on_primary=lambda: ui.navigate.to("/explore"))
                     return
                 render_activity_items(
                     events=state.events,

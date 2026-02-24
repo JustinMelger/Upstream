@@ -247,6 +247,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 if not state.data:
                     ui.label("No data loaded yet.").classes("text-sm").style("color: var(--lp-muted)")
+                    ui.button("Refresh", on_click=_load).props("dense outline")
                     return
 
                 if str(view_filter.value or "learning") == "shared":
