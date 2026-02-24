@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Callable
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 from sqlalchemy.exc import IntegrityError
 
-from backend.core.errors import error_handler, ServiceError
+from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.path_reviews import PathReviewsRepository
 from backend.database.tx import session_scope
 
@@ -18,7 +19,7 @@ class PathReviewsServiceError(ServiceError):
 def path_reviews_error_handler(
     message: str = "An unexpected error occurred while handling path reviews",
     status_code: int = 500,
-):
+) -> Callable[[F], F]:
     return error_handler(
         service_error=PathReviewsServiceError,
         message=message,
@@ -62,6 +63,8 @@ class PathReviewsService:
         """Create or update the current user's review for a path."""
         data = self._parse_mutation_payload(payload)
         rating = data.rating
+        if rating is None:
+            raise PathReviewsServiceError(detail="invalid_rating", status_code=400)
         try:
             rating_i = int(rating)
         except (TypeError, ValueError):

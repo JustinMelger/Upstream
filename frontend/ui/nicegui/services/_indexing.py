@@ -17,8 +17,6 @@ def index_by_int_id(rows: list[dict[str, Any]] | None, *, key: str = "id") -> di
     """
     out: dict[int, dict[str, Any]] = {}
     for row in list(rows or []):
-        if not isinstance(row, dict):
-            continue
         raw = row.get(key)
         if raw is None:
             continue

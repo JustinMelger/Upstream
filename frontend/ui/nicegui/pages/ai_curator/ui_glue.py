@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Sequence
 
 
-def normalize_draft_courses(rows: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+def normalize_draft_courses(rows: Sequence[object] | None) -> list[dict[str, Any]]:
     """Normalize draft course rows into editable dicts."""
     out: list[dict[str, Any]] = []
     for row in list(rows or []):

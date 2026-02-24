@@ -53,7 +53,7 @@ class ArticlesRepository(RepositoryDateTimeCodec):
                 url=str(r.url or ""),
                 tags=r.tags,
                 created_by=str(r.created_by or ""),
-                created_at=self._as_iso(r.created_at) if r.created_at else "",
+                created_at=self._as_iso_or_empty(r.created_at),
             )
             for r in rows
         ]
@@ -83,5 +83,5 @@ class ArticlesRepository(RepositoryDateTimeCodec):
             url=str(row.url or ""),
             tags=row.tags,
             created_by=str(row.created_by or ""),
-            created_at=self._as_iso(row.created_at) if row.created_at else "",
+            created_at=self._as_iso_or_empty(row.created_at),
         )

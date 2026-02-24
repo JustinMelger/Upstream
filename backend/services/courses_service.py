@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
+from typing import Any
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
@@ -237,11 +238,11 @@ class CoursesService:
             return (await self._repo.delete_course(course_id)) > 0
 
     @staticmethod
-    def _parse_float(value):
+    def _parse_float(value: Any) -> float | None:
         """Parse a float value or return None."""
         try:
             return float(value) if value not in (None, "") else None
-        except ValueError:
+        except (TypeError, ValueError):
             return None
 
     @staticmethod

@@ -269,7 +269,7 @@ class CoursesRepository(RepositoryDateTimeCodec):
                 url=url,
             )
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def delete_course(self, course_id: int) -> int:
         """Delete a course.
@@ -281,4 +281,4 @@ class CoursesRepository(RepositoryDateTimeCodec):
             Number of rows deleted.
         """
         result = await self.session.execute(delete(CourseModel).where(CourseModel.id == course_id))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)

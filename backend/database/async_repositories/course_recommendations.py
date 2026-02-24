@@ -30,7 +30,7 @@ class CourseRecommendationsRepository(RepositoryDateTimeCodec):
                 course_id=int(r.course_id),
                 note=r.note,
                 created_by=str(r.created_by),
-                created_at=self._as_iso(r.created_at),
+                created_at=self._as_iso_or_empty(r.created_at),
             )
             for r in rows
         ]
@@ -54,7 +54,7 @@ class CourseRecommendationsRepository(RepositoryDateTimeCodec):
                     course_id=cid,
                     note=r.note,
                     created_by=str(r.created_by),
-                    created_at=self._as_iso(r.created_at),
+                    created_at=self._as_iso_or_empty(r.created_at),
                 )
             )
         return grouped
@@ -96,7 +96,7 @@ class CourseRecommendationsRepository(RepositoryDateTimeCodec):
             course_id=int(row.course_id),
             note=row.note,
             created_by=str(row.created_by),
-            created_at=self._as_iso(row.created_at),
+            created_at=self._as_iso_or_empty(row.created_at),
         )
 
     async def update_recommendation(self, *, recommendation_id: int, note: str | None, created_at: str | datetime) -> int:
@@ -106,14 +106,14 @@ class CourseRecommendationsRepository(RepositoryDateTimeCodec):
             .where(CourseRecommendationModel.id == int(recommendation_id))
             .values(note=note, created_at=self._as_datetime(created_at))
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def delete_recommendation(self, *, recommendation_id: int) -> int:
         """Delete recommendation by id."""
         result = await self.session.execute(
             delete(CourseRecommendationModel).where(CourseRecommendationModel.id == int(recommendation_id))
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def recommendation_count_for_courses(self, *, course_ids: list[int]) -> dict[int, int]:
         """Return recommendation counts for each course id."""
@@ -145,5 +145,5 @@ class CourseRecommendationsRepository(RepositoryDateTimeCodec):
             course_id=int(row.course_id),
             note=row.note,
             created_by=str(row.created_by),
-            created_at=self._as_iso(row.created_at),
+            created_at=self._as_iso_or_empty(row.created_at),
         )

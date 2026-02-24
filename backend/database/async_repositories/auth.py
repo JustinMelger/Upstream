@@ -104,7 +104,7 @@ class AuthRepository(RepositoryDateTimeCodec):
             .where(func.lower(UserModel.username) == func.lower(username))
             .values(password_hash=password_hash, updated_at=self._as_datetime(now))
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def delete_user(self, username: str) -> int:
         """Delete a user by username.
@@ -116,7 +116,7 @@ class AuthRepository(RepositoryDateTimeCodec):
             Number of rows deleted.
         """
         result = await self.session.execute(delete(UserModel).where(func.lower(UserModel.username) == func.lower(username)))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def set_user_disabled(self, username: str, disabled: bool, now: str | datetime) -> int:
         """Disable or enable a user.
@@ -140,7 +140,7 @@ class AuthRepository(RepositoryDateTimeCodec):
             await self.session.execute(
                 delete(SessionModel).where(func.lower(SessionModel.colleague_id) == func.lower(username))
             )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def create_session(
         self,
@@ -185,7 +185,7 @@ class AuthRepository(RepositoryDateTimeCodec):
         if not row:
             return None
         colleague_id, expires_at = row
-        return SessionRecord(colleague_id=colleague_id, expires_at=self._as_iso(expires_at))
+        return SessionRecord(colleague_id=colleague_id, expires_at=self._as_iso_or_empty(expires_at))
 
     async def update_session_last_seen(self, token_hash: str, last_seen: str | datetime) -> None:
         """Update a session's last_seen timestamp.
@@ -208,7 +208,7 @@ class AuthRepository(RepositoryDateTimeCodec):
             Number of rows deleted.
         """
         result = await self.session.execute(delete(SessionModel).where(SessionModel.token_hash == token_hash))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def revoke_sessions(self, colleague_id: str) -> int:
         """Revoke all sessions for a colleague.
@@ -220,7 +220,7 @@ class AuthRepository(RepositoryDateTimeCodec):
             Number of sessions revoked.
         """
         result = await self.session.execute(delete(SessionModel).where(SessionModel.colleague_id == colleague_id))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def purge_expired_sessions(self, now: str | datetime) -> int:
         """Delete expired sessions.
@@ -232,7 +232,7 @@ class AuthRepository(RepositoryDateTimeCodec):
             Number of sessions removed.
         """
         result = await self.session.execute(delete(SessionModel).where(SessionModel.expires_at < self._as_datetime(now)))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def update_last_login(self, username: str, now: str | datetime) -> None:
         """Update a user's last_login_at timestamp.

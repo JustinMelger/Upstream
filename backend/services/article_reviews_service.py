@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Callable
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 from sqlalchemy.exc import IntegrityError
 
-from backend.core.errors import error_handler, ServiceError
+from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.article_reviews import ArticleReviewsRepository
 from backend.database.tx import session_scope
 
@@ -18,7 +19,7 @@ class ArticleReviewsServiceError(ServiceError):
 def article_reviews_error_handler(
     message: str = "An unexpected error occurred while handling article reviews",
     status_code: int = 500,
-):
+) -> Callable[[F], F]:
     return error_handler(
         service_error=ArticleReviewsServiceError,
         message=message,
@@ -62,6 +63,8 @@ class ArticleReviewsService:
         """Create or update the current user's review for an article."""
         data = self._parse_mutation_payload(payload)
         rating = data.rating
+        if rating is None:
+            raise ArticleReviewsServiceError(detail="invalid_rating", status_code=400)
         try:
             rating_i = int(rating)
         except (TypeError, ValueError):

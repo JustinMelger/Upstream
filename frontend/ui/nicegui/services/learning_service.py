@@ -191,8 +191,10 @@ async def load_my_learning_data(
         for cid, rows in zip(tracked_ids_sorted, course_review_rows, strict=False):
             if isinstance(rows, Exception):
                 continue
+            if not isinstance(rows, list):
+                continue
             mine = False
-            for row in list(rows or []):
+            for row in rows:
                 if not isinstance(row, dict):
                     continue
                 if str(row.get("created_by") or "") == username:
@@ -209,8 +211,10 @@ async def load_my_learning_data(
         for pid, rows in zip(selected_ids_sorted, path_review_rows, strict=False):
             if isinstance(rows, Exception):
                 continue
+            if not isinstance(rows, list):
+                continue
             mine = False
-            for row in list(rows or []):
+            for row in rows:
                 if not isinstance(row, dict):
                     continue
                 if str(row.get("created_by") or "") == username:

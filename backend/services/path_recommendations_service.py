@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Callable
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 from sqlalchemy.exc import IntegrityError
 
-from backend.core.errors import error_handler, ServiceError
+from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.path_recommendations import PathRecommendationsRepository
 from backend.database.tx import session_scope
 
@@ -18,7 +19,7 @@ class PathRecommendationsServiceError(ServiceError):
 def path_recommendations_error_handler(
     message: str = "An unexpected error occurred while handling path recommendations",
     status_code: int = 500,
-):
+) -> Callable[[F], F]:
     return error_handler(
         service_error=PathRecommendationsServiceError,
         message=message,

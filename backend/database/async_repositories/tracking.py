@@ -44,7 +44,7 @@ class TrackingRepository(RepositoryDateTimeCodec):
                 colleague_id=row.colleague_id,
                 course_id=row.course_id,
                 status=row.status,
-                updated_at=self._as_iso(row.updated_at),
+                updated_at=self._as_iso_or_empty(row.updated_at),
             )
             for row in rows
         ]
@@ -65,7 +65,7 @@ class TrackingRepository(RepositoryDateTimeCodec):
                 colleague_id=row.colleague_id,
                 course_id=row.course_id,
                 status=row.status,
-                updated_at=self._as_iso(row.updated_at),
+                updated_at=self._as_iso_or_empty(row.updated_at),
             )
             for row in rows
         ]
@@ -166,4 +166,4 @@ class TrackingRepository(RepositoryDateTimeCodec):
             .where(func.lower(TrackingModel.colleague_id) == func.lower(colleague_id))
             .where(TrackingModel.course_id == course_id)
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)

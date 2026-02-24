@@ -37,8 +37,6 @@ def _index_review_summary(rows: list[dict[str, Any]] | None) -> dict[int, dict[s
     """Index review summary rows by course_id."""
     out: dict[int, dict[str, Any]] = {}
     for r in list(rows or []):
-        if not isinstance(r, dict):
-            continue
         try:
             cid = int(r.get("course_id") or 0)
         except (TypeError, ValueError):
@@ -163,8 +161,6 @@ async def load_dashboard_data(
         colleague_ids: list[str] = []
         seen_ids: set[str] = set()
         for row in team_stats_by_user:
-            if not isinstance(row, dict):
-                continue
             who = str(row.get("colleague_id") or "").strip()
             if not who or who in seen_ids:
                 continue
@@ -178,9 +174,11 @@ async def load_dashboard_data(
             for payload in team_tracking_payloads:
                 if isinstance(payload, Exception):
                     continue
-                for row in list(payload or []):
+                if not isinstance(payload, list):
+                    continue
+                for row in payload:
                     if isinstance(row, dict):
-                        team_tracking_rows.append(row)
+                        team_tracking_rows.append(dict(row))
 
     # Prefetch selected-path details (limit for UX).
     shown = selected_paths[:5]

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Callable, Literal
 
 from pydantic import StrictInt, StrictStr, ValidationError
 from pydantic.dataclasses import dataclass
 
-from backend.core.errors import error_handler, ServiceError
+from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.notifications import NotificationsRepository
 from backend.database.tx import session_scope
 
@@ -59,7 +59,7 @@ class ActivityEvent:
 def notifications_error_handler(
     message: str = "An unexpected error occurred while handling notifications",
     status_code: int = 500,
-):
+) -> Callable[[F], F]:
     """Wrap uncaught notification errors into a domain ServiceError."""
     return error_handler(
         service_error=NotificationsServiceError,

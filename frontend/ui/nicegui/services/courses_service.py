@@ -5,12 +5,12 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 import time
-from typing import Any
+from typing import Any, Sequence
 
 from frontend.ui.nicegui.core.api_client import ApiClient
 
 
-def index_tracking_by_course_id(rows: list[dict[str, Any]] | None) -> dict[int, dict[str, Any]]:
+def index_tracking_by_course_id(rows: Sequence[object] | None) -> dict[int, dict[str, Any]]:
     """Index tracking rows by integer `course_id`."""
     out: dict[int, dict[str, Any]] = {}
     for r in list(rows or []):
@@ -111,8 +111,6 @@ async def load_review_summaries(*, api: ApiClient, course_ids: list[int]) -> dic
     result = await api.get("/courses/reviews/summary", params={"course_ids": [int(i) for i in course_ids if int(i) > 0]})
     out: dict[int, dict[str, Any]] = {}
     for row in list(result or []):
-        if not isinstance(row, dict):
-            continue
         try:
             cid = int(row.get("course_id") or 0)
         except (TypeError, ValueError):
@@ -133,8 +131,6 @@ async def load_recommendation_summaries(*, api: ApiClient, course_ids: list[int]
     )
     out: dict[int, dict[str, Any]] = {}
     for row in list(result or []):
-        if not isinstance(row, dict):
-            continue
         try:
             cid = int(row.get("course_id") or 0)
         except (TypeError, ValueError):

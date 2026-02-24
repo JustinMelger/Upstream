@@ -78,7 +78,10 @@ class SessionStore:
         if not token:
             raise ApiError(status_code=500, message="missing_token")
         self.set_token(token)
-        me = await api.get("/auth/me")
+        me_raw = await api.get("/auth/me")
+        if not isinstance(me_raw, dict):
+            raise ApiError(status_code=500, message="invalid_auth_me_payload")
+        me: dict[str, Any] = dict(me_raw)
         self.set_user(me)
         return me
 

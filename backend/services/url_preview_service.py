@@ -166,7 +166,7 @@ class UrlPreviewService:
         provider = self._suggest_provider(site_name=site_name, source_url=normalized_url)
         tags = self._suggest_tags(meta=meta, title=title, description=description)
         category = self._suggest_category(title=title, description=description, tags=tags)
-        payload = {
+        payload: dict[str, object] = {
             "source_url": url,
             "normalized_url": normalized_url,
             "title": title,

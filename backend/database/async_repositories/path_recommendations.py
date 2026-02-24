@@ -30,7 +30,7 @@ class PathRecommendationsRepository(RepositoryDateTimeCodec):
                 path_id=int(r.path_id),
                 note=r.note,
                 created_by=str(r.created_by),
-                created_at=self._as_iso(r.created_at),
+                created_at=self._as_iso_or_empty(r.created_at),
             )
             for r in rows
         ]
@@ -70,7 +70,7 @@ class PathRecommendationsRepository(RepositoryDateTimeCodec):
             path_id=int(row.path_id),
             note=row.note,
             created_by=str(row.created_by),
-            created_at=self._as_iso(row.created_at),
+            created_at=self._as_iso_or_empty(row.created_at),
         )
 
     async def update_recommendation(self, *, recommendation_id: int, note: str | None, created_at: str | datetime) -> int:
@@ -80,14 +80,14 @@ class PathRecommendationsRepository(RepositoryDateTimeCodec):
             .where(PathRecommendationModel.id == int(recommendation_id))
             .values(note=note, created_at=self._as_datetime(created_at))
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def delete_recommendation(self, *, recommendation_id: int) -> int:
         """Delete recommendation by id."""
         result = await self.session.execute(
             delete(PathRecommendationModel).where(PathRecommendationModel.id == int(recommendation_id))
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def recommendation_count_for_paths(self, *, path_ids: list[int]) -> dict[int, int]:
         """Return recommendation counts for each path id."""
@@ -119,5 +119,5 @@ class PathRecommendationsRepository(RepositoryDateTimeCodec):
             path_id=int(row.path_id),
             note=row.note,
             created_by=str(row.created_by),
-            created_at=self._as_iso(row.created_at),
+            created_at=self._as_iso_or_empty(row.created_at),
         )
