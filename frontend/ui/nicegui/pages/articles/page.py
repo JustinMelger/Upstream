@@ -82,6 +82,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             )
 
         _open_share_dialog = build_share_article_dialog(
+            username=username,
             on_submit=_submit_share,
             on_suggest_from_url=lambda url: controller.suggest_article_from_url(url=str(url or "")),
             is_duplicate_url=lambda raw_url: any(

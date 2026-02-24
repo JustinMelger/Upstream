@@ -90,7 +90,47 @@ def build_share_course_dialog(
         category_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
         url_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
         auto_suggest_state: dict[str, int | str] = {"nonce": 0, "last_source": ""}
+        auto_draft_state: dict[str, int | bool] = {"nonce": 0, "enabled": True}
         suggested_values: dict[str, str] = {}
+        course_draft_key = f"courses_share_draft::{username}"
+
+        def _course_draft_payload() -> dict[str, Any]:
+            return {
+                "title": str(create_title.value or ""),
+                "description": str(create_description.value or "").strip(),
+                "provider": str(create_provider.value or ""),
+                "category": str(create_category.value or ""),
+                "language": str(create_language.value or ""),
+                "level": str(create_level.value or ""),
+                "learning_outcomes": str(create_learning_outcomes.value or "").strip(),
+                "prerequisites": str(create_prerequisites.value or "").strip(),
+                "duration_hours": str(create_duration_hours.value or ""),
+                "url": str(create_url.value or ""),
+            }
+
+        def _draft_has_content(raw: Any) -> bool:
+            if not isinstance(raw, dict):
+                return False
+            return any(str(v or "").strip() for v in raw.values())
+
+        def _save_draft_silent() -> None:
+            if not bool(auto_draft_state.get("enabled", True)):
+                return
+            app.storage.user[course_draft_key] = _course_draft_payload()
+
+        def _queue_draft_autosave(*_args: Any) -> None:
+            if not bool(auto_draft_state.get("enabled", True)):
+                return
+            next_nonce = int(auto_draft_state.get("nonce") or 0) + 1
+            auto_draft_state["nonce"] = next_nonce
+
+            async def _run() -> None:
+                await asyncio.sleep(0.3)
+                if next_nonce != int(auto_draft_state.get("nonce") or 0):
+                    return
+                _save_draft_silent()
+
+            asyncio.create_task(_run())
 
         def _refresh_suggestion_hints() -> None:
             title_suggest_hint.text = suggestion_badge_text(
@@ -204,24 +244,9 @@ def build_share_course_dialog(
                 create_prerequisites = ui.textarea("Prerequisites (optional)").props("autogrow").classes("w-full")
                 create_duration_hours = ui.input("Duration hours").props("clearable").classes("w-full")
 
-        course_draft_key = f"courses_share_draft::{username}"
-
-        def _course_draft_payload() -> dict[str, Any]:
-            return {
-                "title": str(create_title.value or ""),
-                "description": str(create_description.value or "").strip(),
-                "provider": str(create_provider.value or ""),
-                "category": str(create_category.value or ""),
-                "language": str(create_language.value or ""),
-                "level": str(create_level.value or ""),
-                "learning_outcomes": str(create_learning_outcomes.value or "").strip(),
-                "prerequisites": str(create_prerequisites.value or "").strip(),
-                "duration_hours": str(create_duration_hours.value or ""),
-                "url": str(create_url.value or ""),
-            }
-
         def _apply_course_draft(raw: Any) -> None:
             draft = raw if isinstance(raw, dict) else {}
+            auto_draft_state["enabled"] = False
             create_title.value = str(draft.get("title") or "")
             create_description.value = str(draft.get("description") or "")
             create_provider.value = str(draft.get("provider") or "")
@@ -234,6 +259,15 @@ def build_share_course_dialog(
             create_url.value = str(draft.get("url") or "")
             suggested_values.clear()
             _refresh_suggestion_hints()
+            auto_draft_state["enabled"] = True
+
+        def _discard_draft(*, reset_form: bool, notify: bool) -> None:
+            app.storage.user.pop(course_draft_key, None)
+            if reset_form:
+                _apply_course_draft({})
+                _refresh_url_hint()
+            if notify:
+                safe_notify("Draft discarded", type="positive")
 
         def _open_success_summary(*, created_row: dict[str, Any], autofilled_fields: list[str]) -> None:
             title = str(created_row.get("title") or "Course")
@@ -272,19 +306,6 @@ def build_share_course_dialog(
             summary_dialog.open()
 
         with ui.row().classes("justify-end mt-4"):
-
-            def _save_draft() -> None:
-                app.storage.user[course_draft_key] = _course_draft_payload()
-                safe_notify("Draft saved", type="positive")
-
-            def _load_draft() -> None:
-                draft = app.storage.user.get(course_draft_key)
-                if not isinstance(draft, dict):
-                    safe_notify("No saved draft found", type="warning")
-                    return
-                _apply_course_draft(draft)
-                safe_notify("Draft loaded", type="positive")
-
             @guard_ui_action(title="Share course failed")
             async def _create_submit() -> None:
                 dh_raw = str(create_duration_hours.value or "")
@@ -312,7 +333,7 @@ def build_share_course_dialog(
                     "url": str(create_url.value or ""),
                 }
                 created_row = dict(await on_submit(payload) or {})
-                app.storage.user.pop(course_draft_key, None)
+                _discard_draft(reset_form=False, notify=False)
                 create_dialog.close()
                 autofilled_fields: list[str] = []
                 field_labels = {
@@ -329,15 +350,31 @@ def build_share_course_dialog(
                         autofilled_fields.append(label)
                 _open_success_summary(created_row=created_row, autofilled_fields=autofilled_fields)
 
-            ui.button("Save draft", on_click=_save_draft).props("outline")
-            ui.button("Load draft", on_click=_load_draft).props("outline")
+            ui.button("Discard draft", on_click=lambda: _discard_draft(reset_form=True, notify=True)).props("outline")
             ui.button("Share", on_click=_create_submit)
             ui.button("Cancel", on_click=create_dialog.close).props("outline")
 
+        for control in [
+            create_title,
+            create_description,
+            create_provider,
+            create_category,
+            create_url,
+            create_language,
+            create_level,
+            create_learning_outcomes,
+            create_prerequisites,
+            create_duration_hours,
+        ]:
+            control.on("update:model-value", _queue_draft_autosave)
+
     def _open_create_dialog() -> None:
-        _apply_course_draft(app.storage.user.get(course_draft_key))
+        draft = app.storage.user.get(course_draft_key)
+        _apply_course_draft(draft)
         _refresh_url_hint()
         _refresh_suggestion_hints()
+        if _draft_has_content(draft):
+            safe_notify("Recovered unsent draft", type="positive")
         create_dialog.open()
 
     return _open_create_dialog

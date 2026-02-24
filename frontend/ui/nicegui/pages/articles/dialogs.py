@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from nicegui import ui
+from nicegui import app, ui
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
@@ -31,6 +31,7 @@ def _normalize_http_url(raw: str) -> str:
 
 def build_share_article_dialog(
     *,
+    username: str,
     on_submit: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
     on_suggest_from_url: Callable[[str], Awaitable[dict[str, Any]]],
     is_duplicate_url: Callable[[str], bool] | None = None,
@@ -44,9 +45,60 @@ def build_share_article_dialog(
         title_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
         url_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
         auto_suggest_state: dict[str, int | str] = {"nonce": 0, "last_source": ""}
+        auto_draft_state: dict[str, int | bool] = {"nonce": 0, "enabled": True}
         suggested_values: dict[str, str] = {}
         new_tags = ui.input("Tags (comma separated)").props("clearable").classes("w-full")
         tags_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+        article_draft_key = f"articles_share_draft::{username}"
+
+        def _article_draft_payload() -> dict[str, Any]:
+            return {
+                "title": str(new_title.value or ""),
+                "url": str(new_url.value or ""),
+                "tags": str(new_tags.value or ""),
+            }
+
+        def _draft_has_content(raw: Any) -> bool:
+            if not isinstance(raw, dict):
+                return False
+            return any(str(v or "").strip() for v in raw.values())
+
+        def _save_draft_silent() -> None:
+            if not bool(auto_draft_state.get("enabled", True)):
+                return
+            app.storage.user[article_draft_key] = _article_draft_payload()
+
+        def _queue_draft_autosave(*_args: Any) -> None:
+            if not bool(auto_draft_state.get("enabled", True)):
+                return
+            next_nonce = int(auto_draft_state.get("nonce") or 0) + 1
+            auto_draft_state["nonce"] = next_nonce
+
+            async def _run() -> None:
+                await asyncio.sleep(0.3)
+                if next_nonce != int(auto_draft_state.get("nonce") or 0):
+                    return
+                _save_draft_silent()
+
+            asyncio.create_task(_run())
+
+        def _apply_draft(raw: Any) -> None:
+            draft = raw if isinstance(raw, dict) else {}
+            auto_draft_state["enabled"] = False
+            new_title.value = str(draft.get("title") or "")
+            new_url.value = str(draft.get("url") or "")
+            new_tags.value = str(draft.get("tags") or "")
+            suggested_values.clear()
+            _refresh_url_hint()
+            _refresh_suggestion_hints()
+            auto_draft_state["enabled"] = True
+
+        def _discard_draft(*, reset_form: bool, notify: bool) -> None:
+            app.storage.user.pop(article_draft_key, None)
+            if reset_form:
+                _apply_draft({})
+            if notify:
+                safe_notify("Draft discarded", type="positive")
 
         def _refresh_suggestion_hints() -> None:
             title_suggest_hint.text = suggestion_badge_text(
@@ -176,6 +228,7 @@ def build_share_article_dialog(
                     "tags": str(new_tags.value or ""),
                 }
                 created_row = dict(await on_submit(payload) or {})
+                _discard_draft(reset_form=False, notify=False)
                 share_dialog.close()
                 autofilled_fields: list[str] = []
                 if suggestion_badge_text(
@@ -190,16 +243,19 @@ def build_share_article_dialog(
                     autofilled_fields.append("Tags")
                 _open_success_summary(created_row=created_row, autofilled_fields=autofilled_fields)
 
+            ui.button("Discard draft", on_click=lambda: _discard_draft(reset_form=True, notify=True)).props("outline")
             ui.button("Share", on_click=_submit_share)
             ui.button("Cancel", on_click=share_dialog.close).props("outline")
 
+        new_title.on("update:model-value", _queue_draft_autosave)
+        new_url.on("update:model-value", _queue_draft_autosave)
+        new_tags.on("update:model-value", _queue_draft_autosave)
+
     def _open_share_dialog() -> None:
-        new_title.value = ""
-        new_url.value = ""
-        new_tags.value = ""
-        suggested_values.clear()
-        _refresh_url_hint()
-        _refresh_suggestion_hints()
+        draft = app.storage.user.get(article_draft_key)
+        _apply_draft(draft)
+        if _draft_has_content(draft):
+            safe_notify("Recovered unsent draft", type="positive")
         share_dialog.open()
 
     return _open_share_dialog

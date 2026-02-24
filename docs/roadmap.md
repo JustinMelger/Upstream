@@ -221,7 +221,7 @@
 - [x] Share flow UX (Courses/Articles): trigger metadata suggestions automatically on URL paste/blur with debounce, while keeping the manual “Suggest from URL” control.
 - [x] Share flow UX (Courses/Articles): show inline “suggested vs edited” indicators so users can quickly trust/override autofilled values.
 - [x] Share flow validation (Courses/Articles): add live URL validation and duplicate checks before submit (existing URL/domain/title-provider hints) with actionable inline messages.
-- [ ] Share flow reliability (Courses/Articles): persist unsent draft form state with autosave + recovery after refresh/navigation and explicit “discard draft” action.
+- [x] Share flow reliability (Courses/Articles): persist unsent draft form state with autosave + recovery after refresh/navigation and explicit “discard draft” action.
 - [ ] Share flow productivity (Courses/Articles): add one-click “apply all suggestions” and per-field “re-suggest” actions for faster curation.
 - [ ] Share flow safety (Courses/Articles): provide “metadata unavailable” fallback UX with smart placeholders/examples so users can still submit quickly.
 - [x] Share flow post-submit: show contextual success summary (what was autofilled/saved) and quick follow-up actions (open item, copy link, add review/recommendation).
