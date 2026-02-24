@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
-from frontend.ui.nicegui.services.paths_service import compute_path_progress
+from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary as _format_review
 
 
 @dataclass(slots=True)
@@ -32,19 +32,7 @@ class PathCardView:
 
 def format_review_summary(row: dict[str, Any] | None) -> str:
     """Format a path review summary row into a compact label."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("review_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    try:
-        avg = float(row.get("avg_rating") or 0.0)
-    except (TypeError, ValueError):
-        avg = 0.0
-    return f"{avg:.1f}/5 ({count})"
+    return _format_review(row, style="fraction")
 
 
 def format_rating_badge(row: dict[str, Any] | None) -> str:
@@ -54,15 +42,7 @@ def format_rating_badge(row: dict[str, Any] | None) -> str:
 
 def format_recommendation_badge(row: dict[str, Any] | None) -> str:
     """Format a compact recommendation badge for path cards."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("recommendation_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    return f"↗ {count} rec"
+    return format_recommendation_summary(row)
 
 
 def path_tracking_label(is_tracked: bool) -> str:
@@ -81,7 +61,7 @@ def compute_outcomes(
     tracking_by_course_id: dict[int, dict[str, Any]],
 ) -> dict[str, Any]:
     """Compute path milestone + next-step metadata for UX rendering."""
-    completed, total, ratio = compute_path_progress(detail=detail, tracking_by_course_id=tracking_by_course_id)
+    completed, total, ratio = _compute_path_progress(detail=detail, tracking_by_course_id=tracking_by_course_id)
     courses = [c for c in list(detail.get("courses") or []) if isinstance(c, dict)]
     next_course: dict[str, Any] | None = None
     in_progress = 0
@@ -130,6 +110,30 @@ def compute_outcomes(
         "milestone_class": milestone_class,
         "impact": impact,
     }
+
+
+def _compute_path_progress(
+    *,
+    detail: dict[str, Any],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+) -> tuple[int, int, float]:
+    courses = list(detail.get("courses") or []) if isinstance(detail, dict) else []
+    total = len(courses)
+    completed = 0
+    for c in courses:
+        if not isinstance(c, dict):
+            continue
+        raw = c.get("id")
+        if raw is None:
+            continue
+        try:
+            cid = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if str((tracking_by_course_id.get(cid) or {}).get("status") or "") == "completed":
+            completed += 1
+    ratio = (completed / total) if total else 0.0
+    return completed, total, ratio
 
 
 def recommendation_authors(rows: list[dict[str, Any]] | None) -> list[str]:

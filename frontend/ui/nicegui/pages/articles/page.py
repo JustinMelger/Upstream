@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 from nicegui import ui
@@ -10,16 +9,27 @@ from nicegui import ui
 from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
-from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
-from frontend.ui.nicegui.core.datetime_utils import format_date
+from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
+from frontend.ui.nicegui.pages.articles.actions import (
+    build_article_card_actions,
+    build_articles_facet_controls,
+    clear_article_filter_and_refresh,
+    recompute_article_facet_controls_for_search,
+)
 from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
-from frontend.ui.nicegui.pages.articles.dialogs import build_share_article_dialog, open_article_details_dialog
+from frontend.ui.nicegui.pages.articles.detail_flow import open_article_details_flow
+from frontend.ui.nicegui.pages.articles.dialogs import build_share_article_dialog
 from frontend.ui.nicegui.pages.articles.filters import normalize_articles_filter_values
-from frontend.ui.nicegui.pages.articles.reducers import compute_facet_state, derive_shown_articles
+from frontend.ui.nicegui.pages.articles.orchestration import (
+    clear_articles_filter_values,
+    load_articles_page,
+    perform_create_article,
+    refresh_articles_list,
+)
+from frontend.ui.nicegui.pages.articles.reducers import derive_shown_articles
 from frontend.ui.nicegui.pages.articles.sections import (
     render_active_filter_chips,
     render_article_card,
@@ -28,37 +38,12 @@ from frontend.ui.nicegui.pages.articles.sections import (
     render_filters_rail,
 )
 from frontend.ui.nicegui.pages.articles.state import ArticlesPageState
-from frontend.ui.nicegui.pages.articles.transitions import (
-    begin_articles_load,
-    clear_articles_state_on_load_error,
-    finalize_articles_load,
-)
 from frontend.ui.nicegui.pages.articles.ui_glue import (
     build_active_filter_chips,
     compute_articles_meta_text,
     compute_expanded_visible_count,
 )
-from frontend.ui.nicegui.services.articles_service import (
-    article_is_new,
-    parse_tags,
-)
-
-
-def _format_review_summary(row: dict[str, Any] | None) -> str:
-    """Format a review summary row into a compact label."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("review_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    try:
-        avg = float(row.get("avg_rating") or 0.0)
-    except (TypeError, ValueError):
-        avg = 0.0
-    return f"{avg:.1f}/5 ({count})"
+from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -84,102 +69,74 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         meta: Any = None
 
         async def _submit_share(payload: dict[str, Any]) -> None:
-            await api.post("/articles", payload)
-            await _load()
+            await perform_create_article(
+                payload=payload,
+                controller=controller,
+                reload_page=_load,
+            )
 
         _open_share_dialog = build_share_article_dialog(on_submit=_submit_share)
 
-        def _recompute_facets(*, needle: str) -> None:
-            if tag_filter is None or author_filter is None:
-                return
-
-            normalized = normalize_articles_filter_values(
-                search_value=needle,
-                tag_value=str(tag_filter.value or ""),
-                author_value=str(author_filter.value or ""),
-                sort_value=str(sort_filter.value or "") if sort_filter is not None else "",
+        def _facet_controls() -> Any:
+            return build_articles_facet_controls(
+                search_input=q,
+                tag_filter=tag_filter,
+                author_filter=author_filter,
+                sort_filter=sort_filter,
             )
-            tag_options, author_options, next_tag, next_author = compute_facet_state(
-                articles=state.articles,
-                needle=normalized.search,
-                selected_tag=normalized.tag,
-                selected_author=normalized.author,
-            )
-            tag_filter.options = tag_options
-            author_filter.options = author_options
-            tag_filter.value = next_tag
-            author_filter.value = next_author
-
-            tag_filter.update()
-            author_filter.update()
 
         def _refresh_list(*_: Any) -> None:
-            state.visible_count = state.page_size
-            needle = str(q.value or "").strip()
-            _recompute_facets(needle=needle)
-            active_filters.refresh()
-            articles_list.refresh()
+            refresh_articles_list(
+                state=state,
+                recompute_facets=lambda: recompute_article_facet_controls_for_search(
+                    controls=_facet_controls(),
+                    articles=state.articles,
+                    search_value=str(q.value or "").strip(),
+                ),
+                refresh_active_filters=active_filters.refresh,
+                refresh_articles_list_ui=articles_list.refresh,
+            )
 
         def _reset_filters() -> None:
-            state.visible_count = state.page_size
-            q.value = ""
-            q.update()
-            if tag_filter is not None:
-                tag_filter.value = ""
-                tag_filter.update()
-            if author_filter is not None:
-                author_filter.value = ""
-                author_filter.update()
-            if sort_filter is not None:
-                sort_filter.value = ""
-                sort_filter.update()
-            _recompute_facets(needle="")
-            active_filters.refresh()
-            articles_list.refresh()
+            clear_articles_filter_values(
+                state=state,
+                controls=_facet_controls(),
+                recompute_facets=lambda: recompute_article_facet_controls_for_search(
+                    controls=_facet_controls(),
+                    articles=state.articles,
+                    search_value="",
+                ),
+                refresh_active_filters=active_filters.refresh,
+                refresh_articles_list_ui=articles_list.refresh,
+            )
 
         @guard_ui_action(title="Load failed")
         async def _load() -> None:
-            if state.loading:
-                return
-            load_start = begin_articles_load(page_size=state.page_size)
-            state.loading = load_start.loading
-            state.visible_count = load_start.visible_count
-            refresh_btn.disable()
-            meta.text = load_start.meta_text
-            articles_list.refresh()
-            ok = False
-            try:
-                bundle = await controller.load_list_bundle()
-                state.articles = list(bundle.articles or [])
-                state.review_summary_by_article_id = dict(bundle.review_summary_by_article_id or {})
-                needle = str(q.value or "").strip()
-                _recompute_facets(needle=needle)
-                ok = True
-            except ApiError as exc:
-                safe_notify(str(exc), type="negative")
-                clear_articles_state_on_load_error(state=state)
-                needle = str(q.value or "").strip()
-                _recompute_facets(needle=needle)
-            finally:
-                load_done = finalize_articles_load(ok=ok, article_count=len(state.articles))
-                state.loading = load_done.loading
-                state.loaded_once = load_done.loaded_once
-                meta.text = compute_articles_meta_text(article_count=len(state.articles))
-                refresh_btn.enable()
-                active_filters.refresh()
-                articles_list.refresh()
+            await load_articles_page(
+                state=state,
+                controller=controller,
+                refresh_btn=refresh_btn,
+                meta=meta,
+                recompute_facets=lambda: recompute_article_facet_controls_for_search(
+                    controls=_facet_controls(),
+                    articles=state.articles,
+                    search_value=str(q.value or "").strip(),
+                ),
+                refresh_active_filters=active_filters.refresh,
+                refresh_articles_list_ui=articles_list.refresh,
+                notify_error=lambda message: safe_notify(message, type="negative"),
+                compute_meta_text=compute_articles_meta_text,
+            )
 
         @guard_ui_action(title="Load article details failed")
         async def _open_details(article: dict[str, Any], *, focus_reviews: bool = False) -> None:
-            await open_article_details_dialog(
-                api=api,
+            await open_article_details_flow(
                 article=article,
                 focus_reviews=focus_reviews,
                 username=username,
                 is_admin=is_admin,
-                review_summary_by_article_id=state.review_summary_by_article_id,
-                format_review_summary=_format_review_summary,
-                format_date=format_date,
+                controller=controller,
+                state=state,
             )
 
         with render_container():
@@ -210,19 +167,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if not chips:
                     return
 
-                def _clear_filter_key(key: str) -> None:
-                    clear_map = {
-                        "search": lambda: setattr(q, "value", "") or q.update(),
-                        "tag": lambda: setattr(tag_filter, "value", "") or tag_filter.update(),
-                        "author": lambda: setattr(author_filter, "value", "") or author_filter.update(),
-                        "sort": lambda: setattr(sort_filter, "value", "") or sort_filter.update(),
-                    }
-                    clear = clear_map.get(str(key))
-                    if callable(clear):
-                        clear()
-                    _refresh_list()
-
-                render_active_filter_chips(chips=chips, on_clear_key=_clear_filter_key)
+                render_active_filter_chips(
+                    chips=chips,
+                    on_clear_key=lambda key: clear_article_filter_and_refresh(
+                        key=str(key),
+                        controls=_facet_controls(),
+                        refresh_list=_refresh_list,
+                    ),
+                )
 
             @ui.refreshable
             def articles_list() -> None:
@@ -261,23 +213,21 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     shown_page = shown[: max(0, int(state.visible_count))]
 
                     for a in shown_page:
-                        created_by = str(a.get("created_by") or "").strip()
-                        created_at = str(a.get("created_at") or "").strip()
-                        summary = _format_review_summary(state.review_summary_by_article_id.get(int(a.get("id") or 0)))
-                        subtitle_bits = [
-                            f"Shared by {created_by}" if created_by else "",
-                            format_date(created_at),
-                        ]
+                        article_id = int(a.get("id") or 0)
+                        card_vm = map_article_card_view(
+                            article_row=a,
+                            review_summary_row=state.review_summary_by_article_id.get(article_id),
+                        )
                         actions = build_article_card_actions(
                             article_row=a,
                             on_open_details=lambda _a, _focus: _open_details(_a, focus_reviews=bool(_focus)),
                         )
                         render_article_card(
                             article_row=a,
-                            is_new=bool(article_is_new(a)),
-                            tags=parse_tags(str(a.get("tags") or "")),
-                            summary_text=f"★ {summary}" if summary else "",
-                            subtitle_text=" · ".join([b for b in subtitle_bits if b]),
+                            is_new=card_vm.is_new,
+                            tags=card_vm.tags,
+                            summary_text=card_vm.summary_text,
+                            subtitle_text=card_vm.subtitle_text,
                             view_action=actions.on_view,
                             review_action=actions.on_review,
                         )

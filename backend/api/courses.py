@@ -9,6 +9,11 @@ from backend.api.deps import (
     get_courses_service,
     require_session,
 )
+from backend.api.policies import (
+    require_existing_owner_or_admin,
+    require_row_exists,
+    require_row_parent_match,
+)
 from backend.api.schemas import (
     CourseCreateRequest,
     CoursePayload,
@@ -135,12 +140,11 @@ async def edit_course(
     Returns:
         dict: Updated course.
     """
-    if not await auth.is_admin(current_user):
-        existing = await courses.get_course_by_id(course_id)
-        if not existing:
-            raise HTTPException(status_code=404, detail="not_found")
-        if str(existing.get("created_by") or "") != str(current_user):
-            raise HTTPException(status_code=403, detail="forbidden")
+    await require_existing_owner_or_admin(
+        row=await courses.get_course_by_id(course_id),
+        current_user=current_user,
+        auth=auth,
+    )
     course = await courses.update_course(course_id, payload.model_dump())
     if not course:
         raise HTTPException(status_code=404, detail="not_found")
@@ -163,12 +167,11 @@ async def remove_course(
     Returns:
         dict: Delete result.
     """
-    if not await auth.is_admin(current_user):
-        existing = await courses.get_course_by_id(course_id)
-        if not existing:
-            raise HTTPException(status_code=404, detail="not_found")
-        if str(existing.get("created_by") or "") != str(current_user):
-            raise HTTPException(status_code=403, detail="forbidden")
+    await require_existing_owner_or_admin(
+        row=await courses.get_course_by_id(course_id),
+        current_user=current_user,
+        auth=auth,
+    )
     ok = await courses.delete_course(course_id)
     if not ok:
         raise HTTPException(status_code=404, detail="not_found")
@@ -183,9 +186,7 @@ async def list_course_reviews(
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
 ):
     """List reviews for a course."""
-    existing = await courses.get_course_by_id(course_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="not_found")
+    require_row_exists(await courses.get_course_by_id(course_id))
     return await reviews.list_reviews(course_id=course_id)
 
 
@@ -198,9 +199,7 @@ async def create_course_review(
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
 ):
     """Create a review for a course (any authenticated user)."""
-    existing = await courses.get_course_by_id(course_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="not_found")
+    require_row_exists(await courses.get_course_by_id(course_id))
     return await reviews.create_review(course_id=course_id, payload=payload.model_dump(), created_by=current_user)
 
 
@@ -213,13 +212,9 @@ async def delete_course_review(
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
 ):
     """Delete a course review (owner/admin only)."""
-    review = await reviews.get_review_by_id(review_id=int(review_id))
-    if not review:
-        raise HTTPException(status_code=404, detail="not_found")
-    if int(review.get("course_id") or 0) != int(course_id):
-        raise HTTPException(status_code=404, detail="not_found")
-    if not await auth.is_admin(current_user) and str(review.get("created_by") or "") != str(current_user):
-        raise HTTPException(status_code=403, detail="forbidden")
+    review = require_row_exists(await reviews.get_review_by_id(review_id=int(review_id)))
+    require_row_parent_match(row=review, parent_field="course_id", parent_id=int(course_id))
+    await require_existing_owner_or_admin(row=review, current_user=current_user, auth=auth)
     deleted = await reviews.delete_review(review_id=int(review_id))
     return {"deleted": bool(deleted)}
 
@@ -232,9 +227,7 @@ async def list_course_recommendations(
     recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
 ):
     """List recommendations for a course."""
-    existing = await courses.get_course_by_id(course_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="not_found")
+    require_row_exists(await courses.get_course_by_id(course_id))
     return await recommendations.list_recommendations(course_id=course_id)
 
 
@@ -247,9 +240,7 @@ async def create_course_recommendation(
     recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
 ):
     """Create/update current user's recommendation for a course."""
-    existing = await courses.get_course_by_id(course_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="not_found")
+    require_row_exists(await courses.get_course_by_id(course_id))
     return await recommendations.create_recommendation(
         course_id=course_id, payload=payload.model_dump(), created_by=current_user
     )
@@ -264,12 +255,10 @@ async def delete_course_recommendation(
     recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
 ):
     """Delete a course recommendation (owner/admin only)."""
-    recommendation = await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))
-    if not recommendation:
-        raise HTTPException(status_code=404, detail="not_found")
-    if int(recommendation.get("course_id") or 0) != int(course_id):
-        raise HTTPException(status_code=404, detail="not_found")
-    if not await auth.is_admin(current_user) and str(recommendation.get("created_by") or "") != str(current_user):
-        raise HTTPException(status_code=403, detail="forbidden")
+    recommendation = require_row_exists(
+        await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))
+    )
+    require_row_parent_match(row=recommendation, parent_field="course_id", parent_id=int(course_id))
+    await require_existing_owner_or_admin(row=recommendation, current_user=current_user, auth=auth)
     deleted = await recommendations.delete_recommendation(recommendation_id=int(recommendation_id))
     return {"deleted": bool(deleted)}

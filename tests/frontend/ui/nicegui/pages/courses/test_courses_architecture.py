@@ -26,6 +26,7 @@ def test_courses_pure_modules_do_not_import_nicegui() -> None:
     pure_modules = [
         "controller.py",
         "filters.py",
+        "orchestration.py",
         "reducers.py",
         "route_init.py",
         "state.py",

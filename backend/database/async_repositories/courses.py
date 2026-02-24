@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import CourseRecord
 from backend.database.orm_models import Course as CourseModel
 
 
-class CoursesRepository:
+class CoursesRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of courses persistence."""
 
     def __init__(self, session: AsyncSession):
@@ -74,7 +77,7 @@ class CoursesRepository:
                 level=row.level,
                 duration_hours=row.duration_hours,
                 url=row.url,
-                created_at=row.created_at,
+                created_at=self._as_iso(row.created_at),
                 created_by=row.created_by,
             )
             for row in rows
@@ -105,7 +108,7 @@ class CoursesRepository:
             level=row.level,
             duration_hours=row.duration_hours,
             url=row.url,
-            created_at=row.created_at,
+            created_at=self._as_iso(row.created_at),
             created_by=row.created_by,
         )
 
@@ -122,7 +125,7 @@ class CoursesRepository:
         level: str | None,
         duration_hours: float | None,
         url: str | None,
-        created_at: str,
+        created_at: str | datetime | None,
         created_by: str | None,
     ) -> int:
         """Create a course.
@@ -150,7 +153,7 @@ class CoursesRepository:
             level=level,
             duration_hours=duration_hours,
             url=url,
-            created_at=created_at,
+            created_at=self._as_datetime(created_at),
             created_by=created_by,
         )
         self.session.add(row)
@@ -185,7 +188,7 @@ class CoursesRepository:
             level=row.level,
             duration_hours=row.duration_hours,
             url=row.url,
-            created_at=row.created_at,
+            created_at=self._as_iso(row.created_at),
             created_by=row.created_by,
         )
 
@@ -217,7 +220,7 @@ class CoursesRepository:
             level=row.level,
             duration_hours=row.duration_hours,
             url=row.url,
-            created_at=row.created_at,
+            created_at=self._as_iso(row.created_at),
             created_by=row.created_by,
         )
 

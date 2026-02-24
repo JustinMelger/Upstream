@@ -1,8 +1,22 @@
 from __future__ import annotations
 
+from pydantic import ValidationError
+from pydantic.dataclasses import dataclass
+
 from backend.core.errors import paths_error_handler, PathsServiceError
 from backend.database.async_repositories.paths import PathsRepository
 from backend.database.models import PathCourseRecord, PathRecord
+from backend.database.tx import session_scope
+
+
+@dataclass
+class PathMutationPayload:
+    """Typed service-layer payload for create/update path flows."""
+
+    name: str | None = None
+    description: str | None = None
+    course_ids: list[int] | None = None
+    created_by: str | None = None
 
 
 class PathsService:
@@ -23,7 +37,7 @@ class PathsService:
         Returns:
             Path list payloads.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             rows = await self._repo.list_paths()
         return [self._path_payload(path) for path in rows]
 
@@ -37,7 +51,7 @@ class PathsService:
         Returns:
             Path payload or None if missing.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             result = await self._repo.get_path(path_id)
         if not result:
             return None
@@ -63,14 +77,15 @@ class PathsService:
         Raises:
             PathsServiceError: If required fields are missing or the name is duplicate.
         """
-        name = (payload.get("name") or "").strip()
+        data = self._parse_mutation_payload(payload)
+        name = str(data.name or "").strip()
         if not name:
             raise PathsServiceError(detail="missing_name", status_code=400)
-        description = (payload.get("description") or "").strip() or None
-        course_ids = payload.get("course_ids") or []
-        created_by = (payload.get("created_by") or "").strip() or None
+        description = str(data.description or "").strip() or None
+        course_ids = list(data.course_ids or [])
+        created_by = str(data.created_by or "").strip() or None
 
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             if await self._repo.path_name_exists(name):
                 raise PathsServiceError(detail="duplicate_name", status_code=409)
             path_id = await self._repo.create_path_with_courses(
@@ -98,13 +113,14 @@ class PathsService:
         Raises:
             PathsServiceError: If required fields are missing or the name is duplicate.
         """
-        name = (payload.get("name") or "").strip()
+        data = self._parse_mutation_payload(payload)
+        name = str(data.name or "").strip()
         if not name:
             raise PathsServiceError(detail="missing_name", status_code=400)
-        description = (payload.get("description") or "").strip() or None
-        course_ids = payload.get("course_ids") or []
+        description = str(data.description or "").strip() or None
+        course_ids = list(data.course_ids or [])
 
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             if await self._repo.path_name_exists_for_other_id(path_id, name):
                 raise PathsServiceError(detail="duplicate_name", status_code=409)
             await self._repo.update_path_with_courses(path_id, name, description, [int(course_id) for course_id in course_ids])
@@ -123,7 +139,7 @@ class PathsService:
         Returns:
             True if deleted.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return (await self._repo.delete_path_with_courses(path_id)) > 0
 
     @staticmethod
@@ -143,3 +159,11 @@ class PathsService:
             "duration_hours": course.duration_hours,
             "url": course.url or "",
         }
+
+    @staticmethod
+    def _parse_mutation_payload(payload: dict) -> PathMutationPayload:
+        """Parse and validate a path mutation payload."""
+        try:
+            return PathMutationPayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise PathsServiceError(detail="invalid_payload", status_code=400) from exc

@@ -7,8 +7,8 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
-from frontend.ui.nicegui.core.api_client import ApiClient
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+from frontend.ui.nicegui.core.errors import FrontendError, guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation import build_activity_tab_link
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -78,7 +78,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         load_done = finalize_activity_load(rows=rows)
                         state.events = list(load_done.events)
                         state.error_message = None
-                    except Exception as exc:
+                    except (ApiError, RuntimeError) as exc:
                         state.events = []
                         state.error_message = str(exc)
                         pending_error = exc
@@ -86,7 +86,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         state.loading = False
                         activity_list.refresh()
                     if pending_error is not None and not state.pending_reload:
-                        raise pending_error
+                        raise FrontendError(status_code=500, message=str(pending_error))
 
             @guard_ui_action(title="Switch tab failed")
             async def _on_tab_change(*_args: Any) -> None:

@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import case, delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import SelectedPathRecord
 from backend.database.orm_models import Path as PathModel, UserPath as UserPathModel
 
 
-class UserPathsRepository:
+class UserPathsRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of user path selection persistence."""
 
     def __init__(self, session: AsyncSession):
@@ -24,7 +27,7 @@ class UserPathsRepository:
         result = await self.session.execute(select(PathModel.id).where(PathModel.id == int(path_id)).limit(1))
         return result.scalar_one_or_none() is not None
 
-    async def add_user_path(self, colleague_id: str, path_id: int, now: str) -> int:
+    async def add_user_path(self, colleague_id: str, path_id: int, now: str | datetime) -> int:
         """Add a path selection for a user.
 
         Args:
@@ -40,14 +43,14 @@ class UserPathsRepository:
             .values(
                 colleague_id=colleague_id,
                 path_id=path_id,
-                created_at=now,
-                updated_at=now,
+                created_at=self._as_datetime(now),
+                updated_at=self._as_datetime(now),
                 status="interested",
             )
             .on_conflict_do_update(
                 index_elements=[UserPathModel.colleague_id, UserPathModel.path_id],
                 set_={
-                    "updated_at": now,
+                    "updated_at": self._as_datetime(now),
                     "status": case(
                         (UserPathModel.status.is_(None), "interested"),
                         else_=UserPathModel.status,
@@ -93,7 +96,7 @@ class UserPathsRepository:
         )
         return int(result.rowcount or 0)
 
-    async def update_user_path_status(self, colleague_id: str, path_id: int, status: str, now: str) -> int:
+    async def update_user_path_status(self, colleague_id: str, path_id: int, status: str, now: str | datetime) -> int:
         """Update status for a selected path.
 
         Args:
@@ -109,6 +112,6 @@ class UserPathsRepository:
             update(UserPathModel)
             .where(func.lower(UserPathModel.colleague_id) == func.lower(colleague_id))
             .where(UserPathModel.path_id == path_id)
-            .values(status=status, updated_at=now)
+            .values(status=status, updated_at=self._as_datetime(now))
         )
         return int(result.rowcount or 0)

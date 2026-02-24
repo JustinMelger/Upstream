@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import ArticleRecord
 from backend.database.orm_models import Article as ArticleModel
 
 
-class ArticlesRepository:
+class ArticlesRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of article persistence."""
 
     def __init__(self, session: AsyncSession):
@@ -50,18 +53,20 @@ class ArticlesRepository:
                 url=str(r.url or ""),
                 tags=r.tags,
                 created_by=str(r.created_by or ""),
-                created_at=str(r.created_at or ""),
+                created_at=self._as_iso(r.created_at) if r.created_at else "",
             )
             for r in rows
         ]
 
-    async def create_article(self, *, title: str, url: str, tags: str | None, created_by: str, created_at: str) -> int:
+    async def create_article(
+        self, *, title: str, url: str, tags: str | None, created_by: str, created_at: str | datetime
+    ) -> int:
         """Create an article.
 
         Returns:
             Newly created article id.
         """
-        row = ArticleModel(title=title, url=url, tags=tags, created_by=created_by, created_at=created_at)
+        row = ArticleModel(title=title, url=url, tags=tags, created_by=created_by, created_at=self._as_datetime(created_at))
         self.session.add(row)
         await self.session.flush()
         return int(row.id)
@@ -78,5 +83,5 @@ class ArticlesRepository:
             url=str(row.url or ""),
             tags=row.tags,
             created_by=str(row.created_by or ""),
-            created_at=str(row.created_at or ""),
+            created_at=self._as_iso(row.created_at) if row.created_at else "",
         )

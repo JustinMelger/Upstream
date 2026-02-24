@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import PathRecommendationRecord
 from backend.database.orm_models import PathRecommendation as PathRecommendationModel
 
 
-class PathRecommendationsRepository:
+class PathRecommendationsRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy persistence for path recommendations."""
 
     def __init__(self, session: AsyncSession):
@@ -27,7 +30,7 @@ class PathRecommendationsRepository:
                 path_id=int(r.path_id),
                 note=r.note,
                 created_by=str(r.created_by),
-                created_at=str(r.created_at),
+                created_at=self._as_iso(r.created_at),
             )
             for r in rows
         ]
@@ -38,14 +41,14 @@ class PathRecommendationsRepository:
         path_id: int,
         note: str | None,
         created_by: str,
-        created_at: str,
+        created_at: str | datetime,
     ) -> int:
         """Create a recommendation and return id."""
         row = PathRecommendationModel(
             path_id=int(path_id),
             note=note,
             created_by=str(created_by),
-            created_at=str(created_at),
+            created_at=self._as_datetime(created_at),
         )
         self.session.add(row)
         await self.session.flush()
@@ -67,15 +70,15 @@ class PathRecommendationsRepository:
             path_id=int(row.path_id),
             note=row.note,
             created_by=str(row.created_by),
-            created_at=str(row.created_at),
+            created_at=self._as_iso(row.created_at),
         )
 
-    async def update_recommendation(self, *, recommendation_id: int, note: str | None, created_at: str) -> int:
+    async def update_recommendation(self, *, recommendation_id: int, note: str | None, created_at: str | datetime) -> int:
         """Update note/timestamp on an existing recommendation."""
         result = await self.session.execute(
             update(PathRecommendationModel)
             .where(PathRecommendationModel.id == int(recommendation_id))
-            .values(note=note, created_at=str(created_at))
+            .values(note=note, created_at=self._as_datetime(created_at))
         )
         return int(result.rowcount or 0)
 
@@ -116,5 +119,5 @@ class PathRecommendationsRepository:
             path_id=int(row.path_id),
             note=row.note,
             created_by=str(row.created_by),
-            created_at=str(row.created_at),
+            created_at=self._as_iso(row.created_at),
         )

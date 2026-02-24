@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 
 
 @dataclass(frozen=True)
@@ -62,3 +66,26 @@ def compute_articles_meta_text(*, article_count: int) -> str:
 def compute_expanded_visible_count(*, current_visible: int, total_count: int, page_size: int) -> int:
     """Return next visible count for load-more pagination."""
     return min(int(total_count), int(current_visible) + int(page_size))
+
+
+def parse_tags(tags: str | None) -> list[str]:
+    """Parse a comma-separated tags string into a normalized list."""
+    raw = str(tags or "")
+    out: list[str] = []
+    seen: set[str] = set()
+    for part in raw.split(","):
+        t = part.strip()
+        if not t:
+            continue
+        key = t.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(t)
+    return out
+
+
+def article_is_new(article: dict[str, Any], *, days: int = 7) -> bool:
+    """Return True when the article was created recently."""
+    created_at: datetime | None = parse_iso_datetime(article.get("created_at")) if isinstance(article, dict) else None
+    return is_recent(created_at, days=days)

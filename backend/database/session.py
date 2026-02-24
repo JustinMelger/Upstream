@@ -62,7 +62,16 @@ def reset_sessionmaker() -> None:
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    """FastAPI dependency that yields a per-request AsyncSession."""
+    """FastAPI dependency that yields a per-request AsyncSession.
+
+    The request boundary owns commit/rollback to keep service transaction
+    behavior deterministic without relying on ORM internals.
+    """
     sessionmaker = get_sessionmaker()
     async with sessionmaker() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any
 
 from nicegui import app, ui
@@ -28,13 +29,23 @@ from frontend.ui.nicegui.pages.paths.actions import (
     clear_path_filter_by_key,
     PathsFilterControls,
     recompute_path_status_filter,
-    reset_path_filter_controls,
     resolve_paths_empty_state,
 )
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.detail_flow import open_path_details_dialog
 from frontend.ui.nicegui.pages.paths.dialogs import build_share_path_dialog, open_edit_path_dialog
 from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values
+from frontend.ui.nicegui.pages.paths.orchestration import (
+    clear_path_filter_values,
+    load_all_paths,
+    perform_create_path,
+    perform_delete_path,
+    perform_update_path,
+    refresh_path_recommendation_summary,
+    refresh_paths_list,
+    run_select_path_flow,
+    run_unselect_path_flow,
+)
 from frontend.ui.nicegui.pages.paths.reducers import (
     apply_scope_and_status,
     build_status_options,
@@ -47,9 +58,6 @@ from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiSta
 from frontend.ui.nicegui.pages.paths.transitions import (
     apply_optimistic_select,
     apply_optimistic_unselect,
-    begin_paths_load,
-    clear_paths_state_on_load_error,
-    finalize_paths_load,
     rollback_optimistic_selection,
 )
 from frontend.ui.nicegui.pages.paths.ui_glue import (
@@ -146,30 +154,23 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         @guard_ui_action(title="Select failed")
         async def _select(path_id: int) -> bool:
             async def _perform_select() -> bool:
-                seeded, detail = await controller.select_path(path_id=int(path_id), state=controller_state)
-                reloaded = await _reload_selected()
-                if not reloaded:
-                    safe_notify("Path selected, but selected list failed to refresh", type="warning")
-                if isinstance(detail, dict):
-                    controller_state.selected_detail_by_path_id[int(path_id)] = detail
-                else:
-                    await _ensure_selected_detail(path_id)
-                if seeded > 0:
-                    await _reload_tracking()
-                if scope_filter is not None:
-                    scope_filter.value = "selected"
-                    scope_filter.update()
-                msg = "Path added to My learning"
-                if seeded > 0:
-                    msg = f"{msg} · {seeded} course(s) set to Interested"
-                safe_notify(msg, type="positive")
-                paths_list.refresh()
-                try:
-                    await _open_details(path_id)
-                except Exception:
-                    # Keep selection persisted even when opening the dialog fails.
-                    safe_notify("Path selected, but details failed to open", type="warning")
-                return True
+                def _on_scope_selected() -> None:
+                    if scope_filter is not None:
+                        scope_filter.value = "selected"
+                        scope_filter.update()
+
+                return await run_select_path_flow(
+                    path_id=int(path_id),
+                    controller=controller,
+                    state=controller_state,
+                    reload_selected=_reload_selected,
+                    ensure_selected_detail=_ensure_selected_detail,
+                    reload_tracking=_reload_tracking,
+                    on_scope_selected=_on_scope_selected,
+                    notify=lambda message, kind: safe_notify(message, type=kind),
+                    refresh_paths_list_ui=paths_list.refresh,
+                    open_details=_open_details,
+                )
 
             return await run_optimistic_mutation(
                 apply_optimistic=lambda: apply_optimistic_select(state=controller_state, path_id=int(path_id)),
@@ -181,13 +182,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         @guard_ui_action(title="Unselect failed")
         async def _unselect(path_id: int) -> bool:
             async def _perform_unselect() -> bool:
-                await controller.unselect_path(path_id=int(path_id))
-                reloaded = await _reload_selected()
-                if not reloaded:
-                    safe_notify("Path untracked, but selected list failed to refresh", type="warning")
-                controller_state.selected_detail_by_path_id.pop(int(path_id), None)
-                paths_list.refresh()
-                return True
+                return await run_unselect_path_flow(
+                    path_id=int(path_id),
+                    controller=controller,
+                    state=controller_state,
+                    reload_selected=_reload_selected,
+                    notify=lambda message, kind: safe_notify(message, type=kind),
+                    refresh_paths_list_ui=paths_list.refresh,
+                )
 
             return await run_optimistic_mutation(
                 apply_optimistic=lambda: apply_optimistic_unselect(state=controller_state, path_id=int(path_id)),
@@ -198,41 +200,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         @guard_ui_action(title="Delete path failed")
         async def _delete_path(path_id: int) -> None:
-            await controller.delete_path(path_id=int(path_id))
-            await _load_all()
-            safe_notify("Path deleted", type="positive")
-
-        async def _refresh_path_recommendation_summary(path_id: int) -> None:
-            row = await controller.load_recommendation_summary_for_path(path_id=int(path_id))
-            if isinstance(row, dict):
-                controller_state.path_recommendation_summary_by_id[int(path_id)] = row
-            else:
-                controller_state.path_recommendation_summary_by_id.pop(int(path_id), None)
-            paths_list.refresh()
-
-        async def _open_edit(*, path_id: int, detail: dict[str, Any], detail_dialog: ui.dialog | None) -> None:
-            """Open an edit dialog for a path (owner/admin only, enforced by backend)."""
-
-            async def _save_edit(payload: dict[str, Any]) -> None:
-                await controller.update_path(path_id=int(path_id), payload=payload)
-                await _load_all()
-                paths_list.refresh()
-
-            await open_edit_path_dialog(
-                detail=detail,
-                course_by_id=controller_state.course_by_id,
-                detail_dialog=detail_dialog,
-                on_save=_save_edit,
+            await perform_delete_path(
+                path_id=int(path_id),
+                controller=controller,
+                reload_page=_load_all,
             )
+            safe_notify("Path deleted", type="positive")
 
         @guard_ui_action(title="Load path details failed")
         async def _open_details(path_id: int, *, view_mode: str = "full") -> None:
-            """Open a path dialog.
-
-            Args:
-                path_id: Path ID.
-                view_mode: Either "full" or "reviews".
-            """
+            """Open a path dialog."""
             await open_path_details_dialog(
                 path_id=int(path_id),
                 view_mode=view_mode,
@@ -244,20 +221,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             )
 
         with render_container():
-            # Rail filters.
             status_filter: Any = None
             refresh_btn: Any = None
             sort_filter: Any = None
             scope_filter: Any = None
 
-            # Share/create dialog (pre-built so opening is instant).
-            async def _create_submit(payload: dict[str, Any]) -> None:
-                await controller.create_path(payload=payload)
-                await _load_all()
-
             _, create_course_ids, _open_create_dialog = build_share_path_dialog(
                 username=username,
-                on_submit=_create_submit,
+                on_submit=lambda payload: perform_create_path(
+                    payload=payload,
+                    controller=controller,
+                    reload_page=_load_all,
+                ),
             )
 
             # Top bar (search + primary action + sort + count).
@@ -299,23 +274,25 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 )
 
             def _refresh_list(*_: Any) -> None:
-                ui_state.visible_count = int(ui_state.page_size)
-                _recompute_facet_options()
-                active_filters.refresh()
-                paths_list.refresh()
+                refresh_paths_list(
+                    ui_state=ui_state,
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_active_filters=active_filters.refresh,
+                    refresh_paths_list_ui=paths_list.refresh,
+                )
 
             def _clear_filter_values() -> None:
-                reset_path_filter_controls(
+                clear_path_filter_values(
                     controls=PathsFilterControls(
                         scope_filter=scope_filter,
                         search_input=q,
                         status_filter=status_filter,
                         sort_filter=sort_filter,
-                    )
+                    ),
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_active_filters=active_filters.refresh,
+                    refresh_paths_list_ui=paths_list.refresh,
                 )
-                _recompute_facet_options()
-                active_filters.refresh()
-                paths_list.refresh()
 
             @guard_ui_action(title="Reset filters failed")
             async def _reset_all() -> None:
@@ -454,9 +431,26 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 path_id=int(_path_id),
                                 note=str(_note),
                             ),
-                            on_saved=lambda _pid=pid: _refresh_path_recommendation_summary(_pid),
+                            on_saved=partial(
+                                refresh_path_recommendation_summary,
+                                path_id=pid,
+                                controller=controller,
+                                state=controller_state,
+                                refresh_paths_list_ui=paths_list.refresh,
+                            ),
                             get_path_detail=lambda _pid: controller.get_path_detail(path_id=int(_pid)),
-                            on_open_edit=lambda _pid, _detail: _open_edit(path_id=_pid, detail=_detail, detail_dialog=None),
+                            on_open_edit=lambda _pid, _detail: open_edit_path_dialog(
+                                detail=_detail,
+                                course_by_id=controller_state.course_by_id,
+                                detail_dialog=None,
+                                on_save=partial(
+                                    perform_update_path,
+                                    path_id=int(_pid),
+                                    controller=controller,
+                                    reload_page=_load_all,
+                                    refresh_paths_list_ui=paths_list.refresh,
+                                ),
+                            ),
                             on_delete=_delete_path,
                             on_open_details=lambda _pid, _mode: _open_details(_pid, view_mode=_mode),
                             on_select=_select,
@@ -510,34 +504,19 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             async def _load_all() -> None:
                 """Reload all data for this page."""
-                if ui_state.loading:
-                    return
-                ok = False
-                load_start = begin_paths_load(page_size=ui_state.page_size)
-                ui_state.loading = load_start.loading
-                ui_state.visible_count = load_start.visible_count
-                refresh_btn.disable()
-                meta.text = load_start.meta_text
-                paths_list.refresh()
-                try:
-                    await controller.load_all(state=controller_state)
-                    create_course_ids.options = _course_options(controller_state.courses)
-                    create_course_ids.update()
-                    _recompute_facet_options()
-                    paths_list.refresh()
-                    ok = True
-                except ApiError as exc:
-                    safe_notify(str(exc), type="negative")
-                    clear_paths_state_on_load_error(state=controller_state)
-                    _recompute_facet_options()
-                    paths_list.refresh()
-                finally:
-                    load_done = finalize_paths_load(ok=ok, path_count=len(controller_state.paths))
-                    meta.text = compute_paths_meta_text(path_count=len(controller_state.paths))
-                    ui_state.loading = load_done.loading
-                    ui_state.loaded_once = load_done.loaded_once
-                    refresh_btn.enable()
-                    paths_list.refresh()
+                await load_all_paths(
+                    ui_state=ui_state,
+                    controller_state=controller_state,
+                    controller=controller,
+                    refresh_btn=refresh_btn,
+                    meta=meta,
+                    create_course_ids=create_course_ids,
+                    compute_course_options=_course_options,
+                    recompute_facet_options=_recompute_facet_options,
+                    refresh_paths_list_ui=paths_list.refresh,
+                    notify_error=lambda message: safe_notify(message, type="negative"),
+                    compute_meta_text=lambda path_count: compute_paths_meta_text(path_count=path_count),
+                )
 
             def _render_rail() -> None:
                 nonlocal status_filter, refresh_btn

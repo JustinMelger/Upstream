@@ -135,6 +135,12 @@ jobs:
       - name: Run frontend architecture guard tests
         run: uv run pytest tests/frontend/ui/nicegui/test_page_package_exports.py tests/frontend/ui/nicegui/test_page_package_layout.py
 
+      - name: Run architecture marker tests
+        run: uv run pytest -m architecture
+
+      - name: Check architecture docs/guard sync
+        run: ./scripts/check_architecture_sync.sh
+
       - name: Run unit tests
         run: |
           COVERAGE_FILE=coverage.unit uv run coverage run -m pytest -m unit

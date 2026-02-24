@@ -8,6 +8,7 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 
 
@@ -126,7 +127,7 @@ async def open_recommend_dialog(
     existing_note = ""
     try:
         existing_note = await get_user_note(int(path_id), username)
-    except Exception:
+    except ApiError:
         existing_note = ""
 
     with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):

@@ -8,6 +8,8 @@ from typing import Any
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.services.courses_service import (
     clear_course_detail_cache,
+    CourseDetailBundle,
+    load_course_detail_bundle,
     load_courses_and_tracking,
     load_recommendation_summaries,
     load_review_summaries,
@@ -48,11 +50,59 @@ class CoursesPageController:
         """Load current user's tracking map only."""
         return await load_tracking_map(api=self._api)
 
+    async def set_tracking_status(self, *, course_id: int, status: str) -> None:
+        """Persist a tracking status for one course."""
+        await self._api.post("/tracking", {"course_id": int(course_id), "status": str(status)})
+
+    async def clear_tracking_status(self, *, course_id: int) -> None:
+        """Remove tracking status for one course."""
+        await self._api.post("/tracking/delete", {"course_id": int(course_id)})
+
+    async def create_course(self, *, payload: dict[str, Any]) -> None:
+        """Create a course."""
+        await self._api.post("/courses", dict(payload or {}))
+
+    async def update_course(self, *, course_id: int, payload: dict[str, Any]) -> None:
+        """Update a course."""
+        await self._api.put(f"/courses/{int(course_id)}", dict(payload or {}))
+
+    async def delete_course(self, *, course_id: int) -> None:
+        """Delete a course."""
+        await self._api.delete(f"/courses/{int(course_id)}")
+
     async def load_recommendation_summary_for_course(self, *, course_id: int) -> dict[str, Any] | None:
         """Load recommendation summary row for a single course id."""
         rows = await load_recommendation_summaries(api=self._api, course_ids=[int(course_id)])
         row = rows.get(int(course_id))
         return dict(row) if isinstance(row, dict) else None
+
+    async def load_course_recommendations(self, *, course_id: int) -> list[dict[str, Any]]:
+        """Load recommendation rows for one course."""
+        return list(await self._api.get(f"/courses/{int(course_id)}/recommendations") or [])
+
+    async def save_course_recommendation(self, *, course_id: int, note: str) -> dict[str, Any]:
+        """Create/update current user's recommendation for one course."""
+        payload = {"note": str(note or "").strip()}
+        return dict(await self._api.post(f"/courses/{int(course_id)}/recommendations", payload) or {})
+
+    async def load_course_detail_bundle(self, *, course_id: int, cache_scope: str) -> CourseDetailBundle:
+        """Load detail payload (course, reviews, recommendations) with short-lived cache."""
+        return await load_course_detail_bundle(api=self._api, course_id=int(course_id), cache_scope=str(cache_scope or ""))
+
+    async def save_course_review(self, *, course_id: int, rating: int, text: str, cache_scope: str) -> dict[str, Any]:
+        """Create/update current user's review and invalidate detail cache."""
+        out = await self._api.post(
+            f"/courses/{int(course_id)}/reviews",
+            {"rating": int(rating), "text": str(text or "")},
+        )
+        clear_course_detail_cache(course_id=int(course_id), cache_scope=str(cache_scope or ""))
+        return dict(out or {})
+
+    async def delete_course_review(self, *, course_id: int, review_id: int, cache_scope: str) -> bool:
+        """Delete a review and invalidate detail cache."""
+        await self._api.delete(f"/courses/{int(course_id)}/reviews/{int(review_id)}")
+        clear_course_detail_cache(course_id=int(course_id), cache_scope=str(cache_scope or ""))
+        return True
 
     def clear_course_detail_cache(self, *, course_id: int, cache_scope: str = "") -> None:
         """Invalidate cached course-detail payloads for one course/user scope."""

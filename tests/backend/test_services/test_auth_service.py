@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import text
 
 from backend.database.async_repositories.auth import AuthRepository
-from backend.services.auth_service import AuthService
+from backend.services.auth_service import AuthService, AuthServiceError
 
 
 pytestmark = pytest.mark.anyio
@@ -62,10 +62,30 @@ async def test_expired_session_is_purged(db_session):
     await auth_service.create_user("dave", "pass123", "user")
     token = (await auth_service.create_session("dave"))["token"]
 
-    past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    past = datetime.now(timezone.utc) - timedelta(days=1)
     async with db_session.begin():
         await db_session.execute(
             text("UPDATE sessions SET expires_at = :past WHERE colleague_id = :cid"), {"past": past, "cid": "dave"}
         )
 
     assert await auth_service.get_session(token) is None
+
+
+@pytest.mark.unit
+async def test_create_user_invalid_payload_type_returns_invalid_payload(db_session):
+    """Service-level payload parsing rejects invalid create-user payload types."""
+    auth_service = AuthService(AuthRepository(db_session))
+    with pytest.raises(AuthServiceError) as excinfo:
+        await auth_service.create_user(["bad"], "pass123", "user")  # type: ignore[arg-type]
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_payload"
+
+
+@pytest.mark.unit
+async def test_set_user_disabled_invalid_payload_type_returns_invalid_payload(db_session):
+    """Service-level payload parsing rejects invalid set-disabled payload types."""
+    auth_service = AuthService(AuthRepository(db_session))
+    with pytest.raises(AuthServiceError) as excinfo:
+        await auth_service.set_user_disabled("alice", {"bad": True})  # type: ignore[arg-type]
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_payload"

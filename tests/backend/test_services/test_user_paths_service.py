@@ -56,6 +56,16 @@ async def test_add_user_path_missing_path_raises_not_found(db_session):
 
 
 @pytest.mark.unit
+async def test_user_paths_invalid_payload_type_returns_invalid_payload(db_session):
+    """Service-level payload parsing rejects invalid selected-path payload types."""
+    user_paths = UserPathsService(UserPathsRepository(db_session))
+    with pytest.raises(UserPathsServiceError) as excinfo:
+        await user_paths.add_user_path("user1", {"bad": 1})  # type: ignore[arg-type]
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_payload"
+
+
+@pytest.mark.unit
 async def test_add_user_path_is_idempotent_and_keeps_existing_status(db_session):
     """Selecting an already selected path should not overwrite explicit status."""
     paths = PathsService(PathsRepository(db_session))

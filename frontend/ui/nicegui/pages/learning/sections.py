@@ -8,7 +8,8 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.card_actions import render_view_review_actions
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
-from frontend.ui.nicegui.core.errors import safe_notify
+from frontend.ui.nicegui.core.api_client import ApiError
+from frontend.ui.nicegui.core.errors import FrontendError, safe_notify
 
 
 _ALLOWED_TRACKING_STATUSES = {"interested", "in_progress", "completed"}
@@ -51,14 +52,14 @@ def render_tracking_status_select(
             if not value:
                 try:
                     await on_clear_status(_cid)
-                except Exception:
+                except (ApiError, FrontendError, RuntimeError):
                     _select.value = previous_value
                     _select.update()
                     raise
                 return
             try:
                 await on_set_status(_cid, value)
-            except Exception:
+            except (ApiError, FrontendError, RuntimeError):
                 _select.value = previous_value
                 _select.update()
                 raise

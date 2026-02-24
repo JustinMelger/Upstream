@@ -7,6 +7,7 @@ from typing import Any
 
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
+from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
 
 
 @dataclass(slots=True)
@@ -25,32 +26,12 @@ class CourseCardView:
 
 def format_rating_badge(row: dict[str, Any] | None) -> str:
     """Format a compact rating badge for course cards (e.g., '★ 4.2 (12)')."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("review_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    try:
-        avg = float(row.get("avg_rating") or 0.0)
-    except (TypeError, ValueError):
-        avg = 0.0
-    return f"★ {avg:.1f} ({count})"
+    return format_review_summary(row, style="star")
 
 
 def format_recommendation_badge(row: dict[str, Any] | None) -> str:
     """Format a compact recommendation badge for course cards."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("recommendation_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    return f"↗ {count} rec"
+    return format_recommendation_summary(row)
 
 
 def _status_for_card(tracked: dict[str, Any] | None) -> str:

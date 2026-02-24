@@ -8,9 +8,13 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+import logging
 from typing import Any
 
-from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -76,7 +80,11 @@ async def _load_review_summaries(*, api: ApiClient, course_ids: list[int]) -> di
         return {}
     try:
         rows = await api.get("/courses/reviews/summary", params={"course_ids": unique})
-    except Exception:
+    except ApiError as exc:
+        logger.warning(
+            "Dashboard review summaries unavailable",
+            extra={"status_code": int(exc.status_code), "course_count": len(unique)},
+        )
         return {}
     return _index_review_summary(list(rows or []))
 
@@ -85,7 +93,11 @@ async def _load_path_detail(*, api: ApiClient, path_id: int) -> dict[str, Any] |
     """Load a single path including its courses."""
     try:
         detail = await api.get(f"/paths/{path_id}")
-    except Exception:
+    except ApiError as exc:
+        logger.warning(
+            "Dashboard selected path detail unavailable",
+            extra={"status_code": int(exc.status_code), "path_id": int(path_id)},
+        )
         return None
     return dict(detail or {}) if isinstance(detail, dict) else None
 

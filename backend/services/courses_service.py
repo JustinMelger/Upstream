@@ -2,11 +2,32 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from pydantic import ValidationError
+from pydantic.dataclasses import dataclass
+
 from backend.core.errors import courses_error_handler, CoursesServiceError
 from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
 from backend.database.async_repositories.courses import CoursesRepository
 from backend.database.models import CourseRecommendationRecord, CourseRecord
+from backend.database.tx import session_scope
 from backend.services.course_search_document import build_course_search_document
+
+
+@dataclass
+class CourseMutationPayload:
+    """Typed service-layer payload for create/update course flows."""
+
+    title: str | None = None
+    description: str | None = None
+    learning_outcomes: str | None = None
+    prerequisites: str | None = None
+    language: str | None = None
+    provider: str | None = None
+    category: str | None = None
+    level: str | None = None
+    duration_hours: float | int | str | None = None
+    url: str | None = None
+    created_by: str | None = None
 
 
 class CoursesService:
@@ -46,7 +67,7 @@ class CoursesService:
             Course list payloads.
         """
         recommendation_map: dict[int, list[CourseRecommendationRecord]] = {}
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             rows = await self._repo.list_courses(query=query, provider=provider, category=category, level=level)
             if self._recommendations_repo and rows:
                 recommendation_map = await self._recommendations_repo.list_for_courses(course_ids=[int(r.id) for r in rows])
@@ -63,7 +84,7 @@ class CoursesService:
             Course payload or None if missing.
         """
         recommendation_rows: list[CourseRecommendationRecord] = []
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             course = await self._repo.get_course_by_id(course_id)
             if self._recommendations_repo and course:
                 recommendation_map = await self._recommendations_repo.list_for_courses(course_ids=[int(course_id)])
@@ -83,26 +104,27 @@ class CoursesService:
         Raises:
             CoursesServiceError: If required fields are missing.
         """
-        title = (payload.get("title") or "").strip()
+        data = self._parse_mutation_payload(payload)
+        title = str(data.title or "").strip()
         if not title:
             raise CoursesServiceError(detail="missing_title", status_code=400)
 
-        description = (payload.get("description") or "").strip()
+        description = str(data.description or "").strip()
         if not description:
             raise CoursesServiceError(detail="missing_description", status_code=400)
 
-        provider = (payload.get("provider") or "").strip() or None
-        category = (payload.get("category") or "").strip() or None
-        level = (payload.get("level") or "").strip() or None
-        learning_outcomes = (payload.get("learning_outcomes") or "").strip() or None
-        prerequisites = (payload.get("prerequisites") or "").strip() or None
-        language = (payload.get("language") or "").strip() or None
-        url = (payload.get("url") or "").strip() or None
-        duration_hours = self._parse_float(payload.get("duration_hours"))
+        provider = str(data.provider or "").strip() or None
+        category = str(data.category or "").strip() or None
+        level = str(data.level or "").strip() or None
+        learning_outcomes = str(data.learning_outcomes or "").strip() or None
+        prerequisites = str(data.prerequisites or "").strip() or None
+        language = str(data.language or "").strip() or None
+        url = str(data.url or "").strip() or None
+        duration_hours = self._parse_float(data.duration_hours)
         created_at = datetime.now(timezone.utc).isoformat()
-        created_by = (payload.get("created_by") or "").strip() or None
+        created_by = str(data.created_by or "").strip() or None
 
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             if url:
                 duplicate_url = await self._repo.find_course_by_url(url=url)
                 if duplicate_url:
@@ -140,27 +162,33 @@ class CoursesService:
         Returns:
             Updated course payload or None if missing.
         """
-        async with self._repo.session.begin():
+        data = self._parse_mutation_payload(payload)
+        async with session_scope(self._repo.session):
             existing = await self._repo.get_course_by_id(course_id)
         if not existing:
             return None
 
-        title = (payload.get("title") or existing.title).strip()
-        description = (payload.get("description") or existing.description).strip()
+        title = str(data.title if data.title is not None else existing.title).strip()
+        description = str(data.description if data.description is not None else existing.description).strip()
         if not description:
             raise CoursesServiceError(detail="missing_description", status_code=400)
-        provider = (payload.get("provider") or (existing.provider or "")).strip() or None
-        category = (payload.get("category") or (existing.category or "")).strip() or None
-        level = (payload.get("level") or (existing.level or "")).strip() or None
-        learning_outcomes = (payload.get("learning_outcomes") or (existing.learning_outcomes or "")).strip() or None
-        prerequisites = (payload.get("prerequisites") or (existing.prerequisites or "")).strip() or None
-        language = (payload.get("language") or (existing.language or "")).strip() or None
-        url = (payload.get("url") or (existing.url or "")).strip() or None
-        duration_hours = self._parse_float(payload.get("duration_hours"))
+        provider = str(data.provider if data.provider is not None else (existing.provider or "")).strip() or None
+        category = str(data.category if data.category is not None else (existing.category or "")).strip() or None
+        level = str(data.level if data.level is not None else (existing.level or "")).strip() or None
+        learning_outcomes = (
+            str(data.learning_outcomes if data.learning_outcomes is not None else (existing.learning_outcomes or "")).strip()
+            or None
+        )
+        prerequisites = (
+            str(data.prerequisites if data.prerequisites is not None else (existing.prerequisites or "")).strip() or None
+        )
+        language = str(data.language if data.language is not None else (existing.language or "")).strip() or None
+        url = str(data.url if data.url is not None else (existing.url or "")).strip() or None
+        duration_hours = self._parse_float(data.duration_hours)
         if duration_hours is None:
             duration_hours = existing.duration_hours
 
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             await self._repo.update_course(
                 course_id=course_id,
                 title=title,
@@ -186,7 +214,7 @@ class CoursesService:
         Returns:
             True if deleted.
         """
-        async with self._repo.session.begin():
+        async with session_scope(self._repo.session):
             return (await self._repo.delete_course(course_id)) > 0
 
     @staticmethod
@@ -196,6 +224,14 @@ class CoursesService:
             return float(value) if value not in (None, "") else None
         except ValueError:
             return None
+
+    @staticmethod
+    def _parse_mutation_payload(payload: dict) -> CourseMutationPayload:
+        """Parse and validate a course mutation payload."""
+        try:
+            return CourseMutationPayload(**dict(payload or {}))
+        except ValidationError as exc:
+            raise CoursesServiceError(detail="invalid_payload", status_code=400) from exc
 
     @staticmethod
     def _to_payload(course: CourseRecord, *, recommendations: list[CourseRecommendationRecord] | None = None) -> dict:

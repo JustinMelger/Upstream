@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import PathReviewRecord
 from backend.database.orm_models import PathReview as PathReviewModel
 
 
-class PathReviewsRepository:
+class PathReviewsRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of path review persistence."""
 
     def __init__(self, session: AsyncSession):
@@ -31,7 +34,7 @@ class PathReviewsRepository:
                 rating=int(r.rating),
                 text=r.text,
                 created_by=str(r.created_by),
-                created_at=str(r.created_at),
+                created_at=self._as_iso(r.created_at),
             )
             for r in rows
         ]
@@ -43,7 +46,7 @@ class PathReviewsRepository:
         rating: int,
         text: str | None,
         created_by: str,
-        created_at: str,
+        created_at: str | datetime,
     ) -> int:
         """Create a review and return its id."""
         row = PathReviewModel(
@@ -51,7 +54,7 @@ class PathReviewsRepository:
             rating=int(rating),
             text=text,
             created_by=str(created_by),
-            created_at=str(created_at),
+            created_at=self._as_datetime(created_at),
         )
         self.session.add(row)
         await self.session.flush()
@@ -74,7 +77,7 @@ class PathReviewsRepository:
             rating=int(row.rating),
             text=row.text,
             created_by=str(row.created_by),
-            created_at=str(row.created_at),
+            created_at=self._as_iso(row.created_at),
         )
 
     async def update_review(
@@ -83,7 +86,7 @@ class PathReviewsRepository:
         review_id: int,
         rating: int,
         text: str | None,
-        created_at: str,
+        created_at: str | datetime,
     ) -> int:
         """Update a review.
 
@@ -93,7 +96,7 @@ class PathReviewsRepository:
         result = await self.session.execute(
             update(PathReviewModel)
             .where(PathReviewModel.id == int(review_id))
-            .values(rating=int(rating), text=text, created_at=str(created_at))
+            .values(rating=int(rating), text=text, created_at=self._as_datetime(created_at))
         )
         return int(result.rowcount or 0)
 
@@ -139,5 +142,5 @@ class PathReviewsRepository:
             rating=int(row.rating),
             text=row.text,
             created_by=str(row.created_by),
-            created_at=str(row.created_at),
+            created_at=self._as_iso(row.created_at),
         )

@@ -6,7 +6,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons, render_inline_spinner
-from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -78,7 +78,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         state.snapshot_stats = dict(bundle.snapshot_stats or {})
                         state.team_stats_by_user = list(bundle.team_stats_by_user or [])
                         ok = True
-                    except Exception as exc:  # ApiError already stringifies nicely, but keep this generic.
+                    except ApiError as exc:
                         safe_notify(str(exc), type="negative")
                         state.snapshot_stats = {}
                         state.team_stats_by_user = []

@@ -123,6 +123,58 @@
 - [x] Frontend clean code: increase service/use-case unit tests to cover extracted orchestration logic.
 - [x] Performance polish: avoid full list reloads after small actions (optimistic UI updates for tracking/reviews), parallelize detail fetches, and add lightweight caching for `/courses/{id}` and reviews.
 
+### Phase 10E — P2 Architecture Hardening (Coupling + Clean Code)
+- [x] Frontend boundary hardening: remove remaining `ApiClient` calls from UI flow modules (`dialogs.py`, `detail_flow.py`) and route through page controllers/services.
+- [x] Frontend boundary hardening: enforce "no direct `api.get/post/put/delete` in `page.py`/UI flow modules" with architecture guard tests.
+- [x] Backend coupling reduction: extract repeated owner/admin authorization checks from routers into reusable policy dependencies/helpers.
+- [x] Backend clean code: standardize review/recommendation endpoint authorization and not-found handling via shared helpers to reduce duplicated branch logic.
+- [x] Persistence best practice: migrate high-value timestamp-like text columns to typed timezone-aware datetime (`sessions.*`, `tracking.updated_at`) with safe casts and repository compatibility shims.
+- [x] Architecture quality gates: keep docs and architecture guards in lock-step; add CI check that fails on architecture doc/guard drift.
+- [x] Complexity follow-up: split `courses/page.py` and `paths/page.py` orchestration blocks into `orchestration.py` helpers (`load`, `filter reset`, `list refresh`) to reduce page-level complexity.
+- [x] Reliability follow-up: replaced broad `except Exception` fallbacks in frontend services/controllers with typed `ApiError` handling + structured context logging where fallback behavior is intentional.
+- [x] Reuse follow-up: centralized duplicated review/recommendation summary formatting helpers into shared utilities and reused across courses/paths/articles/learning.
+- [x] Persistence follow-up: completed phased migration of remaining text timestamp columns to typed timezone-aware datetime (sessions/tracking/users/content/reviews/recommendations/user_paths).
+  - [x] Phase slice: migrated `users.created_at/updated_at/last_login_at` and `user_paths.created_at/updated_at` to `TIMESTAMPTZ` with repository compatibility shims.
+  - [x] Phase slice: migrated `courses.created_at`, `articles.created_at`, and all `*_reviews.created_at` / `*_recommendations.created_at` to `TIMESTAMPTZ` with repository compatibility shims.
+- [x] Docs follow-up: resolved remaining backend architecture doc drift (tracking stats auth sequence, reviews/recommendations coverage, and notifications flow notes) to keep diagrams implementation-accurate.
+- [x] Transaction boundary hardening: introduced shared `session_scope(...)` in backend services to avoid nested transaction failures when services are composed.
+- [x] Typing hardening: started replacing untyped service payload dict handling with pydantic dataclass payloads (courses/paths mutation flows) plus regression tests.
+- [x] Frontend reliability guard: removed broad `except Exception` handlers from page modules and added an architecture test to prevent reintroduction.
+- [x] Backend complexity reduction: refactor `NotificationsService.list_activity` into composable event-builder functions + shared normalize/dedupe/sort pipeline with focused unit tests.
+- [x] Backend typing hardening: tighten service-boundary dataclass fields (prefer strict types over broad `int | str | None`) and remove post-parse coercion branches where possible.
+- [x] Boundary ownership cleanup: reduce duplicate router/service validation paths (especially tracking/path-status flows) and standardize error semantics by layer.
+- [x] Architecture guard maintainability: evolve backend payload-boundary guard from a fully hardcoded method map to a mixed explicit+convention strategy to reduce brittle refactor churn.
+- [x] Backend docs fidelity: add a short enforceable matrix in `docs/architecture_backend.md` mapping service entrypoints -> `_parse_*` helpers -> architecture tests.
+- [x] Transaction boundary decoupling: remove reliance on SQLAlchemy transaction internals in `session_scope`; adopt explicit app-level transaction ownership (request-scoped unit-of-work/dependency) and keep services transaction-agnostic.
+- [x] Transaction reliability guard: add focused tests for explicit transaction vs implicit request transaction behavior (commit/rollback semantics) without inspecting ORM internal transaction-origin fields.
+- [x] Notifications domain typing: replace stringly-typed activity event dict assembly with a typed `ActivityEvent` model (dataclass/TypedDict + enum-like constants) and central event builder utilities.
+- [x] Frontend controller boundary hardening: enforce that `pages/*/controller.py` modules do not import NiceGUI UI primitives (`nicegui.ui`) and remain UI-framework agnostic.
+- [x] Frontend controller/view split: move remaining action orchestration closures from `courses/page.py` and `paths/page.py` into controller/use-case functions to reduce page modules to composition/binding.
+  - [x] Phase slice: extracted `paths` select/unselect side-effect orchestration from `paths/page.py` into `paths/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `paths` create/update/delete + recommendation-summary refresh flows from `paths/page.py` into `paths/orchestration.py` and removed nested page closures.
+  - [x] Phase slice: removed `paths/page.py` thin forwarding wrappers (`_create_submit`, `_open_edit`) by wiring share/edit flows directly to orchestration/dialog callbacks.
+  - [x] Phase slice: extracted `courses` tracking/recommendation-refresh side-effect orchestration from `courses/page.py` into `courses/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `courses` create/update/delete mutation-reload flows from `courses/page.py` into `courses/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: removed remaining nested recommendation-refresh closure in `courses/page.py` by wiring `on_saved` directly to orchestration helper (`functools.partial`).
+  - [x] Phase slice: extracted `courses` details-dialog callback wiring from `courses/page.py` into `courses/detail_flow.py` (`open_course_details_flow`) with focused unit coverage.
+  - [x] Phase slice: removed `courses/page.py` delete-confirm wrappers by routing dialog-driven delete flow through orchestration adapters (`open_delete_course_confirmation`, `perform_delete_course_from_dialog`).
+  - [x] Phase slice: removed `courses/page.py` thin share/edit forwarding wrappers by wiring create/update flows directly to orchestration callbacks.
+  - [x] Phase slice: extracted `articles` list-load lifecycle (`loading/meta/success/failure/facet-refresh`) from `articles/page.py` into `articles/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `articles` share-create + reload flow from `articles/page.py` into `articles/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `articles` filter refresh/reset list orchestration from `articles/page.py` into `articles/orchestration.py` with focused unit coverage.
+  - [x] Phase slice: extracted `articles` facet-controls recompute + active-filter clear-by-key logic from `articles/page.py` into `articles/actions.py` with focused unit coverage.
+  - [x] Phase slice: extracted `articles` details-dialog callback orchestration from `articles/page.py` into `articles/detail_flow.py` with focused unit coverage.
+  - [x] Phase slice: removed remaining nested reset-filter closures from `articles/page.py` via typed control reset helper (`articles/actions.py`) wired through orchestration.
+  - [x] Phase slice: removed `_recompute_facets` closure from `articles/page.py` via explicit-search facet helper in `articles/actions.py` and rewired load/reset/refresh call sites.
+  - [x] Phase slice: removed nested active-filter clear closure from `articles/page.py` by introducing reusable `clear+refresh` action helper with focused unit coverage.
+  - [x] Phase slice: introduced `build_articles_facet_controls(...)` helper to deduplicate repeated control-bundle construction in `articles/page.py` and removed stale imports.
+  - [x] Phase slice: centralized `articles/page.py` facet-control bundle creation behind one local helper to reduce repeated inline wiring across load/reset/refresh callbacks.
+- [x] Frontend view-model boundary: require `page.py` card rendering paths to consume typed view-model mappers (no inline shape coercion in page modules).
+  - [x] Phase slice: added architecture guard asserting key page modules (`courses`, `paths`, `articles`, `learning`) import and call their page-local view-model mapper/builders.
+  - [x] Phase slice: introduced `articles/view_model.py` and migrated article-card display coercion from `articles/page.py` into typed mapper.
+- [x] Frontend complexity guard: add architecture checks that flag oversized page modules and force extraction into `controller.py`/`orchestration.py`/`sections.py`.
+  - [x] Phase slice: added frontend architecture test capping major page module size (guardrail: <= 550 LOC for `courses`, `paths`, `articles`, `learning` page modules).
+
 ## Phase 11 — Operability + Quality
 
 ### Phase 11A — UX & Visual System
@@ -146,6 +198,8 @@
 - [ ] Activity feed UX v2: add pagination/“Load more” for older events.
 - [ ] Activity feed UX v2: improve article deep-linking to open the specific item context.
 - [ ] Activity feed UX v2: group burst events and rank high-signal events higher (e.g., ratings on your shared content).
+- [ ] Activity feed correctness: sort by parsed timezone-aware datetimes (not raw timestamp strings) to guarantee true chronological ordering across offsets.
+- [ ] Activity feed resilience: skip malformed activity rows (bad ids/ratings/timestamps), log structured context, and continue returning valid events.
 
 ### Phase 11C — Reliability & Accessibility
 - [ ] Notification resilience hardening: enrich `safe_notify` logs with action/page context, add optional strict mode for dev/test, and add regression tests for deleted-slot notification paths.

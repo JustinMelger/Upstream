@@ -174,7 +174,7 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 
 Notes:
 
-- Guard all routes except `/login` behind `SessionStore.current_user()`.
+- Guard all routes except `/login` behind `require_user(store, api)` (session validation via backend).
 - Admin routes additionally check `role == "admin"`.
 - Some routes may be feature-flagged via environment variables (see Feature Flags below).
 
@@ -226,19 +226,6 @@ Backend endpoints:
 - `PUT /courses/{id}` (owner/admin)
 - `DELETE /courses/{id}` (owner/admin)
 
-### MyCoursesPage (`/courses/my`)
-Responsibilities:
-
-- Render personal tracking table (course + status).
-- Update a course status with inline controls.
-- Remove tracking entries.
-
-Backend endpoints:
-
-- `GET /tracking` (self)
-- `POST /tracking`
-- `POST /tracking/delete`
-
 ### PathsPage (`/paths`)
 Responsibilities:
 
@@ -259,15 +246,6 @@ Backend endpoints:
 - `POST /paths/{id}/select`
 - `POST /paths/{id}/unselect`
 - `POST /tracking` (for auto-seeding path courses)
-
-### MyPathsPage (`/paths/my`)
-Responsibilities:
-
-- Deprecated: merged into `/paths` + `My learning`.
-
-Backend endpoints:
-
-- Deprecated for direct page usage.
 
 ### AdminUsersPage (`/admin/users`)
 Responsibilities:
@@ -291,13 +269,18 @@ Responsibilities:
 
 - Allow colleagues to share links (title, URL, optional tags).
 - Browse/search shared links.
+- Create/update/delete article reviews (owner/admin delete).
 
 Backend endpoints:
 
 - `GET /articles`
 - `POST /articles`
+- `GET /articles/reviews/summary`
+- `GET /articles/{id}/reviews`
+- `POST /articles/{id}/reviews`
+- `DELETE /articles/{id}/reviews/{review_id}`
 
-### MyLearningPage (`/me`)
+### MyLearningPage (`/learning`)
 Responsibilities:
 
 - Provide a single personal overview split into two intents:
@@ -370,23 +353,26 @@ classDiagram
   }
 
   class LoginPage { +render() }
-  class HomePage { +render() }
+  class InsightsPage { +render() }
   class PathsPage { +render() }
-  class MyPathsPage { +render() }
-  class MyCoursesPage { +render() }
+  class CoursesPage { +render() }
   class ArticlesPage { +render() }
   class MyLearningPage { +render() }
+  class ActivityPage { +render() }
   class AdminUsersPage { +render() }
+  class AiCuratorPage { +render() }
 
   LoginPage --> SessionStore
-  HomePage --> SessionStore
-  HomePage --> TrackingService
+  InsightsPage --> SessionStore
+  InsightsPage --> TrackingService
   PathsPage --> PathsService
-  MyPathsPage --> UserPathsService
-  MyCoursesPage --> TrackingService
+  CoursesPage --> TrackingService
+  CoursesPage --> PathsService
   ArticlesPage --> ArticlesService
   MyLearningPage --> MyLearningService
+  ActivityPage --> ApiClient
   AdminUsersPage --> UsersAdminService
+  AiCuratorPage --> ApiClient
 
   PathsService --> ApiClient
   UserPathsService --> ApiClient

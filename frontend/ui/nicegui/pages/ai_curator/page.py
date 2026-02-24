@@ -7,7 +7,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
-from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -153,7 +153,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses_preview.refresh()
                     done = finalize_generate(count=len(state.draft_courses))
                     meta.text = done.meta_text
-                except Exception:
+                except (ApiError, RuntimeError):
                     meta.text = "Generation failed"
                     raise
                 finally:
@@ -187,7 +187,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     safe_notify("Draft applied: courses + path created.", type="positive")
                     done = finalize_apply()
                     meta.text = done.meta_text
-                except Exception:
+                except (ApiError, RuntimeError):
                     meta.text = "Apply failed"
                     raise
                 finally:

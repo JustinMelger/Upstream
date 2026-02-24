@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import case, delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import TrackingRecord
 from backend.database.orm_models import Tracking as TrackingModel
 
@@ -11,7 +14,7 @@ from backend.database.orm_models import Tracking as TrackingModel
 STATUS_VALUES = ("interested", "in_progress", "completed")
 
 
-class TrackingRepository:
+class TrackingRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of tracking persistence."""
 
     def __init__(self, session: AsyncSession):
@@ -37,7 +40,12 @@ class TrackingRepository:
         result = await self.session.execute(stmt)
         rows = result.scalars().all()
         return [
-            TrackingRecord(colleague_id=row.colleague_id, course_id=row.course_id, status=row.status, updated_at=row.updated_at)
+            TrackingRecord(
+                colleague_id=row.colleague_id,
+                course_id=row.course_id,
+                status=row.status,
+                updated_at=self._as_iso(row.updated_at),
+            )
             for row in rows
         ]
 
@@ -53,7 +61,12 @@ class TrackingRepository:
         result = await self.session.execute(select(TrackingModel).order_by(TrackingModel.updated_at.desc()).limit(limit))
         rows = result.scalars().all()
         return [
-            TrackingRecord(colleague_id=row.colleague_id, course_id=row.course_id, status=row.status, updated_at=row.updated_at)
+            TrackingRecord(
+                colleague_id=row.colleague_id,
+                course_id=row.course_id,
+                status=row.status,
+                updated_at=self._as_iso(row.updated_at),
+            )
             for row in rows
         ]
 
@@ -114,7 +127,7 @@ class TrackingRepository:
             for row in result.all()
         ]
 
-    async def upsert_tracking(self, colleague_id: str, course_id: int, status: str, updated_at: str) -> None:
+    async def upsert_tracking(self, colleague_id: str, course_id: int, status: str, updated_at: str | datetime) -> None:
         """Insert or update a tracking record.
 
         Args:
@@ -125,10 +138,15 @@ class TrackingRepository:
         """
         stmt = (
             insert(TrackingModel)
-            .values(colleague_id=colleague_id, course_id=course_id, status=status, updated_at=updated_at)
+            .values(
+                colleague_id=colleague_id,
+                course_id=course_id,
+                status=status,
+                updated_at=self._as_datetime(updated_at),
+            )
             .on_conflict_do_update(
                 index_elements=[TrackingModel.colleague_id, TrackingModel.course_id],
-                set_={"status": status, "updated_at": updated_at},
+                set_={"status": status, "updated_at": self._as_datetime(updated_at)},
             )
         )
         await self.session.execute(stmt)

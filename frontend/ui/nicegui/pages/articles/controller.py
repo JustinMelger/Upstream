@@ -43,3 +43,24 @@ class ArticlesPageController:
             articles=articles,
             review_summary_by_article_id=review_summary_by_article_id,
         )
+
+    async def create_article(self, *, payload: dict[str, Any]) -> dict[str, Any]:
+        """Create a new article row."""
+        return dict(await self._api.post("/articles", dict(payload or {})) or {})
+
+    async def load_article_reviews(self, *, article_id: int) -> list[dict[str, Any]]:
+        """Load article reviews for details dialog."""
+        return list(await self._api.get(f"/articles/{int(article_id)}/reviews") or [])
+
+    async def save_article_review(self, *, article_id: int, rating: int, text: str) -> dict[str, Any]:
+        """Create/update current user's article review."""
+        out = await self._api.post(
+            f"/articles/{int(article_id)}/reviews",
+            {"rating": int(rating), "text": str(text or "")},
+        )
+        return dict(out or {})
+
+    async def delete_article_review(self, *, article_id: int, review_id: int) -> bool:
+        """Delete one article review."""
+        await self._api.delete(f"/articles/{int(article_id)}/reviews/{int(review_id)}")
+        return True
