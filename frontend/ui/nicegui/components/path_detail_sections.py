@@ -26,7 +26,7 @@ def render_path_detail_header(
     if recommendation_badge:
         ui.label(recommendation_badge).classes("text-sm").style("color: var(--lp-muted)")
     if recommended_by:
-        ui.label(f"Recommended by {recommended_by}").classes("text-xs").style("color: var(--lp-muted)")
+        ui.label(f"Recommended by teammates: {recommended_by}").classes("text-xs").style("color: var(--lp-muted)")
     if latest_activity:
         ui.label(f"Latest activity: {latest_activity}").classes("text-xs").style("color: var(--lp-muted)")
 

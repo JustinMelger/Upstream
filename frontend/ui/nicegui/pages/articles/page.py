@@ -220,7 +220,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                     with ui.column().classes("w-full gap-1 lp-courses-section"):
                         ui.label("Latest reads").classes("lp-courses-section-title")
-                        ui.label("Shared resources from your team").classes("lp-courses-section-subtitle")
+                        ui.label("Resources shared by teammates").classes("lp-courses-section-subtitle")
 
                     total = len(shown)
                     shown_page = shown[: max(0, int(state.visible_count))]

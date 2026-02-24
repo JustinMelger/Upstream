@@ -61,5 +61,5 @@ def render_paths_empty_state(
 def render_paths_collection_intro() -> None:
     """Render section heading above the paths result list."""
     with ui.column().classes("w-full gap-1 lp-courses-section"):
-        ui.label("Recommended paths").classes("lp-courses-section-title")
-        ui.label("Structured journeys to build momentum").classes("lp-courses-section-subtitle")
+        ui.label("Teammate-recommended paths").classes("lp-courses-section-title")
+        ui.label("Structured journeys your team recommends to build momentum").classes("lp-courses-section-subtitle")

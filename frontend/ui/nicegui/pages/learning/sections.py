@@ -184,7 +184,8 @@ def render_shared_content(
     on_open_articles: Any,
 ) -> None:
     """Render shared tab content."""
-    ui.label("Shared by you").classes("text-lg font-semibold mt-2")
+    ui.label("You shared").classes("text-lg font-semibold mt-2")
+    ui.label("Content you shared with teammates.").classes("text-sm").style("color: var(--lp-muted)")
 
     with ui.card().classes("lp-card w-full"):
         ui.label("Courses").classes("text-md font-semibold")
@@ -250,9 +251,9 @@ def render_recommended_section(
 ) -> None:
     """Render recommendation card in learning tab."""
     with ui.card().classes("lp-card w-full"):
-        ui.label("Recommended for you").classes("text-md font-semibold")
+        ui.label("Recommended by teammates").classes("text-md font-semibold")
         if not recommended_courses and not recommended_paths:
-            ui.label("No recommendations yet.").classes("text-sm").style("color: var(--lp-muted)")
+            ui.label("No teammate recommendations yet.").classes("text-sm").style("color: var(--lp-muted)")
         for row in recommended_courses[:5]:
             course = dict(row.get("course") or {})
             cid = int(row.get("course_id") or 0)

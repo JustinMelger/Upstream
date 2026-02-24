@@ -50,7 +50,7 @@ def build_active_filter_chips(
 
     author = str(author_value or "").strip()
     if author:
-        chips.append(ActiveFilterChip(key="author", label=f"Shared by: {author}"))
+        chips.append(ActiveFilterChip(key="author", label=f"Shared by teammate: {author}"))
 
     sort_key = str(sort_value or "").strip()
     if sort_key:
