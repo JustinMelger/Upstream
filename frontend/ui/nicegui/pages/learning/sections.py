@@ -263,7 +263,7 @@ def render_recommended_section(
                     if why:
                         ui.label(why).classes("text-xs").style("color: var(--lp-muted)")
                 with ui.row().classes("items-center gap-2"):
-                    ui.button("Save", on_click=lambda _cid=cid: on_save_recommended_course(_cid)).props("dense outline")
+                    ui.button("Track", on_click=lambda _cid=cid: on_save_recommended_course(_cid)).props("dense outline")
                     ui.button(
                         "Dismiss",
                         on_click=lambda _cid=cid: on_dismiss_recommended_course(_cid),
@@ -280,7 +280,7 @@ def render_recommended_section(
                     if why:
                         ui.label(why).classes("text-xs").style("color: var(--lp-muted)")
                 with ui.row().classes("items-center gap-2"):
-                    ui.button("Save", on_click=lambda _pid=pid: on_save_recommended_path(_pid)).props("dense outline")
+                    ui.button("Select", on_click=lambda _pid=pid: on_save_recommended_path(_pid)).props("dense outline")
                     ui.button(
                         "Dismiss",
                         on_click=lambda _pid=pid: on_dismiss_recommended_path(_pid),

@@ -19,6 +19,7 @@ from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
+from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
 from frontend.ui.nicegui.pages.learning.actions import (
@@ -181,18 +182,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await controller.clear_tracking_status(course_id=int(course_id))
             await _load(reset_visibility=False)
 
-        @guard_ui_action(title="Save recommendation failed")
+        @guard_ui_action(title="Track course failed")
         async def _save_recommended_course(course_id: int) -> None:
             await controller.save_recommended_course(course_id=int(course_id))
             await _load(reset_visibility=False)
 
-        @guard_ui_action(title="Save recommendation failed")
+        @guard_ui_action(title="Select path failed")
         async def _save_recommended_path(path_id: int) -> None:
             await controller.save_recommended_path(path_id=int(path_id))
             await _load(reset_visibility=False)
 
         with render_container():
-            ui.label("What should I do next? Continue your learning and review team recommendations.")
+            ui.label(subtitle_for(PrimaryPage.HOME)).classes("text-sm text-gray-600")
             ui.label("").classes("h-1")
             with ui.row().classes("lp-topbar"):
                 with ui.row().classes("items-center gap-2").style("margin-left: auto"):

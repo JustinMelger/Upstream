@@ -43,7 +43,7 @@ async def test_build_track_toggle_select_branch_runs_select_and_after_hook() -> 
         on_unselect=_unselect,
         on_after_toggle=_after,
     )
-    assert label == "Track"
+    assert label == "Select"
     await action()
     assert calls == ["select:7", "after"]
 
@@ -71,7 +71,7 @@ async def test_build_track_toggle_unselect_branch_runs_unselect_and_after_hook()
         on_unselect=_unselect,
         on_after_toggle=_after,
     )
-    assert label == "Untrack"
+    assert label == "Unselect"
     await action()
     assert calls == ["unselect:9", "after"]
 
@@ -100,7 +100,7 @@ async def test_build_track_toggle_does_not_run_after_hook_when_select_fails() ->
         on_unselect=_unselect,
         on_after_toggle=_after,
     )
-    assert label == "Track"
+    assert label == "Select"
     await action()
     assert calls == ["select:12"]
 
@@ -128,7 +128,7 @@ async def test_build_track_toggle_does_not_run_after_hook_when_unselect_returns_
         on_unselect=_unselect,
         on_after_toggle=_after,
     )
-    assert label == "Untrack"
+    assert label == "Unselect"
     await action()
     assert calls == ["unselect:13"]
 
@@ -192,7 +192,7 @@ async def test_build_path_card_actions_wires_callbacks(monkeypatch: pytest.Monke
         on_after_toggle=_after,
     )
 
-    assert cb.track_toggle_label == "Track"
+    assert cb.track_toggle_label == "Select"
     await cb.on_recommend()
     await cb.on_review()
     await cb.on_edit()

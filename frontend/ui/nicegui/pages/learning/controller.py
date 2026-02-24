@@ -37,9 +37,9 @@ class LearningPageController:
         await clear_tracking_status(api=self._api, course_id=int(course_id))
 
     async def save_recommended_course(self, *, course_id: int) -> None:
-        """Save a recommended course as interested."""
+        """Track a recommended course as interested."""
         await save_recommended_course(api=self._api, course_id=int(course_id))
 
     async def save_recommended_path(self, *, path_id: int) -> None:
-        """Save a recommended path as selected."""
+        """Select a recommended path."""
         await save_recommended_path(api=self._api, path_id=int(path_id))

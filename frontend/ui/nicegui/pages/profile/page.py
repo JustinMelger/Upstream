@@ -9,6 +9,7 @@ from frontend.ui.nicegui.components.loading import render_card_skeletons, render
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.home.helpers_compat import _render_snapshot_metrics, _top_contributors
 from frontend.ui.nicegui.pages.home.sections import render_admin_team_section
@@ -36,7 +37,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         render_shell(title="Profile", store=store, api=api)
         with render_container():
-            ui.label("Your personal and team learning stats.").classes("text-sm text-gray-600")
+            ui.label(subtitle_for(PrimaryPage.PROFILE)).classes("text-sm text-gray-600")
 
             state = HomePageState()
             meta = ui.label("").classes("text-sm text-gray-600")

@@ -105,14 +105,14 @@ def build_track_toggle(
             if ok is True and on_after_toggle is not None:
                 on_after_toggle()
 
-        return _do_unselect, "Untrack"
+        return _do_unselect, "Unselect"
 
     async def _do_select() -> None:
         ok = await on_select(int(path_id))
         if ok is True and on_after_toggle is not None:
             on_after_toggle()
 
-    return _do_select, "Track"
+    return _do_select, "Select"
 
 
 async def open_recommend_dialog(
@@ -142,7 +142,7 @@ async def open_recommend_dialog(
                 dialog.close()
                 await on_saved()
 
-            ui.button("Save", on_click=_save)
+            ui.button("Recommend", on_click=_save)
             ui.button("Cancel", on_click=dialog.close).props("outline")
 
     dialog.open()

@@ -26,9 +26,9 @@
 
 ## Sprint 3 — Terminology + First-Time Clarity + Share-Flow UX
 - [ ] Complete `11E.6` terminology alignment:
-  - [ ] Canonicalize language for `Track` vs `Save` vs `Select` across cards, dialogs, and filters.
+  - [x] Canonicalize language for `Track` vs `Save` vs `Select` across cards, dialogs, and filters.
   - [ ] Align `Shared` vs `Recommended` semantics in labels and page copy.
-  - [ ] Add contextual purpose subtitles under primary page titles (`Home`, `Explore`, `Teams`, `Profile`).
+  - [x] Add contextual purpose subtitles under primary page titles (`Home`, `Explore`, `Teams`, `Profile`).
 - [ ] Complete `11E.7` first-time user clarity pass:
   - [ ] Add dismissible 3-step first-login intro.
   - [ ] Ensure each key empty state has exactly one primary action.

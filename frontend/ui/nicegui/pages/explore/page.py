@@ -15,6 +15,7 @@ from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
@@ -74,6 +75,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         state = ExplorePageState()
 
         with render_catalog_scope(variant="explore").classes("lp-container"):
+            with ui.row().classes("w-full items-center"):
+                ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
+            # Sticky topbar uses a negative top margin; reserve vertical space so it
+            # doesn't visually overlap this subtitle line.
+            ui.element("div").classes("h-3")
             search_telemetry_emitted = False
 
             with ui.dialog() as share_dialog:
@@ -371,7 +377,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         review_summary_row=state.path_review_summary_by_id.get(path_id),
                         recommendation_summary_row=state.path_recommendation_summary_by_id.get(path_id),
                     )
-                    track_toggle_label = "Untrack" if is_tracked else "Track"
+                    track_toggle_label = "Unselect" if is_tracked else "Select"
 
                     async def _on_track_toggle() -> None:
                         await _toggle_path_selection(path_id)

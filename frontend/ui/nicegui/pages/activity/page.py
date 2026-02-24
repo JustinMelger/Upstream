@@ -11,6 +11,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.errors import FrontendError, guard_ui_action
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.navigation import build_activity_tab_link
+from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.activity.controller import ActivityPageController
 from frontend.ui.nicegui.pages.activity.route_init import resolve_activity_tab
@@ -38,6 +39,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         with render_container():
             request = getattr(ui.context.client, "request", None)
             initial_tab = resolve_activity_tab(request=request)
+            ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600")
 
             with ui.row().classes("items-center justify-between w-full"):
                 tab_filter = (

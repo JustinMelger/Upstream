@@ -44,7 +44,7 @@ async def open_recommend_course_dialog(
                 dialog.close()
                 await on_saved()
 
-            ui.button("Save", on_click=_save)
+            ui.button("Recommend", on_click=_save)
             ui.button("Cancel", on_click=dialog.close).props("outline")
 
     dialog.open()
