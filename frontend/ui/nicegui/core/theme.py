@@ -382,18 +382,18 @@ def apply_theme() -> None:
           flex: 0 0 var(--lp-rail-width);
           position: sticky;
           top: 94px;
-          background: rgba(15, 24, 39, 0.58);
-          border: 1px solid rgba(186, 204, 227, 0.1);
+          background: rgba(15, 24, 39, 0.46);
+          border: 1px solid rgba(186, 204, 227, 0.075);
           border-radius: 22px;
-          backdrop-filter: blur(12px);
-          box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+          backdrop-filter: blur(8px);
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
         }
 
         .lp-catalog-scope .lp-rail {
           background:
-            radial-gradient(140% 140% at 10% 8%, color-mix(in srgb, var(--lp-page-accent-soft) 48%, transparent), transparent 64%),
-            rgba(15, 24, 39, 0.58);
-          border-color: color-mix(in srgb, var(--lp-page-accent-soft) 42%, rgba(186, 204, 227, 0.1));
+            radial-gradient(140% 140% at 10% 8%, color-mix(in srgb, var(--lp-page-accent-soft) 32%, transparent), transparent 64%),
+            rgba(15, 24, 39, 0.46);
+          border-color: color-mix(in srgb, var(--lp-page-accent-soft) 30%, rgba(186, 204, 227, 0.075));
         }
 
         .lp-rail-content {
@@ -405,10 +405,10 @@ def apply_theme() -> None:
 
         .lp-rail--bar {
           border: none;
-          border-right: 1px solid var(--lp-border-soft);
+          border-right: 1px solid rgba(186, 204, 227, 0.11);
           border-radius: 0;
           box-shadow: none;
-          background: rgba(15, 24, 39, 0.58);
+          background: rgba(15, 24, 39, 0.44);
           position: sticky;
           height: calc(100vh - 94px);
           overflow: auto;
@@ -421,9 +421,9 @@ def apply_theme() -> None:
           bottom: 0;
           left: -100vw;
           width: 100vw;
-          background: rgba(15, 24, 39, 0.58);
-          border-right: 1px solid var(--lp-border-soft);
-          backdrop-filter: blur(12px);
+          background: rgba(15, 24, 39, 0.44);
+          border-right: 1px solid rgba(186, 204, 227, 0.11);
+          backdrop-filter: blur(8px);
           pointer-events: none;
         }
 
@@ -551,13 +551,13 @@ def apply_theme() -> None:
         .lp-filters-head {
           padding-bottom: var(--lp-space-2);
           margin-bottom: var(--lp-space-1);
-          border-bottom: 1px solid rgba(186, 204, 227, 0.06);
+          border-bottom: 1px solid rgba(186, 204, 227, 0.045);
         }
 
         .lp-filters-tip {
           margin-top: -2px;
           margin-bottom: var(--lp-space-1);
-          opacity: 0.78;
+          opacity: 0.68;
         }
 
         @media (max-width: 1280px) {
@@ -1362,7 +1362,7 @@ def apply_theme() -> None:
 
         .lp-rail .q-field--outlined .q-field__control {
           min-height: 42px;
-          background: rgba(255, 255, 255, 0.02) !important;
+          background: rgba(255, 255, 255, 0.014) !important;
         }
 
         .lp-rail .q-field__label {

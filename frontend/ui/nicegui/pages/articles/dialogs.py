@@ -12,6 +12,7 @@ from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
+from frontend.ui.nicegui.core.metadata_fallback import build_article_metadata_fallback
 from frontend.ui.nicegui.core.suggestion_utils import suggestion_badge_text
 from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
 
@@ -29,7 +30,7 @@ def _normalize_http_url(raw: str) -> str:
         return ""
 
 
-def build_share_article_dialog(
+def build_share_article_dialog(  # noqa: C901, PLR0915
     *,
     username: str,
     on_submit: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]],
@@ -47,6 +48,8 @@ def build_share_article_dialog(
         auto_suggest_state: dict[str, int | str] = {"nonce": 0, "last_source": ""}
         auto_draft_state: dict[str, int | bool] = {"nonce": 0, "enabled": True}
         suggested_values: dict[str, str] = {}
+        latest_suggestions: dict[str, str] = {}
+        fallback_examples: dict[str, str] = {}
         new_tags = ui.input("Tags (comma separated)").props("clearable").classes("w-full")
         tags_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
         article_draft_key = f"articles_share_draft::{username}"
@@ -89,8 +92,11 @@ def build_share_article_dialog(
             new_url.value = str(draft.get("url") or "")
             new_tags.value = str(draft.get("tags") or "")
             suggested_values.clear()
+            latest_suggestions.clear()
+            fallback_examples.clear()
             _refresh_url_hint()
             _refresh_suggestion_hints()
+            _refresh_fallback_hint()
             auto_draft_state["enabled"] = True
 
         def _discard_draft(*, reset_form: bool, notify: bool) -> None:
@@ -109,6 +115,43 @@ def build_share_article_dialog(
                 current_value=str(new_tags.value or ""),
                 suggested_value=str(suggested_values.get("tags") or ""),
             )
+
+        fallback_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+
+        def _refresh_fallback_hint() -> None:
+            if not fallback_examples:
+                fallback_hint.text = ""
+                return
+            fallback_hint.text = (
+                "Metadata unavailable. Example values ready: "
+                f"title='{fallback_examples.get('title', '')}', "
+                f"tags='{fallback_examples.get('tags', '')}'."
+            )
+
+        def _cache_suggestion(*, key: str, value: str) -> None:
+            cleaned = str(value or "").strip()
+            if cleaned:
+                latest_suggestions[key] = cleaned
+            else:
+                latest_suggestions.pop(key, None)
+
+        def _apply_suggested_field(*, key: str, only_if_empty: bool) -> bool:
+            value = str(latest_suggestions.get(key) or "").strip()
+            if not value:
+                return False
+            if key == "title":
+                if only_if_empty and str(new_title.value or "").strip():
+                    return False
+                new_title.value = value
+                suggested_values["title"] = value
+                return True
+            if key == "tags":
+                if only_if_empty and str(new_tags.value or "").strip():
+                    return False
+                new_tags.value = value
+                suggested_values["tags"] = value
+                return True
+            return False
 
         with ui.row().classes("items-center justify-between w-full -mt-2"):
             ui.label("Paste a link and auto-suggest title/tags.").classes("text-xs").style("color: var(--lp-muted)")
@@ -139,15 +182,19 @@ def build_share_article_dialog(
                 suggested_title = str(payload.get("title") or "").strip()
                 suggested_tags = list(payload.get("suggested_tags") or [])
                 normalized_url = str(payload.get("normalized_url") or "").strip()
+                suggested_tags_text = ", ".join([str(tag).strip() for tag in suggested_tags if str(tag).strip()])
+                _cache_suggestion(key="title", value=suggested_title)
+                _cache_suggestion(key="tags", value=suggested_tags_text)
+                has_suggestions = bool(suggested_title or suggested_tags_text)
+                fallback_examples.clear()
+                if not has_suggestions:
+                    fallback_examples.update(build_article_metadata_fallback(url=normalized_url or source_url))
+                _refresh_fallback_hint()
                 if normalized_url:
                     new_url.value = normalized_url
-                if suggested_title and not str(new_title.value or "").strip():
-                    new_title.value = suggested_title
-                    suggested_values["title"] = suggested_title
-                if suggested_tags and not str(new_tags.value or "").strip():
-                    new_tags.value = ", ".join([str(tag).strip() for tag in suggested_tags if str(tag).strip()])
-                    suggested_values["tags"] = str(new_tags.value or "")
-                if suggested_title or suggested_tags:
+                _apply_suggested_field(key="title", only_if_empty=True)
+                _apply_suggested_field(key="tags", only_if_empty=True)
+                if has_suggestions:
                     safe_notify("Suggestions applied", type="positive")
                 else:
                     safe_notify("No suggestions found for this URL", type="warning")
@@ -155,9 +202,54 @@ def build_share_article_dialog(
                 _refresh_url_hint()
                 _refresh_suggestion_hints()
 
+            def _apply_fallback_examples() -> None:
+                if not fallback_examples:
+                    safe_notify("No fallback examples available", type="warning")
+                    return
+                changed = False
+                title_example = str(fallback_examples.get("title") or "").strip()
+                tags_example = str(fallback_examples.get("tags") or "").strip()
+                if title_example and not str(new_title.value or "").strip():
+                    new_title.value = title_example
+                    changed = True
+                if tags_example and not str(new_tags.value or "").strip():
+                    new_tags.value = tags_example
+                    changed = True
+                _refresh_suggestion_hints()
+                _save_draft_silent()
+                if changed:
+                    safe_notify("Fallback examples applied", type="positive")
+                else:
+                    safe_notify("Fallback examples are already filled", type="warning")
+
             @guard_ui_action(title="URL suggestion failed")
             async def _suggest_from_url_manual() -> None:
                 await _suggest_from_url(auto_trigger=False)
+
+            @guard_ui_action(title="Suggestion apply failed")
+            async def _apply_all_suggestions() -> None:
+                if not latest_suggestions:
+                    await _suggest_from_url(auto_trigger=False)
+                changed = _apply_suggested_field(key="title", only_if_empty=False)
+                changed = _apply_suggested_field(key="tags", only_if_empty=False) or changed
+                _refresh_suggestion_hints()
+                _save_draft_silent()
+                if changed:
+                    safe_notify("All suggestions applied", type="positive")
+                elif latest_suggestions:
+                    safe_notify("No additional suggestions to apply", type="warning")
+
+            @guard_ui_action(title="Suggestion apply failed")
+            async def _resuggest_field(field_key: str, field_label: str) -> None:
+                if field_key not in latest_suggestions:
+                    await _suggest_from_url(auto_trigger=False)
+                changed = _apply_suggested_field(key=field_key, only_if_empty=False)
+                _refresh_suggestion_hints()
+                _save_draft_silent()
+                if changed:
+                    safe_notify(f"{field_label} updated from suggestion", type="positive")
+                else:
+                    safe_notify(f"No suggestion available for {field_label.lower()}", type="warning")
 
             async def _suggest_from_url_auto() -> None:
                 await _suggest_from_url(auto_trigger=True)
@@ -180,7 +272,14 @@ def build_share_article_dialog(
             new_title.on("update:model-value", lambda *_: _refresh_suggestion_hints())
             new_tags.on("update:model-value", lambda *_: _refresh_suggestion_hints())
 
-            ui.button("Suggest from URL", on_click=_suggest_from_url_manual).props("outline dense")
+            with ui.row().classes("items-center gap-2"):
+                ui.button("Suggest from URL", on_click=_suggest_from_url_manual).props("outline dense")
+                ui.button("Apply all suggestions", on_click=_apply_all_suggestions).props("outline dense")
+                ui.button("Use fallback examples", on_click=_apply_fallback_examples).props("outline dense")
+            with ui.row().classes("items-center gap-2"):
+                ui.button("Re-suggest title", on_click=lambda: _resuggest_field("title", "Title")).props("flat dense")
+                ui.button("Re-suggest tags", on_click=lambda: _resuggest_field("tags", "Tags")).props("flat dense")
+            _refresh_fallback_hint()
 
         def _open_success_summary(*, created_row: dict[str, Any], autofilled_fields: list[str]) -> None:
             title = str(created_row.get("title") or "Article")
@@ -189,6 +288,7 @@ def build_share_article_dialog(
             def _share_another(summary_dialog: Any) -> None:
                 summary_dialog.close()
                 suggested_values.clear()
+                latest_suggestions.clear()
                 _refresh_suggestion_hints()
                 _open_share_dialog()
 
@@ -254,6 +354,7 @@ def build_share_article_dialog(
     def _open_share_dialog() -> None:
         draft = app.storage.user.get(article_draft_key)
         _apply_draft(draft)
+        _refresh_fallback_hint()
         if _draft_has_content(draft):
             safe_notify("Recovered unsent draft", type="positive")
         share_dialog.open()

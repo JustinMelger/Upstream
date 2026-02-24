@@ -12,6 +12,7 @@ from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
+from frontend.ui.nicegui.core.metadata_fallback import build_course_metadata_fallback
 from frontend.ui.nicegui.core.suggestion_utils import suggestion_badge_text
 
 
@@ -26,6 +27,36 @@ def _normalize_http_url(raw: str) -> str:
         return str(_HTTP_URL_ADAPTER.validate_python(value))
     except ValidationError:
         return ""
+
+
+def _cache_suggestion(*, suggestions: dict[str, str], key: str, value: str) -> None:
+    cleaned = str(value or "").strip()
+    if cleaned:
+        suggestions[key] = cleaned
+    else:
+        suggestions.pop(key, None)
+
+
+def _apply_course_suggestion(
+    *,
+    key: str,
+    latest_suggestions: dict[str, str],
+    controls: dict[str, Any],
+    suggested_values: dict[str, str],
+    only_if_empty: bool,
+) -> bool:
+    value = str(latest_suggestions.get(key) or "").strip()
+    if not value:
+        return False
+    control = controls.get(key)
+    if control is None:
+        return False
+    if only_if_empty and str(control.value or "").strip():
+        return False
+    control.value = value
+    if key in {"title", "description", "provider", "category"}:
+        suggested_values[key] = value
+    return True
 
 
 async def open_recommend_course_dialog(
@@ -65,7 +96,7 @@ async def open_recommend_course_dialog(
     dialog.open()
 
 
-def build_share_course_dialog(
+def build_share_course_dialog(  # noqa: C901, PLR0915
     *,
     username: str,
     parse_duration_hours: Callable[[str], float | None],
@@ -92,6 +123,8 @@ def build_share_course_dialog(
         auto_suggest_state: dict[str, int | str] = {"nonce": 0, "last_source": ""}
         auto_draft_state: dict[str, int | bool] = {"nonce": 0, "enabled": True}
         suggested_values: dict[str, str] = {}
+        latest_suggestions: dict[str, str] = {}
+        fallback_examples: dict[str, str] = {}
         course_draft_key = f"courses_share_draft::{username}"
 
         def _course_draft_payload() -> dict[str, Any]:
@@ -149,6 +182,19 @@ def build_share_course_dialog(
                 current_value=str(create_category.value or ""),
                 suggested_value=str(suggested_values.get("category") or ""),
             )
+
+        fallback_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
+
+        def _refresh_fallback_hint() -> None:
+            if not fallback_examples:
+                fallback_hint.text = ""
+                return
+            fallback_hint.text = (
+                "Metadata unavailable. Example values ready: "
+                f"title='{fallback_examples.get('title', '')}', "
+                f"provider='{fallback_examples.get('provider', '')}', "
+                f"category='{fallback_examples.get('category', '')}'."
+            )
         with ui.row().classes("items-center justify-between w-full -mt-2"):
             ui.label("Paste a link and auto-suggest metadata.").classes("text-xs").style("color: var(--lp-muted)")
 
@@ -181,35 +227,137 @@ def build_share_course_dialog(
                 suggested_provider = str(payload.get("suggested_provider") or "").strip()
                 suggested_category = str(payload.get("suggested_category") or "").strip()
                 suggested_tags = [str(tag).strip() for tag in list(payload.get("suggested_tags") or []) if str(tag).strip()]
+                suggested_outcomes = "Suggested topics: " + ", ".join(suggested_tags[:6]) if suggested_tags else ""
+
+                _cache_suggestion(suggestions=latest_suggestions, key="title", value=suggested_title)
+                _cache_suggestion(suggestions=latest_suggestions, key="description", value=suggested_description)
+                _cache_suggestion(suggestions=latest_suggestions, key="provider", value=suggested_provider)
+                _cache_suggestion(suggestions=latest_suggestions, key="category", value=suggested_category)
+                _cache_suggestion(suggestions=latest_suggestions, key="learning_outcomes", value=suggested_outcomes)
+                has_suggestions = any([suggested_title, suggested_description, suggested_provider, suggested_category, suggested_tags])
+                fallback_examples.clear()
+                if not has_suggestions:
+                    fallback_examples.update(build_course_metadata_fallback(url=normalized_url or source_url))
+                _refresh_fallback_hint()
 
                 if normalized_url:
                     create_url.value = normalized_url
-                if suggested_title and not str(create_title.value or "").strip():
-                    create_title.value = suggested_title
-                    suggested_values["title"] = suggested_title
-                if suggested_description and not str(create_description.value or "").strip():
-                    create_description.value = suggested_description
-                    suggested_values["description"] = suggested_description
-                if suggested_provider and not str(create_provider.value or "").strip():
-                    create_provider.value = suggested_provider
-                    suggested_values["provider"] = suggested_provider
-                if suggested_category and not str(create_category.value or "").strip():
-                    create_category.value = suggested_category
-                    suggested_values["category"] = suggested_category
-                if suggested_tags and not str(create_learning_outcomes.value or "").strip():
-                    create_learning_outcomes.value = "Suggested topics: " + ", ".join(suggested_tags[:6])
+                _apply_course_suggestion(
+                    key="title",
+                    latest_suggestions=latest_suggestions,
+                    controls=suggestion_controls,
+                    suggested_values=suggested_values,
+                    only_if_empty=True,
+                )
+                _apply_course_suggestion(
+                    key="description",
+                    latest_suggestions=latest_suggestions,
+                    controls=suggestion_controls,
+                    suggested_values=suggested_values,
+                    only_if_empty=True,
+                )
+                _apply_course_suggestion(
+                    key="provider",
+                    latest_suggestions=latest_suggestions,
+                    controls=suggestion_controls,
+                    suggested_values=suggested_values,
+                    only_if_empty=True,
+                )
+                _apply_course_suggestion(
+                    key="category",
+                    latest_suggestions=latest_suggestions,
+                    controls=suggestion_controls,
+                    suggested_values=suggested_values,
+                    only_if_empty=True,
+                )
+                _apply_course_suggestion(
+                    key="learning_outcomes",
+                    latest_suggestions=latest_suggestions,
+                    controls=suggestion_controls,
+                    suggested_values=suggested_values,
+                    only_if_empty=True,
+                )
 
                 auto_suggest_state["last_source"] = normalized_url or source_url
-                if any([suggested_title, suggested_description, suggested_provider, suggested_category, suggested_tags]):
+                if has_suggestions:
                     safe_notify("Suggestions applied", type="positive")
                 else:
                     safe_notify("No suggestions found for this URL", type="warning")
                 _refresh_url_hint()
                 _refresh_suggestion_hints()
 
+            def _apply_fallback_examples() -> None:
+                if not fallback_examples:
+                    safe_notify("No fallback examples available", type="warning")
+                    return
+                changed = False
+                for key in ["title", "description", "provider", "category", "learning_outcomes"]:
+                    value = str(fallback_examples.get(key) or "").strip()
+                    if not value:
+                        continue
+                    if key == "title" and not str(create_title.value or "").strip():
+                        create_title.value = value
+                        changed = True
+                    if key == "description" and not str(create_description.value or "").strip():
+                        create_description.value = value
+                        changed = True
+                    if key == "provider" and not str(create_provider.value or "").strip():
+                        create_provider.value = value
+                        changed = True
+                    if key == "category" and not str(create_category.value or "").strip():
+                        create_category.value = value
+                        changed = True
+                    if key == "learning_outcomes" and not str(create_learning_outcomes.value or "").strip():
+                        create_learning_outcomes.value = value
+                        changed = True
+                _refresh_suggestion_hints()
+                _save_draft_silent()
+                if changed:
+                    safe_notify("Fallback examples applied", type="positive")
+                else:
+                    safe_notify("Fallback examples are already filled", type="warning")
+
             @guard_ui_action(title="URL suggestion failed")
             async def _suggest_from_url_manual() -> None:
                 await _suggest_from_url(auto_trigger=False)
+
+            @guard_ui_action(title="Suggestion apply failed")
+            async def _apply_all_suggestions() -> None:
+                if not latest_suggestions:
+                    await _suggest_from_url(auto_trigger=False)
+                changed = False
+                for key in ["title", "description", "provider", "category", "learning_outcomes"]:
+                    changed = _apply_course_suggestion(
+                        key=key,
+                        latest_suggestions=latest_suggestions,
+                        controls=suggestion_controls,
+                        suggested_values=suggested_values,
+                        only_if_empty=False,
+                    ) or changed
+                _refresh_suggestion_hints()
+                _save_draft_silent()
+                if changed:
+                    safe_notify("All suggestions applied", type="positive")
+                elif latest_suggestions:
+                    safe_notify("No additional suggestions to apply", type="warning")
+
+            @guard_ui_action(title="Suggestion apply failed")
+            async def _resuggest_field(field_key: str, field_label: str) -> None:
+                if field_key not in latest_suggestions:
+                    await _suggest_from_url(auto_trigger=False)
+                changed = _apply_course_suggestion(
+                    key=field_key,
+                    latest_suggestions=latest_suggestions,
+                    controls=suggestion_controls,
+                    suggested_values=suggested_values,
+                    only_if_empty=False,
+                )
+                _refresh_suggestion_hints()
+                _save_draft_silent()
+                if changed:
+                    safe_notify(f"{field_label} updated from suggestion", type="positive")
+                else:
+                    safe_notify(f"No suggestion available for {field_label.lower()}", type="warning")
 
             async def _suggest_from_url_auto() -> None:
                 await _suggest_from_url(auto_trigger=True)
@@ -234,7 +382,18 @@ def build_share_course_dialog(
             create_provider.on("update:model-value", lambda *_: _refresh_suggestion_hints())
             create_category.on("update:model-value", lambda *_: _refresh_suggestion_hints())
 
-            ui.button("Suggest from URL", on_click=_suggest_from_url_manual).props("outline dense")
+            with ui.row().classes("items-center gap-2"):
+                ui.button("Suggest from URL", on_click=_suggest_from_url_manual).props("outline dense")
+                ui.button("Apply all suggestions", on_click=_apply_all_suggestions).props("outline dense")
+                ui.button("Use fallback examples", on_click=_apply_fallback_examples).props("outline dense")
+            with ui.row().classes("items-center gap-2"):
+                ui.button("Re-suggest title", on_click=lambda: _resuggest_field("title", "Title")).props("flat dense")
+                ui.button("Re-suggest description", on_click=lambda: _resuggest_field("description", "Description")).props(
+                    "flat dense"
+                )
+                ui.button("Re-suggest provider", on_click=lambda: _resuggest_field("provider", "Provider")).props("flat dense")
+                ui.button("Re-suggest category", on_click=lambda: _resuggest_field("category", "Category")).props("flat dense")
+            _refresh_fallback_hint()
         create_language = ui.input("Language").props("clearable").classes("w-full")
 
         with ui.expansion("More fields").props("dense"):
@@ -243,6 +402,13 @@ def build_share_course_dialog(
                 create_learning_outcomes = ui.textarea("Learning outcomes (optional)").props("autogrow").classes("w-full")
                 create_prerequisites = ui.textarea("Prerequisites (optional)").props("autogrow").classes("w-full")
                 create_duration_hours = ui.input("Duration hours").props("clearable").classes("w-full")
+        suggestion_controls: dict[str, Any] = {
+            "title": create_title,
+            "description": create_description,
+            "provider": create_provider,
+            "category": create_category,
+            "learning_outcomes": create_learning_outcomes,
+        }
 
         def _apply_course_draft(raw: Any) -> None:
             draft = raw if isinstance(raw, dict) else {}
@@ -258,7 +424,10 @@ def build_share_course_dialog(
             create_duration_hours.value = str(draft.get("duration_hours") or "")
             create_url.value = str(draft.get("url") or "")
             suggested_values.clear()
+            latest_suggestions.clear()
+            fallback_examples.clear()
             _refresh_suggestion_hints()
+            _refresh_fallback_hint()
             auto_draft_state["enabled"] = True
 
         def _discard_draft(*, reset_form: bool, notify: bool) -> None:
@@ -373,6 +542,7 @@ def build_share_course_dialog(
         _apply_course_draft(draft)
         _refresh_url_hint()
         _refresh_suggestion_hints()
+        _refresh_fallback_hint()
         if _draft_has_content(draft):
             safe_notify("Recovered unsent draft", type="positive")
         create_dialog.open()

@@ -44,12 +44,12 @@
 ## Sprint 4 — Share Reliability + Catalog Polish
 - [ ] Complete highest-impact open `11A.3` reliability/productivity items:
   - [x] Share flow reliability (Courses/Articles): persist unsent draft form state with autosave + recovery after refresh/navigation and explicit “discard draft” action.
-  - [ ] Share flow productivity (Courses/Articles): add one-click “apply all suggestions” and per-field “re-suggest” actions.
-  - [ ] Share flow safety (Courses/Articles): provide “metadata unavailable” fallback UX with smart placeholders/examples.
+  - [x] Share flow productivity (Courses/Articles): add one-click “apply all suggestions” and per-field “re-suggest” actions.
+  - [x] Share flow safety (Courses/Articles): provide “metadata unavailable” fallback UX with smart placeholders/examples.
 - [ ] Complete open `11A.2` catalog polish follow-ups:
-  - [ ] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls.
-  - [ ] Empty-state density polish (Articles): tighten spacing and reduce vertical whitespace while preserving CTA prominence.
-  - [ ] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so cards remain dominant.
+  - [x] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls.
+  - [x] Empty-state density polish (Articles): tighten spacing and reduce vertical whitespace while preserving CTA prominence.
+  - [x] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so cards remain dominant.
 - [ ] Keep architecture quality gates green during Sprint 4:
   - [ ] `uv run ruff check ...` on touched modules.
   - [ ] `uv run mypy ...` on touched modules.

@@ -204,11 +204,11 @@
   - [x] Phase slice: de-emphasized secondary topbar controls (view/sort/share/count) and tuned visual weight so search remains primary on Courses.
 - [ ] Filter rail density pass: reduce rail visual weight (contrast/width) so content remains primary while preserving filter discoverability.
   - [x] Phase slice: reduced rail width and lowered rail contrast/shadow intensity to shift visual focus back to the content column.
-- [ ] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so primary content cards remain the dominant focal point.
+- [x] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so primary content cards remain the dominant focal point.
 - [ ] Content-type hierarchy pass (in progress): tune card information priority per domain (Courses: progression/status; Articles: author/date/editorial metadata; Paths: milestones/progress sequencing).
 - [ ] Articles UX follow-up (empty-state composition): avoid hero + empty-card message duplication; introduce a compact empty variant so first-load pages do not feel content-sparse.
-- [ ] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls for faster scan.
-- [ ] Empty-state density polish (Articles): tighten headline/body spacing and reduce vertical whitespace in the empty block while preserving CTA prominence.
+- [x] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls for faster scan.
+- [x] Empty-state density polish (Articles): tighten headline/body spacing and reduce vertical whitespace in the empty block while preserving CTA prominence.
 
 #### Phase 11A.3 — Media & Thumbnail Pipeline
 - [x] Course media UX: support embedded course videos when source is YouTube (validated URL parsing, safe embed iframe, and fallback external link).
@@ -222,8 +222,8 @@
 - [x] Share flow UX (Courses/Articles): show inline “suggested vs edited” indicators so users can quickly trust/override autofilled values.
 - [x] Share flow validation (Courses/Articles): add live URL validation and duplicate checks before submit (existing URL/domain/title-provider hints) with actionable inline messages.
 - [x] Share flow reliability (Courses/Articles): persist unsent draft form state with autosave + recovery after refresh/navigation and explicit “discard draft” action.
-- [ ] Share flow productivity (Courses/Articles): add one-click “apply all suggestions” and per-field “re-suggest” actions for faster curation.
-- [ ] Share flow safety (Courses/Articles): provide “metadata unavailable” fallback UX with smart placeholders/examples so users can still submit quickly.
+- [x] Share flow productivity (Courses/Articles): add one-click “apply all suggestions” and per-field “re-suggest” actions for faster curation.
+- [x] Share flow safety (Courses/Articles): provide “metadata unavailable” fallback UX with smart placeholders/examples so users can still submit quickly.
 - [x] Share flow post-submit: show contextual success summary (what was autofilled/saved) and quick follow-up actions (open item, copy link, add review/recommendation).
 - [ ] Course media enrichment: extend thumbnail resolution beyond YouTube using provider APIs/oEmbed first, then metadata scraping fallback (`og:image`/`twitter:image`) with caching and SSRF-safe fetch constraints.
 - [ ] Course + Article URL metadata persistence: persist fetched source metadata on create/update (`preview_image_url`, source title/site/description/canonical URL, `metadata_fetched_at`) with optional manual refresh action; avoid per-list live re-scraping.
