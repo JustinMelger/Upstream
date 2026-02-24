@@ -1,4 +1,4 @@
-"""My learning page for the NiceGUI frontend.
+"""Home page for the NiceGUI frontend.
 
 This page provides an overview of:
 - Learning: tracked courses + selected paths.
@@ -41,7 +41,11 @@ from frontend.ui.nicegui.pages.learning.ui_glue import (
     compute_path_progress,
     resolve_tracking_status_value,
 )
-from frontend.ui.nicegui.pages.learning.view_model import build_learning_tab_view, build_shared_tab_view
+from frontend.ui.nicegui.pages.learning.view_model import (
+    build_learning_tab_view,
+    build_recently_shared_in_teams,
+    build_shared_tab_view,
+)
 
 
 def _progress_for_path_detail(
@@ -107,15 +111,16 @@ def _next_from_tracked_courses(
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
-    """Register the `/learning` route."""
+    """Register the `/home` route (with legacy `/learning` alias)."""
 
+    @ui.page("/home")
     @ui.page("/learning")
     async def learning_page() -> None:
         user = await require_user(store, api)
         if user is None:
             return
 
-        render_shell(title="My learning", store=store, api=api)
+        render_shell(title="Home", store=store, api=api)
         username = str(user.get("username") or "")
         controller = LearningPageController(api=api)
         nav_actions = LearningNavigationActions(
@@ -187,6 +192,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await _load(reset_visibility=False)
 
         with render_container():
+            ui.label("What should I do next? Continue your learning and review team recommendations.")
+            ui.label("").classes("h-1")
             with ui.row().classes("lp-topbar"):
                 with ui.row().classes("items-center gap-2").style("margin-left: auto"):
                     view_filter = (
@@ -231,6 +238,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     data=state.data,
                     dismissed_recommended_course_ids=state.dismissed_recommended_course_ids,
                     dismissed_recommended_path_ids=state.dismissed_recommended_path_ids,
+                )
+                recently_shared_in_teams = build_recently_shared_in_teams(
+                    data=state.data,
+                    username=username,
+                    limit=6,
                 )
 
                 next_course = _next_uncompleted_course_from_selected_paths(
@@ -283,6 +295,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     on_browse_courses=lambda: ui.navigate.to("/courses"),
                     on_browse_paths=lambda: ui.navigate.to("/paths"),
                     on_open_selected_paths=lambda: ui.navigate.to("/paths?tab=selected"),
+                    on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
+                    recently_shared_in_teams=recently_shared_in_teams,
+                    on_open_recently_shared_item=lambda row: (
+                        ui.navigate.to(f"/courses?course_id={int(row.get('id') or 0)}")
+                        if str(row.get("type") or "") == "course"
+                        else (
+                            ui.navigate.to(f"/paths?path_id={int(row.get('id') or 0)}")
+                            if str(row.get("type") or "") == "path"
+                            else ui.navigate.to("/articles")
+                        )
+                    ),
                     on_load_more_tracked=lambda: load_more_tracked(
                         state=state,
                         total_count=len(learning_vm.tracked_courses),

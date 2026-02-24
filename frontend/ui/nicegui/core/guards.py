@@ -20,7 +20,7 @@ async def require_user(store: SessionStore, api: ApiClient, *, require_admin: bo
     """Ensure the user is logged in (and optionally admin).
 
     If unauthenticated, this function redirects to `/login` and returns `None`.
-    If `require_admin=True` and the user is not an admin, it redirects to `/learning`.
+    If `require_admin=True` and the user is not an admin, it redirects to `/home`.
 
     Args:
         store: Session store.
@@ -46,7 +46,7 @@ async def require_user(store: SessionStore, api: ApiClient, *, require_admin: bo
             return None
 
     if require_admin and str(user.get("role") or "") != "admin":
-        ui.navigate.to("/learning")
+        ui.navigate.to("/home")
         return None
 
     return user

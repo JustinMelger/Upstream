@@ -8,6 +8,12 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.card_frame import (
+    render_card_actions_row,
+    render_card_content_column,
+    render_card_main_row,
+    render_card_topright,
+)
 from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
@@ -77,8 +83,8 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any, on_open_filters:
             )
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             filters_btn = ui.button("Filters", on_click=on_open_filters).props("dense outline").classes("lp-topbar-share")
-        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
-            ui.button("Share", on_click=on_share).props("dense outline").classes("lp-topbar-share")
+            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                ui.menu_item("Share course", on_share)
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
     return CoursesTopbarControls(
@@ -254,7 +260,7 @@ def render_course_card(
 
     with ui.card().classes(f"w-full lp-course-card lp-course-card--surface lp-card--hover{card_vm.card_class_suffix}"):
         title = str(course_row.get("title") or "")
-        with ui.element("div").classes("lp-card-topright"):
+        with render_card_topright():
             if card_vm.is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
             elif card_vm.is_updated:
@@ -272,8 +278,8 @@ def render_course_card(
                     ui.menu_item("Delete", actions.on_delete)
 
         thumbnail_url = str(getattr(card_vm, "thumbnail_url", "") or "").strip()
-        with ui.row().classes("lp-course-card-main no-wrap"):
-            with ui.column().classes("lp-course-card-content lp-course-card-stack"):
+        with render_card_main_row(classes="lp-course-card-main"):
+            with render_card_content_column(classes="lp-course-card-content lp-course-card-stack"):
                 ui.label(title).classes("text-lg font-semibold lp-card-title")
                 shared_by = card_vm.shared_by
                 with ui.row().classes("items-center gap-2 flex-wrap lp-social-strip"):
@@ -306,13 +312,9 @@ def render_course_card(
 
                     ui.label(card_vm.tracking_label_text).classes(f"{card_vm.tracking_chip_cls} lp-course-status-chip")
 
-                with ui.row().classes("items-center gap-2 mt-2") as actions_row:
-                    actions_row.classes("lp-card-actions")
+                def _render_actions() -> None:
                     primary_label = "Continue" if str((tracked_row or {}).get("status") or "").strip() else "Track"
                     ui.button(primary_label, on_click=_on_primary_action).props("dense")
-                    if has_video_preview:
-                        preview_label = "Hide preview" if bool(is_preview_open) else "Preview"
-                        ui.button(preview_label, on_click=on_toggle_preview).props("outline dense")
 
                     current_status = str((tracked_row or {}).get("status") or "")
                     options_map = {
@@ -328,6 +330,8 @@ def render_course_card(
                         on_set_status=on_set_status,
                         on_clear_status=on_clear_status,
                     )
+
+                render_card_actions_row(render_actions=_render_actions)
 
             if thumbnail_url:
                 with ui.element("div").classes("lp-course-media-slot"):

@@ -263,6 +263,109 @@
 - [x] Docs sync: update `docs/architecture_frontend.md` to match current IA/routes (`My learning`, `Insights`, mailbox activity) and current service/page boundaries.
 - [ ] Docs sync: update `docs/architecture_backend.md` course/recommendation/review model details (`description`, `learning_outcomes`, `prerequisites`, `language`, `search_document`) and current service flows.
 
+### Phase 11E — IA Simplification + First-Use Clarity
+
+Goal: reduce cognitive load and make the core loop understandable in the first 2-3 minutes.
+
+Success criteria:
+- [ ] First-use comprehension: a new user can describe the product in one sentence within 5 minutes.
+- [ ] Time-to-first-meaningful-action: `< 60s` from login to first `track` or `share`.
+- [ ] Top-level navigation: max 4 items (`Home`, `Explore`, `Teams`, `Profile`).
+- [ ] IA consistency: no conceptual duplication across primary pages.
+
+Execution sequencing (prioritized):
+- [ ] Phase 11E.0 (instrumentation baseline): add telemetry for first meaningful action (`track`/`share`), first search, primary-nav clicks, and page exits so pre/post redesign impact is measurable.
+- [ ] Phase 11E.1 (IA + terminology foundation): ship nav reduction + naming alignment first to establish a stable mental model before page-level redesign.
+- [ ] Phase 11E.2 (home/explore behavior): redesign `Home` and `Explore` around one dominant action each.
+- [ ] Phase 11E.3 (first-time clarity): add intro + empty-state clarity pass and close top confusion points from usability tests.
+
+#### Phase 11E.1 — Top-Level Navigation Simplification
+- [ ] Navigation reduction: keep only `Home`, `Explore`, `Teams`, `Profile` in top-level shell nav.
+- [ ] Navigation cleanup: remove `Insights` from top-level navigation.
+- [ ] Navigation cleanup: remove standalone `Courses`, `Paths`, and `Articles` from top-level navigation.
+- [ ] Navigation consistency: enforce active-route highlighting and simplified menu structure across all routes.
+- [ ] Navigation audit: remove low-frequency routes from primary nav and keep them in contextual menus/overflow.
+
+#### Phase 11E.2 — Merge & Reorganize Primary Pages
+- [ ] IA merge: combine `My Learning` + `Insights` into new `Home`.
+- [ ] IA relocation: move full statistics dashboard to `Profile > Stats`.
+- [ ] IA consolidation: merge `Courses`, `Paths`, and `Articles` into `Explore` with tabs (`All`, `Courses`, `Paths`, `Articles`).
+- [ ] IA dedupe: remove redundant discovery sections duplicated between `Explore` and catalog-specific pages.
+
+#### Phase 11E.3 — Home Redesign (Action-Oriented Hub)
+- [ ] Home hero priority: make `Continue learning` the dominant above-the-fold section.
+- [ ] Home density reduction: collapse review nudges into a compact secondary block.
+- [ ] Home social loop: add `Recently shared in your teams`.
+- [ ] Home stats containment: show at most 3 snapshot cards with link to full stats in `Profile > Stats`.
+- [ ] Home CTA hierarchy: ensure only one dominant CTA above the fold.
+
+#### Phase 11E.4 — Explore as Single Discovery Hub
+- [ ] Explore hierarchy: make search the dominant visual control.
+- [ ] Explore filtering: implement tab-based type filtering (`All`, `Courses`, `Paths`, `Articles`).
+- [ ] Explore dedupe: remove duplicated `featured` logic inherited from `Courses`.
+- [ ] Explore consistency: standardize card structure across content types.
+- [ ] Explore card actions: ensure one primary action per card.
+
+#### Phase 11E.5 — Visual & Action Density Reduction
+- [ ] Card action limit: cap card controls to 1 primary CTA + 1 state control (`track`/`select`) + overflow for secondary actions.
+- [ ] Filter-rail weight: reduce filter rail visual dominance so content remains primary.
+- [ ] Metadata pruning: remove redundant metadata from default card view.
+- [ ] Topbar hierarchy: de-emphasize secondary controls (`sort`, `view`, `share`) relative to search and core action.
+
+#### Phase 11E.6 — Terminology Alignment
+- [ ] Rename `My Learning` -> `Home` in copy, routes, and references.
+- [ ] Terminology audit: align `Track` vs `Save` vs `Select` and choose one canonical term per intent.
+- [ ] Terminology audit: align `Shared` vs `Recommended` semantics in UI labels and filters.
+- [ ] Terminology audit: align `Insights` vs `Stats` and reserve `Stats` for analytics surfaces.
+- [ ] Context subtitles: add a short purpose subtitle under each primary page title.
+- [ ] Cross-page consistency: use the same language model across course/path/article cards and detail dialogs.
+
+#### Phase 11E.7 — First-Time User Clarity Pass
+- [ ] Onboarding intro: add lightweight, dismissible 3-step first-login walkthrough.
+- [ ] Empty states: ensure each empty state has exactly one clear primary action.
+- [ ] Next-step clarity: no page should load without an unambiguous next step.
+- [ ] Usability testing: run 5 first-time-user tests and log confusion points.
+- [ ] Pilot readiness: fix top 5 confusion points before pilot launch.
+
+Definition of done:
+- [ ] Navigation feels obvious without explanation.
+- [ ] Users do not ask "Where do I go?" in first-session testing.
+- [ ] `Home` clearly answers "What should I do next?"
+- [ ] `Explore` clearly answers "What can I discover?"
+
+Implementation map (routes + files, ordered):
+- [ ] Route transition contract (ship before UI polish): `/` -> `/home`; `/insights` -> `/home` (legacy redirect); `/learning` -> `/home` (legacy redirect); `/activity` -> `/teams` (legacy redirect); add `/profile` and `/profile/stats`; keep `/courses`, `/paths`, `/articles` as deep-link routes until Explore parity is complete.
+- [ ] Phase 11E.0 instrumentation baseline:
+  - Primary files: `frontend/ui/nicegui/core/api_client.py`, `frontend/ui/nicegui/core/navigation.py`, `frontend/ui/nicegui/pages/login/page.py`, `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/explore/page.py`.
+  - New modules (if needed): `frontend/ui/nicegui/services/telemetry_service.py`, backend endpoint under `backend/api/` + service in `backend/services/`.
+  - Event checkpoints: login success, first nav click, first search, first `track`, first `share`, first meaningful action timestamp.
+- [ ] Phase 11E.1 navigation simplification:
+  - Primary files: `frontend/ui/nicegui/components/layout.py` (top-level menu), `frontend/ui/nicegui/main.py` (route registration), `frontend/ui/nicegui/pages/home/page.py` (home route binding), `frontend/ui/nicegui/core/guards.py` (non-admin fallback route), `frontend/ui/nicegui/core/navigation.py` (tab/deep-link helpers).
+  - New page packages to add: `frontend/ui/nicegui/pages/teams/`, `frontend/ui/nicegui/pages/profile/`.
+  - Test/docs updates: `tests/frontend/ui/nicegui/test_routes.py`, `tests/frontend/ui/nicegui/core/test_core_navigation.py`, `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`, `docs/architecture_frontend.md`.
+- [ ] Phase 11E.2 page merge + IA reorganization:
+  - Home merge (`My learning` + `Insights`): `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/home/sections.py`, `frontend/ui/nicegui/pages/home/controller.py`, `frontend/ui/nicegui/pages/home/state.py`, `frontend/ui/nicegui/services/learning_service.py`, `frontend/ui/nicegui/services/dashboard_service.py`.
+  - Explore consolidation (Courses/Paths/Articles): `frontend/ui/nicegui/pages/explore/page.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/explore/orchestration.py`, `frontend/ui/nicegui/pages/explore/state.py`, `frontend/ui/nicegui/pages/explore/ui_glue.py`, plus card adapters from `pages/courses/view_model.py`, `pages/paths/view_model.py`, `pages/articles/view_model.py`.
+  - Stats relocation: create `frontend/ui/nicegui/pages/profile/page.py` and move full stats rendering from current insights/home blocks into `Profile > Stats`.
+- [ ] Phase 11E.3 home redesign (action-oriented):
+  - Primary files: `frontend/ui/nicegui/pages/home/sections.py` (hero + compact review nudges + team shares), `frontend/ui/nicegui/pages/home/page.py` (layout hierarchy + single dominant CTA), `frontend/ui/nicegui/pages/home/controller.py` (load ordering), `frontend/ui/nicegui/core/theme.py` (above-the-fold emphasis styles).
+  - Data feeds likely reused: learning progression from `frontend/ui/nicegui/services/learning_service.py`, team-share activity from `frontend/ui/nicegui/services/notifications_service.py`.
+- [ ] Phase 11E.4 explore hub redesign:
+  - Primary files: `frontend/ui/nicegui/pages/explore/sections.py` (search-dominant topbar + tabs), `frontend/ui/nicegui/pages/explore/page.py` (single discovery flow), `frontend/ui/nicegui/pages/explore/orchestration.py` (unified load/filter pipeline), `frontend/ui/nicegui/core/theme.py` (card consistency tokens).
+  - Remove duplicate discovery logic from standalone catalogs after parity: `frontend/ui/nicegui/pages/courses/page.py`, `frontend/ui/nicegui/pages/paths/page.py`, `frontend/ui/nicegui/pages/articles/page.py`.
+- [ ] Phase 11E.5 visual/action density reduction:
+  - Primary files: `frontend/ui/nicegui/pages/courses/sections.py`, `frontend/ui/nicegui/pages/articles/sections.py`, `frontend/ui/nicegui/components/path_card.py`, `frontend/ui/nicegui/components/card_actions.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/core/theme.py`.
+  - Acceptance checks in code: one primary CTA + one state control per card, overflow for secondary actions, reduced metadata defaults.
+- [ ] Phase 11E.6 terminology alignment:
+  - Primary files: `frontend/ui/nicegui/components/layout.py`, `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/explore/page.py`, `frontend/ui/nicegui/pages/courses/`, `frontend/ui/nicegui/pages/paths/`, `frontend/ui/nicegui/pages/articles/`, `frontend/ui/nicegui/pages/activity/`.
+  - Copy + route helper updates: `frontend/ui/nicegui/core/navigation.py`, `frontend/ui/nicegui/pages/learning/route_init.py` (or replacement home route init).
+  - Test updates for label/route expectations: `tests/frontend/ui/nicegui/pages/login/test_login_page_integration.py`, `tests/frontend/ui/nicegui/pages/home/test_home_page_integration.py`, `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`.
+- [ ] Phase 11E.7 first-time-user clarity pass:
+  - Primary files: add onboarding component (recommended `frontend/ui/nicegui/components/onboarding_intro.py`) and wire in `frontend/ui/nicegui/pages/home/page.py`.
+  - Empty-state harmonization targets: `frontend/ui/nicegui/pages/home/sections.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/courses/sections.py`, `frontend/ui/nicegui/pages/paths/sections.py`, `frontend/ui/nicegui/pages/articles/sections.py`.
+  - Validation/testing harness: add/update integration tests under `tests/frontend/ui/nicegui/pages/home/` and `tests/frontend/ui/nicegui/pages/explore/` for one-clear-next-action empty states and intro dismiss behavior.
+- [ ] Sprint-level execution plan: track active sprint tasks in `docs/sprint.md`.
+
 ## Phase 12 — Analytics + Data Durability
 - [ ] Colleague profiles with interest/completion tracking.
 - [ ] Basic analytics (popular courses, completion rates).

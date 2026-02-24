@@ -34,6 +34,8 @@ def test_all_page_modules_expose_register() -> None:
         pages.learning,
         pages.login,
         pages.paths,
+        pages.profile,
+        pages.teams,
     ]
     for mod in page_modules:
         assert callable(getattr(mod, "register", None))

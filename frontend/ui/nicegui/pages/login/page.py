@@ -8,6 +8,7 @@ from frontend.ui.nicegui.components.layout import render_container
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
 from frontend.ui.nicegui.pages.login.controller import LoginPageController
 from frontend.ui.nicegui.pages.login.state import LoginPageState
 from frontend.ui.nicegui.pages.login.transitions import begin_login_submit, finalize_login_submit
@@ -26,7 +27,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
     async def login_page() -> None:
         controller = LoginPageController(store=store, api=api)
         if controller.is_authenticated():
-            ui.navigate.to("/learning")
+            ui.navigate.to("/home")
             return
 
         state = LoginPageState()
@@ -55,7 +56,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         login_btn.disable()
                         try:
                             await controller.submit_login(username=u, password=p)
-                            ui.navigate.to("/learning")
+                            track_ui_event_nowait(
+                                api=api,
+                                event_name="login_success",
+                                context={"username": str(u)},
+                            )
+                            ui.navigate.to("/home")
                         finally:
                             done = finalize_login_submit()
                             state.loading = done.loading

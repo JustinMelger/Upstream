@@ -61,6 +61,7 @@ from backend.api.schemas.paths import (
     SelectPathResponse,
     UnselectPathResponse,
 )
+from backend.api.schemas.telemetry import TelemetryEventRequest, TelemetryEventResponse
 from backend.api.schemas.tracking import (
     TrackingDeleteRequest,
     TrackingDeleteResponse,
@@ -135,6 +136,8 @@ __all__ = [
     "TrackingRecordPayload",
     "TrackingDeleteResponse",
     "TrackingStatsByUserItem",
+    "TelemetryEventRequest",
+    "TelemetryEventResponse",
     "UrlPreviewMetadataRequest",
     "UrlPreviewMetadataResponse",
 ]

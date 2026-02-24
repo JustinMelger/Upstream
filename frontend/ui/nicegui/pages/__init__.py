@@ -18,6 +18,8 @@ __all__ = [
     "learning",
     "login",
     "paths",
+    "profile",
+    "teams",
 ]
 
 

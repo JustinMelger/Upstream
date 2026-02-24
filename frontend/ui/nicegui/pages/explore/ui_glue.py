@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 
-TAB_OPTIONS = {"all": "All", "courses": "Courses", "articles": "Articles"}
+TAB_OPTIONS = {"all": "All", "courses": "Courses", "paths": "Paths", "articles": "Articles"}
 SORT_OPTIONS = {
     "": "Recommended",
     "newest": "Newest",
@@ -25,10 +25,12 @@ def normalize_sort(raw: Any) -> str:
     return value if value in SORT_OPTIONS else ""
 
 
-def compute_explore_meta_text(*, tab_value: str, course_count: int, article_count: int) -> str:
+def compute_explore_meta_text(*, tab_value: str, course_count: int, path_count: int, article_count: int) -> str:
     """Build topbar meta text for current Explore scope."""
     if tab_value == "courses":
         return f"{int(course_count)} courses"
+    if tab_value == "paths":
+        return f"{int(path_count)} paths"
     if tab_value == "articles":
         return f"{int(article_count)} articles"
-    return f"{int(course_count)} courses | {int(article_count)} articles"
+    return f"{int(course_count)} courses | {int(path_count)} paths | {int(article_count)} articles"

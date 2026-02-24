@@ -17,6 +17,7 @@ class ExploreTopbarControls:
     search_input: Any
     tab_filter: Any
     sort_filter: Any
+    share_btn: Any
     filters_btn: Any
     meta: Any
 
@@ -32,37 +33,41 @@ class ExploreFilterControls:
     author_filter: Any
 
 
-def render_explore_topbar(*, initial_tab: str, on_open_filters: Any) -> ExploreTopbarControls:
+def render_explore_topbar(*, initial_tab: str, on_open_filters: Any, on_open_share: Any) -> ExploreTopbarControls:
     """Render Explore topbar and return control handles."""
-    with ui.row().classes("lp-topbar lp-sticky-controls lp-courses-toolbar"):
-        search_input = (
-            ui.input("Search courses and articles")
-            .props("clearable debounce=300 dense")
-            .classes("lp-topbar-search lp-courses-search")
-            .style("flex: 1")
-        )
-        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
-            ui.label("View").classes("lp-topbar-group-label")
-            tab_filter = (
-                ui.radio(TAB_OPTIONS, value=initial_tab).props("inline dense").classes("text-sm lp-topbar-secondary-control")
+    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar w-full gap-2"):
+        with ui.row().classes("w-full items-center gap-2"):
+            search_input = (
+                ui.input("Search courses, paths, and articles")
+                .props("clearable debounce=300 dense")
+                .classes("lp-topbar-search lp-courses-search")
+                .style("flex: 1")
             )
-        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
-            ui.label("Sort").classes("lp-topbar-group-label")
-            sort_filter = (
-                ui.select(SORT_OPTIONS, value="", label=None)
-                .props("dense")
-                .style("min-width: 180px")
-                .classes("lp-topbar-secondary-control")
-            )
-        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
-            filters_btn = ui.button("Filters", on_click=on_open_filters).props("dense outline").classes("lp-topbar-share")
-        with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
+        with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
+            with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                ui.label("View").classes("lp-topbar-group-label")
+                tab_filter = (
+                    ui.radio(TAB_OPTIONS, value=initial_tab)
+                    .props("inline dense")
+                    .classes("text-sm lp-topbar-secondary-control")
+                )
+            with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                ui.label("Sort").classes("lp-topbar-group-label")
+                sort_filter = (
+                    ui.select(SORT_OPTIONS, value="", label=None)
+                    .props("dense")
+                    .style("min-width: 180px")
+                    .classes("lp-topbar-secondary-control")
+                )
+                share_btn = ui.button("Share", on_click=on_open_share).props("dense")
+                filters_btn = ui.button("Filters", on_click=on_open_filters).props("dense outline").classes("lp-topbar-share")
 
     return ExploreTopbarControls(
         search_input=search_input,
         tab_filter=tab_filter,
         sort_filter=sort_filter,
+        share_btn=share_btn,
         filters_btn=filters_btn,
         meta=meta,
     )

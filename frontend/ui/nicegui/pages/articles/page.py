@@ -60,6 +60,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         controller = ArticlesPageController(api=api)
 
         render_shell(title="Articles", store=store, api=api)
+        request = getattr(ui.context.client, "request", None)
+        query_params = getattr(request, "query_params", None)
+        open_share_from_query = str(
+            getattr(query_params, "get", lambda _k, _d=None: _d)("share", "") or ""
+        ).strip().lower() in {"1", "true", "yes"}
 
         state = ArticlesPageState()
 
@@ -275,3 +280,5 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 author_filter.on("update:model-value", _refresh_list)
 
             await _load()
+            if open_share_from_query:
+                _open_share_dialog()

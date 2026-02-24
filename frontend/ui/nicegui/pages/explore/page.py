@@ -9,12 +9,14 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
+from frontend.ui.nicegui.components.path_card import render_path_card
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
 from frontend.ui.nicegui.pages.articles.reducers import derive_shown_articles
@@ -31,6 +33,7 @@ from frontend.ui.nicegui.pages.explore.orchestration import (
     clear_explore_tracking_status,
     load_explore_articles_background,
     load_explore_courses,
+    load_explore_paths_background,
     set_explore_tracking_status,
 )
 from frontend.ui.nicegui.pages.explore.sections import (
@@ -40,6 +43,11 @@ from frontend.ui.nicegui.pages.explore.sections import (
 )
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
 from frontend.ui.nicegui.pages.explore.ui_glue import compute_explore_meta_text, normalize_sort, normalize_tab
+from frontend.ui.nicegui.pages.paths.actions import copy_path_link
+from frontend.ui.nicegui.pages.paths.controller import PathsPageController
+from frontend.ui.nicegui.pages.paths.reducers import filter_paths_by_needle, sort_paths
+from frontend.ui.nicegui.pages.paths.state import PathsPageState
+from frontend.ui.nicegui.pages.paths.view_model import map_path_card_view
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -50,9 +58,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         user = await require_user(store, api)
         if user is None:
             return
+        username = str(user.get("username") or "")
+        is_admin = str(user.get("role") or "") == "admin"
 
         courses_controller = CoursesPageController(api=api)
         articles_controller = ArticlesPageController(api=api)
+        paths_controller = PathsPageController(api=api)
 
         render_shell(title="Explore", store=store, api=api)
 
@@ -63,6 +74,25 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         state = ExplorePageState()
 
         with render_catalog_scope(variant="explore").classes("lp-container"):
+            search_telemetry_emitted = False
+
+            with ui.dialog() as share_dialog:
+                with ui.card().classes("lp-card lp-dialog w-[min(540px,95vw)]"):
+                    ui.label("Share with your team").classes("text-lg font-semibold")
+                    ui.label("Choose what you want to share.").classes("text-sm").style("color: var(--lp-muted)")
+                    with ui.column().classes("w-full gap-2 mt-2"):
+                        ui.button(
+                            "Share course", on_click=lambda: (share_dialog.close(), ui.navigate.to("/courses?share=1"))
+                        ).props("unelevated")
+                        ui.button(
+                            "Share path", on_click=lambda: (share_dialog.close(), ui.navigate.to("/paths?share=1"))
+                        ).props("outline")
+                        ui.button(
+                            "Share article",
+                            on_click=lambda: (share_dialog.close(), ui.navigate.to("/articles?share=1")),
+                        ).props("outline")
+                    with ui.row().classes("justify-end w-full mt-1"):
+                        ui.button("Cancel", on_click=share_dialog.close).props("flat")
 
             def _reset_filters() -> None:
                 for control in [
@@ -75,13 +105,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     control.update()
                 list_view.refresh()
 
-            topbar = render_explore_topbar(initial_tab=initial_tab, on_open_filters=lambda: filter_controls.dialog.open())
+            topbar = render_explore_topbar(
+                initial_tab=initial_tab,
+                on_open_filters=lambda: filter_controls.dialog.open(),
+                on_open_share=share_dialog.open,
+            )
             filter_controls = render_explore_filters_dialog(on_reset=_reset_filters)
 
-            def _refresh_meta(*, course_count: int, article_count: int, tab_value: str) -> None:
+            def _refresh_meta(*, course_count: int, path_count: int, article_count: int, tab_value: str) -> None:
                 topbar.meta.text = compute_explore_meta_text(
                     tab_value=tab_value,
                     course_count=course_count,
+                    path_count=path_count,
                     article_count=article_count,
                 )
 
@@ -128,6 +163,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ),
                 )
 
+            async def _load_paths_background() -> None:
+                await load_explore_paths_background(
+                    state=state,
+                    paths_controller=paths_controller,
+                    refresh_ui=list_view.refresh,
+                    notify_warning=lambda message: safe_notify(
+                        f"Paths unavailable in Explore ({message})",
+                        type="warning",
+                    ),
+                )
+
             @guard_ui_action(title="Load explore failed")
             async def _load() -> None:
                 await load_explore_courses(
@@ -135,8 +181,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     courses_controller=courses_controller,
                     refresh_ui=list_view.refresh,
                     refresh_filter_options=_refresh_filter_options,
-                    spawn_articles_load=(
-                        lambda: asyncio.create_task(_load_articles_background()) if settings.feature_articles else None
+                    spawn_background_loads=lambda: (
+                        asyncio.create_task(_load_articles_background()) if settings.feature_articles else None,
+                        asyncio.create_task(_load_paths_background()),
                     ),
                 )
 
@@ -156,6 +203,34 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     course_id=int(course_id),
                     refresh_ui=list_view.refresh,
                 )
+
+            async def _select_path(path_id: int) -> None:
+                pid = int(path_id)
+                optimistic_state = PathsPageState(
+                    selected_by_id=dict(state.selected_by_path_id or {}),
+                    selected_detail_by_path_id=dict(state.selected_detail_by_path_id or {}),
+                    tracking_by_course_id=dict(state.tracking_by_course_id or {}),
+                )
+                _, selected_detail = await paths_controller.select_path(path_id=pid, state=optimistic_state)
+                state.selected_by_path_id[pid] = {"path_id": pid}
+                if isinstance(selected_detail, dict):
+                    state.selected_detail_by_path_id[pid] = selected_detail
+                state.tracking_by_course_id = dict(optimistic_state.tracking_by_course_id or {})
+                list_view.refresh()
+
+            async def _unselect_path(path_id: int) -> None:
+                pid = int(path_id)
+                await paths_controller.unselect_path(path_id=pid)
+                state.selected_by_path_id.pop(pid, None)
+                state.selected_detail_by_path_id.pop(pid, None)
+                list_view.refresh()
+
+            async def _toggle_path_selection(path_id: int) -> None:
+                pid = int(path_id)
+                if pid in state.selected_by_path_id:
+                    await _unselect_path(pid)
+                else:
+                    await _select_path(pid)
 
             def _course_actions(course_row: dict[str, Any], course_id: int, course_url: str) -> Any:
                 async def _open_course_details(cid: int, focus: bool) -> None:
@@ -216,15 +291,32 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     author_value=str(filter_controls.author_filter.value or ""),
                     sort_value=sort_value,
                 )
+                shown_paths = filter_paths_by_needle(list(state.paths or []), needle.lower())
+                shown_paths = sort_paths(
+                    paths=shown_paths,
+                    sort_value=sort_value,
+                    path_review_summary_by_id=dict(state.path_review_summary_by_id or {}),
+                    parse_iso_datetime=parse_iso_datetime,
+                )
 
                 if tab_value == "courses":
+                    shown_paths = []
+                    shown_articles = []
+                elif tab_value == "paths":
+                    shown_courses = []
                     shown_articles = []
                 elif tab_value == "articles":
                     shown_courses = []
+                    shown_paths = []
 
-                _refresh_meta(course_count=len(shown_courses), article_count=len(shown_articles), tab_value=tab_value)
+                _refresh_meta(
+                    course_count=len(shown_courses),
+                    path_count=len(shown_paths),
+                    article_count=len(shown_articles),
+                    tab_value=tab_value,
+                )
 
-                if not shown_courses and not shown_articles:
+                if not shown_courses and not shown_paths and not shown_articles:
                     with ui.column().classes("w-full gap-2 lp-courses-section"):
                         if not state.loaded_once:
                             ui.label("Discovery feed unavailable").classes("lp-courses-section-title")
@@ -243,6 +335,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         course_id = int(course.get("id") or 0)
                         tracked = state.tracking_by_course_id.get(course_id)
                         url = str(course.get("url") or "").strip()
+                        can_edit = bool(is_admin or (str(course.get("created_by") or "") == username))
                         card_vm = map_course_card_view(
                             course_row=course,
                             tracked_row=tracked if isinstance(tracked, dict) else None,
@@ -253,25 +346,63 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             course_row=course,
                             tracked_row=tracked if isinstance(tracked, dict) else None,
                             card_vm=card_vm,
-                            can_edit=False,
+                            can_edit=can_edit,
                             has_url=bool(url),
                             actions=_course_actions(course, course_id, url),
                             is_tracked_course=lambda cid: int(cid) in state.tracking_by_course_id,
                             resolve_status_value=resolve_tracking_status_value,
                             on_set_status=_set_tracking,
                             on_clear_status=_clear_tracking,
-                            has_video_preview=bool(card_vm.has_video_preview),
-                            is_preview_open=bool(int(state.preview_course_id or 0) == int(course_id)),
-                            preview_embed_url=str(card_vm.video_embed_url or ""),
-                            on_toggle_preview=lambda _cid=course_id: (
-                                setattr(
-                                    state,
-                                    "preview_course_id",
-                                    None if int(state.preview_course_id or 0) == int(_cid) else int(_cid),
-                                ),
-                                list_view.refresh(),
-                            ),
+                            has_video_preview=False,
+                            is_preview_open=False,
+                            preview_embed_url="",
+                            on_toggle_preview=lambda: None,
                         )
+
+                def _render_path_item(path: dict[str, Any]) -> None:
+                    path_id = int(path.get("id") or 0)
+                    is_tracked = path_id in state.selected_by_path_id
+                    can_edit = bool(is_admin or (str(path.get("created_by") or "") == username))
+                    card_vm = map_path_card_view(
+                        path_row=path,
+                        is_tracked=is_tracked,
+                        detail=state.selected_detail_by_path_id.get(path_id),
+                        tracking_by_course_id=dict(state.tracking_by_course_id or {}),
+                        review_summary_row=state.path_review_summary_by_id.get(path_id),
+                        recommendation_summary_row=state.path_recommendation_summary_by_id.get(path_id),
+                    )
+                    track_toggle_label = "Untrack" if is_tracked else "Track"
+
+                    async def _on_track_toggle() -> None:
+                        await _toggle_path_selection(path_id)
+
+                    render_path_card(
+                        path_row=path,
+                        card_class_suffix=card_vm.card_class_suffix,
+                        is_new=card_vm.is_new,
+                        is_updated=card_vm.is_updated,
+                        rating_badge=card_vm.rating_badge,
+                        recommendation_badge=card_vm.recommendation_badge,
+                        can_edit=can_edit,
+                        shared_by=card_vm.shared_by,
+                        tracking_label_text=card_vm.tracking_label_text,
+                        tracking_chip_cls=card_vm.tracking_chip_cls,
+                        completed=card_vm.completed,
+                        total_courses=card_vm.total_courses,
+                        progress=card_vm.progress,
+                        milestone=card_vm.milestone,
+                        milestone_class=card_vm.milestone_class,
+                        impact=card_vm.impact,
+                        next_title=card_vm.next_title,
+                        on_review=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}&view=reviews"),
+                        on_recommend=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
+                        on_copy_link=lambda _pid=path_id: copy_path_link(path_id=int(_pid)),
+                        on_edit=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
+                        on_delete=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
+                        on_view=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
+                        on_track_toggle=_on_track_toggle,
+                        track_toggle_label=track_toggle_label,
+                    )
 
                 if shown_courses:
                     with ui.column().classes("w-full gap-2 lp-courses-section"):
@@ -280,9 +411,22 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         shown_page=shown_courses,
                         render_course_item=_render_course_item,
                         featured_title="Spotlight course",
-                        featured_subtitle="Popular for your current query",
-                        collection_title="Explore by category",
+                        featured_subtitle="Top match for your current query",
+                        collection_title="More courses",
                     )
+
+                if shown_paths:
+                    with ui.column().classes("w-full gap-2 lp-courses-section"):
+                        ui.label("Path picks").classes("lp-courses-section-title")
+                        ui.label("Top match for your current query").classes("lp-courses-section-subtitle")
+                    featured_path = shown_paths[0]
+                    remaining_paths = shown_paths[1:]
+                    with ui.element("div").classes("lp-courses-grid"):
+                        _render_path_item(featured_path)
+                    if remaining_paths:
+                        with ui.grid().classes("w-full gap-3 md:grid-cols-2"):
+                            for row in remaining_paths:
+                                _render_path_item(row)
 
                 if shown_articles:
                     grouped_articles: list[dict[str, Any]] = []
@@ -312,12 +456,27 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             review_action=actions.on_review,
                         )
 
-                    render_explore_article_rails(
-                        shown_articles=grouped_articles,
-                        render_article_item=_render_article_item,
-                    )
+                    featured_article = grouped_articles[0]
+                    remaining_articles = grouped_articles[1:]
+                    with ui.column().classes("w-full gap-2 lp-courses-section"):
+                        ui.label("Article picks").classes("lp-courses-section-title")
+                        ui.label("Top match for your current query").classes("lp-courses-section-subtitle")
+                        _render_article_item(featured_article)
 
-            topbar.search_input.on("update:model-value", lambda *_: list_view.refresh())
+                    if remaining_articles:
+                        render_explore_article_rails(
+                            shown_articles=remaining_articles,
+                            render_article_item=_render_article_item,
+                        )
+
+            def _on_search_change(*_args: Any) -> None:
+                nonlocal search_telemetry_emitted
+                if not search_telemetry_emitted and str(topbar.search_input.value or "").strip():
+                    search_telemetry_emitted = True
+                    track_ui_event_nowait(api=api, event_name="first_search", context={"page": "explore"})
+                list_view.refresh()
+
+            topbar.search_input.on("update:model-value", _on_search_change)
             topbar.tab_filter.on("update:model-value", lambda *_: list_view.refresh())
             topbar.sort_filter.on("update:model-value", lambda *_: list_view.refresh())
 

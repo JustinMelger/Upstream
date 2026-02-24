@@ -9,6 +9,12 @@ The backend is a FastAPI application organized as:
 - Repositories (persistence).
 - Postgres (schema managed via Alembic).
 
+The backend also includes an observability layer:
+- OpenTelemetry traces + metrics initialization at app startup.
+- Authenticated frontend product-event ingestion via `POST /telemetry/events`.
+- OTLP export to an OpenTelemetry Collector (fan-out to Tempo/Prometheus).
+- Logs shipped by Promtail into Loki for Grafana log exploration.
+
 ## High-Level Diagram
 
 ```mermaid
@@ -21,6 +27,7 @@ flowchart LR
     Paths[Path Service]
     Tracking[Tracking Service]
     Notifications[Notifications Service]
+    Telemetry[Telemetry Service]
   end
 
   UI --> Auth
@@ -28,6 +35,7 @@ flowchart LR
   UI --> Paths
   UI --> Tracking
   UI --> Notifications
+  UI --> Telemetry
 
   DB[(Postgres)]
   Auth --> DB
@@ -35,7 +43,63 @@ flowchart LR
   Paths --> DB
   Tracking --> DB
   Notifications --> DB
+
+  OTel[OpenTelemetry SDK]
+  Collector[OpenTelemetry Collector]
+  Prom[Prometheus]
+  Tempo[Grafana Tempo]
+  Loki[Grafana Loki]
+  Promtail[Promtail]
+  DockerLogs[Docker container logs]
+  Grafana[Grafana UI]
+  API --> OTel
+  OTel --> Collector
+  Collector --> Prom
+  Collector --> Tempo
+  DockerLogs --> Promtail
+  Promtail --> Loki
+  Prom --> Grafana
+  Tempo --> Grafana
+  Loki --> Grafana
 ```
+
+## Observability Architecture
+
+### Runtime wiring
+- `backend/main.py` initializes observability with `configure_observability(app)` when `OTEL_ENABLED=1`.
+- `backend/core/observability.py` configures:
+  - Tracer provider + OTLP trace exporter.
+  - Meter provider + OTLP metrics exporter.
+  - FastAPI / HTTPX / SQLAlchemy instrumentation.
+
+### Telemetry ingestion flow
+- Frontend emits product events to `POST /telemetry/events` (authenticated).
+- Router: `backend/api/telemetry.py`
+- Service: `backend/services/telemetry_service.py`
+- Current behavior:
+  - Increments metric counter `frontend_events_total`.
+  - Emits span `frontend.event` with event attributes.
+  - Logs a structured fallback line for operational debugging.
+
+### Key environment settings
+- `OTEL_ENABLED`
+- `OTEL_SERVICE_NAME`
+- `OTEL_SERVICE_VERSION`
+- `OTEL_DEPLOYMENT_ENVIRONMENT`
+- `OTEL_TRACES_SAMPLE_RATIO`
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
+- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`
+- `OTEL_EXPORTER_OTLP_HEADERS`
+
+### Local Grafana stack wiring
+- Observability stack runs separately via `docker-compose.observability.yml`.
+- Collector exports traces to Tempo (`TEMPO_OTLP_ENDPOINT`, default `http://tempo:4318/v1/traces`).
+- Collector exports metrics in Prometheus format on `:9464`; Prometheus scrapes Collector.
+- Promtail discovers Docker containers and ships logs to Loki.
+- Grafana is configured with provisioned datasources for:
+  - Prometheus (`http://prometheus:9090`)
+  - Tempo (`http://tempo:3200`)
+  - Loki (`http://loki:3100`)
 
 ## Auth Architecture
 
@@ -179,6 +243,11 @@ erDiagram
 ### Notifications service
 - Aggregates share/recommend/review events into activity feed payloads.
 - Supports mailbox-style scopes: `inbox` (personal) and `team` (team-wide timeline).
+
+### Telemetry service
+- Accepts low-risk frontend product telemetry events (`event_name`, optional context, timestamp).
+- Records event count + tracing attributes for product-loop analysis and operability.
+- Keeps ingestion auth-protected via `require_session`.
 
 ## API Error Handling
 

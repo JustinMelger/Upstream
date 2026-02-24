@@ -13,7 +13,9 @@ The backend uses a standard error envelope like:
 `{"status": "error", "message": "...", "timestamp": "..."}`.
 """
 
+import asyncio
 from dataclasses import dataclass
+from datetime import datetime, UTC
 from typing import Any, Callable
 
 import httpx
@@ -129,7 +131,51 @@ class ApiClient:
                 message = str(body.get("detail"))
             raise ApiError(status_code=resp.status_code, message=message or resp.reason_phrase)
 
+        self._emit_product_action_telemetry(
+            method=str(method or "").upper(),
+            path=str(path or ""),
+        )
+
         return body
+
+    def _emit_product_action_telemetry(self, *, method: str, path: str) -> None:
+        """Emit low-noise telemetry for key share/track actions."""
+        if method != "POST":
+            return
+        event_name = ""
+        if path == "/tracking":
+            event_name = "track_action"
+        elif path == "/courses":
+            event_name = "share_course"
+        elif path == "/paths":
+            event_name = "share_path"
+        elif path == "/articles":
+            event_name = "share_article"
+        if not event_name:
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        loop.create_task(self._post_telemetry_event(event_name=event_name, context={"path": path}))
+
+    async def _post_telemetry_event(self, *, event_name: str, context: dict[str, Any]) -> None:
+        """Best-effort telemetry POST, intentionally detached from request flow."""
+        try:
+            resp = await self._client.request(
+                "POST",
+                "/telemetry/events",
+                headers=self._headers(),
+                json={
+                    "event_name": str(event_name),
+                    "context": dict(context or {}),
+                    "happened_at": datetime.now(UTC).isoformat(),
+                },
+            )
+            if resp.status_code >= 400:
+                return
+        except httpx.RequestError:
+            return
 
     async def get(self, path: str, *, params: dict[str, Any] | None = None) -> Any:
         """Send a GET request."""

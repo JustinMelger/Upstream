@@ -243,6 +243,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             # Top bar (search + primary action + sort + count).
             request = getattr(ui.context.client, "request", None)
+            query_params = getattr(request, "query_params", None)
+            open_share_from_query = str(
+                getattr(query_params, "get", lambda _k, _d=None: _d)("share", "") or ""
+            ).strip().lower() in {"1", "true", "yes"}
             intent = get_path_storage_intent(storage_user=app.storage.user)
             nav_intent = get_path_intent(username=username)
             route_init = resolve_paths_route_init(
@@ -519,6 +523,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             render_split_layout(rail=_render_rail, main=_render_main, rail_classes="lp-rail--bar")
 
             await _load_all()
+            if open_share_from_query:
+                _open_create_dialog()
             if route_init.initial_path_id > 0:
                 await _open_details(route_init.initial_path_id, view_mode=route_init.initial_dialog_mode)
                 if intent_matches_path(intent if isinstance(intent, dict) else None, route_init.initial_path_id):

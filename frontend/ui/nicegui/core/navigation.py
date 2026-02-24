@@ -14,13 +14,13 @@ def build_paths_deep_link(*, path_id: int, view: str = "full", tab: str = "selec
 
 
 def build_learning_tab_link(*, tab: str) -> str:
-    """Build stable learning-tab URL."""
-    return f"/learning?tab={str(tab or 'learning')}"
+    """Build stable home-tab URL."""
+    return f"/home?tab={str(tab or 'learning')}"
 
 
 def build_activity_tab_link(*, tab: str) -> str:
-    """Build stable activity-tab URL."""
-    return f"/activity?tab={str(tab or 'inbox')}"
+    """Build stable teams-tab URL."""
+    return f"/teams?tab={str(tab or 'inbox')}"
 
 
 def build_activity_target_link(*, target_type: str, target_id: int) -> str:
@@ -32,4 +32,4 @@ def build_activity_target_link(*, target_type: str, target_id: int) -> str:
         return f"/paths?path_id={int(target_id)}"
     if kind == "article":
         return "/articles"
-    return "/learning"
+    return "/home"

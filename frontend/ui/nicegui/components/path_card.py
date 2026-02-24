@@ -6,6 +6,12 @@ from typing import Any, Callable
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.card_frame import (
+    render_card_actions_row,
+    render_card_content_column,
+    render_card_topright,
+)
+
 
 def render_path_card(
     *,
@@ -37,7 +43,7 @@ def render_path_card(
 ) -> None:
     """Render a single path card."""
     with ui.card().classes(f"w-full lp-accent-card lp-card--hover lp-path-card{card_class_suffix}"):
-        with ui.element("div").classes("lp-card-topright"):
+        with render_card_topright():
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
             elif is_updated:
@@ -55,28 +61,30 @@ def render_path_card(
                     ui.menu_item("Edit", on_edit)
                     ui.menu_item("Delete", on_delete)
 
-        ui.label(path_row.get("name") or "").classes("text-lg font-semibold lp-card-title")
-        with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
-            if shared_by:
-                ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
-            ui.label(tracking_label_text).classes(tracking_chip_cls)
+        with render_card_content_column():
+            ui.label(path_row.get("name") or "").classes("text-lg font-semibold lp-card-title")
+            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
+                if shared_by:
+                    ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
+                ui.label(tracking_label_text).classes(tracking_chip_cls)
 
-        if total_courses > 0:
-            with ui.row().classes("items-center justify-between w-full"):
-                ui.label("Path progress").classes("text-xs lp-path-progress-label")
-                ui.label(f"{completed}/{total_courses} completed").classes("text-sm lp-path-progress-count").style(
-                    "color: var(--lp-muted)"
-                )
-            ui.linear_progress(progress, show_value=False).classes("w-full lp-path-progress-bar")
-            with ui.row().classes("items-center gap-2 lp-path-milestone-row"):
-                ui.label(milestone).classes(f"{milestone_class} lp-path-milestone")
-                ui.label(impact).classes("text-xs").style("color: var(--lp-muted)")
-            if next_title:
-                ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
-        if str(path_row.get("description") or "").strip():
-            ui.label(path_row.get("description") or "").classes("text-sm text-gray-600 lp-card-body lp-path-description")
+            if total_courses > 0:
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label("Path progress").classes("text-xs lp-path-progress-label")
+                    ui.label(f"{completed}/{total_courses} completed").classes("text-sm lp-path-progress-count").style(
+                        "color: var(--lp-muted)"
+                    )
+                ui.linear_progress(progress, show_value=False).classes("w-full lp-path-progress-bar")
+                with ui.row().classes("items-center gap-2 lp-path-milestone-row"):
+                    ui.label(milestone).classes(f"{milestone_class} lp-path-milestone")
+                    ui.label(impact).classes("text-xs").style("color: var(--lp-muted)")
+                if next_title:
+                    ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
+            if str(path_row.get("description") or "").strip():
+                ui.label(path_row.get("description") or "").classes("text-sm text-gray-600 lp-card-body lp-path-description")
 
-        with ui.row().classes("items-center gap-2 mt-2") as actions_row:
-            actions_row.classes("lp-card-actions")
-            ui.button("", icon="visibility", on_click=on_view).props("outline dense").tooltip("View")
-            ui.button(track_toggle_label, on_click=on_track_toggle).props("outline dense")
+            def _render_actions() -> None:
+                ui.button("Open", on_click=on_view).props("dense")
+                ui.button(track_toggle_label, on_click=on_track_toggle).props("outline dense")
+
+            render_card_actions_row(render_actions=_render_actions)

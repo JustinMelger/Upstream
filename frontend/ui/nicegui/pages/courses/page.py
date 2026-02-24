@@ -111,6 +111,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             ui_state = CoursesPageUiState()
 
             request = getattr(ui.context.client, "request", None)
+            query_params = getattr(request, "query_params", None)
+            open_share_from_query = str(
+                getattr(query_params, "get", lambda _k, _d=None: _d)("share", "") or ""
+            ).strip().lower() in {"1", "true", "yes"}
             intent = get_course_storage_intent(storage_user=app.storage.user)
             nav_intent = get_course_intent(username=username)
             route_init = resolve_courses_route_init(
@@ -524,6 +528,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 courses_list()
 
             await _load()
+            if open_share_from_query:
+                _open_create_dialog()
             if route_init.initial_course_id > 0:
                 await _open_details(route_init.initial_course_id, focus_reviews=route_init.initial_focus_reviews)
                 consume_course_intents_for_opened_course(

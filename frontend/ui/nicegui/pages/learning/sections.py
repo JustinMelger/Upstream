@@ -291,7 +291,7 @@ def render_recommended_section(
 def render_continue_learning_section(*, next_course: dict[str, Any], on_open_selected_paths: Any) -> None:
     """Render continue-learning card for next step."""
     nxt = dict(next_course.get("course") or {})
-    with ui.card().classes("lp-card w-full"):
+    with ui.card().classes("lp-card w-full lp-home-hero-card"):
         ui.label("Continue learning").classes("text-md font-semibold")
         ui.label(str(nxt.get("title") or "")).classes("text-sm font-semibold")
         path_name = str(next_course.get("path_name") or "").strip()
@@ -300,8 +300,9 @@ def render_continue_learning_section(*, next_course: dict[str, Any], on_open_sel
         with ui.row().classes("items-center gap-2"):
             url = str(nxt.get("url") or "").strip()
             if url:
-                ui.button("Continue", on_click=lambda u=url: ui.navigate.to(u, new_tab=True)).props("dense outline")
-            ui.button("Open path", on_click=on_open_selected_paths).props("dense outline")
+                ui.button("Continue now", on_click=lambda u=url: ui.navigate.to(u, new_tab=True)).props("unelevated")
+            elif int(next_course.get("path_id") or 0) > 0:
+                ui.button("Open selected path", on_click=on_open_selected_paths).props("unelevated")
 
 
 def render_review_nudges_section(
@@ -311,18 +312,68 @@ def render_review_nudges_section(
     on_open_first_course_review: Any,
     on_open_first_path_review: Any,
 ) -> None:
-    """Render review nudge card."""
+    """Render compact review nudge card."""
     with ui.card().classes("lp-card w-full"):
         ui.label("Review nudges").classes("text-md font-semibold")
+        with ui.row().classes("items-center gap-2 flex-wrap"):
+            ui.label(f"Courses: {len(pending_course_review_ids)}").classes("lp-chip lp-chip--muted")
+            ui.label(f"Paths: {len(pending_path_review_ids)}").classes("lp-chip lp-chip--muted")
         if not pending_course_review_ids and not pending_path_review_ids:
             ui.label("You're up to date on reviews.").classes("text-sm").style("color: var(--lp-muted)")
             return
+        ui.label("Finish one review to keep your feed useful.").classes("text-sm").style("color: var(--lp-muted)")
         if pending_course_review_ids:
-            ui.label(f"{len(pending_course_review_ids)} tracked course(s) need your review.").classes("text-sm")
-            ui.button("Review courses", on_click=on_open_first_course_review).props("dense outline")
-        if pending_path_review_ids:
-            ui.label(f"{len(pending_path_review_ids)} selected path(s) need your review.").classes("text-sm")
-            ui.button("Review paths", on_click=on_open_first_path_review).props("dense outline")
+            ui.button("Review next", on_click=on_open_first_course_review).props("dense outline")
+        elif pending_path_review_ids:
+            ui.button("Review next", on_click=on_open_first_path_review).props("dense outline")
+
+
+def render_home_snapshot_cards(*, tracking_by_course_id: dict[int, dict[str, Any]], on_open_full_stats: Any) -> None:
+    """Render compact snapshot cards with a link to full profile stats."""
+    interested = 0
+    in_progress = 0
+    completed = 0
+    for row in list((tracking_by_course_id or {}).values()):
+        status = str((row or {}).get("status") or "").strip()
+        if status == "interested":
+            interested += 1
+        elif status == "in_progress":
+            in_progress += 1
+        elif status == "completed":
+            completed += 1
+
+    with ui.column().classes("w-full gap-2"):
+        with ui.row().classes("items-center justify-between w-full"):
+            ui.label("Progress snapshot").classes("text-md font-semibold")
+            ui.button("Open full stats", on_click=on_open_full_stats).props("dense flat")
+        with ui.grid().classes("w-full gap-2 md:grid-cols-3"):
+            with ui.card().classes("lp-card"):
+                ui.label("Interested").classes("text-xs").style("color: var(--lp-muted)")
+                ui.label(str(interested)).classes("text-xl font-semibold")
+            with ui.card().classes("lp-card"):
+                ui.label("In progress").classes("text-xs").style("color: var(--lp-muted)")
+                ui.label(str(in_progress)).classes("text-xl font-semibold")
+            with ui.card().classes("lp-card"):
+                ui.label("Completed").classes("text-xs").style("color: var(--lp-muted)")
+                ui.label(str(completed)).classes("text-xl font-semibold")
+
+
+def render_recently_shared_in_teams(*, items: list[dict[str, Any]], on_open_item: Any) -> None:
+    """Render mixed teammate content feed for quick discovery."""
+    with ui.card().classes("lp-card w-full"):
+        ui.label("Recently shared in your teams").classes("text-md font-semibold")
+        if not items:
+            ui.label("No recent teammate shares yet.").classes("text-sm").style("color: var(--lp-muted)")
+            ui.button("Explore", on_click=lambda: ui.navigate.to("/explore")).props("dense outline")
+            return
+        for row in items[:6]:
+            with ui.row().classes("items-center justify-between w-full"):
+                with ui.column().classes("gap-0"):
+                    ui.label(str(row.get("title") or "")).classes("text-sm font-semibold")
+                    ui.label(f"{str(row.get('type') or '').title()} · by {str(row.get('created_by') or '')}").classes(
+                        "text-xs"
+                    ).style("color: var(--lp-muted)")
+                ui.button("Open", on_click=lambda _row=dict(row): on_open_item(_row)).props("dense outline")
 
 
 def render_shared_tab(
@@ -376,22 +427,14 @@ def render_learning_tab(
     on_browse_courses: Any,
     on_browse_paths: Any,
     on_open_selected_paths: Any,
+    on_open_full_stats: Any,
+    recently_shared_in_teams: list[dict[str, Any]],
+    on_open_recently_shared_item: Any,
     on_load_more_tracked: Any,
     on_load_more_selected: Any,
 ) -> None:
     """Compose learning-tab UI from the learning view-model."""
     ui.label("Learning").classes("text-lg font-semibold mt-2")
-
-    render_recommended_section(
-        recommended_courses=learning_vm.recommended_courses,
-        recommended_paths=learning_vm.recommended_paths,
-        on_save_recommended_course=on_save_recommended_course,
-        on_save_recommended_path=on_save_recommended_path,
-        on_dismiss_recommended_course=on_dismiss_recommended_course,
-        on_dismiss_recommended_path=on_dismiss_recommended_path,
-        on_view_course=nav_actions.make_course_view_action,
-        on_view_path=nav_actions.make_path_view_action,
-    )
 
     if next_course is not None:
         render_continue_learning_section(
@@ -404,6 +447,27 @@ def render_learning_tab(
         pending_path_review_ids=learning_vm.pending_path_review_ids,
         on_open_first_course_review=first_course_review_action,
         on_open_first_path_review=first_path_review_action,
+    )
+
+    render_home_snapshot_cards(
+        tracking_by_course_id=learning_vm.tracking_by_course_id,
+        on_open_full_stats=on_open_full_stats,
+    )
+
+    render_recently_shared_in_teams(
+        items=recently_shared_in_teams,
+        on_open_item=on_open_recently_shared_item,
+    )
+
+    render_recommended_section(
+        recommended_courses=learning_vm.recommended_courses,
+        recommended_paths=learning_vm.recommended_paths,
+        on_save_recommended_course=on_save_recommended_course,
+        on_save_recommended_path=on_save_recommended_path,
+        on_dismiss_recommended_course=on_dismiss_recommended_course,
+        on_dismiss_recommended_path=on_dismiss_recommended_path,
+        on_view_course=nav_actions.make_course_view_action,
+        on_view_path=nav_actions.make_path_view_action,
     )
 
     render_tracked_courses_section(

@@ -12,6 +12,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
 
 
 CatalogVariant = Literal["default", "courses", "articles", "paths", "explore"]
@@ -32,6 +33,13 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
     def _is_active(target: str) -> bool:
         return current_path == target
 
+    def _is_path_prefix_active(prefix: str) -> bool:
+        return current_path == prefix or current_path.startswith(f"{prefix}/")
+
+    def _nav_click(*, label: str, target: str) -> None:
+        track_ui_event_nowait(api=api, event_name="nav_click", context={"label": str(label), "target": str(target)})
+        ui.navigate.to(target)
+
     with ui.header().classes("lp-header"):
         # Keep header content aligned with `.lp-container` so page facets/cards
         # visually line up with the page title.
@@ -40,38 +48,42 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
             with ui.row().classes("items-center gap-2"):
                 # A compact menu keeps navigation usable on small screens.
                 with ui.dropdown_button("Menu", icon="menu", auto_close=True).props("outline dense"):
-                    home_item = ui.menu_item("Insights", on_click=lambda: ui.navigate.to("/insights"))
-                    if _is_active("/insights"):
+                    home_item = ui.menu_item("Home", on_click=lambda: _nav_click(label="home", target="/home"))
+                    if _is_active("/home"):
                         home_item.classes("lp-nav-active")
 
-                    explore_item = ui.menu_item("Explore", on_click=lambda: ui.navigate.to("/explore"))
+                    explore_item = ui.menu_item("Explore", on_click=lambda: _nav_click(label="explore", target="/explore"))
                     if _is_active("/explore"):
                         explore_item.classes("lp-nav-active")
 
-                    learning_item = ui.menu_item("My learning", on_click=lambda: ui.navigate.to("/learning"))
-                    if _is_active("/learning"):
-                        learning_item.classes("lp-nav-active")
+                    teams_item = ui.menu_item("Teams", on_click=lambda: _nav_click(label="teams", target="/teams"))
+                    if _is_active("/teams"):
+                        teams_item.classes("lp-nav-active")
 
-                    if settings.feature_ai_curator:
-                        ai_item = ui.menu_item("AI Curator", on_click=lambda: ui.navigate.to("/ai"))
-                        if _is_active("/ai"):
-                            ai_item.classes("lp-nav-active")
+                    profile_item = ui.menu_item("Profile", on_click=lambda: _nav_click(label="profile", target="/profile"))
+                    if _is_path_prefix_active("/profile"):
+                        profile_item.classes("lp-nav-active")
 
-                    courses_item = ui.menu_item("Courses", on_click=lambda: ui.navigate.to("/courses"))
-                    if _is_active("/courses"):
+                    ui.separator()
+                    courses_item = ui.menu_item("Courses", on_click=lambda: _nav_click(label="courses", target="/courses"))
+                    if _is_path_prefix_active("/courses"):
                         courses_item.classes("lp-nav-active")
-
-                    paths_item = ui.menu_item("Paths", on_click=lambda: ui.navigate.to("/paths"))
-                    if _is_active("/paths"):
+                    paths_item = ui.menu_item("Paths", on_click=lambda: _nav_click(label="paths", target="/paths"))
+                    if _is_path_prefix_active("/paths"):
                         paths_item.classes("lp-nav-active")
-
                     if settings.feature_articles:
-                        articles_item = ui.menu_item("Articles", on_click=lambda: ui.navigate.to("/articles"))
-                        if _is_active("/articles"):
+                        articles_item = ui.menu_item(
+                            "Articles", on_click=lambda: _nav_click(label="articles", target="/articles")
+                        )
+                        if _is_path_prefix_active("/articles"):
                             articles_item.classes("lp-nav-active")
+                    if settings.feature_ai_curator:
+                        ai_item = ui.menu_item("AI Curator", on_click=lambda: _nav_click(label="ai", target="/ai"))
+                        if _is_path_prefix_active("/ai"):
+                            ai_item.classes("lp-nav-active")
                     if is_admin:
                         ui.separator()
-                        admin_item = ui.menu_item("Admin", on_click=lambda: ui.navigate.to("/admin/users"))
+                        admin_item = ui.menu_item("Admin", on_click=lambda: _nav_click(label="admin", target="/admin/users"))
                         if _is_active("/admin/users"):
                             admin_item.classes("lp-nav-active")
 
@@ -80,11 +92,11 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                     await store.logout(api)
                     ui.navigate.to("/login")
 
-                activity_btn = ui.button(icon="markunread_mailbox", on_click=lambda: ui.navigate.to("/activity")).props(
-                    "outline dense"
-                )
-                activity_btn.tooltip("Activity")
-                if _is_active("/activity"):
+                activity_btn = ui.button(
+                    icon="markunread_mailbox", on_click=lambda: _nav_click(label="teams", target="/teams")
+                ).props("outline dense")
+                activity_btn.tooltip("Teams")
+                if _is_active("/teams"):
                     activity_btn.classes("lp-nav-active")
 
                 ui.button("Logout", on_click=_logout).props("outline dense")

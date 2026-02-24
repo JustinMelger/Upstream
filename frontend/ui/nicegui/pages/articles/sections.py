@@ -8,7 +8,12 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.components.card_actions import render_view_review_actions
+from frontend.ui.nicegui.components.card_frame import (
+    render_card_actions_row,
+    render_card_content_column,
+    render_card_main_row,
+    render_card_topright,
+)
 from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.pages.articles.ui_glue import ActiveFilterChip
@@ -34,25 +39,36 @@ class ArticlesTopbarControls:
 
 def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
     """Render articles topbar and return controls."""
-    with ui.row().classes("lp-topbar lp-sticky-controls"):
-        search_input = ui.input("Search articles").props("clearable debounce=300").style("flex: 1")
-        with ui.row().classes("items-center gap-2").style("margin-left: auto"):
-            ui.button("Share", on_click=on_share).props("dense")
-            sort_filter = (
-                ui.select(
-                    {
-                        "": "Recommended",
-                        "newest": "Newest",
-                        "title_az": "Title A–Z",
-                        "author_az": "Author A–Z",
-                    },
-                    value="",
-                    label=None,
-                )
-                .props("dense")
-                .style("min-width: 180px")
+    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar w-full gap-2"):
+        with ui.row().classes("w-full items-center gap-2"):
+            search_input = (
+                ui.input("Search articles")
+                .props("clearable debounce=300 dense")
+                .classes("lp-topbar-search lp-courses-search")
+                .style("flex: 1")
             )
-            meta = ui.label("").classes("lp-topbar-meta")
+            meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
+        with ui.row().classes("w-full items-center justify-end gap-2 flex-wrap"):
+            with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                ui.label("Sort").classes("lp-topbar-group-label")
+                sort_filter = (
+                    ui.select(
+                        {
+                            "": "Recommended",
+                            "newest": "Newest",
+                            "title_az": "Title A–Z",
+                            "author_az": "Author A–Z",
+                        },
+                        value="",
+                        label=None,
+                    )
+                    .props("dense")
+                    .style("min-width: 180px")
+                    .classes("lp-topbar-secondary-control")
+                )
+            with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                    ui.menu_item("Share article", on_share)
     return ArticlesTopbarControls(search_input=search_input, sort_filter=sort_filter, meta=meta)
 
 
@@ -147,12 +163,14 @@ def render_article_card(
     url = str(article_row.get("url") or "").strip()
 
     with ui.card().classes("w-full lp-card lp-card--hover lp-article-card"):
-        with ui.element("div").classes("lp-card-topright"):
+        with render_card_topright():
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
+            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                ui.menu_item("Review", review_action)
 
-        with ui.row().classes("lp-article-card-main no-wrap"):
-            with ui.column().classes("lp-article-card-content"):
+        with render_card_main_row(classes="lp-article-card-main"):
+            with render_card_content_column(classes="lp-article-card-content"):
                 ui.label(title).classes("text-lg font-semibold lp-card-title")
                 if url:
                     ui.link(url, url).props("target=_blank").classes("text-sm")
@@ -173,9 +191,10 @@ def render_article_card(
                 if summary_text:
                     ui.label(summary_text).classes("lp-meta-chip lp-article-summary-chip")
 
-                with ui.row().classes("items-center gap-2 mt-2") as actions_row:
-                    actions_row.classes("lp-card-actions")
-                    render_view_review_actions(on_view=view_action, on_review=review_action, review_tooltip="Reviews")
+                def _render_actions() -> None:
+                    ui.button("Open", on_click=view_action).props("dense")
+
+                render_card_actions_row(render_actions=_render_actions)
 
             safe_src = html.escape(str(thumbnail_url or "").strip(), quote=True)
             if safe_src:

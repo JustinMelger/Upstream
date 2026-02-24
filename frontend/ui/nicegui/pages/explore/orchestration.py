@@ -8,6 +8,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
+from frontend.ui.nicegui.pages.paths.state import PathsPageState
 
 
 async def load_explore_courses(
@@ -16,7 +17,7 @@ async def load_explore_courses(
     courses_controller: Any,
     refresh_ui: Callable[[], None],
     refresh_filter_options: Callable[[], None],
-    spawn_articles_load: Callable[[], None],
+    spawn_background_loads: Callable[[], None],
 ) -> None:
     """Load courses and related summaries for Explore."""
     state.loading = True
@@ -30,9 +31,44 @@ async def load_explore_courses(
         state.loaded_once = True
         refresh_filter_options()
         refresh_ui()
-        spawn_articles_load()
+        spawn_background_loads()
     finally:
         state.loading = False
+        refresh_ui()
+
+
+async def load_explore_paths_background(
+    *,
+    state: ExplorePageState,
+    paths_controller: Any,
+    refresh_ui: Callable[[], None],
+    notify_warning: Callable[[str], None],
+) -> None:
+    """Best-effort path load that should not block course rendering."""
+    if state.paths_loading:
+        return
+
+    state.paths_loading = True
+    refresh_ui()
+    try:
+        paths_state = PathsPageState()
+        await asyncio.wait_for(paths_controller.load_all(state=paths_state), timeout=8.0)
+        state.paths = list(paths_state.paths or [])
+        state.selected_by_path_id = dict(paths_state.selected_by_id or {})
+        state.selected_detail_by_path_id = dict(paths_state.selected_detail_by_path_id or {})
+        state.path_review_summary_by_id = dict(paths_state.path_review_summary_by_id or {})
+        state.path_recommendation_summary_by_id = dict(paths_state.path_recommendation_summary_by_id or {})
+        if paths_state.tracking_by_course_id:
+            state.tracking_by_course_id = dict(paths_state.tracking_by_course_id)
+    except (ApiError, TimeoutError) as exc:
+        state.paths = []
+        state.selected_by_path_id = {}
+        state.selected_detail_by_path_id = {}
+        state.path_review_summary_by_id = {}
+        state.path_recommendation_summary_by_id = {}
+        notify_warning(str(exc))
+    finally:
+        state.paths_loading = False
         refresh_ui()
 
 

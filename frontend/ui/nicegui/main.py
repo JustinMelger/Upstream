@@ -14,7 +14,6 @@ from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.theme import apply_theme
 from frontend.ui.nicegui.pages import (
-    activity,
     admin_users,
     ai_curator,
     articles,
@@ -24,6 +23,8 @@ from frontend.ui.nicegui.pages import (
     learning,
     login,
     paths,
+    profile,
+    teams,
 )
 
 
@@ -38,7 +39,8 @@ def create_app() -> None:
     home.register(store=store, api=api)
     explore.register(store=store, api=api)
     learning.register(store=store, api=api)
-    activity.register(store=store, api=api)
+    teams.register(store=store, api=api)
+    profile.register(store=store, api=api)
     if settings.feature_ai_curator:
         ai_curator.register(store=store, api=api)
     courses.register(store=store, api=api)

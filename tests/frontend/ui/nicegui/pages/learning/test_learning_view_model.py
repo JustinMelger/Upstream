@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.learning.view_model import build_learning_tab_view, build_shared_tab_view
+from frontend.ui.nicegui.pages.learning.view_model import (
+    build_learning_tab_view,
+    build_recently_shared_in_teams,
+    build_shared_tab_view,
+)
 
 
 def test_build_shared_tab_view_projects_expected_fields() -> None:
@@ -56,3 +60,19 @@ def test_build_learning_tab_view_ignores_invalid_pending_review_ids() -> None:
     )
     assert vm.pending_course_review_ids == [5]
     assert vm.pending_path_review_ids == [3]
+
+
+def test_build_recently_shared_in_teams_excludes_current_user_and_sorts() -> None:
+    items = build_recently_shared_in_teams(
+        data={
+            "courses": [
+                {"id": 1, "title": "A", "created_by": "alice", "updated_at": "2026-02-20T10:00:00Z"},
+                {"id": 2, "title": "Mine", "created_by": "bob", "updated_at": "2026-02-24T10:00:00Z"},
+            ],
+            "paths": [{"id": 10, "name": "Path 1", "created_by": "charlie", "updated_at": "2026-02-21T10:00:00Z"}],
+            "articles": [{"id": 100, "title": "Article 1", "created_by": "dana", "updated_at": "2026-02-22T10:00:00Z"}],
+        },
+        username="bob",
+        limit=3,
+    )
+    assert [(str(i["type"]), int(i["id"])) for i in items] == [("article", 100), ("path", 10), ("course", 1)]

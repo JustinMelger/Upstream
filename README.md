@@ -19,9 +19,11 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 
 ## Run locally (Docker)
 ### Quick start
-1. Build and start services:
+1. Start observability stack (separate deploy):
+   - `docker compose -f docker-compose.observability.yml up -d`
+2. Build and start app services:
    - `docker compose up --build`
-2. Open the UI:
+3. Open the UI:
    - `http://localhost:8080`
 
 ## Database migrations (Postgres)
@@ -32,9 +34,11 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 ### Live reload (Docker Compose watch)
 1. Ensure Docker Compose supports `watch`:
    - `docker compose version`
-2. Start services with file sync + reload:
+2. Start observability stack:
+   - `docker compose -f docker-compose.observability.yml up -d`
+3. Start app services with file sync + reload:
    - `docker compose -f docker-compose.watch.yml watch`
-3. Open the UI:
+4. Open the UI:
    - `http://localhost:8080`
 
 ### Environment variables
@@ -43,6 +47,14 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 - `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist (API).
 - `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage (UI).
 - `DATABASE_URL`: Postgres connection string (API).
+- `OTEL_ENABLED`: enable OpenTelemetry in API (`0` or `1`).
+- `OTEL_SERVICE_NAME`: OpenTelemetry service name for backend traces/metrics.
+- `OTEL_SERVICE_VERSION`: OpenTelemetry service version.
+- `OTEL_DEPLOYMENT_ENVIRONMENT`: environment label (e.g. `dev`, `staging`, `prod`).
+- `OTEL_TRACES_SAMPLE_RATIO`: trace sample ratio (`0.0` - `1.0`).
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`: OTLP HTTP traces endpoint (default `http://localhost:4318/v1/traces`).
+- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`: OTLP HTTP metrics endpoint (default `http://localhost:4318/v1/metrics`).
+- `OTEL_EXPORTER_OTLP_HEADERS`: optional comma-separated OTLP headers (`k=v,k2=v2`).
 
 ## Run locally (without Docker)
 1. Install dependencies:
@@ -116,6 +128,7 @@ Examples:
 
 ## API endpoints (read-first)
 - `GET /health`
+- `POST /telemetry/events` (authenticated frontend product events sink)
 
 Endpoint families:
 - Auth/session: `/auth/*`
@@ -124,7 +137,36 @@ Endpoint families:
 - Articles (+ reviews): `/articles/*`
 - Tracking/stats: `/tracking/*`
 - Notifications/activity: `/notifications/*`
+- Telemetry/events: `/telemetry/*`
 - AI draft planning: `/ai/*`
+
+## Observability (OpenTelemetry + Prometheus + Grafana)
+- Start observability independently:
+  - `docker compose -f docker-compose.observability.yml up -d`
+- Observability stack includes:
+  - OpenTelemetry Collector on `4317`/`4318`
+  - Tempo on `http://localhost:3200` (trace backend)
+  - Loki on `http://localhost:3100` (log backend)
+  - Promtail (ships Docker logs to Loki)
+  - Prometheus on `http://localhost:9090`
+  - Grafana on `http://localhost:3000` (default `admin` / `admin`)
+  - Collector Prometheus metrics endpoint on `http://localhost:9464/metrics`
+- API exports traces + metrics via OTLP HTTP to Collector.
+  - App containers send OTLP to `host.docker.internal:4318`, so observability can run in a separate Compose project.
+- Collector config lives at:
+  - `deploy/observability/otel-collector-config.yaml`
+  - `deploy/observability/prometheus.yml`
+  - `deploy/observability/tempo.yaml`
+  - `deploy/observability/loki-config.yaml`
+  - `deploy/observability/promtail-config.yaml`
+  - `deploy/observability/grafana/provisioning/datasources/datasources.yml`
+  - `deploy/observability/grafana/provisioning/dashboards/dashboards.yml`
+  - `deploy/observability/grafana/provisioning/dashboards/json/learning-platform-observability.json`
+- Collector trace export target env vars (in observability compose):
+  - `TEMPO_OTLP_ENDPOINT` (default `http://tempo:4318/v1/traces`)
+  - `TEMPO_OTLP_AUTH_HEADER` (optional)
+- Grafana auto-loads the starter dashboard:
+  - `Learning Platform Observability`
 
 OpenAPI docs:
 - Swagger UI: `http://localhost:8000/docs`

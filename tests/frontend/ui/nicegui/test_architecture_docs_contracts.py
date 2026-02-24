@@ -83,8 +83,12 @@ def test_documented_routes_exist_in_page_modules() -> None:
     documented_routes = {
         "/",
         "/login",
+        "/home",
         "/learning",
+        "/teams",
         "/activity",
+        "/profile",
+        "/profile/stats",
         "/courses",
         "/paths",
         "/articles",

@@ -163,13 +163,17 @@ Notes:
 Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 
 - `/login`: Authenticate and create a session.
-- `/`: Redirect to `/learning`.
+- `/`: Redirect to `/home`.
+- `/home`: Primary action hub (continue learning + review nudges + personal workspace).
 - `/courses`: Browse/search courses.
 - `/paths`: Browse learning paths.
-- `/learning`: Personal learning workspace (tracked/shared/recommended).
-- `/activity`: Inbox + team activity feed.
+- `/learning`: Legacy alias for `/home` (kept temporarily for compatibility).
+- `/teams`: Inbox + team activity feed.
+- `/activity`: Legacy alias for `/teams` (kept temporarily for compatibility).
+- `/profile`: Profile landing route (redirects to `/profile/stats`).
+- `/profile/stats`: Full statistics dashboard.
 - `/articles`: Share and browse colleague-submitted links ("Articles").
-- `/insights`: Statistics/overview page.
+- `/insights`: Legacy stats route (being retired in favor of `/profile/stats`).
 - `/admin/users`: User management (admin only).
 
 Notes:
@@ -199,17 +203,21 @@ Backend endpoints:
 - `POST /auth/login`
 - `GET /auth/me` (optional post-login verification)
 
-### HomePage (`/`)
+### HomePage (`/home`)
 Responsibilities:
 
-- Render current user and role.
-- Show quick links to Courses, Paths, and Tracking.
-- Optionally show recent team activity for admins.
+- Render the primary personal workspace (tracked/selected/shared content).
+- Keep "continue learning" and next-action workflows prominent.
+- Provide clear transition into discovery (`Explore`) and collaboration (`Teams`).
 
 Backend endpoints (optional):
 
 - `GET /auth/me`
-- `GET /tracking/recent` (admin)
+- `GET /tracking`
+- `GET /paths/selected/list`
+- `GET /courses`
+- `GET /paths`
+- `GET /articles`
 
 ### CoursesPage (`/courses`)
 Responsibilities:
@@ -280,9 +288,10 @@ Backend endpoints:
 - `POST /articles/{id}/reviews`
 - `DELETE /articles/{id}/reviews/{review_id}`
 
-### MyLearningPage (`/learning`)
+### MyLearningPage (legacy alias: `/learning`)
 Responsibilities:
 
+- Route alias to the Home workspace while migration is in progress.
 - Provide a single personal overview split into two intents:
 - `Learning`: what the user plans to learn (tracked courses + selected paths; optionally saved articles later).
 - `Shared`: what the user contributed (courses created by the user, paths created by the user, articles shared by the user).
@@ -306,6 +315,29 @@ Notes:
 - `GET /courses?created_by=alice`
 - `GET /paths?created_by=alice`
 - `GET /articles?created_by=alice`
+
+### TeamsPage (`/teams`, legacy alias: `/activity`)
+Responsibilities:
+
+- Show inbox/team activity feed for collaboration updates.
+- Allow tab-based filtering between personal inbox and team timeline.
+- Route activity targets to course/path/article detail pages.
+
+Backend endpoints:
+
+- `GET /notifications/activity`
+
+### ProfilePage (`/profile`, `/profile/stats`)
+Responsibilities:
+
+- Redirect `/profile` to `/profile/stats`.
+- Show detailed user stats and (for admins) team stats breakdown.
+- Keep snapshot stats discoverable from Home while full breakdown stays in Profile.
+
+Backend endpoints:
+
+- `GET /tracking/stats`
+- `GET /tracking/stats/users`
 
 ## Expanded Domain Model
 
@@ -353,24 +385,23 @@ classDiagram
   }
 
   class LoginPage { +render() }
-  class InsightsPage { +render() }
+  class HomePage { +render() }
   class PathsPage { +render() }
   class CoursesPage { +render() }
   class ArticlesPage { +render() }
-  class MyLearningPage { +render() }
-  class ActivityPage { +render() }
+  class TeamsPage { +render() }
+  class ProfilePage { +render() }
   class AdminUsersPage { +render() }
   class AiCuratorPage { +render() }
 
   LoginPage --> SessionStore
-  InsightsPage --> SessionStore
-  InsightsPage --> TrackingService
+  HomePage --> MyLearningService
   PathsPage --> PathsService
   CoursesPage --> TrackingService
   CoursesPage --> PathsService
   ArticlesPage --> ArticlesService
-  MyLearningPage --> MyLearningService
-  ActivityPage --> ApiClient
+  TeamsPage --> ApiClient
+  ProfilePage --> TrackingService
   AdminUsersPage --> UsersAdminService
   AiCuratorPage --> ApiClient
 
