@@ -30,7 +30,7 @@
   - [x] Align `Shared` vs `Recommended` semantics in labels and page copy.
   - [x] Add contextual purpose subtitles under primary page titles (`Home`, `Explore`, `Teams`, `Profile`).
 - [ ] Complete `11E.7` first-time user clarity pass:
-  - [ ] Add dismissible 3-step first-login intro.
+  - [x] Add dismissible 3-step first-login intro.
   - [ ] Ensure each key empty state has exactly one primary action.
   - [ ] Ensure no primary page loads without an unambiguous next step.
   - [ ] Run 5 usability tests and log confusion points; fix top 5 before pilot.

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from nicegui import ui
+from nicegui import app, ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
@@ -30,6 +30,11 @@ from frontend.ui.nicegui.pages.learning.actions import (
     load_more_tracked,
 )
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
+from frontend.ui.nicegui.pages.learning.onboarding import (
+    dismiss_home_intro,
+    INTRO_STEPS,
+    should_show_home_intro,
+)
 from frontend.ui.nicegui.pages.learning.route_init import resolve_learning_initial_view
 from frontend.ui.nicegui.pages.learning.sections import (
     render_learning_tab,
@@ -195,6 +200,30 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         with render_container():
             ui.label(subtitle_for(PrimaryPage.HOME)).classes("text-sm text-gray-600")
             ui.label("").classes("h-1")
+
+            @ui.refreshable
+            def intro_panel() -> None:
+                if not should_show_home_intro(storage_user=app.storage.user):
+                    return
+                with ui.card().classes("lp-card w-full"):
+                    ui.label("Welcome to Home").classes("text-md font-semibold")
+                    ui.label("Start here in three quick steps.").classes("text-sm").style("color: var(--lp-muted)")
+                    for idx, step in enumerate(INTRO_STEPS, start=1):
+                        with ui.row().classes("items-start gap-2 w-full"):
+                            ui.label(str(idx)).classes("lp-chip lp-chip--sky")
+                            with ui.column().classes("gap-0"):
+                                ui.label(step.title).classes("text-sm font-semibold")
+                                ui.label(step.body).classes("text-xs").style("color: var(--lp-muted)")
+
+                    def _dismiss_intro() -> None:
+                        dismiss_home_intro(storage_user=app.storage.user)
+                        intro_panel.refresh()
+
+                    with ui.row().classes("justify-end w-full"):
+                        ui.button("Dismiss", on_click=_dismiss_intro).props("dense outline")
+
+            intro_panel()
+
             with ui.row().classes("lp-topbar"):
                 with ui.row().classes("items-center gap-2").style("margin-left: auto"):
                     view_filter = (
