@@ -349,5 +349,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         refresh=_refresh_content,
                     ),
                 )
+
             await _load()
             content()
