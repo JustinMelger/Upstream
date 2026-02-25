@@ -59,6 +59,18 @@
   - [ ] Resolve current `mypy` baseline errors in `frontend/ui/nicegui/pages/paths/*` and `frontend/ui/nicegui/pages/explore/page.py`.
   - [ ] Keep `ruff` and `mypy` green on touched modules for every sprint slice.
   - [ ] Add/update targeted tests for any extracted orchestration/controller helpers.
+  - [ ] Lint ratchet near-term target for non-legacy modules:
+    - [ ] `mccabe<=25`
+    - [ ] `max-branches<=20`
+    - [ ] `max-statements<=100`
+    - [ ] `max-args<=10`
+    - [ ] `max-returns<=8`
+  - [ ] Define enforcement tiers in `pyproject.toml` (strict in `services/controllers/orchestration/reducers`, slightly looser in UI composition modules).
+  - [ ] Remove temporary per-file complexity ignores from active modules by extracting long/high-branch functions.
+  - [ ] Reduce argument-heavy APIs (`PLR0913`) using typed payload/context objects (dataclass/view-model based).
+  - [ ] Add architecture regression guard for complexity in active page modules (prevent new regressions).
+  - [ ] Keep legacy-page excludes fixed (no broadened ignore scope).
+  - [ ] Roll out CI ratchet mode: fail on new violations first, then enforce full thresholds.
 - [ ] Complete open Phase `11D` engineering items:
   - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
   - [ ] Isolate backend integration test auth/session state to reduce intermittent `401/404/500` failures.

@@ -264,6 +264,13 @@
 - [ ] Test reliability: isolate backend integration test auth/session state per test (or per module) to remove intermittent `401/404/500` flakiness.
 - [x] Docs sync: update `docs/architecture_frontend.md` to match current IA/routes (`My learning`, `Insights`, mailbox activity) and current service/page boundaries.
 - [ ] Docs sync: update `docs/architecture_backend.md` course/recommendation/review model details (`description`, `learning_outcomes`, `prerequisites`, `language`, `search_document`) and current service flows.
+- [ ] Lint/mypy ratchet (near-term target): converge to `mccabe<=25`, `max-branches<=20`, `max-statements<=100`, `max-args<=10`, `max-returns<=8` for non-legacy code.
+  - [ ] Phase slice: define enforcement tiers by module type (strict for `services/controllers/orchestration/reducers`; slightly looser for UI section renderers) and document them in `pyproject.toml` comments.
+  - [ ] Phase slice: remove temporary per-file complexity ignores from active (non-legacy) modules by extracting oversized functions into `controller.py`, `orchestration.py`, `actions.py`, and `ui_glue.py`.
+  - [ ] Phase slice: reduce argument-heavy APIs (`PLR0913`) by introducing typed payload/view-model dataclasses and callback/context objects instead of long parameter lists.
+  - [ ] Phase slice: add architecture tests that prevent new direct complexity regressions in active page modules (file-size + complexity smoke guards).
+  - [ ] Phase slice: keep legacy pages explicitly excluded until migration is complete; do not expand legacy ignore scope.
+  - [ ] Phase slice: enable CI ratchet mode (fail on new violations first, then fail on full threshold) to tighten incrementally without blocking delivery.
 
 ### Phase 11E — IA Simplification + First-Use Clarity
 
