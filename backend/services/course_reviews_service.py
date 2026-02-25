@@ -5,11 +5,11 @@ from typing import Callable
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
-from sqlalchemy.exc import IntegrityError
 
 from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.course_reviews import CourseReviewsRepository
 from backend.database.tx import session_scope
+from backend.services.review_upsert import upsert_review_id
 
 
 class CourseReviewsServiceError(ServiceError):
@@ -20,6 +20,16 @@ def course_reviews_error_handler(
     message: str = "An unexpected error occurred while handling course reviews",
     status_code: int = 500,
 ) -> Callable[[F], F]:
+    """Build an error-handler decorator for course review methods.
+
+    Args:
+        message: Default fallback error message.
+        status_code: Default HTTP status code for unexpected failures.
+
+    Returns:
+        Decorator wrapping uncaught errors as `CourseReviewsServiceError`.
+
+    """
     return error_handler(
         service_error=CourseReviewsServiceError,
         message=message,
@@ -40,10 +50,37 @@ class CourseReviewsService:
     """Course reviews service."""
 
     def __init__(self, repo: CourseReviewsRepository):
+        """Initialize the service.
+
+        Args:
+            repo: Course reviews repository.
+
+        """
         self._repo = repo
+
+    @staticmethod
+    def _coerce_rating(value: int | float | str | None) -> int:
+        if value is None:
+            raise CourseReviewsServiceError(detail="invalid_rating", status_code=400)
+        try:
+            rating_i = int(value)
+        except (TypeError, ValueError):
+            raise CourseReviewsServiceError(detail="invalid_rating", status_code=400)
+        if rating_i < 1 or rating_i > 5:
+            raise CourseReviewsServiceError(detail="invalid_rating", status_code=400)
+        return rating_i
 
     @course_reviews_error_handler()
     async def list_reviews(self, *, course_id: int) -> list[dict]:
+        """List review rows for one course.
+
+        Args:
+            course_id: Course identifier.
+
+        Returns:
+            Serialized review rows.
+
+        """
         async with session_scope(self._repo.session):
             rows = await self._repo.list_for_course(course_id=course_id)
         return [
@@ -66,51 +103,37 @@ class CourseReviewsService:
         per course).
         """
         data = self._parse_mutation_payload(payload)
-        rating = data.rating
-        if rating is None:
-            raise CourseReviewsServiceError(detail="invalid_rating", status_code=400)
-        try:
-            rating_i = int(rating)
-        except (TypeError, ValueError):
-            raise CourseReviewsServiceError(detail="invalid_rating", status_code=400)
-        if rating_i < 1 or rating_i > 5:
-            raise CourseReviewsServiceError(detail="invalid_rating", status_code=400)
+        rating_i = self._coerce_rating(data.rating)
 
         text = str(data.text or "").strip() or None
         created_at = datetime.now(timezone.utc).isoformat()
-
-        review_id: int | None = None
         async with session_scope(self._repo.session):
-            existing = await self._repo.get_review_for_course_by_user(course_id=int(course_id), created_by=str(created_by))
-            if existing:
-                await self._repo.update_review(review_id=existing.id, rating=rating_i, text=text, created_at=created_at)
-                review_id = existing.id
-            else:
-                try:
-                    review_id = await self._repo.create_review(
-                        course_id=int(course_id),
-                        rating=rating_i,
-                        text=text,
-                        created_by=str(created_by),
-                        created_at=created_at,
-                    )
-                except IntegrityError:
-                    # Concurrent insert: fetch then update.
-                    concurrent = await self._repo.get_review_for_course_by_user(
-                        course_id=int(course_id), created_by=str(created_by)
-                    )
-                    if not concurrent:
-                        raise
-                    await self._repo.update_review(
-                        review_id=concurrent.id,
-                        rating=rating_i,
-                        text=text,
-                        created_at=created_at,
-                    )
-                    review_id = concurrent.id
+            review_id = await upsert_review_id(
+                get_existing=lambda: self._repo.get_review_for_course_by_user(
+                    course_id=int(course_id),
+                    created_by=str(created_by),
+                ),
+                create=lambda: self._repo.create_review(
+                    course_id=int(course_id),
+                    rating=rating_i,
+                    text=text,
+                    created_by=str(created_by),
+                    created_at=created_at,
+                ),
+                get_concurrent=lambda: self._repo.get_review_for_course_by_user(
+                    course_id=int(course_id),
+                    created_by=str(created_by),
+                ),
+                update=lambda review_id: self._repo.update_review(
+                    review_id=int(review_id),
+                    rating=rating_i,
+                    text=text,
+                    created_at=created_at,
+                ),
+            )
 
         async with session_scope(self._repo.session):
-            created = await self._repo.get_review_by_id(int(review_id or 0))
+            created = await self._repo.get_review_by_id(int(review_id))
         if not created:
             raise CourseReviewsServiceError(detail="create_failed", status_code=500)
         return {

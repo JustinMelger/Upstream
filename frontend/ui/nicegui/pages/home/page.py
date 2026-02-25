@@ -1,4 +1,4 @@
-"""Root and legacy route redirects."""
+"""Root route redirects."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from frontend.ui.nicegui.core.session_store import SessionStore
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
-    """Register root and legacy redirects."""
+    """Register root redirects."""
 
     async def _guard_contract_probe() -> None:
         await require_user(store, api)
@@ -21,8 +21,3 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
     async def root_page() -> None:
         """Default app landing route: redirect to Home."""
         ui.navigate.to("/home")
-
-    @ui.page("/insights")
-    async def insights_legacy_page() -> None:
-        """Legacy insights route: redirect to Profile stats."""
-        ui.navigate.to("/profile/stats")

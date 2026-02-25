@@ -14,6 +14,13 @@ class NotificationsServiceError(ServiceError):
     """Domain error for notifications failures."""
 
     def __init__(self, *, detail: str, status_code: int = 500) -> None:
+        """Initialize the service error payload.
+
+        Args:
+            detail: Domain-specific error key/message.
+            status_code: HTTP status code to expose.
+
+        """
         super().__init__(detail=detail, status_code=status_code)
 
 
@@ -73,6 +80,12 @@ class NotificationsService:
     """Activity feed service for shared/recommended notifications."""
 
     def __init__(self, repo: NotificationsRepository):
+        """Initialize the service.
+
+        Args:
+            repo: Notifications read repository.
+
+        """
         self._repo = repo
 
     @notifications_error_handler()
@@ -195,6 +208,26 @@ class NotificationsService:
         return out
 
     @staticmethod
+    def _recommendation_event_copy(
+        *,
+        actor: str,
+        owner: str,
+        label: str,
+        username: str,
+        is_team: bool,
+        kind: Literal["course", "path"],
+    ) -> tuple[str, str] | None:
+        if is_team:
+            if actor == username:
+                return f"you_recommended_{kind}", f'You recommended "{label}"'
+            if owner and owner == username:
+                return f"your_{kind}_recommended", f'{actor} recommended your shared {kind} "{label}"'
+            return f"{kind}_recommended", f'{actor} recommended "{label}"'
+        if actor == username or owner != username:
+            return None
+        return f"your_{kind}_recommended", f'{actor} recommended your shared {kind} "{label}"'
+
+    @staticmethod
     def _build_recommendation_events(
         *, rows: list[dict], username: str, is_team: bool, kind: Literal["course", "path"]
     ) -> list[ActivityEvent]:
@@ -210,20 +243,17 @@ class NotificationsService:
             if not actor:
                 continue
             label = str(row.get(label_key) or "").strip() or f"Untitled {key}"
-            if is_team:
-                event_type = f"{key}_recommended"
-                message = f'{actor} recommended "{label}"'
-                if actor == username:
-                    event_type = f"you_recommended_{key}"
-                    message = f'You recommended "{label}"'
-                elif owner and owner == username:
-                    event_type = f"your_{key}_recommended"
-                    message = f'{actor} recommended your shared {key} "{label}"'
-            else:
-                if actor == username or owner != username:
-                    continue
-                event_type = f"your_{key}_recommended"
-                message = f'{actor} recommended your shared {key} "{label}"'
+            copy = NotificationsService._recommendation_event_copy(
+                actor=actor,
+                owner=owner,
+                label=label,
+                username=username,
+                is_team=is_team,
+                kind=key,
+            )
+            if copy is None:
+                continue
+            event_type, message = copy
             out.append(
                 ActivityEvent(
                     event_id=f"{key}_recommended:{int(row.get('recommendation_id') or 0)}",
@@ -237,6 +267,27 @@ class NotificationsService:
                 )
             )
         return out
+
+    @staticmethod
+    def _rating_event_copy(
+        *,
+        actor: str,
+        owner: str,
+        label: str,
+        stars: str,
+        username: str,
+        is_team: bool,
+        kind: Literal["course", "path", "article"],
+    ) -> tuple[str, str] | None:
+        if is_team:
+            if actor == username:
+                return f"you_rated_{kind}", f'You rated "{label}" ({stars})'
+            if owner and owner == username:
+                return f"your_{kind}_rated", f'{actor} rated your shared {kind} "{label}" ({stars})'
+            return f"{kind}_rated", f'{actor} rated "{label}" ({stars})'
+        if actor == username or owner != username:
+            return None
+        return f"your_{kind}_rated", f'{actor} rated your shared {kind} "{label}" ({stars})'
 
     @staticmethod
     def _build_rating_events(
@@ -267,20 +318,18 @@ class NotificationsService:
             label = str(row.get(label_key) or "").strip() or f"Untitled {kind}"
             rating = int(row.get("rating") or 0)
             stars = f"{rating}/5" if rating > 0 else "a rating"
-            if is_team:
-                event_type = f"{kind}_rated"
-                message = f'{actor} rated "{label}" ({stars})'
-                if actor == username:
-                    event_type = f"you_rated_{kind}"
-                    message = f'You rated "{label}" ({stars})'
-                elif owner and owner == username:
-                    event_type = f"your_{kind}_rated"
-                    message = f'{actor} rated your shared {kind} "{label}" ({stars})'
-            else:
-                if actor == username or owner != username:
-                    continue
-                event_type = f"your_{kind}_rated"
-                message = f'{actor} rated your shared {kind} "{label}" ({stars})'
+            copy = NotificationsService._rating_event_copy(
+                actor=actor,
+                owner=owner,
+                label=label,
+                stars=stars,
+                username=username,
+                is_team=is_team,
+                kind=kind,
+            )
+            if copy is None:
+                continue
+            event_type, message = copy
             out.append(
                 ActivityEvent(
                     event_id=f"{kind}_rated:{int(row.get('review_id') or 0)}",

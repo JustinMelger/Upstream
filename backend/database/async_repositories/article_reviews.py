@@ -14,6 +14,12 @@ class ArticleReviewsRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of article review persistence."""
 
     def __init__(self, session: AsyncSession):
+        """Initialize the repository.
+
+        Args:
+            session: Active async SQLAlchemy session.
+
+        """
         self.session = session
 
     async def list_for_article(self, *, article_id: int) -> list[ArticleReviewRecord]:

@@ -237,6 +237,47 @@ async def _load_shared_summaries(
     )
 
 
+def _build_learning_collections(
+    *,
+    courses: list[dict[str, Any]],
+    paths: list[dict[str, Any]],
+    articles: list[dict[str, Any]],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+    selected_ids: list[int],
+    username: str,
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[int],
+    list[int],
+    list[int],
+    list[int],
+]:
+    shared_courses = [c for c in courses if str(c.get("created_by") or "") == username]
+    shared_paths = [p for p in paths if str(p.get("created_by") or "") == username]
+    shared_articles = [a for a in articles if str(a.get("created_by") or "") == username]
+
+    tracked_course_ids = {int(cid) for cid in tracking_by_course_id.keys()}
+    tracked_courses = [c for c in courses if int(c.get("id") or 0) in tracked_course_ids]
+
+    tracked_ids_sorted = sorted(int(c.get("id") or 0) for c in tracked_courses if int(c.get("id") or 0) > 0)
+    selected_ids_sorted = sorted(int(pid) for pid in selected_ids if int(pid) > 0)
+    shared_course_ids = sorted(int(c.get("id") or 0) for c in shared_courses if int(c.get("id") or 0) > 0)
+    shared_path_ids = sorted(int(p.get("id") or 0) for p in shared_paths if int(p.get("id") or 0) > 0)
+    return (
+        shared_courses,
+        shared_paths,
+        shared_articles,
+        tracked_courses,
+        tracked_ids_sorted,
+        selected_ids_sorted,
+        shared_course_ids,
+        shared_path_ids,
+    )
+
+
 async def load_my_learning_data(
     *,
     api: ApiClient,
@@ -277,16 +318,23 @@ async def load_my_learning_data(
 
     paths = list(paths_result or [])
     articles = list(articles_result or [])
-
-    shared_courses = [c for c in courses if str(c.get("created_by") or "") == username]
-    shared_paths = [p for p in paths if str(p.get("created_by") or "") == username]
-    shared_articles = [a for a in articles if str(a.get("created_by") or "") == username]
-
-    tracked_course_ids = {int(cid) for cid in tracking_by_course_id.keys()}
-    tracked_courses = [c for c in courses if int(c.get("id") or 0) in tracked_course_ids]
-
-    tracked_ids_sorted = sorted(int(c.get("id") or 0) for c in tracked_courses if int(c.get("id") or 0) > 0)
-    selected_ids_sorted = sorted(int(pid) for pid in selected_ids if int(pid) > 0)
+    (
+        shared_courses,
+        shared_paths,
+        shared_articles,
+        tracked_courses,
+        tracked_ids_sorted,
+        selected_ids_sorted,
+        shared_course_ids,
+        shared_path_ids,
+    ) = _build_learning_collections(
+        courses=courses,
+        paths=paths,
+        articles=articles,
+        tracking_by_course_id=tracking_by_course_id,
+        selected_ids=selected_ids,
+        username=username,
+    )
 
     course_review_summary_by_id = await _load_summary_map(
         api=api,
@@ -337,9 +385,6 @@ async def load_my_learning_data(
         username=username,
         recommendation_summary_by_id=path_recommendation_summary_by_id,
     )
-
-    shared_course_ids = sorted(int(c.get("id") or 0) for c in shared_courses if int(c.get("id") or 0) > 0)
-    shared_path_ids = sorted(int(p.get("id") or 0) for p in shared_paths if int(p.get("id") or 0) > 0)
 
     (
         shared_course_review_summary_by_id,

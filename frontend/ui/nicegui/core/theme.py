@@ -620,25 +620,28 @@ def apply_theme() -> None:
           width: 196px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-section-title {
+        .lp-catalog--explore .lp-courses-section-title {
           font-size: 1.32rem;
           text-transform: none;
           letter-spacing: 0.01em;
           margin-top: 6px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-section-subtitle {
+        .lp-catalog--explore .lp-courses-section-subtitle {
           font-size: 0.86rem;
           color: rgba(220, 225, 235, 0.72);
           margin-top: -4px;
           margin-bottom: 2px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-grid,
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-rail {
+        .lp-catalog--explore .lp-courses-grid,
+        .lp-catalog--explore .lp-courses-rail {
           display: grid;
+          grid-template-columns: none;
           grid-auto-flow: column;
           grid-auto-columns: minmax(212px, 212px);
+          justify-content: start;
+          align-content: start;
           gap: 10px;
           overflow-x: auto;
           overflow-y: hidden;
@@ -647,27 +650,27 @@ def apply_theme() -> None:
           scrollbar-width: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-grid::-webkit-scrollbar,
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-rail::-webkit-scrollbar {
+        .lp-catalog--explore .lp-courses-grid::-webkit-scrollbar,
+        .lp-catalog--explore .lp-courses-rail::-webkit-scrollbar {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-grid-item,
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-rail-item {
+        .lp-catalog--explore .lp-courses-grid-item,
+        .lp-catalog--explore .lp-courses-rail-item {
           scroll-snap-align: start;
           width: 212px;
           flex: 0 0 212px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-grid-item--featured {
+        .lp-catalog--explore .lp-courses-grid-item--featured {
           grid-column: auto;
           width: 212px;
           flex: 0 0 212px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card,
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-card {
+        .lp-catalog--explore .lp-course-card,
+        .lp-catalog--explore .lp-path-card,
+        .lp-catalog--explore .lp-article-card {
           width: 212px;
           min-height: 258px;
           border-radius: 12px;
@@ -677,30 +680,30 @@ def apply_theme() -> None:
           transition: transform 160ms ease, box-shadow 180ms ease;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card--surface,
-        .lp-catalog--explore.lp-explore-cinema .lp-accent-card {
+        .lp-catalog--explore .lp-course-card--surface,
+        .lp-catalog--explore .lp-accent-card {
           border: none !important;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card::before,
-        .lp-catalog--explore.lp-explore-cinema .lp-accent-card::before,
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card::after {
+        .lp-catalog--explore .lp-course-card::before,
+        .lp-catalog--explore .lp-accent-card::before,
+        .lp-catalog--explore .lp-course-card::after {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card {
+        .lp-catalog--explore .lp-path-card {
           min-height: 246px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card:hover,
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card:hover,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-card:hover {
+        .lp-catalog--explore .lp-course-card:hover,
+        .lp-catalog--explore .lp-path-card:hover,
+        .lp-catalog--explore .lp-article-card:hover {
           transform: translateY(-3px);
           box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
           z-index: 5;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-title {
+        .lp-catalog--explore .lp-card-title {
           font-size: 0.94rem;
           line-height: 1.22;
           padding-right: 0;
@@ -712,32 +715,32 @@ def apply_theme() -> None:
           overflow: hidden;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-body {
+        .lp-catalog--explore .lp-card-body {
           font-size: 0.82rem;
           line-height: 1.3;
           max-width: 28ch;
           -webkit-line-clamp: 1;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-summary,
-        .lp-catalog--explore.lp-explore-cinema .lp-path-description,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-summary-chip {
+        .lp-catalog--explore .lp-course-summary,
+        .lp-catalog--explore .lp-path-description,
+        .lp-catalog--explore .lp-article-summary-chip {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-status-line {
+        .lp-catalog--explore .lp-course-status-line {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card-main,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-card-main {
+        .lp-catalog--explore .lp-course-card-main,
+        .lp-catalog--explore .lp-article-card-main {
           flex-direction: column;
           align-items: stretch;
           gap: 10px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card-content,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-card-content {
+        .lp-catalog--explore .lp-course-card-content,
+        .lp-catalog--explore .lp-article-card-content {
           order: 2;
           padding-right: 0;
           display: flex;
@@ -745,14 +748,14 @@ def apply_theme() -> None:
           min-height: 120px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-card-content {
+        .lp-catalog--explore .lp-path-card .lp-card-content {
           display: flex;
           flex-direction: column;
           min-height: 120px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-media-slot,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-media-slot {
+        .lp-catalog--explore .lp-course-media-slot,
+        .lp-catalog--explore .lp-article-media-slot {
           order: 1;
           width: 100%;
           margin-left: 0;
@@ -760,7 +763,7 @@ def apply_theme() -> None:
           justify-content: stretch;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-thumb--side {
+        .lp-catalog--explore .lp-course-thumb--side {
           width: 100%;
           height: 108px;
           border-radius: 9px;
@@ -769,7 +772,7 @@ def apply_theme() -> None:
           box-shadow: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-topright {
+        .lp-catalog--explore .lp-card-topright {
           top: 6px;
           right: 6px;
           padding: 1px 5px;
@@ -780,32 +783,32 @@ def apply_theme() -> None:
           backdrop-filter: blur(8px);
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-social-strip,
-        .lp-catalog--explore.lp-explore-cinema .lp-card-subtitle {
+        .lp-catalog--explore .lp-social-strip,
+        .lp-catalog--explore .lp-card-subtitle {
           font-size: 0.74rem;
           opacity: 0.68;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card .lp-social-strip {
+        .lp-catalog--explore .lp-course-card .lp-social-strip {
           min-height: 18px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-meta-row,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-meta-row {
+        .lp-catalog--explore .lp-path-card .lp-path-meta-row,
+        .lp-catalog--explore .lp-article-card .lp-article-meta-row {
           min-height: 18px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-social-strip .lp-card-subtitle,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-byline,
-        .lp-catalog--explore.lp-explore-cinema .lp-path-meta-row .lp-card-subtitle {
+        .lp-catalog--explore .lp-social-strip .lp-card-subtitle,
+        .lp-catalog--explore .lp-article-byline,
+        .lp-catalog--explore .lp-path-meta-row .lp-card-subtitle {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-social-strip .lp-meta-chip--rating {
+        .lp-catalog--explore .lp-social-strip .lp-meta-chip--rating {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-context-line {
+        .lp-catalog--explore .lp-course-context-line {
           display: block;
           margin-top: -4px;
           margin-bottom: 2px;
@@ -819,30 +822,30 @@ def apply_theme() -> None:
           min-height: 2.48em;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-social-strip .lp-meta-chip:nth-of-type(n+3) {
+        .lp-catalog--explore .lp-social-strip .lp-meta-chip:nth-of-type(n+3) {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-taxonomy .lp-meta-chip--quiet,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-tag-row .lp-meta-chip:nth-of-type(n+2),
-        .lp-catalog--explore.lp-explore-cinema .lp-path-meta-row .lp-meta-chip:nth-of-type(n+2) {
+        .lp-catalog--explore .lp-card-taxonomy .lp-meta-chip--quiet,
+        .lp-catalog--explore .lp-article-tag-row .lp-meta-chip:nth-of-type(n+2),
+        .lp-catalog--explore .lp-path-meta-row .lp-meta-chip:nth-of-type(n+2) {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-context-line,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-context-line,
-        .lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-tag-row {
+        .lp-catalog--explore .lp-path-card .lp-path-context-line,
+        .lp-catalog--explore .lp-article-card .lp-article-context-line,
+        .lp-catalog--explore .lp-article-card .lp-article-tag-row {
           min-height: 28px;
           align-items: center;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-context-line {
+        .lp-catalog--explore .lp-path-card .lp-path-context-line {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-next-line {
+        .lp-catalog--explore .lp-path-card .lp-path-next-line {
           display: none;
         }
 
@@ -855,17 +858,17 @@ def apply_theme() -> None:
           padding: 0;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-course-card .lp-card-taxonomy {
+        .lp-catalog--explore .lp-course-card .lp-card-taxonomy {
           min-height: 28px;
           align-items: center;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-actions {
+        .lp-catalog--explore .lp-card-actions {
           margin-top: auto;
           min-height: 34px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn {
+        .lp-catalog--explore .lp-card-actions .q-btn {
           border-radius: 10px;
           min-height: 30px !important;
           padding: 4px 10px !important;
@@ -873,56 +876,56 @@ def apply_theme() -> None:
           letter-spacing: 0.01em;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .lp-status-select,
-        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-card-actions .q-btn:nth-child(2) {
+        .lp-catalog--explore .lp-card-actions .lp-status-select,
+        .lp-catalog--explore .lp-path-card .lp-card-actions .q-btn:nth-child(2) {
           display: none !important;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn--standard {
+        .lp-catalog--explore .lp-card-actions .q-btn--standard {
           background: #4f86c6 !important;
           color: #eef6ff !important;
           box-shadow: none !important;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn--standard:hover {
+        .lp-catalog--explore .lp-card-actions .q-btn--standard:hover {
           background: #5c8fd8 !important;
           box-shadow: 0 8px 16px rgba(51, 98, 156, 0.34) !important;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip .q-btn--standard,
-        .lp-catalog--explore.lp-explore-cinema .lp-topbar .q-btn--standard {
+        .lp-catalog--explore .lp-explore-spotlight-strip .q-btn--standard,
+        .lp-catalog--explore .lp-topbar .q-btn--standard {
           background: #4f86c6 !important;
           color: #eef6ff !important;
           box-shadow: none !important;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip .q-btn--standard:hover,
-        .lp-catalog--explore.lp-explore-cinema .lp-topbar .q-btn--standard:hover {
+        .lp-catalog--explore .lp-explore-spotlight-strip .q-btn--standard:hover,
+        .lp-catalog--explore .lp-topbar .q-btn--standard:hover {
           background: #5c8fd8 !important;
           box-shadow: 0 8px 16px rgba(51, 98, 156, 0.34) !important;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn--outline {
+        .lp-catalog--explore .lp-card-actions .q-btn--outline {
           background: rgba(255, 255, 255, 0.04) !important;
           border-color: rgba(186, 204, 227, 0.16) !important;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-rail-item--hero .lp-course-card {
+        .lp-catalog--explore .lp-courses-rail-item--hero .lp-course-card {
           box-shadow: 0 11px 30px rgba(17, 35, 68, 0.36), 0 8px 24px rgba(0, 0, 0, 0.35);
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-topright .q-btn {
+        .lp-catalog--explore .lp-card-topright .q-btn {
           opacity: 0;
           pointer-events: none;
           transition: opacity 120ms ease;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card--hover:hover .lp-card-topright .q-btn {
+        .lp-catalog--explore .lp-card--hover:hover .lp-card-topright .q-btn {
           opacity: 1;
           pointer-events: auto;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip {
+        .lp-catalog--explore .lp-explore-spotlight-strip {
           width: 100%;
           margin: 2px 0 6px;
           padding: 8px 10px;
@@ -937,12 +940,12 @@ def apply_theme() -> None:
           gap: 14px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip > .column {
+        .lp-catalog--explore .lp-explore-spotlight-strip > .column {
           max-width: 900px;
           min-width: 0;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-eyebrow {
+        .lp-catalog--explore .lp-explore-spotlight-eyebrow {
           font-size: 0.72rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -950,13 +953,13 @@ def apply_theme() -> None:
           font-weight: 700;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-title {
+        .lp-catalog--explore .lp-explore-spotlight-title {
           font-size: 0.96rem;
           font-weight: 700;
           line-height: 1.25;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-body {
+        .lp-catalog--explore .lp-explore-spotlight-body {
           font-size: 0.8rem;
           line-height: 1.35;
           color: rgba(220, 225, 235, 0.8);
@@ -966,12 +969,12 @@ def apply_theme() -> None:
           overflow: hidden;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-meta {
+        .lp-catalog--explore .lp-explore-spotlight-meta {
           font-size: 0.78rem;
           color: rgba(220, 225, 235, 0.66);
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-sticky-controls {
+        .lp-catalog--explore .lp-sticky-controls {
           margin: 0 0 8px;
           padding: 8px 10px;
           background: linear-gradient(180deg, rgba(12, 21, 35, 0.68), rgba(11, 20, 33, 0.52));
@@ -979,21 +982,21 @@ def apply_theme() -> None:
           box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-topbar-group--secondary {
+        .lp-catalog--explore .lp-topbar-group--secondary {
           opacity: 0.84;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-toolbar-controls {
+        .lp-catalog--explore .lp-courses-toolbar-controls {
           border-left-color: rgba(186, 204, 227, 0.05);
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-collection-title {
+        .lp-catalog--explore .lp-courses-collection-title {
           font-size: 1.1rem;
           margin-bottom: 2px;
           letter-spacing: 0.01em;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-courses-row-title {
+        .lp-catalog--explore .lp-courses-row-title {
           font-size: 0.9rem;
           font-weight: 600;
           letter-spacing: 0.01em;
@@ -1001,12 +1004,12 @@ def apply_theme() -> None:
           opacity: 0.92;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-topbar .q-field__native,
-        .lp-catalog--explore.lp-explore-cinema .lp-topbar input {
+        .lp-catalog--explore .lp-topbar .q-field__native,
+        .lp-catalog--explore .lp-topbar input {
           font-size: 0.92rem !important;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-topbar .q-radio__label {
+        .lp-catalog--explore .lp-topbar .q-radio__label {
           font-size: 0.86rem;
           font-weight: 600;
         }
@@ -1889,6 +1892,69 @@ def apply_theme() -> None:
           color: rgba(163, 230, 53, 0.9);
           font-weight: 600;
           letter-spacing: 0.02em;
+        }
+
+        .lp-explore-detail {
+          --lp-max-content: 1380px;
+        }
+
+        .lp-explore-detail-breadcrumb {
+          color: var(--lp-muted);
+          opacity: 0.92;
+        }
+
+        .lp-explore-detail-breadcrumb a {
+          color: rgba(212, 226, 243, 0.86);
+          text-decoration: none;
+        }
+
+        .lp-explore-detail-main {
+          flex: 1 1 0%;
+          min-width: 0;
+          gap: 10px;
+          padding: 14px 16px 8px;
+          border-radius: var(--lp-radius-md);
+          border: 1px solid var(--lp-border-soft);
+          background:
+            linear-gradient(180deg, rgba(18, 30, 48, 0.72), rgba(12, 22, 38, 0.64)),
+            radial-gradient(720px 360px at 24% -12%, rgba(124, 184, 235, 0.12), transparent 60%);
+          box-shadow: var(--lp-shadow-sm);
+        }
+
+        .lp-explore-detail-side {
+          flex: 0 0 300px;
+          gap: 10px;
+          padding: 14px;
+          border-radius: var(--lp-radius-md);
+          border: 1px solid var(--lp-border-soft);
+          background: rgba(9, 18, 32, 0.72);
+          box-shadow: var(--lp-shadow-sm);
+        }
+
+        .lp-explore-detail-title {
+          font-family: var(--lp-font-display);
+          font-size: clamp(1.42rem, 2.1vw, 2.06rem);
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          line-height: 1.1;
+        }
+
+        .lp-explore-detail-body {
+          font-size: var(--lp-type-sm);
+          color: rgba(222, 230, 242, 0.88);
+          line-height: 1.55;
+        }
+
+        .lp-explore-detail-muted {
+          font-size: var(--lp-type-xs);
+          color: var(--lp-muted);
+          line-height: 1.5;
+        }
+
+        @media (max-width: 1040px) {
+          .lp-explore-detail-side {
+            flex-basis: 100%;
+          }
         }
 
         .lp-video-wrap {

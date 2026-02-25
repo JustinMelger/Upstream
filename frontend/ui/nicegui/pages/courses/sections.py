@@ -274,7 +274,7 @@ def render_course_card(
             elif card_vm.is_updated:
                 ui.label("Updated").classes("lp-chip lp-chip--teal")
             with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
-                ui.menu_item("Details", actions.on_view)
+                ui.menu_item("Open details", actions.on_view)
                 ui.menu_item("Review", actions.on_review)
                 ui.menu_item("Recommend", actions.on_recommend)
                 if has_video_preview:

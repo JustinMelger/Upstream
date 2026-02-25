@@ -26,17 +26,41 @@ class PathsPageController:
     """Imperative orchestration for Paths page API workflows."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the page controller.
+
+        Args:
+            api: Shared API client used for all backend requests.
+
+        """
         self._api = api
 
     async def reload_selected(self, *, state: PathsPageState) -> None:
+        """Reload selected-path rows into page state.
+
+        Args:
+            state: Mutable page state to update.
+
+        """
         selected_result = await self._api.get("/paths/selected/list")
         state.selected_by_id = index_rows_by_int_id(list(selected_result or []))
 
     async def reload_tracking(self, *, state: PathsPageState) -> None:
+        """Reload course tracking rows into page state.
+
+        Args:
+            state: Mutable page state to update.
+
+        """
         tracking_result = await self._api.get("/tracking")
         state.tracking_by_course_id = index_tracking_by_course_id(list(tracking_result or []))
 
     async def reload_selected_details(self, *, state: PathsPageState) -> None:
+        """Reload detail payloads for all selected paths.
+
+        Args:
+            state: Mutable page state to update.
+
+        """
         path_ids = sorted(int(pid) for pid in state.selected_by_id.keys())
         state.selected_detail_by_path_id = {}
         if not path_ids:
@@ -49,6 +73,13 @@ class PathsPageController:
                 state.selected_detail_by_path_id[int(pid)] = payload
 
     async def ensure_selected_detail(self, *, path_id: int, state: PathsPageState) -> None:
+        """Ensure one selected path has a cached detail payload.
+
+        Args:
+            path_id: Path identifier to load.
+            state: Mutable page state to update.
+
+        """
         if int(path_id) in state.selected_detail_by_path_id:
             return
         detail = await self._api.get(f"/paths/{int(path_id)}")
@@ -116,6 +147,15 @@ class PathsPageController:
         return True
 
     async def _load_course_review_summary(self, *, course_ids: list[int]) -> dict[int, dict[str, Any]]:
+        """Load per-course review summaries keyed by course id.
+
+        Args:
+            course_ids: Course identifiers to query.
+
+        Returns:
+            Mapping from course id to summary payload row.
+
+        """
         if not course_ids:
             return {}
         rows = await self._api.get("/courses/reviews/summary", params={"course_ids": [int(cid) for cid in course_ids]})
@@ -181,6 +221,16 @@ class PathsPageController:
         )
 
     async def select_path(self, *, path_id: int, state: PathsPageState) -> tuple[int, dict[str, Any] | None]:
+        """Select a path and seed missing course tracking statuses.
+
+        Args:
+            path_id: Path identifier to select.
+            state: Mutable page state providing tracking and cached detail context.
+
+        Returns:
+            Tuple of seeded tracking count and optional path detail payload.
+
+        """
         cached_detail = state.selected_detail_by_path_id.get(int(path_id))
         return await select_path_and_seed_tracking(
             api=self._api,
@@ -190,9 +240,24 @@ class PathsPageController:
         )
 
     async def unselect_path(self, *, path_id: int) -> bool:
+        """Unselect a path for the current user.
+
+        Args:
+            path_id: Path identifier to unselect.
+
+        Returns:
+            `True` when the request succeeds.
+
+        """
         return await unselect_path(api=self._api, path_id=int(path_id))
 
     async def load_all(self, *, state: PathsPageState) -> None:
+        """Load full Paths page dataset into state.
+
+        Args:
+            state: Mutable page state to update.
+
+        """
         paths, selected_by_id, courses, course_by_id = await load_paths_page_data(api=self._api)
         state.paths = paths
         state.selected_by_id = selected_by_id
@@ -206,8 +271,6 @@ class PathsPageController:
 
         path_ids: list[int] = []
         for p in state.paths:
-            if not isinstance(p, dict):
-                continue
             try:
                 pid = int(p.get("id") or 0)
             except (TypeError, ValueError):

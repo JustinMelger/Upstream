@@ -51,11 +51,11 @@ def test_courses_and_articles_topbar_are_componentized_in_sections() -> None:
 @pytest.mark.unit
 def test_load_more_footer_component_is_reused_across_pages() -> None:
     pagination_src = Path("frontend/ui/nicegui/components/pagination.py").read_text(encoding="utf-8")
-    paths_src = Path("frontend/ui/nicegui/pages/paths/page.py").read_text(encoding="utf-8")
+    paths_sections_src = Path("frontend/ui/nicegui/pages/paths/sections.py").read_text(encoding="utf-8")
     articles_sections_src = Path("frontend/ui/nicegui/pages/articles/sections.py").read_text(encoding="utf-8")
     courses_sections_src = Path("frontend/ui/nicegui/pages/courses/sections.py").read_text(encoding="utf-8")
     assert "def render_load_more_footer" in pagination_src
-    assert "render_load_more_footer(" in paths_src
+    assert "render_load_more_footer(" in paths_sections_src
     assert "render_load_more_footer(" in articles_sections_src
     assert "render_load_more_footer(" in courses_sections_src
 

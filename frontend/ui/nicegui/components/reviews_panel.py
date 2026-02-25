@@ -33,6 +33,46 @@ class ReviewPanelHooks:
     on_changed: Callable[[list[dict[str, Any]]], None] | None = None
 
 
+def _find_review_by_user(*, reviews: list[dict[str, Any]], username: str) -> dict[str, Any] | None:
+    for row in reviews:
+        if str(row.get("created_by") or "") == username:
+            return dict(row)
+    return None
+
+
+def _review_input_defaults(*, my_review: dict[str, Any] | None) -> tuple[int, str]:
+    rating = int((my_review or {}).get("rating") or 5)
+    text = str((my_review or {}).get("text") or "")
+    return rating, text
+
+
+def _merge_saved_review_rows(
+    *,
+    reviews: list[dict[str, Any]],
+    username: str,
+    saved: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Return review rows replacing the current user's review with the saved one."""
+    try:
+        saved_id = int((saved or {}).get("id") or 0)
+    except (TypeError, ValueError):
+        saved_id = 0
+
+    out: list[dict[str, Any]] = []
+    for row in reviews:
+        if str(row.get("created_by") or "") == username:
+            continue
+        if saved_id:
+            try:
+                if int(row.get("id") or 0) == saved_id:
+                    continue
+            except (TypeError, ValueError):
+                pass
+        out.append(dict(row))
+    out.insert(0, dict(saved))
+    return out
+
+
 def render_reviews_panel(
     *,
     username: str,
@@ -48,24 +88,18 @@ def render_reviews_panel(
     resolved_hooks = hooks if hooks is not None else ReviewPanelHooks()
     ui.label(resolved_text.section_title).classes("text-lg font-semibold")
 
-    def _find_my_review() -> dict[str, Any] | None:
-        for r in reviews:
-            if str(r.get("created_by") or "") == username:
-                return dict(r)
-        return None
-
     def _notify_changed() -> None:
         if resolved_hooks.on_changed is not None:
             resolved_hooks.on_changed(reviews)
 
-    my_review = _find_my_review()
+    my_review = _find_review_by_user(reviews=reviews, username=username)
 
     @guard_ui_action(title=resolved_text.delete_error_title)
     async def _delete_review(review_id: int) -> None:
         nonlocal my_review
         await on_delete(int(review_id))
         reviews[:] = [r for r in reviews if int(r.get("id") or 0) != int(review_id)]
-        my_review = _find_my_review()
+        my_review = _find_review_by_user(reviews=reviews, username=username)
         if my_review is None:
             rating_in.value = 5
             text_in.value = ""
@@ -109,39 +143,21 @@ def render_reviews_panel(
     reviews_list()
 
     my_review_label = ui.label("Your review" if my_review else "Add a review").classes("text-md font-semibold mt-2")
+    default_rating, default_text = _review_input_defaults(my_review=my_review)
     rating_in = ui.select(
         {1: "1", 2: "2", 3: "3", 4: "4", 5: "5"},
-        value=int((my_review or {}).get("rating") or 5),
+        value=default_rating,
         label="Rating",
     ).props("dense")
-    text_in = (
-        ui.textarea("Comment (optional)", value=str((my_review or {}).get("text") or "")).props("autogrow").classes("w-full")
-    )
+    text_in = ui.textarea("Comment (optional)", value=default_text).props("autogrow").classes("w-full")
 
     @guard_ui_action(title=resolved_text.save_error_title)
     async def _submit_review() -> None:
         saved = await on_save(int(rating_in.value or 0), str(text_in.value or ""))
-        try:
-            saved_id = int((saved or {}).get("id") or 0)
-        except (TypeError, ValueError):
-            saved_id = 0
-
-        new_reviews: list[dict[str, Any]] = []
-        for r in reviews:
-            if str(r.get("created_by") or "") == username:
-                continue
-            if saved_id:
-                try:
-                    if int(r.get("id") or 0) == saved_id:
-                        continue
-                except (TypeError, ValueError):
-                    pass
-            new_reviews.append(dict(r))
         if isinstance(saved, dict):
-            new_reviews.insert(0, dict(saved))
-        reviews[:] = new_reviews
+            reviews[:] = _merge_saved_review_rows(reviews=reviews, username=username, saved=saved)
         _notify_changed()
-        my_review_label.text = "Your review" if _find_my_review() else "Add a review"
+        my_review_label.text = "Your review" if _find_review_by_user(reviews=reviews, username=username) else "Add a review"
         reviews_list.refresh()
         safe_notify(resolved_text.save_success_text, type="positive")
 

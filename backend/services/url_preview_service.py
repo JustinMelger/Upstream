@@ -98,6 +98,14 @@ class UrlPreviewService:
         timeout_seconds: float = 4.0,
         max_response_bytes: int = 1_000_000,
     ) -> None:
+        """Initialize URL preview resolver caches and limits.
+
+        Args:
+            ttl_seconds: Cache TTL for resolved previews/metadata.
+            timeout_seconds: HTTP request timeout.
+            max_response_bytes: Maximum response body size to process.
+
+        """
         self._ttl_seconds = float(ttl_seconds)
         self._timeout_seconds = float(timeout_seconds)
         self._max_response_bytes = int(max_response_bytes)
@@ -105,14 +113,30 @@ class UrlPreviewService:
         self._metadata_cache: dict[str, tuple[float, dict[str, object]]] = {}
         self._lock = asyncio.Lock()
 
-    async def resolve_image_url(self, *, source_url: str) -> str:
+    @staticmethod
+    def _validate_resolvable_url(*, source_url: str) -> tuple[str, bool]:
         url = str(source_url or "").strip()
         if not url:
-            return ""
+            return "", False
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
-            return ""
+            return url, False
         if not _is_safe_public_host(parsed.hostname or ""):
+            return url, False
+        return url, True
+
+    async def resolve_image_url(self, *, source_url: str) -> str:
+        """Resolve a preview image URL for a source link.
+
+        Args:
+            source_url: Source URL to inspect.
+
+        Returns:
+            Preview image URL or empty string when unavailable.
+
+        """
+        url, is_valid = self._validate_resolvable_url(source_url=source_url)
+        if not is_valid:
             return ""
 
         now = time.monotonic()
@@ -132,13 +156,8 @@ class UrlPreviewService:
 
     async def resolve_metadata(self, *, source_url: str) -> dict[str, object]:
         """Resolve URL metadata used for form autofill suggestions."""
-        url = str(source_url or "").strip()
-        if not url:
-            return self._empty_metadata(url="")
-        parsed = urlparse(url)
-        if parsed.scheme not in {"http", "https"}:
-            return self._empty_metadata(url=url)
-        if not _is_safe_public_host(parsed.hostname or ""):
+        url, is_valid = self._validate_resolvable_url(source_url=source_url)
+        if not is_valid:
             return self._empty_metadata(url=url)
 
         now = time.monotonic()
@@ -258,21 +277,16 @@ class UrlPreviewService:
         return core.replace("-", " ").replace("_", " ").title()
 
     @staticmethod
-    def _suggest_tags(*, meta: dict[str, str], title: str, description: str) -> list[str]:
-        tags: list[str] = []
-        seen: set[str] = set()
-        keywords = str(meta.get("keywords") or "")
-        for part in keywords.split(","):
-            value = str(part or "").strip()
-            key = value.lower()
-            if not value or key in seen:
+    def _append_keyword_tags(*, tags: list[str], seen: set[str], keywords: str) -> bool:
+        for part in str(keywords or "").split(","):
+            if not UrlPreviewService._append_tag_if_new(tags=tags, seen=seen, value=str(part or "")):
                 continue
-            seen.add(key)
-            tags.append(value)
             if len(tags) >= 6:
-                return tags
+                return True
+        return False
 
-        corpus = f"{title} {description}".lower()
+    @staticmethod
+    def _append_heuristic_tags(*, tags: list[str], seen: set[str], corpus: str) -> None:
         heuristics = [
             ("fastapi", "FastAPI"),
             ("sqlalchemy", "SQLAlchemy"),
@@ -289,13 +303,19 @@ class UrlPreviewService:
         for needle, label in heuristics:
             if needle not in corpus:
                 continue
-            key = label.lower()
-            if key in seen:
+            if not UrlPreviewService._append_tag_if_new(tags=tags, seen=seen, value=label):
                 continue
-            seen.add(key)
-            tags.append(label)
             if len(tags) >= 6:
                 break
+
+    @staticmethod
+    def _suggest_tags(*, meta: dict[str, str], title: str, description: str) -> list[str]:
+        tags: list[str] = []
+        seen: set[str] = set()
+        corpus = f"{title} {description}".lower()
+        if UrlPreviewService._append_keyword_tags(tags=tags, seen=seen, keywords=str(meta.get("keywords") or "")):
+            return tags
+        UrlPreviewService._append_heuristic_tags(tags=tags, seen=seen, corpus=corpus)
         return tags
 
     @staticmethod
@@ -339,6 +359,27 @@ class UrlPreviewService:
             return ""
         return absolute
 
+    @staticmethod
+    def _append_tag_if_new(*, tags: list[str], seen: set[str], value: str) -> bool:
+        clean = str(value or "").strip()
+        key = clean.lower()
+        if not clean or key in seen:
+            return False
+        seen.add(key)
+        tags.append(clean)
+        return True
+
+    def _response_within_limit(self, response: httpx.Response) -> bool:
+        content_length = str(response.headers.get("content-length") or "").strip()
+        if content_length:
+            try:
+                if int(content_length) > self._max_response_bytes:
+                    return False
+            except ValueError:
+                return False
+        body_bytes = getattr(response, "content", b"") or b""
+        return len(body_bytes) <= self._max_response_bytes
+
     async def _safe_get(self, url: str) -> httpx.Response | None:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
@@ -354,14 +395,6 @@ class UrlPreviewService:
                 response = await client.get(url)
         except httpx.HTTPError:
             return None
-        content_length = str(response.headers.get("content-length") or "").strip()
-        if content_length:
-            try:
-                if int(content_length) > self._max_response_bytes:
-                    return None
-            except ValueError:
-                return None
-        body_bytes = getattr(response, "content", b"") or b""
-        if len(body_bytes) > self._max_response_bytes:
+        if not self._response_within_limit(response):
             return None
         return response

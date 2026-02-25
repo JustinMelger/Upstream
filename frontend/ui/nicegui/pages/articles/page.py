@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from nicegui import ui
+from nicegui import app, ui
 
 from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell, render_split_layout
@@ -12,6 +12,7 @@ from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.navigation_intents import pop_catalog_share_storage_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.articles.actions import (
     build_article_card_actions,
@@ -48,26 +49,21 @@ from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
-    """Register the `/articles` route."""
+    """Register the articles routes."""
 
-    @ui.page("/articles")
+    @ui.page("/manage/articles")
     async def articles_page() -> None:
         user = await require_user(store, api)
         if user is None:
             return
+        share_intent = pop_catalog_share_storage_intent(storage_user=app.storage.user)
         username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
         controller = ArticlesPageController(api=api)
 
         render_shell(title="Articles", store=store, api=api)
-        request = getattr(ui.context.client, "request", None)
-        query_params = getattr(request, "query_params", None)
-        open_share_from_query = str(
-            getattr(query_params, "get", lambda _k, _d=None: _d)("share", "") or ""
-        ).strip().lower() in {"1", "true", "yes"}
-
+        open_share_from_intent = str(share_intent or "") == "article"
         state = ArticlesPageState()
-
         tag_filter: Any = None
         author_filter: Any = None
         sort_filter: Any = None
@@ -218,7 +214,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     if state.loading or not state.loaded_once:
                         render_card_skeletons(count=3)
                         return
-
                     if not shown:
                         any_filters = any([normalized.search, normalized.tag, normalized.author])
                         render_articles_empty_state(
@@ -229,7 +224,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             on_refresh=_load,
                         )
                         return
-
                     with ui.column().classes("w-full gap-1 lp-courses-section"):
                         ui.label("Latest reads").classes("lp-courses-section-title")
                         ui.label("Resources shared by teammates").classes("lp-courses-section-subtitle")
@@ -292,5 +286,5 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 author_filter.on("update:model-value", _refresh_list)
 
             await _load()
-            if open_share_from_query:
+            if open_share_from_intent:
                 _open_share_dialog()

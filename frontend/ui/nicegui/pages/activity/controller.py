@@ -12,6 +12,12 @@ class ActivityPageController:
     """Imperative API workflows for `/activity`."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def load_events(self, *, scope: str, limit: int = 50) -> list[dict[str, Any]]:

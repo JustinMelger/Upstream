@@ -1,9 +1,4 @@
-"""Home page for the NiceGUI frontend.
-
-This page provides an overview of:
-- Learning: tracked courses + selected paths.
-- Shared: content created by the current user (courses/paths/articles).
-"""
+"""Home page for the NiceGUI frontend."""
 
 from __future__ import annotations
 
@@ -117,10 +112,9 @@ def _next_from_tracked_courses(
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
-    """Register the `/home` route (with legacy `/learning` alias)."""
+    """Register the `/home` route."""
 
     @ui.page("/home")
-    @ui.page("/learning")
     async def learning_page() -> None:
         user = await require_user(store, api)
         if user is None:
@@ -142,7 +136,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         )
 
         state = LearningPageState()
-
         request = getattr(ui.context.client, "request", None)
         initial_view = resolve_learning_initial_view(request=request)
 
@@ -237,7 +230,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             def _navigate_tab() -> None:
                 nav_actions.navigate_tab(str(view_filter.value or "learning"))
 
-            view_filter.on("update:model-value", lambda *_: _navigate_tab() or content.refresh())
+            def _on_view_tab_change(*_: Any) -> None:
+                _navigate_tab()
+                content.refresh()
+
+            view_filter.on("update:model-value", _on_view_tab_change)
 
             @ui.refreshable
             def content() -> None:
@@ -259,7 +256,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         recommendation_summary_label=format_recommendation_summary,
                         nav_actions=nav_actions,
                         feature_articles=bool(settings.feature_articles),
-                        on_open_articles=lambda: ui.navigate.to("/articles"),
+                        on_open_articles=lambda: ui.navigate.to("/explore?tab=articles"),
                     )
 
                     return
@@ -297,6 +294,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 first_path_review_action: Any = lambda: None
                 if learning_vm.pending_path_review_ids:
                     first_path_review_action = nav_actions.make_path_review_action(int(learning_vm.pending_path_review_ids[0]))
+
+                def _refresh_content() -> None:
+                    content.refresh()
+
                 render_learning_tab(
                     learning_vm=learning_vm,
                     state=state,
@@ -314,40 +315,39 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     on_dismiss_recommended_course=lambda _cid: dismiss_recommended_course(
                         state=state,
                         course_id=int(_cid),
-                        refresh=content.refresh,
+                        refresh=_refresh_content,
                     ),
                     on_dismiss_recommended_path=lambda _pid: dismiss_recommended_path(
                         state=state,
                         path_id=int(_pid),
-                        refresh=content.refresh,
+                        refresh=_refresh_content,
                     ),
                     on_set_tracking_status=_set_tracking_status,
                     on_clear_tracking_status=_clear_tracking_status,
-                    on_browse_courses=lambda: ui.navigate.to("/courses"),
-                    on_browse_paths=lambda: ui.navigate.to("/paths"),
-                    on_open_selected_paths=lambda: ui.navigate.to("/paths?tab=selected"),
+                    on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
+                    on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
+                    on_open_selected_paths=lambda: ui.navigate.to("/manage/paths?tab=selected"),
                     on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
                     recently_shared_in_teams=recently_shared_in_teams,
                     on_open_recently_shared_item=lambda row: (
-                        ui.navigate.to(f"/courses?course_id={int(row.get('id') or 0)}")
+                        ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}")
                         if str(row.get("type") or "") == "course"
                         else (
-                            ui.navigate.to(f"/paths?path_id={int(row.get('id') or 0)}")
+                            ui.navigate.to(f"/explore/paths/{int(row.get('id') or 0)}")
                             if str(row.get("type") or "") == "path"
-                            else ui.navigate.to("/articles")
+                            else ui.navigate.to("/explore?tab=articles")
                         )
                     ),
                     on_load_more_tracked=lambda: load_more_tracked(
                         state=state,
                         total_count=len(learning_vm.tracked_courses),
-                        refresh=content.refresh,
+                        refresh=_refresh_content,
                     ),
                     on_load_more_selected=lambda: load_more_selected(
                         state=state,
                         total_count=len(learning_vm.selected_paths),
-                        refresh=content.refresh,
+                        refresh=_refresh_content,
                     ),
                 )
-
             await _load()
             content()

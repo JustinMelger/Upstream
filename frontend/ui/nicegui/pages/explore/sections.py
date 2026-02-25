@@ -33,21 +33,39 @@ class ExploreFilterControls:
     author_filter: Any
 
 
-def render_explore_share_dialog() -> Any:
+def render_explore_share_dialog(*, on_share_course: Any, on_share_path: Any, on_share_article: Any) -> Any:
     """Render share dialog and return dialog handle."""
+
+    def _close_then_share_course(dialog: Any) -> None:
+        dialog.close()
+        on_share_course()
+
+    def _close_then_share_path(dialog: Any) -> None:
+        dialog.close()
+        on_share_path()
+
+    def _close_then_share_article(dialog: Any) -> None:
+        dialog.close()
+        on_share_article()
+
     with ui.dialog() as share_dialog:
         with ui.card().classes("lp-card lp-dialog w-[min(540px,95vw)]"):
             ui.label("Share with your team").classes("text-lg font-semibold")
             ui.label("Choose what you want to share.").classes("text-sm").style("color: var(--lp-muted)")
 
-            def _navigate_to_share(path: str) -> None:
-                share_dialog.close()
-                ui.navigate.to(str(path))
-
             with ui.column().classes("w-full gap-2 mt-2"):
-                ui.button("Share course", on_click=lambda: _navigate_to_share("/courses?share=1")).props("unelevated")
-                ui.button("Share path", on_click=lambda: _navigate_to_share("/paths?share=1")).props("outline")
-                ui.button("Share article", on_click=lambda: _navigate_to_share("/articles?share=1")).props("outline")
+                ui.button(
+                    "Share course",
+                    on_click=lambda: _close_then_share_course(share_dialog),
+                ).props("unelevated")
+                ui.button(
+                    "Share path",
+                    on_click=lambda: _close_then_share_path(share_dialog),
+                ).props("outline")
+                ui.button(
+                    "Share article",
+                    on_click=lambda: _close_then_share_article(share_dialog),
+                ).props("outline")
             with ui.row().classes("justify-end w-full mt-1"):
                 ui.button("Cancel", on_click=share_dialog.close).props("flat")
     return share_dialog
@@ -133,7 +151,7 @@ def render_explore_spotlight_strip(
                 ui.label(str(description)).classes("lp-explore-spotlight-body")
             if str(shared_by or "").strip():
                 ui.label(f"Shared by {shared_by}").classes("lp-explore-spotlight-meta")
-        ui.button("Continue", on_click=on_primary).props("dense unelevated")
+        ui.button("Open details", on_click=on_primary).props("dense unelevated")
 
 
 def bind_rail_arrow_visibility(*, rail_id: str, left_btn_id: str, right_btn_id: str) -> None:

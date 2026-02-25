@@ -110,19 +110,19 @@ def test_page_modules_do_not_define_catalog_variant_classnames_directly() -> Non
         assert "lp-catalog--" not in src, f"Variant classname should be assigned via render_catalog_scope only: {page}"
 
 
-def test_explore_cinema_card_alignment_selectors_are_defined_in_theme() -> None:
+def test_explore_card_alignment_selectors_are_defined_in_theme() -> None:
     theme_src = _THEME_FILE.read_text(encoding="utf-8")
     selectors = [
-        ".lp-catalog--explore.lp-explore-cinema .lp-card-title",
-        ".lp-catalog--explore.lp-explore-cinema .lp-course-card .lp-social-strip",
-        ".lp-catalog--explore.lp-explore-cinema .lp-course-card .lp-card-taxonomy",
-        ".lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-meta-row",
-        ".lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-context-line",
-        ".lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-meta-row",
-        ".lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-context-line",
-        ".lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-tag-row",
-        ".lp-catalog--explore.lp-explore-cinema .lp-card-actions",
-        ".lp-catalog--explore.lp-explore-cinema .lp-course-context-line",
+        ".lp-catalog--explore .lp-card-title",
+        ".lp-catalog--explore .lp-course-card .lp-social-strip",
+        ".lp-catalog--explore .lp-course-card .lp-card-taxonomy",
+        ".lp-catalog--explore .lp-path-card .lp-path-meta-row",
+        ".lp-catalog--explore .lp-path-card .lp-path-context-line",
+        ".lp-catalog--explore .lp-article-card .lp-article-meta-row",
+        ".lp-catalog--explore .lp-article-card .lp-article-context-line",
+        ".lp-catalog--explore .lp-article-card .lp-article-tag-row",
+        ".lp-catalog--explore .lp-card-actions",
+        ".lp-catalog--explore .lp-course-context-line",
     ]
     for selector in selectors:
         assert selector in theme_src

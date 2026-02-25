@@ -402,7 +402,7 @@ async def open_article_details_dialog(
                 url = str(article.get("url") or "").strip()
                 if url:
                     ui.button(
-                        "Open link",
+                        "Open source",
                         icon="open_in_new",
                         on_click=lambda u=url: ui.navigate.to(u, new_tab=True),
                     ).props("outline dense")

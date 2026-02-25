@@ -8,8 +8,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
-from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
-from frontend.ui.nicegui.pages.courses.controller import CourseDetailBundle, CoursesPageController
+from frontend.ui.nicegui.pages.explore.gateway import CourseDetailBundle, ExploreDataGateway
 from frontend.ui.nicegui.pages.explore.orchestration import (
     clear_explore_tracking_status,
     load_explore_articles_background,
@@ -18,7 +17,6 @@ from frontend.ui.nicegui.pages.explore.orchestration import (
     set_explore_tracking_status,
 )
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
-from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
 
 
@@ -26,9 +24,13 @@ class ExplorePageController:
     """Imperative API workflow orchestration for Explore page."""
 
     def __init__(self, *, api: ApiClient):
-        self._courses = CoursesPageController(api=api)
-        self._articles = ArticlesPageController(api=api)
-        self._paths = PathsPageController(api=api)
+        """Initialize the controller and domain gateway.
+
+        Args:
+            api: Shared API client.
+
+        """
+        self._gateway = ExploreDataGateway.from_api(api=api)
 
     async def load(
         self,
@@ -45,7 +47,7 @@ class ExplorePageController:
             await load_explore_articles_background(
                 state=state,
                 feature_articles_enabled=settings.feature_articles,
-                articles_controller=self._articles,
+                articles_controller=self._gateway.articles,
                 refresh_ui=refresh_ui,
                 refresh_filter_options=refresh_filter_options,
                 notify_warning=notify_articles_warning,
@@ -54,7 +56,7 @@ class ExplorePageController:
         async def _load_paths_background() -> None:
             await load_explore_paths_background(
                 state=state,
-                paths_controller=self._paths,
+                paths_controller=self._gateway.paths,
                 refresh_ui=refresh_ui,
                 notify_warning=notify_paths_warning,
             )
@@ -66,7 +68,7 @@ class ExplorePageController:
 
         await load_explore_courses(
             state=state,
-            courses_controller=self._courses,
+            courses_controller=self._gateway.courses,
             refresh_ui=refresh_ui,
             refresh_filter_options=refresh_filter_options,
             spawn_background_loads=_spawn_background_loads,
@@ -83,7 +85,7 @@ class ExplorePageController:
         """Persist tracking status for a course and update local page state."""
         await set_explore_tracking_status(
             state=state,
-            courses_controller=self._courses,
+            courses_controller=self._gateway.courses,
             course_id=int(course_id),
             status=str(status),
             refresh_ui=refresh_ui,
@@ -99,7 +101,7 @@ class ExplorePageController:
         """Clear tracking status for a course and update local page state."""
         await clear_explore_tracking_status(
             state=state,
-            courses_controller=self._courses,
+            courses_controller=self._gateway.courses,
             course_id=int(course_id),
             refresh_ui=refresh_ui,
         )
@@ -114,7 +116,7 @@ class ExplorePageController:
         """Toggle path selection state in Explore."""
         pid = int(path_id)
         if pid in state.selected_by_path_id:
-            await self._paths.unselect_path(path_id=pid)
+            await self._gateway.paths.unselect_path(path_id=pid)
             state.selected_by_path_id.pop(pid, None)
             state.selected_detail_by_path_id.pop(pid, None)
             refresh_ui()
@@ -125,7 +127,7 @@ class ExplorePageController:
             selected_detail_by_path_id=dict(state.selected_detail_by_path_id or {}),
             tracking_by_course_id=dict(state.tracking_by_course_id or {}),
         )
-        _, selected_detail = await self._paths.select_path(path_id=pid, state=optimistic_state)
+        _, selected_detail = await self._gateway.paths.select_path(path_id=pid, state=optimistic_state)
         state.selected_by_path_id[pid] = {"path_id": pid}
         if isinstance(selected_detail, dict):
             state.selected_detail_by_path_id[pid] = selected_detail
@@ -134,7 +136,9 @@ class ExplorePageController:
 
     async def load_course_detail_bundle(self, *, course_id: int, cache_scope: str) -> CourseDetailBundle:
         """Load course detail payload for the Explore details dialog."""
-        return await self._courses.load_course_detail_bundle(course_id=int(course_id), cache_scope=str(cache_scope or ""))
+        return await self._gateway.courses.load_course_detail_bundle(
+            course_id=int(course_id), cache_scope=str(cache_scope or "")
+        )
 
     async def save_course_review(
         self,
@@ -145,7 +149,7 @@ class ExplorePageController:
         cache_scope: str,
     ) -> dict[str, Any]:
         """Save course review from Explore details dialog."""
-        return await self._courses.save_course_review(
+        return await self._gateway.courses.save_course_review(
             course_id=int(course_id),
             rating=int(rating),
             text=str(text or ""),
@@ -160,7 +164,7 @@ class ExplorePageController:
         cache_scope: str,
     ) -> bool:
         """Delete course review from Explore details dialog."""
-        return await self._courses.delete_course_review(
+        return await self._gateway.courses.delete_course_review(
             course_id=int(course_id),
             review_id=int(review_id),
             cache_scope=str(cache_scope or ""),

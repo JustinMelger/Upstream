@@ -18,6 +18,12 @@ class AdminUsersPageController:
     """Imperative API workflows for `/admin/users`."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def list_users(self) -> list[dict[str, Any]]:

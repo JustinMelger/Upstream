@@ -17,10 +17,7 @@ from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.mutation_flow import run_optimistic_mutation
 from frontend.ui.nicegui.core.navigation_intents import (
-    get_course_intent,
-    get_course_storage_intent,
-    pop_course_intent,
-    pop_course_storage_intent,
+    pop_catalog_share_storage_intent,
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.courses.actions import (
@@ -58,7 +55,7 @@ from frontend.ui.nicegui.pages.courses.reducers import (
     filter_courses,
     sort_courses,
 )
-from frontend.ui.nicegui.pages.courses.route_init import consume_course_intents_for_opened_course, resolve_courses_route_init
+from frontend.ui.nicegui.pages.courses.route_init import resolve_courses_route_init
 from frontend.ui.nicegui.pages.courses.sections import (
     render_active_filter_chips,
     render_course_card,
@@ -97,11 +94,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         api: API client.
     """
 
-    @ui.page("/courses")
+    @ui.page("/manage/courses")
     async def courses_page() -> None:
         user = await require_user(store, api)
         if user is None:
             return
+        request = getattr(ui.context.client, "request", None)
+        share_intent = pop_catalog_share_storage_intent(storage_user=app.storage.user)
         render_shell(title="Courses", store=store, api=api)
         username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
@@ -111,18 +110,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             page_state = CoursesPageState()
             ui_state = CoursesPageUiState()
 
-            request = getattr(ui.context.client, "request", None)
-            query_params = getattr(request, "query_params", None)
-            open_share_from_query = str(
-                getattr(query_params, "get", lambda _k, _d=None: _d)("share", "") or ""
-            ).strip().lower() in {"1", "true", "yes"}
-            intent = get_course_storage_intent(storage_user=app.storage.user)
-            nav_intent = get_course_intent(username=username)
-            route_init = resolve_courses_route_init(
-                request=request,
-                storage_intent=intent if isinstance(intent, dict) else None,
-                nav_intent=nav_intent if isinstance(nav_intent, dict) else None,
-            )
+            open_share_from_intent = str(share_intent or "") == "course"
+            route_init = resolve_courses_route_init(request=request)
             _open_create_dialog: Callable[[], None] = lambda: None
             filters_dialog: Any = None
 
@@ -552,14 +541,5 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 courses_list()
 
             await _load()
-            if open_share_from_query:
+            if open_share_from_intent:
                 _open_create_dialog()
-            if route_init.initial_course_id > 0:
-                await _open_details(route_init.initial_course_id, focus_reviews=route_init.initial_focus_reviews)
-                consume_course_intents_for_opened_course(
-                    storage_intent=intent if isinstance(intent, dict) else None,
-                    nav_intent=nav_intent if isinstance(nav_intent, dict) else None,
-                    course_id=route_init.initial_course_id,
-                    pop_storage_intent=lambda: pop_course_storage_intent(storage_user=app.storage.user),
-                    pop_nav_intent=lambda: pop_course_intent(username=username),
-                )

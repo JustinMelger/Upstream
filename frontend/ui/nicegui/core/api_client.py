@@ -142,15 +142,12 @@ class ApiClient:
         """Emit low-noise telemetry for key share/track actions."""
         if method != "POST":
             return
-        event_name = ""
-        if path == "/tracking":
-            event_name = "track_action"
-        elif path == "/courses":
-            event_name = "share_course"
-        elif path == "/paths":
-            event_name = "share_path"
-        elif path == "/articles":
-            event_name = "share_article"
+        event_name = {
+            "/tracking": "track_action",
+            "/courses": "share_course",
+            "/paths": "share_path",
+            "/articles": "share_article",
+        }.get(path, "")
         if not event_name:
             return
         try:

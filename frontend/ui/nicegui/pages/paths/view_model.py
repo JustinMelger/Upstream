@@ -151,8 +151,6 @@ def latest_activity_day(*, reviews: list[dict[str, Any]] | None, recommendations
     """Return latest activity date (YYYY-MM-DD) across review/recommendation rows."""
     timestamps: list[str] = []
     for row in list(reviews or []) + list(recommendations or []):
-        if not isinstance(row, dict):
-            continue
         created_at = str(row.get("created_at") or "").strip()
         if created_at:
             timestamps.append(created_at)
@@ -172,8 +170,6 @@ def enrich_path_courses(
 
     out: list[dict[str, Any]] = []
     for course in list(courses or []):
-        if not isinstance(course, dict):
-            continue
         try:
             cid = int(course.get("id") or 0)
         except (TypeError, ValueError):
@@ -194,7 +190,7 @@ def summarize_path_reviews(*, path_id: int, reviews: list[dict[str, Any]] | None
     ratings: list[int] = []
     for row in list(reviews or []):
         try:
-            ratings.append(int((row if isinstance(row, dict) else {}).get("rating") or 0))
+            ratings.append(int(row.get("rating") or 0))
         except (TypeError, ValueError):
             continue
     if not ratings:

@@ -465,7 +465,7 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
                     if course_id > 0:
                         ui.button(
                             "Open details",
-                            on_click=lambda cid=course_id: ui.navigate.to(f"/courses?course_id={int(cid)}"),
+                            on_click=lambda cid=course_id: ui.navigate.to(f"/explore/courses/{int(cid)}"),
                         ).props("outline")
                     if source_url:
                         ui.button("Open source", on_click=lambda u=source_url: ui.navigate.to(str(u), new_tab=True)).props(

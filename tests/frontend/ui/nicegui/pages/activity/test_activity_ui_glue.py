@@ -4,9 +4,9 @@ from frontend.ui.nicegui.pages.activity.ui_glue import coerce_target_id, format_
 
 
 def test_activity_target_url_mapping() -> None:
-    assert target_url(target_type="course", target_id=7) == "/courses?course_id=7"
-    assert target_url(target_type="path", target_id=2) == "/paths?path_id=2"
-    assert target_url(target_type="article", target_id=1) == "/articles"
+    assert target_url(target_type="course", target_id=7) == "/explore/courses/7"
+    assert target_url(target_type="path", target_id=2) == "/explore/paths/2"
+    assert target_url(target_type="article", target_id=1) == "/explore?tab=articles"
     assert target_url(target_type="unknown", target_id=1) == "/home"
 
 

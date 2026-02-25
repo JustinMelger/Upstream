@@ -22,10 +22,9 @@ from frontend.ui.nicegui.pages.activity.ui_glue import target_url
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
-    """Register the `/teams` route (with legacy `/activity` alias)."""
+    """Register the `/teams` route."""
 
     @ui.page("/teams")
-    @ui.page("/activity")
     async def activity_page() -> None:
         user = await require_user(store, api)
         if user is None:

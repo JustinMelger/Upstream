@@ -28,6 +28,7 @@ dependencies = [
 dev = [
     "ruff>=0.14.14",
     "mypy>=1.11.2",
+    "pre-commit>=4.0.1",
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
     "pytest-anyio>=0.0.0",
@@ -47,18 +48,18 @@ line-length = 128
 # - risky exception handling (`BLE`)
 # - avoid ad-hoc print debugging in app code (`T20`)
 # - function complexity guardrails (`C901`, `PLR091x`)
-select = ["I", "F821", "BLE", "TID", "T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
+select = ["I", "F821", "BLE", "TID", "T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "D102", "D103", "D107"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
-"scripts/**/*.py" = ["T20"]
+"tests/**/*.py" = ["T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "D102", "D103", "D107"]
+"scripts/**/*.py" = ["T20", "D102", "D103", "D107"]
+"alembic/**/*.py" = ["D102", "D103", "D107"]
 # Tier 2 (UI composition modules): allow slightly looser complexity while
 # we continue extracting orchestration into controller/orchestration/actions.
 "frontend/ui/nicegui/pages/*/page.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 "frontend/ui/nicegui/pages/*/sections.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 "frontend/ui/nicegui/pages/*/dialogs.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 "frontend/ui/nicegui/core/errors.py" = ["BLE001"]
-"frontend/ui/nicegui/pages/explore/page.py" = ["C901", "PLR0915"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["backend", "frontend"]
@@ -71,16 +72,19 @@ section-order = ["future", "standard-library", "third-party", "first-party", "lo
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.mccabe]
-# Tier 1 (services/controllers/orchestration/reducers): stricter default.
-max-complexity = 25
+# Baseline repo ratchet (v7): tightened after service/control-flow extraction.
+max-complexity = 19
 
 [tool.ruff.lint.pylint]
-# Tier 1 (services/controllers/orchestration/reducers): stricter default.
+# Baseline repo ratchet (v7): tightened after service/control-flow extraction.
 max-args = 10
-max-branches = 20
+max-branches = 14
 max-returns = 8
-max-statements = 100
+max-statements = 70
 
 [tool.mypy]
 python_version = "3.13"
@@ -90,6 +94,7 @@ warn_return_any = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unreachable = true
+strict_equality = true
 no_implicit_optional = true
 check_untyped_defs = true
 ignore_missing_imports = true
@@ -99,19 +104,11 @@ exclude = ["^tests/"]
 module = [
     "backend.services.*",
     "frontend.ui.nicegui.services.*",
+    "frontend.ui.nicegui.pages.*.controller",
+    "frontend.ui.nicegui.pages.*.orchestration",
+    "frontend.ui.nicegui.pages.*.actions",
+    "frontend.ui.nicegui.pages.*.reducers",
     "frontend.ui.nicegui.pages.*.state",
     "frontend.ui.nicegui.pages.*.view_model",
 ]
 disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = [
-    "frontend.ui.nicegui.pages.paths.page",
-    "frontend.ui.nicegui.pages.paths.controller",
-    "frontend.ui.nicegui.pages.paths.dialogs",
-    "frontend.ui.nicegui.pages.paths.view_model",
-    "frontend.ui.nicegui.pages.learning.page",
-    "frontend.ui.nicegui.pages.learning.view_model",
-    "frontend.ui.nicegui.pages.home.helpers_compat",
-]
-ignore_errors = true

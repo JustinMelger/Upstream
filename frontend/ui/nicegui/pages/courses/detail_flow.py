@@ -45,8 +45,6 @@ def _recommendation_authors(recommendations: list[dict[str, Any]]) -> list[str]:
 def _latest_activity_timestamp(*, reviews: list[dict[str, Any]], recommendations: list[dict[str, Any]]) -> str | None:
     timestamps: list[str] = []
     for row in list(reviews) + list(recommendations):
-        if not isinstance(row, dict):
-            continue
         created_at = str(row.get("created_at") or "").strip()
         if created_at:
             timestamps.append(created_at)

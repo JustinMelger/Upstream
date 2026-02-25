@@ -291,7 +291,7 @@ Execution sequencing (prioritized):
 - [x] Phase 11E.0 (instrumentation baseline): add telemetry for first meaningful action (`track`/`share`), first search, primary-nav clicks, and page exits so pre/post redesign impact is measurable.
 - [x] Phase 11E.1 (IA + terminology foundation): ship nav reduction + naming alignment first to establish a stable mental model before page-level redesign.
 - [x] Phase 11E.2 (home/explore behavior): redesign `Home` and `Explore` around one dominant action each.
-- [ ] Phase 11E.3 (first-time clarity): add intro + empty-state clarity pass and close top confusion points from usability tests.
+- [ ] Phase 11E.3 (first-time clarity): complete intro + empty-state clarity pass and keep next-step clarity explicit across primary pages.
 
 #### Phase 11E.1 — Top-Level Navigation Simplification
 - [x] Navigation reduction: keep only `Home`, `Explore`, `Teams`, `Profile` in top-level shell nav.
@@ -321,8 +321,8 @@ Execution sequencing (prioritized):
   - [x] Phase slice: course cards finalized as the Explore reference pattern.
   - [x] Phase slice: finish path/article card parity with course-card structure and CTA baseline alignment.
 - [x] Explore card actions: ensure one primary action per card.
-- [ ] Explore details navigation: replace hover/dialog-first detail behavior with dedicated detail routes per content type (course/path/article) and keep cards focused on scan + primary action.
-- [ ] Legacy catalog cleanup: convert `/courses`, `/paths`, and `/articles` to thin compatibility routes (deep-link/management only), remove duplicated discovery UI, and complete redirect/deprecation plan after Explore detail parity is stable.
+- [x] Explore details navigation: replace hover/dialog-first detail behavior with dedicated detail routes per content type (course/path/article) and keep cards focused on scan + primary action.
+- [x] Legacy catalog cleanup: convert `/courses`, `/paths`, and `/articles` to thin compatibility routes (deep-link/management only), remove duplicated discovery UI, and complete redirect/deprecation plan after Explore detail parity is stable.
 
 #### Phase 11E.5 — Visual & Action Density Reduction
 - [x] Card action limit: cap card controls to 1 primary CTA + 1 state control (`track`/`select`) + overflow for secondary actions.
@@ -336,23 +336,20 @@ Execution sequencing (prioritized):
 - [x] Terminology audit: align `Shared` vs `Recommended` semantics in UI labels and filters.
 - [x] Terminology audit: align `Insights` vs `Stats` and reserve `Stats` for analytics surfaces.
 - [x] Context subtitles: add a short purpose subtitle under each primary page title.
-- [ ] Cross-page consistency: use the same language model across course/path/article cards and detail dialogs.
+- [x] Cross-page consistency: use the same language model across course/path/article cards and detail dialogs.
 
 #### Phase 11E.7 — First-Time User Clarity Pass
 - [x] Onboarding intro: add lightweight, dismissible 3-step first-login walkthrough.
 - [x] Empty states: ensure each empty state has exactly one clear primary action.
 - [x] Next-step clarity: no page should load without an unambiguous next step.
-- [ ] Usability testing: run 5 first-time-user tests and log confusion points.
-- [ ] Pilot readiness: fix top 5 confusion points before pilot launch.
 
 Definition of done:
 - [ ] Navigation feels obvious without explanation.
-- [ ] Users do not ask "Where do I go?" in first-session testing.
 - [ ] `Home` clearly answers "What should I do next?"
 - [ ] `Explore` clearly answers "What can I discover?"
 
 Implementation map (routes + files, ordered):
-- [x] Route transition contract (ship before UI polish): `/` -> `/home`; `/insights` -> `/home` (legacy redirect); `/learning` -> `/home` (legacy redirect); `/activity` -> `/teams` (legacy redirect); add `/profile` and `/profile/stats`; keep `/courses`, `/paths`, `/articles` as deep-link routes until Explore parity is complete.
+- [x] Route transition contract finalized: canonical routes are `/home`, `/explore`, `/teams`, `/profile`, `/profile/stats`, `/manage/courses`, `/manage/paths`, `/manage/articles`, and Explore detail routes (`/explore/courses/{id}`, `/explore/paths/{id}`, `/explore/articles/{id}`); legacy aliases and compatibility discovery routes removed.
 - [x] Phase 11E.0 instrumentation baseline:
   - Primary files: `frontend/ui/nicegui/core/api_client.py`, `frontend/ui/nicegui/core/navigation.py`, `frontend/ui/nicegui/pages/login/page.py`, `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/explore/page.py`.
   - New modules (if needed): `frontend/ui/nicegui/services/telemetry_service.py`, backend endpoint under `backend/api/` + service in `backend/services/`.
@@ -401,3 +398,9 @@ Implementation map (routes + files, ordered):
 - [ ] Add provenance fields for AI-suggested content (e.g. `source`, `source_url`, `confidence`) and surface them in UI.
 - [ ] Run discovery as a background job (avoid blocking request/response; show progress + retries).
 - [ ] Persist approved drafts via existing domain services (`CoursesService`, `PathsService`, `TrackingService`) to keep consistency.
+
+## Phase 14 — User Testing + Pilot Validation
+- [ ] Run 5 first-time-user usability tests and log confusion points.
+- [ ] Fix top 5 confusion points before pilot launch.
+- [ ] Add pilot observer confusion-log template + triage rubric.
+- [ ] Validate first-session navigation clarity (`"Where do I go?"` confusion rate) after Phase 11 closure.

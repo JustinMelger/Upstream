@@ -18,6 +18,12 @@ class LearningPageController:
     """Imperative API workflows used by the Learning page."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def load_page_data(self, *, username: str, include_articles: bool) -> dict[str, Any]:

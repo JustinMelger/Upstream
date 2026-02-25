@@ -14,6 +14,12 @@ class CourseRecommendationsRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy persistence for course recommendations."""
 
     def __init__(self, session: AsyncSession):
+        """Initialize the repository.
+
+        Args:
+            session: Active async SQLAlchemy session.
+
+        """
         self.session = session
 
     async def list_for_course(self, *, course_id: int) -> list[CourseRecommendationRecord]:

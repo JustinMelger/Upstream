@@ -21,6 +21,12 @@ class ArticlesPageController:
     """Imperative API workflows for `/articles`."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def load_list_bundle(self) -> ArticlesListBundle:

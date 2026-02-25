@@ -82,12 +82,17 @@ Optional:
 ## Development commands
 - Format: `just fmt`
 - Lint: `just lint`
+- Lint ratchet + strict core quality gate: `just lint-ratchet`
 - Unit tests: `just unit`
 - Integration tests: `just integration`
 - Architecture tests: `just architecture`
 - Full local gate: `just test`
 - Frontend architecture guards: `just frontend-arch-guards`
 - Architecture docs sync guard: `just architecture-sync-check`
+
+Optional local commit hooks:
+- Install: `uv run pre-commit install`
+- Run on all files: `uv run pre-commit run --all-files`
 
 ## Pages
 - Insights (`/insights`): team-level progress and contribution visibility.

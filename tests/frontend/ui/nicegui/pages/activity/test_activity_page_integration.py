@@ -128,7 +128,7 @@ async def test_activity_tab_change_during_load_queues_followup_reload(monkeypatc
             return [{"message": "ok", "target_id": 1}]
 
     activity_page.register(store=object(), api=_Api())  # type: ignore[arg-type]
-    handler = fake_ui.routes["/activity"]
+    handler = fake_ui.routes["/teams"]
     await handler()
 
     assert calls == ["inbox", "team"]
@@ -173,7 +173,7 @@ async def test_activity_queue_runs_followup_even_if_first_load_fails(monkeypatch
             return [{"message": "ok", "target_id": 1}]
 
     activity_page.register(store=object(), api=_Api())  # type: ignore[arg-type]
-    handler = fake_ui.routes["/activity"]
+    handler = fake_ui.routes["/teams"]
     await handler()
 
     assert calls == ["inbox", "team"]
@@ -208,7 +208,7 @@ async def test_activity_failed_tab_load_clears_events_and_renders_error(monkeypa
             return [{"message": "ok", "target_id": 1}]
 
     activity_page.register(store=object(), api=_Api())  # type: ignore[arg-type]
-    handler = fake_ui.routes["/activity"]
+    handler = fake_ui.routes["/teams"]
     await handler()
 
     assert item_renders

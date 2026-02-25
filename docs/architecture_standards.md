@@ -24,6 +24,10 @@ Use it as the default guide before adding or refactoring code.
 
 - No direct API calls in page UI modules.
 - Keep controller modules UI-framework agnostic (no `nicegui.ui` imports).
+- Keep frontend dependency direction one-way:
+  - Page layer can depend on services/core/components through controllers/actions.
+  - Service layer must never import from page modules.
+  - Move shared transforms/parsers to `frontend/ui/nicegui/services/*` or `frontend/ui/nicegui/core/*`.
 - Keep repository concerns out of routers.
 - Keep persistence/session internals out of service business logic.
 - Prefer typed payload parsing at service boundaries (pydantic dataclasses).
@@ -45,11 +49,32 @@ Use it as the default guide before adding or refactoring code.
 - Use typed state/view-model structures instead of ad-hoc dict mutation in page modules.
 - Keep naming explicit and consistent across backend/frontend layers.
 - Keep docs aligned with implementation changes.
+- Terminology model for cards/detail dialogs:
+  - use `Open details` for detail-view actions,
+  - use `Open source` for external-link actions,
+  - use `Manage in Paths` for path-management deep-link actions,
+  - use `Shared by ...` as the ownership/byline label.
+- Lint thresholds (repo baseline ratchet): `C901<=19`, `PLR0913<=10`, `PLR0912<=14`, `PLR0915<=70`, `PLR0911<=8`.
+- Strict complexity profile for core scope (`backend/services`, `frontend/ui/nicegui/core`, `frontend/ui/nicegui/services`):
+  `C901<=9`, `PLR0913<=7`, `PLR0912<=6`, `PLR0915<=30`.
+- Type-checking: keep scoped `mypy` gate on service/core modules, enforce `mypy --strict` on
+  `frontend/ui/nicegui/core`, and require typed defs in page controllers/orchestration/actions/reducers.
+- Docstring enforcement (Ruff + pydocstyle, Google convention):
+  - Enforced rules:
+    - `D102`: public methods require docstrings.
+    - `D103`: public functions require docstrings.
+    - `D107`: `__init__` methods require docstrings.
+  - Scope:
+    - enforced for application code in `frontend/` and `backend/`.
+    - intentionally ignored for `tests/**/*.py` and `scripts/**/*.py` to keep CI noise low while preserving strong standards in shipped code.
 
 ## 5) Test & Quality Gates
 
 - Mark tests clearly: `unit`, `integration`, `architecture`.
 - Architecture guards enforce boundaries (not just conventions).
+- Required boundary guard coverage:
+  - `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py` for global page/service guardrails.
+  - `tests/frontend/ui/nicegui/pages/explore/test_explore_architecture.py` for Explore package boundaries.
 - Add focused tests when extracting logic (controller/orchestration/view-model/service).
 - Maintain lint + test gates (`ruff`, `pytest`) for touched code.
 

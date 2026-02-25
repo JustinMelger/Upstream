@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from nicegui import ui
+from nicegui import app, ui
 
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.core.api_client import ApiClient
-from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.navigation_intents import set_catalog_share_storage_intent
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
@@ -20,7 +20,11 @@ from frontend.ui.nicegui.pages.articles.reducers import derive_shown_articles
 from frontend.ui.nicegui.pages.courses.reducers import filter_courses, sort_courses
 from frontend.ui.nicegui.pages.explore.actions import build_explore_course_actions, open_explore_article_details
 from frontend.ui.nicegui.pages.explore.controller import ExplorePageController
-from frontend.ui.nicegui.pages.explore.detail_flow import open_explore_path_details_dialog
+from frontend.ui.nicegui.pages.explore.detail_page import (
+    render_explore_article_detail_page,
+    render_explore_course_detail_page,
+    render_explore_path_detail_page,
+)
 from frontend.ui.nicegui.pages.explore.list_sections import (
     ExploreSectionsDeps,
     render_explore_empty_state,
@@ -62,14 +66,28 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
     state = ExplorePageState()
     flags = {"search_telemetry_emitted": False, "show_all_categories": False}
 
-    explore_scope_classes = "lp-container lp-explore-cinema" if settings.feature_explore_cinema else "lp-container"
-    with render_catalog_scope(variant="explore").classes(explore_scope_classes):
+    with render_catalog_scope(variant="explore").classes("lp-container"):
         with ui.row().classes("w-full items-center"):
             ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
         # Sticky topbar uses a negative top margin; reserve vertical space so it
         # doesn't visually overlap this subtitle line.
         ui.element("div").classes("h-3")
-        share_dialog = render_explore_share_dialog()
+
+        def _open_manage_share(target: str) -> None:
+            set_catalog_share_storage_intent(storage_user=app.storage.user, target=str(target))
+            if str(target) == "course":
+                ui.navigate.to("/manage/courses")
+                return
+            if str(target) == "path":
+                ui.navigate.to("/manage/paths")
+                return
+            ui.navigate.to("/manage/articles")
+
+        share_dialog = render_explore_share_dialog(
+            on_share_course=lambda: _open_manage_share("course"),
+            on_share_path=lambda: _open_manage_share("path"),
+            on_share_article=lambda: _open_manage_share("article"),
+        )
 
         filter_controls: ExploreFilterControls | None = None
 
@@ -222,7 +240,6 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                     username=username,
                     is_admin=is_admin,
                     show_all_categories=bool(flags["show_all_categories"]),
-                    feature_explore_cinema=settings.feature_explore_cinema,
                     course_actions_builder=lambda course_row, course_id, course_url: build_explore_course_actions(
                         course_row=course_row,
                         course_id=course_id,
@@ -237,9 +254,8 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                     on_set_tracking=_set_tracking,
                     on_clear_tracking=_clear_tracking,
                     on_toggle_path_selection=_toggle_path_selection,
-                    open_path_details_dialog=lambda path_row, card_vm: open_explore_path_details_dialog(
-                        path_row=path_row,
-                        card_vm=card_vm,
+                    open_path_details_dialog=lambda path_row, card_vm: ui.navigate.to(
+                        f"/explore/paths/{int(path_row.get('id') or 0)}"
                     ),
                     open_article_details=open_explore_article_details,
                 ),
@@ -274,3 +290,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
     @ui.page("/explore")
     async def explore_page() -> None:
         await _render_explore_page(store=store, api=api)
+
+    @ui.page("/explore/courses/{course_id}")
+    async def explore_course_detail_page(course_id: str) -> None:
+        await render_explore_course_detail_page(store=store, api=api, course_id=course_id)
+
+    @ui.page("/explore/paths/{path_id}")
+    async def explore_path_detail_page(path_id: str) -> None:
+        await render_explore_path_detail_page(store=store, api=api, path_id=path_id)
+
+    @ui.page("/explore/articles/{article_id}")
+    async def explore_article_detail_page(article_id: str) -> None:
+        await render_explore_article_detail_page(store=store, api=api, article_id=article_id)

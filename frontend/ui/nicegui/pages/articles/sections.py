@@ -190,10 +190,8 @@ def render_article_card(
                 if compact_mode:
                     context_line = subtitle_parts[1] if len(subtitle_parts) > 1 else ""
                     if not context_line and url:
-                        context_line = "Open source link"
-                    ui.label(context_line or "Shared in your team feed").classes(
-                        "text-xs lp-card-subtitle lp-article-context-line"
-                    )
+                        context_line = "Source link"
+                    ui.label(context_line or "Shared by teammate").classes("text-xs lp-card-subtitle lp-article-context-line")
 
                 with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
                     if tags:
@@ -207,7 +205,7 @@ def render_article_card(
                     ui.label(summary_text).classes("lp-meta-chip lp-article-summary-chip")
 
                 def _render_actions() -> None:
-                    ui.button("Open", on_click=view_action).props("dense")
+                    ui.button("Open details", on_click=view_action).props("dense")
 
                 render_card_actions_row(render_actions=_render_actions)
 

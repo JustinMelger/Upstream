@@ -43,9 +43,7 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
     with ui.header().classes("lp-header"):
         # Keep header content aligned with `.lp-container` so page facets/cards
         # visually line up with the page title.
-        with ui.row().classes("lp-header-inner") as header_row:
-            if str(title or "") == "Explore" and bool(settings.feature_explore_cinema):
-                header_row.classes("lp-header-inner--explore-cinema")
+        with ui.row().classes("lp-header-inner"):
             ui.label(title).classes("text-lg font-semibold")
             with ui.row().classes("items-center gap-2"):
                 # A compact menu keeps navigation usable on small screens.

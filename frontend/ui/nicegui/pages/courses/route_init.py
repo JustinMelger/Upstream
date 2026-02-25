@@ -11,65 +11,11 @@ class CoursesRouteInit:
     """Resolved initial route state for Courses page."""
 
     initial_scope: str
-    initial_course_id: int
-    initial_focus_reviews: bool
 
 
-def resolve_courses_route_init(
-    *, request: Any, storage_intent: dict[str, Any] | None, nav_intent: dict[str, Any] | None
-) -> CoursesRouteInit:
-    """Resolve initial scope/course/dialog mode from query params and intents."""
+def resolve_courses_route_init(*, request: Any) -> CoursesRouteInit:
+    """Resolve initial scope from query params."""
     query_params = getattr(request, "query_params", {}) if request is not None else {}
     initial_tab = str(getattr(query_params, "get", lambda _k, _d=None: _d)("tab", "") or "").strip().lower()
     initial_scope = "tracked" if initial_tab == "tracked" else "all"
-
-    initial_course_id_raw = str(getattr(query_params, "get", lambda _k, _d=None: _d)("course_id", "") or "").strip()
-    try:
-        initial_course_id = int(initial_course_id_raw) if initial_course_id_raw else 0
-    except (TypeError, ValueError):
-        initial_course_id = 0
-
-    initial_view_mode = str(getattr(query_params, "get", lambda _k, _d=None: _d)("view", "") or "").strip().lower()
-    initial_focus_reviews = initial_view_mode == "reviews"
-
-    for intent in [storage_intent, nav_intent]:
-        if not isinstance(intent, dict):
-            continue
-        if initial_course_id <= 0:
-            try:
-                initial_course_id = int(intent.get("course_id") or 0)
-            except (TypeError, ValueError):
-                initial_course_id = 0
-        if initial_view_mode not in {"full", "reviews"}:
-            initial_focus_reviews = str(intent.get("view") or "").strip().lower() == "reviews"
-
-    return CoursesRouteInit(
-        initial_scope=initial_scope,
-        initial_course_id=int(initial_course_id),
-        initial_focus_reviews=bool(initial_focus_reviews),
-    )
-
-
-def intent_matches_course(intent: dict[str, Any] | None, course_id: int) -> bool:
-    """Return whether an intent targets the opened course id."""
-    if not isinstance(intent, dict):
-        return False
-    try:
-        return int(intent.get("course_id") or 0) == int(course_id)
-    except (TypeError, ValueError):
-        return False
-
-
-def consume_course_intents_for_opened_course(
-    *,
-    storage_intent: dict[str, Any] | None,
-    nav_intent: dict[str, Any] | None,
-    course_id: int,
-    pop_storage_intent: Any,
-    pop_nav_intent: Any,
-) -> None:
-    """Consume matching storage/nav intents for an opened course id."""
-    if intent_matches_course(storage_intent, int(course_id)):
-        pop_storage_intent()
-    if intent_matches_course(nav_intent, int(course_id)):
-        pop_nav_intent()
+    return CoursesRouteInit(initial_scope=initial_scope)

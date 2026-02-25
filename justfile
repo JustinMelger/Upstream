@@ -13,17 +13,7 @@ lint:
 	uv run ruff format --check .
 
 lint-ratchet range='HEAD~1..HEAD':
-	#!/usr/bin/env bash
-	set -euo pipefail
-	changed_py="$(git diff --name-only '{{range}}' -- '*.py' | grep -E '^(backend|frontend)/' || true)"
-	if [ -z "$changed_py" ]; then
-		echo "No changed backend/frontend Python files for ratchet checks."
-		exit 0
-	fi
-	echo "Changed Python files:"
-	echo "$changed_py"
-	uv run ruff check $changed_py
-	uv run mypy $changed_py
+	./scripts/lint_quality_gate.sh '{{range}}'
 
 unit:
 	DATABASE_URL={{DATABASE_URL}} uv run pytest -m unit

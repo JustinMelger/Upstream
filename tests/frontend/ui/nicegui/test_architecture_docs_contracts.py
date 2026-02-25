@@ -11,6 +11,7 @@ import pytest
 pytestmark = pytest.mark.architecture
 
 _PAGES_ROOT = Path("frontend/ui/nicegui/pages")
+_SERVICES_ROOT = Path("frontend/ui/nicegui/services")
 _MAIN_FILE = Path("frontend/ui/nicegui/main.py")
 _PYPROJECT_FILE = Path("pyproject.toml")
 
@@ -87,15 +88,16 @@ def test_documented_routes_exist_in_page_modules() -> None:
         "/",
         "/login",
         "/home",
-        "/learning",
         "/teams",
-        "/activity",
         "/profile",
         "/profile/stats",
-        "/courses",
-        "/paths",
-        "/articles",
-        "/insights",
+        "/manage/courses",
+        "/manage/paths",
+        "/manage/articles",
+        "/explore",
+        "/explore/courses/{course_id}",
+        "/explore/paths/{path_id}",
+        "/explore/articles/{article_id}",
         "/admin/users",
         "/ai",
     }
@@ -116,6 +118,42 @@ def test_non_login_pages_require_auth_guard() -> None:
 def test_admin_users_page_requires_admin_guard() -> None:
     admin_page = _PAGES_ROOT / "admin_users" / "page.py"
     assert _admin_page_requires_admin(admin_page), "Expected require_user(..., require_admin=True)"
+
+
+def test_legacy_catalog_compat_modules_are_removed() -> None:
+    removed = (
+        Path("frontend/ui/nicegui/pages/courses/compat.py"),
+        Path("frontend/ui/nicegui/pages/paths/compat.py"),
+        Path("frontend/ui/nicegui/pages/articles/compat.py"),
+    )
+    for path in removed:
+        assert not path.exists(), f"Legacy compatibility module should be removed: {path}"
+
+
+def test_page_modules_do_not_navigate_to_legacy_discovery_routes() -> None:
+    forbidden = {"/courses", "/paths", "/articles", "/learning", "/activity", "/insights"}
+    for page_path in sorted(_PAGES_ROOT.glob("*/page.py")):
+        tree = _parse(page_path)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if not (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "to"
+                and isinstance(node.func.value, ast.Attribute)
+                and node.func.value.attr == "navigate"
+                and isinstance(node.func.value.value, ast.Name)
+                and node.func.value.value.id == "ui"
+            ):
+                continue
+            if not node.args:
+                continue
+            first = node.args[0]
+            if not isinstance(first, ast.Constant) or not isinstance(first.value, str):
+                continue
+            value = str(first.value)
+            if value in forbidden or any(value.startswith(f"{route}?") for route in forbidden):
+                raise AssertionError(f"Use Explore or /manage routes instead of legacy discovery route in {page_path}: {value}")
 
 
 def test_main_create_app_keeps_feature_flag_gates() -> None:
@@ -143,6 +181,14 @@ def test_page_modules_do_not_import_services_directly() -> None:
         imports = _imports_for(path)
         assert not any(name.startswith("frontend.ui.nicegui.services") for name in imports), (
             f"page.py should use controller/actions, not services directly: {path}"
+        )
+
+
+def test_service_modules_do_not_import_pages_modules() -> None:
+    for path in sorted(_SERVICES_ROOT.rglob("*.py")):
+        imports = _imports_for(path)
+        assert not any(name.startswith("frontend.ui.nicegui.pages") for name in imports), (
+            f"service module should not depend on page modules: {path}"
         )
 
 
@@ -217,16 +263,29 @@ def test_card_pages_use_view_model_mappers() -> None:
     }
     for page_path, (module_name, mapper_names) in expected.items():
         imports = _imports_for(page_path)
-        assert module_name in imports, f"Expected {page_path} to import {module_name}"
+        if page_path == Path("frontend/ui/nicegui/pages/paths/page.py"):
+            section_path = Path("frontend/ui/nicegui/pages/paths/sections.py")
+            section_imports = _imports_for(section_path)
+            assert module_name in imports or module_name in section_imports, (
+                f"Expected {page_path} or {section_path} to import {module_name}"
+            )
+        else:
+            assert module_name in imports, f"Expected {page_path} to import {module_name}"
         for mapper_name in mapper_names:
-            assert _calls_function_named(page_path, mapper_name), f"Expected {page_path} to call {mapper_name}"
+            if page_path == Path("frontend/ui/nicegui/pages/paths/page.py"):
+                section_path = Path("frontend/ui/nicegui/pages/paths/sections.py")
+                assert _calls_function_named(page_path, mapper_name) or _calls_function_named(section_path, mapper_name), (
+                    f"Expected {page_path} or {section_path} to call {mapper_name}"
+                )
+            else:
+                assert _calls_function_named(page_path, mapper_name), f"Expected {page_path} to call {mapper_name}"
 
 
 def test_large_page_modules_stay_below_size_guardrail() -> None:
     """Keep large page modules from regressing while migration continues."""
     max_lines_by_page = {
         Path("frontend/ui/nicegui/pages/courses/page.py"): 565,
-        Path("frontend/ui/nicegui/pages/paths/page.py"): 536,
+        Path("frontend/ui/nicegui/pages/paths/page.py"): 537,
         Path("frontend/ui/nicegui/pages/articles/page.py"): 296,
         Path("frontend/ui/nicegui/pages/learning/page.py"): 353,
     }

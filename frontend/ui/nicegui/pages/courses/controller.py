@@ -31,6 +31,12 @@ class CoursesPageController:
     """Imperative API workflow orchestration for Courses page."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def load_list_bundle(self, *, params: dict[str, Any] | None = None) -> CoursesListBundle:

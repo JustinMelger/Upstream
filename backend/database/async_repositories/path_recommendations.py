@@ -14,6 +14,12 @@ class PathRecommendationsRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy persistence for path recommendations."""
 
     def __init__(self, session: AsyncSession):
+        """Initialize the repository.
+
+        Args:
+            session: Active async SQLAlchemy session.
+
+        """
         self.session = session
 
     async def list_for_path(self, *, path_id: int) -> list[PathRecommendationRecord]:

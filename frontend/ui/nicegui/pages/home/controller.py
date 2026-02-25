@@ -21,6 +21,12 @@ class HomePageController:
     """Imperative API workflows for `/insights`."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def load_overview(

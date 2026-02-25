@@ -8,37 +8,32 @@ from frontend.ui.nicegui.core.navigation import (
     build_paths_deep_link,
 )
 from frontend.ui.nicegui.core.navigation_intents import (
-    get_course_storage_intent,
-    get_path_storage_intent,
-    pop_course_storage_intent,
-    pop_path_storage_intent,
-    set_course_storage_intent,
-    set_path_storage_intent,
+    get_catalog_share_storage_intent,
+    pop_catalog_share_storage_intent,
+    set_catalog_share_storage_intent,
 )
 
 
 def test_navigation_link_builders() -> None:
-    assert build_courses_deep_link(course_id=12, view="reviews") == "/courses?tab=tracked&course_id=12&view=reviews"
-    assert build_paths_deep_link(path_id=9, view="full") == "/paths?tab=selected&path_id=9&view=full"
+    assert build_courses_deep_link(course_id=12, view="reviews") == "/explore/courses/12?view=reviews"
+    assert build_paths_deep_link(path_id=9, view="full") == "/explore/paths/9"
     assert build_learning_tab_link(tab="shared") == "/home?tab=shared"
     assert build_activity_tab_link(tab="team") == "/teams?tab=team"
 
 
 def test_activity_target_link_builder() -> None:
-    assert build_activity_target_link(target_type="course", target_id=7) == "/courses?course_id=7"
-    assert build_activity_target_link(target_type="path", target_id=2) == "/paths?path_id=2"
-    assert build_activity_target_link(target_type="article", target_id=1) == "/articles"
+    assert build_activity_target_link(target_type="course", target_id=7) == "/explore/courses/7"
+    assert build_activity_target_link(target_type="path", target_id=2) == "/explore/paths/2"
+    assert build_activity_target_link(target_type="article", target_id=1) == "/explore?tab=articles"
     assert build_activity_target_link(target_type="unknown", target_id=1) == "/home"
 
 
-def test_storage_intent_helpers_round_trip() -> None:
+def test_catalog_share_storage_intent_helpers_round_trip() -> None:
     storage: dict[str, object] = {}
-    set_course_storage_intent(storage_user=storage, course_id=11, view="reviews")
-    assert get_course_storage_intent(storage_user=storage) == {"course_id": 11, "view": "reviews"}
-    assert pop_course_storage_intent(storage_user=storage) == {"course_id": 11, "view": "reviews"}
-    assert get_course_storage_intent(storage_user=storage) is None
+    set_catalog_share_storage_intent(storage_user=storage, target="course")
+    assert get_catalog_share_storage_intent(storage_user=storage) == "course"
+    assert pop_catalog_share_storage_intent(storage_user=storage) == "course"
+    assert get_catalog_share_storage_intent(storage_user=storage) is None
 
-    set_path_storage_intent(storage_user=storage, path_id=5, view="full")
-    assert get_path_storage_intent(storage_user=storage) == {"path_id": 5, "view": "full"}
-    assert pop_path_storage_intent(storage_user=storage) == {"path_id": 5, "view": "full"}
-    assert get_path_storage_intent(storage_user=storage) is None
+    set_catalog_share_storage_intent(storage_user=storage, target="invalid")
+    assert get_catalog_share_storage_intent(storage_user=storage) is None

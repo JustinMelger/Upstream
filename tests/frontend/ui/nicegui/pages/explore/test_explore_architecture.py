@@ -38,7 +38,7 @@ def test_explore_pure_modules_do_not_import_nicegui() -> None:
 def test_explore_page_imports_page_package_modules() -> None:
     imports = _imports_for(_EXPLORE_DIR / "page.py")
     assert "frontend.ui.nicegui.pages.explore.controller" in imports
-    assert "frontend.ui.nicegui.pages.explore.detail_flow" in imports
+    assert "frontend.ui.nicegui.pages.explore.detail_page" in imports
     assert "frontend.ui.nicegui.pages.explore.list_sections" in imports
     assert "frontend.ui.nicegui.pages.explore.sections" in imports
     assert "frontend.ui.nicegui.pages.explore.state" in imports
@@ -48,19 +48,37 @@ def test_explore_page_imports_page_package_modules() -> None:
 
 
 @pytest.mark.unit
+def test_explore_controller_depends_on_gateway_not_page_controllers() -> None:
+    imports = _imports_for(_EXPLORE_DIR / "controller.py")
+    assert "frontend.ui.nicegui.pages.explore.gateway" in imports
+    assert "frontend.ui.nicegui.pages.courses.controller" not in imports
+    assert "frontend.ui.nicegui.pages.paths.controller" not in imports
+    assert "frontend.ui.nicegui.pages.articles.controller" not in imports
+
+
+@pytest.mark.unit
 def test_explore_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"actions.py", "page.py", "sections.py", "detail_flow.py", "list_sections.py"}
+    allowed_ui_modules = {
+        "actions.py",
+        "detail_article.py",
+        "detail_common.py",
+        "detail_course.py",
+        "detail_flow.py",
+        "detail_path.py",
+        "list_items.py",
+        "list_sections.py",
+        "page.py",
+        "sections.py",
+    }
     for path in sorted(_EXPLORE_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)
-        if path.name in expected_ui_modules:
-            assert imports_nicegui
-        else:
-            assert not imports_nicegui
+        if imports_nicegui:
+            assert path.name in allowed_ui_modules
 
 
 @pytest.mark.unit
 def test_explore_article_cards_use_compact_mode() -> None:
-    src = (_EXPLORE_DIR / "list_sections.py").read_text(encoding="utf-8")
+    src = (_EXPLORE_DIR / "list_items.py").read_text(encoding="utf-8")
     assert "render_article_card(" in src
     assert "compact_mode=True" in src

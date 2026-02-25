@@ -31,30 +31,17 @@ jobs:
           pip install uv
           uv sync --no-install-project --group dev --frozen
 
-      - name: Run ratchet lint/type checks on changed Python files
+      - name: Run quality gate (ratchet + strict core profile)
         shell: bash
         run: |
           set -euo pipefail
-
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             RANGE="origin/${{ github.base_ref }}...HEAD"
             git fetch origin "${{ github.base_ref }}" --depth=1
           else
             RANGE="HEAD~1..HEAD"
           fi
-
-          CHANGED_PY="$(git diff --name-only "$RANGE" -- '*.py' | grep -E '^(backend|frontend)/' || true)"
-          if [ -z "$CHANGED_PY" ]; then
-            echo "No changed backend/frontend Python files for ratchet checks."
-            exit 0
-          fi
-
-          echo "Changed Python files:"
-          echo "$CHANGED_PY"
-
-          # Ratchet mode: fail fast on newly introduced violations in changed files.
-          uv run ruff check $CHANGED_PY
-          uv run mypy $CHANGED_PY
+          ./scripts/lint_quality_gate.sh "$RANGE"
 
       - name: Run ruff lint
         run: uv run ruff check .

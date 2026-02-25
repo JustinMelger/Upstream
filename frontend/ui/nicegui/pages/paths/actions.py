@@ -95,7 +95,7 @@ def resolve_paths_empty_state(
 
 def path_share_link(*, path_id: int) -> str:
     """Build a copyable app-relative deep link for a path."""
-    return f"/paths?path_id={int(path_id)}&view=full"
+    return f"/explore/paths/{int(path_id)}"
 
 
 def copy_path_link(*, path_id: int) -> None:

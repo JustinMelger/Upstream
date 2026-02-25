@@ -34,11 +34,9 @@ async def test_root_redirects_to_home(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.anyio
-async def test_legacy_insights_redirects_to_profile_stats(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_legacy_insights_route_is_not_registered(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     monkeypatch.setattr(home_page, "ui", fake_ui)
 
     home_page.register(store=object(), api=object())  # type: ignore[arg-type]
-    handler = fake_ui.routes["/insights"]
-    await handler()
-    assert fake_ui.navigations == ["/profile/stats"]
+    assert "/insights" not in fake_ui.routes

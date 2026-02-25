@@ -16,6 +16,19 @@ def tracking_status_key(*, tracking_by_course_id: dict[int, dict[str, Any]], cou
     return value if value in _TRACKING_STATES else "not_tracked"
 
 
+def _matches_optional_course_field(
+    *,
+    course: dict[str, Any],
+    field: str,
+    expected: str,
+    ignore: str,
+    ignore_key: str,
+) -> bool:
+    if ignore == ignore_key or not expected:
+        return True
+    return expected == str(course.get(field) or "").strip().lower()
+
+
 def _course_matches(
     course: dict[str, Any],
     *,
@@ -35,15 +48,30 @@ def _course_matches(
     if ignore != "needle" and needle:
         if needle not in str(course.get("title") or "").lower() and needle not in str(course.get("description") or "").lower():
             return False
-    if ignore != "provider" and provider_value:
-        if provider_value != str(course.get("provider") or "").strip().lower():
-            return False
-    if ignore != "category" and category_value:
-        if category_value != str(course.get("category") or "").strip().lower():
-            return False
-    if ignore != "level" and level_value:
-        if level_value != str(course.get("level") or "").strip().lower():
-            return False
+    if not (
+        _matches_optional_course_field(
+            course=course,
+            field="provider",
+            expected=provider_value,
+            ignore=ignore,
+            ignore_key="provider",
+        )
+        and _matches_optional_course_field(
+            course=course,
+            field="category",
+            expected=category_value,
+            ignore=ignore,
+            ignore_key="category",
+        )
+        and _matches_optional_course_field(
+            course=course,
+            field="level",
+            expected=level_value,
+            ignore=ignore,
+            ignore_key="level",
+        )
+    ):
+        return False
     if ignore != "status" and status_value:
         cid = int(course.get("id") or 0)
         if status_value == "not_tracked":

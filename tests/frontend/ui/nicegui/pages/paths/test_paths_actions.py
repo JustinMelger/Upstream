@@ -18,7 +18,7 @@ from frontend.ui.nicegui.pages.paths.actions import (
 
 @pytest.mark.unit
 def test_path_share_link_builds_expected_deep_link() -> None:
-    assert path_share_link(path_id=42) == "/paths?path_id=42&view=full"
+    assert path_share_link(path_id=42) == "/explore/paths/42"
 
 
 @pytest.mark.unit

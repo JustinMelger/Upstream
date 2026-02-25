@@ -20,6 +20,16 @@ def path_recommendations_error_handler(
     message: str = "An unexpected error occurred while handling path recommendations",
     status_code: int = 500,
 ) -> Callable[[F], F]:
+    """Build an error-handler decorator for path recommendation methods.
+
+    Args:
+        message: Default fallback error message.
+        status_code: Default HTTP status code for unexpected failures.
+
+    Returns:
+        Decorator wrapping uncaught errors as `PathRecommendationsServiceError`.
+
+    """
     return error_handler(
         service_error=PathRecommendationsServiceError,
         message=message,
@@ -39,10 +49,25 @@ class PathRecommendationsService:
     """Path recommendations service."""
 
     def __init__(self, repo: PathRecommendationsRepository):
+        """Initialize the service.
+
+        Args:
+            repo: Path recommendations repository.
+
+        """
         self._repo = repo
 
     @path_recommendations_error_handler()
     async def list_recommendations(self, *, path_id: int) -> list[dict]:
+        """List recommendation rows for one path.
+
+        Args:
+            path_id: Path identifier.
+
+        Returns:
+            Serialized recommendation rows.
+
+        """
         async with session_scope(self._repo.session):
             rows = await self._repo.list_for_path(path_id=path_id)
         return [

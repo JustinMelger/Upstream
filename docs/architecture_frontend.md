@@ -34,6 +34,10 @@ Rules:
 - Keep frontend controllers focused on UI workflow orchestration.
 - Keep page modules thin and avoid large closure/nonlocal state when a typed model can be used.
 - Page package `__init__.py` should export `register` only; tests should import helper functions from their source modules.
+- Keep dependency direction one-way:
+  - `pages/*` may depend on page-local modules, components, core helpers, and services via controllers.
+  - `services/*` must not depend on `pages/*` modules.
+  - If shared transforms are needed by both page/controller and service, place them in `services/*` (or `core/*`) and import from there.
 
 Reference implementation (current):
 
@@ -85,6 +89,13 @@ The current implementation now standardizes several frontend patterns across pag
   - `frontend/ui/nicegui/pages/__init__.py` no longer eagerly imports all pages.
   - `frontend/ui/nicegui/pages/ai_curator/__init__.py` uses a lazy `register(...)` proxy.
   - This keeps service-layer tests import-safe when run in isolation.
+
+- Architecture enforcement tests:
+  - `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`
+    - Enforces that service modules do not import page modules.
+    - Enforces page/controller boundaries and complexity guardrails.
+  - `tests/frontend/ui/nicegui/pages/explore/test_explore_architecture.py`
+    - Enforces Explore page package UI/pure-module boundaries.
 
 ## NiceGUI Sequence
 
@@ -165,15 +176,16 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 - `/login`: Authenticate and create a session.
 - `/`: Redirect to `/home`.
 - `/home`: Primary action hub (continue learning + review nudges + personal workspace).
-- `/courses`: Browse/search courses.
-- `/paths`: Browse learning paths.
-- `/learning`: Legacy alias for `/home` (kept temporarily for compatibility).
+- `/manage/courses`: Course management and sharing surface.
+- `/manage/paths`: Path management and sharing surface.
+- `/manage/articles`: Article management and sharing surface.
+- `/explore`: Unified discovery hub.
+- `/explore/courses/{course_id}`: Course detail route.
+- `/explore/paths/{path_id}`: Path detail route.
+- `/explore/articles/{article_id}`: Article detail route.
 - `/teams`: Inbox + team activity feed.
-- `/activity`: Legacy alias for `/teams` (kept temporarily for compatibility).
 - `/profile`: Profile landing route (redirects to `/profile/stats`).
 - `/profile/stats`: Full statistics dashboard.
-- `/articles`: Share and browse colleague-submitted links ("Articles").
-- `/insights`: Legacy stats route (being retired in favor of `/profile/stats`).
 - `/admin/users`: User management (admin only).
 
 Notes:
@@ -288,10 +300,9 @@ Backend endpoints:
 - `POST /articles/{id}/reviews`
 - `DELETE /articles/{id}/reviews/{review_id}`
 
-### MyLearningPage (legacy alias: `/learning`)
+### Home Workspace (`/home`)
 Responsibilities:
 
-- Route alias to the Home workspace while migration is in progress.
 - Provide a single personal overview split into two intents:
 - `Learning`: what the user plans to learn (tracked courses + selected paths; optionally saved articles later).
 - `Shared`: what the user contributed (courses created by the user, paths created by the user, articles shared by the user).
@@ -316,7 +327,7 @@ Notes:
 - `GET /paths?created_by=alice`
 - `GET /articles?created_by=alice`
 
-### TeamsPage (`/teams`, legacy alias: `/activity`)
+### TeamsPage (`/teams`)
 Responsibilities:
 
 - Show inbox/team activity feed for collaboration updates.

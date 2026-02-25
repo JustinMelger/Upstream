@@ -2,63 +2,52 @@
 
 from __future__ import annotations
 
-from functools import partial
-from typing import Any
+from typing import Any, cast
 
 from nicegui import app, ui
 
 from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.pagination import render_load_more_footer
-from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
 from frontend.ui.nicegui.components.paths_sections import render_paths_filter_rail, render_paths_topbar
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
+from frontend.ui.nicegui.core.errors import guard_ui_action, NotificationType, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.mutation_flow import run_optimistic_mutation
 from frontend.ui.nicegui.core.navigation_intents import (
-    get_path_intent,
-    get_path_storage_intent,
-    pop_path_intent,
-    pop_path_storage_intent,
+    pop_catalog_share_storage_intent,
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.paths.actions import (
-    build_path_card_actions,
     clear_path_filter_by_key,
-    PathCardActionDeps,
     PathsFilterControls,
-    recompute_path_status_filter,
     resolve_paths_empty_state,
 )
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.detail_flow import open_path_details_dialog
-from frontend.ui.nicegui.pages.paths.dialogs import build_share_path_dialog, open_edit_path_dialog
-from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values
+from frontend.ui.nicegui.pages.paths.dialogs import build_share_path_dialog
+from frontend.ui.nicegui.pages.paths.filter_flow import (
+    clear_paths_filters_and_refresh,
+    recompute_paths_facet_options,
+    refresh_paths_filter_list,
+)
 from frontend.ui.nicegui.pages.paths.orchestration import (
-    clear_path_filter_values,
     load_all_paths,
     LoadAllPathsDeps,
     perform_create_path,
     perform_delete_path,
-    perform_update_path,
-    refresh_path_recommendation_summary,
-    refresh_paths_list,
     run_select_path_flow,
     run_unselect_path_flow,
 )
 from frontend.ui.nicegui.pages.paths.reducers import (
-    apply_scope_and_status,
-    build_status_options,
-    compute_status_counts,
-    filter_paths_by_needle,
-    sort_paths,
+    derive_paths_list_slice,
 )
-from frontend.ui.nicegui.pages.paths.route_init import intent_matches_path, resolve_paths_route_init
+from frontend.ui.nicegui.pages.paths.route_init import resolve_paths_route_init
 from frontend.ui.nicegui.pages.paths.sections import (
+    PathsCardsRenderDeps,
     render_paths_active_filter_chips,
+    render_paths_cards_block,
     render_paths_collection_intro,
     render_paths_empty_state,
 )
@@ -70,11 +59,7 @@ from frontend.ui.nicegui.pages.paths.transitions import (
 )
 from frontend.ui.nicegui.pages.paths.ui_glue import (
     collect_active_filter_chips,
-    compute_expanded_visible_count,
     compute_paths_meta_text,
-)
-from frontend.ui.nicegui.pages.paths.view_model import (
-    map_path_card_view,
 )
 
 
@@ -111,25 +96,27 @@ def _path_matches_state(path_id: int, selected_by_id: dict[int, dict[str, Any]],
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
-    """Register the `/paths` route.
+    """Register the paths routes."""
 
-    Args:
-        store: Session store.
-        api: API client.
-    """
-
-    @ui.page("/paths")
+    @ui.page("/manage/paths")
     async def paths_page() -> None:
         user = await require_user(store, api)
         if user is None:
             return
-
+        request = getattr(ui.context.client, "request", None)
+        share_intent = pop_catalog_share_storage_intent(storage_user=app.storage.user)
         render_shell(title="Paths", store=store, api=api)
         username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
         controller = PathsPageController(api=api)
         controller_state = PathsPageState()
         ui_state = PathsPageUiState()
+
+        def _notify(message: str, kind: str) -> None:
+            normalized = str(kind or "").strip().lower()
+            if normalized not in {"positive", "negative", "warning", "info", "ongoing"}:
+                normalized = "info"
+            safe_notify(message, type=cast(NotificationType, normalized))
 
         async def _reload_selected() -> bool:
             """Reload selected path rows (used after select/unselect/status updates)."""
@@ -175,8 +162,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     ensure_selected_detail=_ensure_selected_detail,
                     reload_tracking=_reload_tracking,
                     on_scope_selected=_on_scope_selected,
-                    notify=lambda message, kind: safe_notify(message, type=kind),
-                    refresh_paths_list_ui=paths_list.refresh,
+                    notify=_notify,
+                    refresh_paths_list_ui=_refresh_paths_list,
                     open_details=_open_details,
                 )
 
@@ -184,7 +171,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 apply_optimistic=lambda: apply_optimistic_select(state=controller_state, path_id=int(path_id)),
                 perform_mutation=_perform_select,
                 rollback=lambda snapshot: rollback_optimistic_selection(state=controller_state, snapshot=snapshot),
-                refresh_ui=paths_list.refresh,
+                refresh_ui=_refresh_paths_list,
             )
 
         @guard_ui_action(title="Unselect failed")
@@ -195,15 +182,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     controller=controller,
                     state=controller_state,
                     reload_selected=_reload_selected,
-                    notify=lambda message, kind: safe_notify(message, type=kind),
-                    refresh_paths_list_ui=paths_list.refresh,
+                    notify=_notify,
+                    refresh_paths_list_ui=_refresh_paths_list,
                 )
 
             return await run_optimistic_mutation(
                 apply_optimistic=lambda: apply_optimistic_unselect(state=controller_state, path_id=int(path_id)),
                 perform_mutation=_perform_unselect,
                 rollback=lambda snapshot: rollback_optimistic_selection(state=controller_state, snapshot=snapshot),
-                refresh_ui=paths_list.refresh,
+                refresh_ui=_refresh_paths_list,
             )
 
         @guard_ui_action(title="Delete path failed")
@@ -244,66 +231,45 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             )
 
             # Top bar (search + primary action + sort + count).
-            request = getattr(ui.context.client, "request", None)
-            query_params = getattr(request, "query_params", None)
-            open_share_from_query = str(
-                getattr(query_params, "get", lambda _k, _d=None: _d)("share", "") or ""
-            ).strip().lower() in {"1", "true", "yes"}
-            intent = get_path_storage_intent(storage_user=app.storage.user)
-            nav_intent = get_path_intent(username=username)
-            route_init = resolve_paths_route_init(
-                request=request,
-                storage_intent=intent if isinstance(intent, dict) else None,
-                nav_intent=nav_intent if isinstance(nav_intent, dict) else None,
-                normalize_view_mode=_normalize_path_view_mode,
-            )
+            open_share_from_intent = str(share_intent or "") == "path"
+            route_init = resolve_paths_route_init(request=request)
 
             q, scope_filter, sort_filter, meta = render_paths_topbar(
                 initial_scope=route_init.initial_scope,
                 on_open_create_dialog=_open_create_dialog,
             )
+            controls = PathsFilterControls(
+                scope_filter=scope_filter,
+                search_input=q,
+                status_filter=status_filter,
+                sort_filter=sort_filter,
+            )
 
             def _recompute_facet_options() -> None:
-                """Recompute status facet options with counts based on the current local filters."""
-                normalized = normalize_paths_filter_values(
-                    scope_value=str(scope_filter.value or "all"),
-                    search_value=str(q.value or ""),
-                    status_value=str(status_filter.value or ""),
-                    sort_value=str(sort_filter.value or ""),
-                )
-                recompute_path_status_filter(
+                recompute_paths_facet_options(
                     controls=PathsFilterControls(
                         scope_filter=scope_filter,
                         search_input=q,
                         status_filter=status_filter,
                         sort_filter=sort_filter,
                     ),
-                    paths=controller_state.paths,
-                    selected_by_id=controller_state.selected_by_id,
-                    normalized_filters=normalized,
-                    compute_status_counts=compute_status_counts,
-                    build_status_options=build_status_options,
+                    state=controller_state,
                 )
 
             def _refresh_list(*_: Any) -> None:
-                refresh_paths_list(
+                refresh_paths_filter_list(
                     ui_state=ui_state,
                     recompute_facet_options=_recompute_facet_options,
-                    refresh_active_filters=active_filters.refresh,
-                    refresh_paths_list_ui=paths_list.refresh,
+                    refresh_active_filters=_refresh_active_filters,
+                    refresh_paths_list_ui=_refresh_paths_list,
                 )
 
             def _clear_filter_values() -> None:
-                clear_path_filter_values(
-                    controls=PathsFilterControls(
-                        scope_filter=scope_filter,
-                        search_input=q,
-                        status_filter=status_filter,
-                        sort_filter=sort_filter,
-                    ),
+                clear_paths_filters_and_refresh(
+                    controls=controls,
                     recompute_facet_options=_recompute_facet_options,
-                    refresh_active_filters=active_filters.refresh,
-                    refresh_paths_list_ui=paths_list.refresh,
+                    refresh_active_filters=_refresh_active_filters,
+                    refresh_paths_list_ui=_refresh_paths_list,
                 )
 
             @guard_ui_action(title="Reset filters failed")
@@ -326,44 +292,38 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     sort_options=dict(sort_filter.options or {}),
                 )
 
+                def _on_clear_key(key: str) -> None:
+                    clear_path_filter_by_key(
+                        key=str(key),
+                        controls=PathsFilterControls(
+                            scope_filter=scope_filter,
+                            search_input=q,
+                            status_filter=status_filter,
+                            sort_filter=sort_filter,
+                        ),
+                    )
+                    _refresh_list()
+
                 render_paths_active_filter_chips(
                     chips=chips,
-                    on_clear_key=lambda key: (
-                        clear_path_filter_by_key(
-                            key=str(key),
-                            controls=PathsFilterControls(
-                                scope_filter=scope_filter,
-                                search_input=q,
-                                status_filter=status_filter,
-                                sort_filter=sort_filter,
-                            ),
-                        )
-                        and _refresh_list()
-                    ),
+                    on_clear_key=_on_clear_key,
                 )
 
             @ui.refreshable
             def paths_list() -> None:
-                normalized = normalize_paths_filter_values(
+                list_slice = derive_paths_list_slice(
+                    paths=controller_state.paths,
+                    selected_by_id=controller_state.selected_by_id,
+                    path_review_summary_by_id=controller_state.path_review_summary_by_id,
                     scope_value=str(scope_filter.value or "all"),
                     search_value=str(q.value or ""),
                     status_value=str(status_filter.value or "").strip(),
                     sort_value=str(sort_filter.value or "").strip(),
-                )
-                shown = filter_paths_by_needle(controller_state.paths, normalized.search)
-                shown = apply_scope_and_status(
-                    paths=shown,
-                    selected_by_id=controller_state.selected_by_id,
-                    scope_value=normalized.scope,
-                    status_value=normalized.status,
                     path_matches_state=_path_matches_state,
-                )
-                shown = sort_paths(
-                    paths=shown,
-                    sort_value=normalized.sort,
-                    path_review_summary_by_id=controller_state.path_review_summary_by_id,
                     parse_iso_datetime=parse_iso_datetime,
                 )
+                normalized = list_slice.normalized
+                shown = list_slice.shown
 
                 with ui.column().classes("w-full gap-3"):
                     if ui_state.loading or not ui_state.loaded_once:
@@ -377,123 +337,39 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         has_any_filters=bool(any_filters),
                         has_any_paths=bool(controller_state.paths),
                     )
+
+                    def _browse_all() -> None:
+                        scope_filter.value = "all"
+                        _refresh_list()
+
                     if render_paths_empty_state(
                         empty_state=empty_state,
-                        on_browse_all=lambda: setattr(scope_filter, "value", "all") or _refresh_list(),
+                        on_browse_all=_browse_all,
                         on_refresh=_load_all,
                         on_share=_open_create_dialog,
-                        on_browse_courses=lambda: ui.navigate.to("/courses"),
+                        on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
                         on_reset_all=_reset_all,
                     ):
                         return
 
                     render_paths_collection_intro()
-
-                    total = len(shown)
-                    shown_page = shown[: max(0, int(ui_state.visible_count))]
-                    for p in shown_page:
-                        pid = int(p.get("id") or 0)
-                        selected = controller_state.selected_by_id.get(pid)
-                        can_edit = is_admin or (str(p.get("created_by") or "") == username)
-                        is_tracked = selected is not None
-                        detail = controller_state.selected_detail_by_path_id.get(pid) if selected else None
-                        card_vm = map_path_card_view(
-                            path_row=p,
-                            is_tracked=is_tracked,
-                            detail=detail if isinstance(detail, dict) else None,
-                            tracking_by_course_id=controller_state.tracking_by_course_id,
-                            review_summary_row=controller_state.path_review_summary_by_id.get(pid),
-                            recommendation_summary_row=controller_state.path_recommendation_summary_by_id.get(pid),
-                        )
-
-                        actions = build_path_card_actions(
-                            path_id=pid,
-                            is_tracked=selected is not None,
-                            deps=PathCardActionDeps(
-                                username=username,
-                                get_user_note=lambda _path_id, _username: controller.get_user_recommendation_note(
-                                    path_id=int(_path_id),
-                                    username=str(_username),
-                                ),
-                                save_recommendation=lambda _path_id, _note: controller.save_recommendation(
-                                    path_id=int(_path_id),
-                                    note=str(_note),
-                                ),
-                                on_saved=partial(
-                                    refresh_path_recommendation_summary,
-                                    path_id=pid,
-                                    controller=controller,
-                                    state=controller_state,
-                                    refresh_paths_list_ui=paths_list.refresh,
-                                ),
-                                get_path_detail=lambda _pid: controller.get_path_detail(path_id=int(_pid)),
-                                on_open_edit=lambda _pid, _detail: open_edit_path_dialog(
-                                    detail=_detail,
-                                    course_by_id=controller_state.course_by_id,
-                                    detail_dialog=None,
-                                    on_save=partial(
-                                        perform_update_path,
-                                        path_id=int(_pid),
-                                        controller=controller,
-                                        reload_page=_load_all,
-                                        refresh_paths_list_ui=paths_list.refresh,
-                                    ),
-                                ),
-                                on_delete=_delete_path,
-                                on_open_details=lambda _pid, _mode: _open_details(_pid, view_mode=_mode),
-                                on_select=_select,
-                                on_unselect=_unselect,
-                            ),
-                            on_after_toggle=_recompute_facet_options,
-                        )
-
-                        render_path_card(
-                            display=PathCardDisplay(
-                                path_row=p,
-                                card_class_suffix=card_vm.card_class_suffix,
-                                is_new=card_vm.is_new,
-                                is_updated=card_vm.is_updated,
-                                rating_badge=card_vm.rating_badge,
-                                recommendation_badge=card_vm.recommendation_badge,
-                                can_edit=can_edit,
-                                shared_by=card_vm.shared_by,
-                                tracking_label_text=card_vm.tracking_label_text,
-                                tracking_chip_cls=card_vm.tracking_chip_cls,
-                                completed=card_vm.completed,
-                                total_courses=card_vm.total_courses,
-                                progress=card_vm.progress,
-                                milestone=card_vm.milestone,
-                                milestone_class=card_vm.milestone_class,
-                                impact=card_vm.impact,
-                                next_title=card_vm.next_title,
-                            ),
-                            actions=PathCardCallbacks(
-                                on_review=actions.on_review,
-                                on_recommend=actions.on_recommend,
-                                on_copy_link=actions.on_copy_link,
-                                on_edit=actions.on_edit,
-                                on_delete=actions.on_delete,
-                                on_view=actions.on_view,
-                                on_track_toggle=actions.on_track_toggle,
-                                track_toggle_label=actions.track_toggle_label,
-                            ),
-                        )
-
-                    if total > len(shown_page):
-
-                        def _load_more() -> None:
-                            ui_state.visible_count = compute_expanded_visible_count(
-                                current_visible=int(ui_state.visible_count),
-                                total_count=int(total),
-                                page_size=int(ui_state.page_size),
-                            )
-                            paths_list.refresh()
-
-                        render_load_more_footer(
-                            shown_page_count=len(shown_page),
-                            shown_total_count=total,
-                            on_load_more=_load_more,
-                        )
+                    render_paths_cards_block(
+                        shown=shown,
+                        deps=PathsCardsRenderDeps(
+                            username=username,
+                            is_admin=is_admin,
+                            controller=controller,
+                            controller_state=controller_state,
+                            ui_state=ui_state,
+                            refresh_paths_list_ui=_refresh_paths_list,
+                            recompute_facet_options=_recompute_facet_options,
+                            open_details=lambda _pid, _mode: _open_details(_pid, view_mode=_mode),
+                            select_path=_select,
+                            unselect_path=_unselect,
+                            delete_path=_delete_path,
+                            load_all=_load_all,
+                        ),
+                    )
 
             async def _load_all() -> None:
                 """Reload all data for this page."""
@@ -507,11 +383,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         create_course_ids=create_course_ids,
                         compute_course_options=_course_options,
                         recompute_facet_options=_recompute_facet_options,
-                        refresh_paths_list_ui=paths_list.refresh,
+                        refresh_paths_list_ui=_refresh_paths_list,
                         notify_error=lambda message: safe_notify(message, type="negative"),
                         compute_meta_text=lambda path_count: compute_paths_meta_text(path_count=path_count),
                     ),
                 )
+
+            def _refresh_active_filters() -> None:
+                active_filters.refresh()
+
+            def _refresh_paths_list() -> None:
+                paths_list.refresh()
 
             def _render_rail() -> None:
                 nonlocal status_filter, refresh_btn
@@ -533,11 +415,5 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             render_split_layout(rail=_render_rail, main=_render_main, rail_classes="lp-rail--bar")
 
             await _load_all()
-            if open_share_from_query:
+            if open_share_from_intent:
                 _open_create_dialog()
-            if route_init.initial_path_id > 0:
-                await _open_details(route_init.initial_path_id, view_mode=route_init.initial_dialog_mode)
-                if intent_matches_path(intent if isinstance(intent, dict) else None, route_init.initial_path_id):
-                    pop_path_storage_intent(storage_user=app.storage.user)
-                if intent_matches_path(nav_intent if isinstance(nav_intent, dict) else None, route_init.initial_path_id):
-                    pop_path_intent(username=username)

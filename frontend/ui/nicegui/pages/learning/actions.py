@@ -7,15 +7,9 @@ from dataclasses import dataclass
 import json
 from typing import Any
 
-from nicegui import app, ui
+from nicegui import ui
 
 from frontend.ui.nicegui.core.navigation import build_learning_tab_link
-from frontend.ui.nicegui.core.navigation_intents import (
-    set_course_intent,
-    set_course_storage_intent,
-    set_path_intent,
-    set_path_storage_intent,
-)
 from frontend.ui.nicegui.pages.learning.state import LearningPageState
 
 
@@ -28,42 +22,80 @@ class LearningNavigationActions:
     build_path_navigation_url: Callable[[int, str], str]
 
     def make_course_view_action(self, course_id: int) -> Any:
+        """Build a callback that opens course details.
+
+        Args:
+            course_id: Course identifier to open.
+
+        Returns:
+            Async callback for UI action binding.
+
+        """
+
         async def _view_course() -> None:
-            set_course_intent(username=self.username, course_id=int(course_id), view="full")
-            set_course_storage_intent(storage_user=app.storage.user, course_id=int(course_id), view="full")
             url = self.build_course_navigation_url(int(course_id), "full")
             ui.run_javascript(f"window.location.href={json.dumps(url)};")
 
         return _view_course
 
     def make_course_review_action(self, course_id: int) -> Any:
+        """Build a callback that opens course reviews mode.
+
+        Args:
+            course_id: Course identifier to open.
+
+        Returns:
+            Async callback for UI action binding.
+
+        """
+
         async def _review_course() -> None:
-            set_course_intent(username=self.username, course_id=int(course_id), view="reviews")
-            set_course_storage_intent(storage_user=app.storage.user, course_id=int(course_id), view="reviews")
             url = self.build_course_navigation_url(int(course_id), "reviews")
             ui.run_javascript(f"window.location.href={json.dumps(url)};")
 
         return _review_course
 
     def make_path_view_action(self, path_id: int) -> Any:
+        """Build a callback that opens path details.
+
+        Args:
+            path_id: Path identifier to open.
+
+        Returns:
+            Async callback for UI action binding.
+
+        """
+
         async def _view_path() -> None:
-            set_path_intent(username=self.username, path_id=int(path_id), view="full")
-            set_path_storage_intent(storage_user=app.storage.user, path_id=int(path_id), view="full")
             url = self.build_path_navigation_url(int(path_id), "full")
             ui.run_javascript(f"window.location.href={json.dumps(url)};")
 
         return _view_path
 
     def make_path_review_action(self, path_id: int) -> Any:
+        """Build a callback that opens path reviews mode.
+
+        Args:
+            path_id: Path identifier to open.
+
+        Returns:
+            Async callback for UI action binding.
+
+        """
+
         async def _review_path() -> None:
-            set_path_intent(username=self.username, path_id=int(path_id), view="reviews")
-            set_path_storage_intent(storage_user=app.storage.user, path_id=int(path_id), view="reviews")
             url = self.build_path_navigation_url(int(path_id), "reviews")
             ui.run_javascript(f"window.location.href={json.dumps(url)};")
 
         return _review_path
 
     def navigate_tab(self, tab: str) -> None:
+        """Navigate to a specific learning tab.
+
+        Args:
+            tab: Target tab key.
+
+        """
         ui.navigate.to(build_learning_tab_link(tab=str(tab)))
 
 

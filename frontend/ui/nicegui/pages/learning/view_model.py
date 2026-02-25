@@ -45,8 +45,6 @@ def build_recently_shared_in_teams(
 
     def _append_rows(content_type: str, rows: list[dict[str, Any]], title_key: str) -> None:
         for row in rows:
-            if not isinstance(row, dict):
-                continue
             owner = str(row.get("created_by") or "").strip()
             if not owner or owner == username:
                 continue
