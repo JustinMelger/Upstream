@@ -49,13 +49,6 @@ from frontend.ui.nicegui.pages.learning.view_model import (
 )
 
 
-def _progress_for_path_detail(
-    *, detail: dict[str, Any], tracking_by_course_id: dict[int, dict[str, Any]]
-) -> tuple[int, int, float]:
-    """Compute (completed, total, ratio) for a path based on course tracking."""
-    return compute_path_progress(detail=detail, tracking_by_course_id=tracking_by_course_id)
-
-
 def _next_uncompleted_course_from_selected_paths(
     *,
     selected_paths: list[dict[str, Any]],
@@ -308,7 +301,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     tracking_label_fn=tracking_label,
                     tracking_chip_class_fn=tracking_chip_class,
                     resolve_status_value=resolve_tracking_status_value,
-                    progress_for_path_detail=_progress_for_path_detail,
+                    progress_for_path_detail=compute_path_progress,
                     nav_actions=nav_actions,
                     on_save_recommended_course=_save_recommended_course,
                     on_save_recommended_path=_save_recommended_path,
