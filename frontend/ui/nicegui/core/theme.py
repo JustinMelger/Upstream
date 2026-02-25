@@ -570,6 +570,36 @@ def apply_theme() -> None:
           overflow: hidden;
         }
 
+        .lp-catalog--explore .lp-course-card .lp-social-strip,
+        .lp-catalog--explore .lp-path-card .lp-path-meta-row,
+        .lp-catalog--explore .lp-article-card .lp-article-meta-row {
+          min-height: 18px;
+        }
+
+        .lp-catalog--explore .lp-course-card .lp-course-context-line,
+        .lp-catalog--explore .lp-path-card .lp-path-context-line,
+        .lp-catalog--explore .lp-course-card .lp-card-taxonomy,
+        .lp-catalog--explore .lp-article-card .lp-article-context-line,
+        .lp-catalog--explore .lp-article-card .lp-article-tag-row {
+          min-height: 28px;
+          align-items: center;
+        }
+
+        .lp-catalog--explore .lp-path-card .lp-path-context-line {
+          margin-top: 0;
+        }
+
+        .lp-catalog--explore .lp-article-card .lp-article-context-line {
+          margin-top: -2px;
+          margin-bottom: -2px;
+          color: rgba(218, 227, 238, 0.78);
+        }
+
+        .lp-catalog--explore .lp-card-actions {
+          margin-top: auto;
+          min-height: 34px;
+        }
+
         .lp-catalog--explore .lp-article-summary-chip {
           display: -webkit-box;
           -webkit-box-orient: vertical;
@@ -800,6 +830,7 @@ def apply_theme() -> None:
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-context-line,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-context-line,
         .lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-tag-row {
           min-height: 28px;
           align-items: center;

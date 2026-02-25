@@ -9,7 +9,11 @@ from pydantic.dataclasses import dataclass
 
 from backend.core.errors import courses_error_handler, CoursesServiceError
 from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
-from backend.database.async_repositories.courses import CoursesRepository
+from backend.database.async_repositories.courses import (
+    CoursesRepository,
+    CreateCoursePayload,
+    UpdateCoursePayload,
+)
 from backend.database.models import CourseRecommendationRecord, CourseRecord
 from backend.database.tx import session_scope
 from backend.services.course_search_document import build_course_search_document
@@ -153,18 +157,20 @@ class CoursesService:
             if duplicate_title_provider:
                 raise CoursesServiceError(detail="duplicate_title_provider", status_code=409)
             course_id = await self._repo.create_course(
-                title=title,
-                description=description,
-                learning_outcomes=learning_outcomes,
-                prerequisites=prerequisites,
-                language=language,
-                provider=provider,
-                category=category,
-                level=level,
-                duration_hours=duration_hours,
-                url=url,
-                created_at=created_at,
-                created_by=created_by,
+                payload=CreateCoursePayload(
+                    title=title,
+                    description=description,
+                    learning_outcomes=learning_outcomes,
+                    prerequisites=prerequisites,
+                    language=language,
+                    provider=provider,
+                    category=category,
+                    level=level,
+                    duration_hours=duration_hours,
+                    url=url,
+                    created_at=created_at,
+                    created_by=created_by,
+                )
             )
         course = await self.get_course_by_id(course_id)
         if not course:
@@ -210,17 +216,19 @@ class CoursesService:
 
         async with session_scope(self._repo.session):
             await self._repo.update_course(
-                course_id=course_id,
-                title=title,
-                description=description,
-                learning_outcomes=learning_outcomes,
-                prerequisites=prerequisites,
-                language=language,
-                provider=provider,
-                category=category,
-                level=level,
-                duration_hours=duration_hours,
-                url=url,
+                payload=UpdateCoursePayload(
+                    course_id=course_id,
+                    title=title,
+                    description=description,
+                    learning_outcomes=learning_outcomes,
+                    prerequisites=prerequisites,
+                    language=language,
+                    provider=provider,
+                    category=category,
+                    level=level,
+                    duration_hours=duration_hours,
+                    url=url,
+                )
             )
         return await self.get_course_by_id(course_id)
 

@@ -2,24 +2,27 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import timezone
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 
 
-@dataclass(frozen=True)
-class ActiveFilterChip:
+class ActiveFilterChip(BaseModel):
     """Descriptor for a removable active-filter chip."""
+
+    model_config = ConfigDict(frozen=True)
 
     key: str
     label: str
 
 
-@dataclass(frozen=True)
-class CoursesFilterResetState:
+class CoursesFilterResetState(BaseModel):
     """Default filter state for a full reset action."""
+
+    model_config = ConfigDict(frozen=True)
 
     scope: str
     search: str

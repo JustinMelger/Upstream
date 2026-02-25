@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -28,6 +30,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install uv
           uv sync --no-install-project --group dev --frozen
+
+      - name: Run ratchet lint/type checks on changed Python files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="origin/${{ github.base_ref }}...HEAD"
+            git fetch origin "${{ github.base_ref }}" --depth=1
+          else
+            RANGE="HEAD~1..HEAD"
+          fi
+
+          CHANGED_PY="$(git diff --name-only "$RANGE" -- '*.py' | grep -E '^(backend|frontend)/' || true)"
+          if [ -z "$CHANGED_PY" ]; then
+            echo "No changed backend/frontend Python files for ratchet checks."
+            exit 0
+          fi
+
+          echo "Changed Python files:"
+          echo "$CHANGED_PY"
+
+          # Ratchet mode: fail fast on newly introduced violations in changed files.
+          uv run ruff check $CHANGED_PY
+          uv run mypy $CHANGED_PY
 
       - name: Run ruff lint
         run: uv run ruff check .
@@ -203,9 +230,93 @@ jobs:
           name: coverage-integration
           path: coverage.integration
 
-  coverage_report:
+  e2e_smoke:
     runs-on: ubuntu-latest
     needs: integration
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: learning_platform
+          POSTGRES_USER: learning_platform
+          POSTGRES_PASSWORD: learning_platform
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U learning_platform -d learning_platform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
+      E2E_API_URL: http://127.0.0.1:8000
+      E2E_UI_URL: http://127.0.0.1:8080
+      E2E_SCREENSHOT_DIR: test-results/e2e-screenshots
+      E2E_VISUAL_ASSERT: "1"
+      E2E_VISUAL_STRICT: "0"
+      NICEGUI_STORAGE_SECRET: ci-e2e-storage-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          uv sync --no-install-project --group dev --frozen
+
+      - name: Install Playwright Chromium
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run Alembic migrations
+        run: uv run alembic upgrade head
+
+      - name: Start backend + UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          nohup uv run uvicorn backend.main:app --host 127.0.0.1 --port 8000 > backend.log 2>&1 &
+          nohup uv run python -m frontend.ui.nicegui.main > ui.log 2>&1 &
+
+      - name: Wait for backend + UI health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in {1..120}; do
+            if curl -fsS "$E2E_API_URL/health" >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          for i in {1..120}; do
+            if curl -fsS "$E2E_UI_URL/login" >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run e2e smoke tests
+        run: uv run pytest tests/e2e -m e2e
+
+      - name: Upload e2e artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            backend.log
+            ui.log
+            test-results/e2e-screenshots
+
+  coverage_report:
+    runs-on: ubuntu-latest
+    needs: e2e_smoke
     permissions:
       contents: write
     steps:

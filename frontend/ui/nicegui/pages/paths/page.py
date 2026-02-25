@@ -11,7 +11,7 @@ from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_container, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
-from frontend.ui.nicegui.components.path_card import render_path_card
+from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
 from frontend.ui.nicegui.components.paths_sections import render_paths_filter_rail, render_paths_topbar
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
@@ -28,6 +28,7 @@ from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.paths.actions import (
     build_path_card_actions,
     clear_path_filter_by_key,
+    PathCardActionDeps,
     PathsFilterControls,
     recompute_path_status_filter,
     resolve_paths_empty_state,
@@ -39,6 +40,7 @@ from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_value
 from frontend.ui.nicegui.pages.paths.orchestration import (
     clear_path_filter_values,
     load_all_paths,
+    LoadAllPathsDeps,
     perform_create_path,
     perform_delete_path,
     perform_update_path,
@@ -407,68 +409,74 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         actions = build_path_card_actions(
                             path_id=pid,
                             is_tracked=selected is not None,
-                            username=username,
-                            get_user_note=lambda _path_id, _username: controller.get_user_recommendation_note(
-                                path_id=int(_path_id),
-                                username=str(_username),
-                            ),
-                            save_recommendation=lambda _path_id, _note: controller.save_recommendation(
-                                path_id=int(_path_id),
-                                note=str(_note),
-                            ),
-                            on_saved=partial(
-                                refresh_path_recommendation_summary,
-                                path_id=pid,
-                                controller=controller,
-                                state=controller_state,
-                                refresh_paths_list_ui=paths_list.refresh,
-                            ),
-                            get_path_detail=lambda _pid: controller.get_path_detail(path_id=int(_pid)),
-                            on_open_edit=lambda _pid, _detail: open_edit_path_dialog(
-                                detail=_detail,
-                                course_by_id=controller_state.course_by_id,
-                                detail_dialog=None,
-                                on_save=partial(
-                                    perform_update_path,
-                                    path_id=int(_pid),
+                            deps=PathCardActionDeps(
+                                username=username,
+                                get_user_note=lambda _path_id, _username: controller.get_user_recommendation_note(
+                                    path_id=int(_path_id),
+                                    username=str(_username),
+                                ),
+                                save_recommendation=lambda _path_id, _note: controller.save_recommendation(
+                                    path_id=int(_path_id),
+                                    note=str(_note),
+                                ),
+                                on_saved=partial(
+                                    refresh_path_recommendation_summary,
+                                    path_id=pid,
                                     controller=controller,
-                                    reload_page=_load_all,
+                                    state=controller_state,
                                     refresh_paths_list_ui=paths_list.refresh,
                                 ),
+                                get_path_detail=lambda _pid: controller.get_path_detail(path_id=int(_pid)),
+                                on_open_edit=lambda _pid, _detail: open_edit_path_dialog(
+                                    detail=_detail,
+                                    course_by_id=controller_state.course_by_id,
+                                    detail_dialog=None,
+                                    on_save=partial(
+                                        perform_update_path,
+                                        path_id=int(_pid),
+                                        controller=controller,
+                                        reload_page=_load_all,
+                                        refresh_paths_list_ui=paths_list.refresh,
+                                    ),
+                                ),
+                                on_delete=_delete_path,
+                                on_open_details=lambda _pid, _mode: _open_details(_pid, view_mode=_mode),
+                                on_select=_select,
+                                on_unselect=_unselect,
                             ),
-                            on_delete=_delete_path,
-                            on_open_details=lambda _pid, _mode: _open_details(_pid, view_mode=_mode),
-                            on_select=_select,
-                            on_unselect=_unselect,
                             on_after_toggle=_recompute_facet_options,
                         )
 
                         render_path_card(
-                            path_row=p,
-                            card_class_suffix=card_vm.card_class_suffix,
-                            is_new=card_vm.is_new,
-                            is_updated=card_vm.is_updated,
-                            rating_badge=card_vm.rating_badge,
-                            recommendation_badge=card_vm.recommendation_badge,
-                            can_edit=can_edit,
-                            shared_by=card_vm.shared_by,
-                            tracking_label_text=card_vm.tracking_label_text,
-                            tracking_chip_cls=card_vm.tracking_chip_cls,
-                            completed=card_vm.completed,
-                            total_courses=card_vm.total_courses,
-                            progress=card_vm.progress,
-                            milestone=card_vm.milestone,
-                            milestone_class=card_vm.milestone_class,
-                            impact=card_vm.impact,
-                            next_title=card_vm.next_title,
-                            on_review=actions.on_review,
-                            on_recommend=actions.on_recommend,
-                            on_copy_link=actions.on_copy_link,
-                            on_edit=actions.on_edit,
-                            on_delete=actions.on_delete,
-                            on_view=actions.on_view,
-                            on_track_toggle=actions.on_track_toggle,
-                            track_toggle_label=actions.track_toggle_label,
+                            display=PathCardDisplay(
+                                path_row=p,
+                                card_class_suffix=card_vm.card_class_suffix,
+                                is_new=card_vm.is_new,
+                                is_updated=card_vm.is_updated,
+                                rating_badge=card_vm.rating_badge,
+                                recommendation_badge=card_vm.recommendation_badge,
+                                can_edit=can_edit,
+                                shared_by=card_vm.shared_by,
+                                tracking_label_text=card_vm.tracking_label_text,
+                                tracking_chip_cls=card_vm.tracking_chip_cls,
+                                completed=card_vm.completed,
+                                total_courses=card_vm.total_courses,
+                                progress=card_vm.progress,
+                                milestone=card_vm.milestone,
+                                milestone_class=card_vm.milestone_class,
+                                impact=card_vm.impact,
+                                next_title=card_vm.next_title,
+                            ),
+                            actions=PathCardCallbacks(
+                                on_review=actions.on_review,
+                                on_recommend=actions.on_recommend,
+                                on_copy_link=actions.on_copy_link,
+                                on_edit=actions.on_edit,
+                                on_delete=actions.on_delete,
+                                on_view=actions.on_view,
+                                on_track_toggle=actions.on_track_toggle,
+                                track_toggle_label=actions.track_toggle_label,
+                            ),
                         )
 
                     if total > len(shown_page):
@@ -492,15 +500,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 await load_all_paths(
                     ui_state=ui_state,
                     controller_state=controller_state,
-                    controller=controller,
-                    refresh_btn=refresh_btn,
-                    meta=meta,
-                    create_course_ids=create_course_ids,
-                    compute_course_options=_course_options,
-                    recompute_facet_options=_recompute_facet_options,
-                    refresh_paths_list_ui=paths_list.refresh,
-                    notify_error=lambda message: safe_notify(message, type="negative"),
-                    compute_meta_text=lambda path_count: compute_paths_meta_text(path_count=path_count),
+                    deps=LoadAllPathsDeps(
+                        controller=controller,
+                        refresh_btn=refresh_btn,
+                        meta=meta,
+                        create_course_ids=create_course_ids,
+                        compute_course_options=_course_options,
+                        recompute_facet_options=_recompute_facet_options,
+                        refresh_paths_list_ui=paths_list.refresh,
+                        notify_error=lambda message: safe_notify(message, type="negative"),
+                        compute_meta_text=lambda path_count: compute_paths_meta_text(path_count=path_count),
+                    ),
                 )
 
             def _render_rail() -> None:

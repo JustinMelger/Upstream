@@ -205,9 +205,9 @@
 - [x] Filter rail density pass: reduce rail visual weight (contrast/width) so content remains primary while preserving filter discoverability.
   - [x] Phase slice: reduced rail width and lowered rail contrast/shadow intensity to shift visual focus back to the content column.
 - [x] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so primary content cards remain the dominant focal point.
-- [ ] Content-type hierarchy pass (in progress): tune card information priority per domain (Courses: progression/status; Articles: author/date/editorial metadata; Paths: milestones/progress sequencing).
+- [x] Content-type hierarchy pass (in progress): tune card information priority per domain (Courses: progression/status; Articles: author/date/editorial metadata; Paths: milestones/progress sequencing).
   - [x] Phase slice: accepted Explore course-card UX baseline (compact premium card rhythm, primary CTA clarity, and reduced metadata density).
-  - [ ] Phase slice: align Explore path and article cards to the same visual rhythm/slot model as the accepted course cards (title/meta/status/action baselines + spacing parity).
+  - [x] Phase slice: align Explore path and article cards to the same visual rhythm/slot model as the accepted course cards (title/meta/status/action baselines + spacing parity).
 - [x] Articles UX follow-up (empty-state composition): avoid hero + empty-card message duplication; introduce a compact empty variant so first-load pages do not feel content-sparse.
 - [x] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls for faster scan.
 - [x] Empty-state density polish (Articles): tighten headline/body spacing and reduce vertical whitespace in the empty block while preserving CTA prominence.
@@ -261,16 +261,21 @@
 
 ### Phase 11D — Quality Gates & Test Stability
 - [ ] Quality gates: add visual regression checks for key pages and smoke e2e flows (login, track course, review, select path).
-- [ ] Test reliability: isolate backend integration test auth/session state per test (or per module) to remove intermittent `401/404/500` flakiness.
+  - [x] Phase slice: add Playwright smoke coverage for `login` + `track` with CI artifact uploads (screenshots + app logs).
+  - [x] Phase slice: extend smoke coverage to `review` + `select path`.
+  - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
+  - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+- [x] Test reliability: isolate backend integration test auth/session state per test (or per module) to remove intermittent `401/404/500` flakiness.
 - [x] Docs sync: update `docs/architecture_frontend.md` to match current IA/routes (`My learning`, `Insights`, mailbox activity) and current service/page boundaries.
-- [ ] Docs sync: update `docs/architecture_backend.md` course/recommendation/review model details (`description`, `learning_outcomes`, `prerequisites`, `language`, `search_document`) and current service flows.
-- [ ] Lint/mypy ratchet (near-term target): converge to `mccabe<=25`, `max-branches<=20`, `max-statements<=100`, `max-args<=10`, `max-returns<=8` for non-legacy code.
-  - [ ] Phase slice: define enforcement tiers by module type (strict for `services/controllers/orchestration/reducers`; slightly looser for UI section renderers) and document them in `pyproject.toml` comments.
-  - [ ] Phase slice: remove temporary per-file complexity ignores from active (non-legacy) modules by extracting oversized functions into `controller.py`, `orchestration.py`, `actions.py`, and `ui_glue.py`.
-  - [ ] Phase slice: reduce argument-heavy APIs (`PLR0913`) by introducing typed payload/view-model dataclasses and callback/context objects instead of long parameter lists.
-  - [ ] Phase slice: add architecture tests that prevent new direct complexity regressions in active page modules (file-size + complexity smoke guards).
-  - [ ] Phase slice: keep legacy pages explicitly excluded until migration is complete; do not expand legacy ignore scope.
-  - [ ] Phase slice: enable CI ratchet mode (fail on new violations first, then fail on full threshold) to tighten incrementally without blocking delivery.
+- [x] Docs sync: update `docs/architecture_backend.md` course/recommendation/review model details (`description`, `learning_outcomes`, `prerequisites`, `language`, `search_document`) and current service flows.
+- [x] Lint/mypy ratchet (near-term target): converge to `mccabe<=25`, `max-branches<=20`, `max-statements<=100`, `max-args<=10`, `max-returns<=8` for non-legacy code.
+  - [x] Phase slice: define enforcement tiers by module type (strict for `services/controllers/orchestration/reducers`; slightly looser for UI section renderers) and document them in `pyproject.toml` comments.
+  - [x] Phase slice: remove temporary per-file complexity ignores from active (non-legacy) modules by extracting oversized functions into `controller.py`, `orchestration.py`, `actions.py`, and `ui_glue.py`.
+  - [x] Phase slice: reduce argument-heavy APIs (`PLR0913`) by introducing typed payload/view-model dataclasses and callback/context objects instead of long parameter lists.
+  - [x] Phase slice: add architecture tests that prevent new direct complexity regressions in active page modules (file-size + complexity smoke guards).
+  - [x] Phase slice: keep legacy pages explicitly excluded until migration is complete; do not expand legacy ignore scope.
+  - [x] Phase slice: enable CI ratchet mode (fail on new violations first, then fail on full threshold) to tighten incrementally without blocking delivery.
+  - [x] Phase slice: enforce target thresholds in `pyproject.toml` and refactor remaining non-legacy violations to keep full `ruff` + scoped `mypy` green.
 
 ### Phase 11E — IA Simplification + First-Use Clarity
 
@@ -314,7 +319,7 @@ Execution sequencing (prioritized):
 - [x] Explore dedupe: remove duplicated `featured` logic inherited from `Courses`.
 - [x] Explore consistency: standardize card structure across content types.
   - [x] Phase slice: course cards finalized as the Explore reference pattern.
-  - [ ] Phase slice: finish path/article card parity with course-card structure and CTA baseline alignment.
+  - [x] Phase slice: finish path/article card parity with course-card structure and CTA baseline alignment.
 - [x] Explore card actions: ensure one primary action per card.
 - [ ] Explore details navigation: replace hover/dialog-first detail behavior with dedicated detail routes per content type (course/path/article) and keep cards focused on scan + primary action.
 - [ ] Legacy catalog cleanup: convert `/courses`, `/paths`, and `/articles` to thin compatibility routes (deep-link/management only), remove duplicated discovery UI, and complete redirect/deprecation plan after Explore detail parity is stable.

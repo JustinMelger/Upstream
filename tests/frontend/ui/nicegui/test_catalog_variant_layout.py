@@ -119,6 +119,7 @@ def test_explore_cinema_card_alignment_selectors_are_defined_in_theme() -> None:
         ".lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-meta-row",
         ".lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-context-line",
         ".lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-meta-row",
+        ".lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-context-line",
         ".lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-tag-row",
         ".lp-catalog--explore.lp-explore-cinema .lp-card-actions",
         ".lp-catalog--explore.lp-explore-cinema .lp-course-context-line",

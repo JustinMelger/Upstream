@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from pydantic import BaseModel, ConfigDict
 
 
-@dataclass(frozen=True, slots=True)
-class PathsFilterValues:
+class PathsFilterValues(BaseModel):
     """Normalized filter values consumed by reducers and UI glue."""
+
+    model_config = ConfigDict(frozen=True)
 
     scope: str
     search: str

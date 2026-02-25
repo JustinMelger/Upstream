@@ -51,30 +51,34 @@
   - [x] Empty-state density polish (Articles): tighten spacing and reduce vertical whitespace while preserving CTA prominence.
   - [x] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so cards remain dominant.
   - [x] Explore course-card UX baseline: finalize accepted course-card look/feel and CTA behavior in Explore.
-  - [ ] Explore parity follow-up: align path/article cards to the accepted course-card slot rhythm and baseline alignment in Explore.
+  - [x] Explore parity follow-up: align path/article cards to the accepted course-card slot rhythm and baseline alignment in Explore.
 
 
 ## Sprint 5 — Hardening + Pilot Readiness (Non-UX)
 - [ ] Stabilize quality gates and type discipline:
-  - [ ] Resolve current `mypy` baseline errors in `frontend/ui/nicegui/pages/paths/*` and `frontend/ui/nicegui/pages/explore/page.py`.
+  - [x] Resolve current `mypy` baseline errors in `frontend/ui/nicegui/pages/paths/*` and `frontend/ui/nicegui/pages/explore/page.py`.
   - [ ] Keep `ruff` and `mypy` green on touched modules for every sprint slice.
-  - [ ] Add/update targeted tests for any extracted orchestration/controller helpers.
-  - [ ] Lint ratchet near-term target for non-legacy modules:
-    - [ ] `mccabe<=25`
-    - [ ] `max-branches<=20`
-    - [ ] `max-statements<=100`
-    - [ ] `max-args<=10`
-    - [ ] `max-returns<=8`
-  - [ ] Define enforcement tiers in `pyproject.toml` (strict in `services/controllers/orchestration/reducers`, slightly looser in UI composition modules).
-  - [ ] Remove temporary per-file complexity ignores from active modules by extracting long/high-branch functions.
-  - [ ] Reduce argument-heavy APIs (`PLR0913`) using typed payload/context objects (dataclass/view-model based).
-  - [ ] Add architecture regression guard for complexity in active page modules (prevent new regressions).
-  - [ ] Keep legacy-page excludes fixed (no broadened ignore scope).
-  - [ ] Roll out CI ratchet mode: fail on new violations first, then enforce full thresholds.
+  - [x] Add/update targeted tests for any extracted orchestration/controller helpers.
+  - [x] Lint ratchet near-term target for non-legacy modules:
+    - [x] `mccabe<=25`
+    - [x] `max-branches<=20`
+    - [x] `max-statements<=100`
+    - [x] `max-args<=10`
+    - [x] `max-returns<=8`
+  - [x] Define enforcement tiers in `pyproject.toml` (strict in `services/controllers/orchestration/reducers`, slightly looser in UI composition modules).
+  - [x] Remove temporary per-file complexity ignores from active modules by extracting long/high-branch functions.
+  - [x] Reduce argument-heavy APIs (`PLR0913`) using typed payload/context objects (dataclass/view-model based).
+  - [x] Add architecture regression guard for complexity in active page modules (prevent new regressions).
+  - [x] Keep legacy-page excludes fixed (no broadened ignore scope).
+  - [x] Roll out CI ratchet mode: fail on new violations first, then enforce full thresholds.
 - [ ] Complete open Phase `11D` engineering items:
   - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
-  - [ ] Isolate backend integration test auth/session state to reduce intermittent `401/404/500` failures.
-  - [ ] Sync `docs/architecture_backend.md` with current course/recommendation/review model + service flow details.
+    - [x] Phase slice: add Playwright smoke coverage for `login` + `track` and upload screenshots/log artifacts in CI.
+    - [x] Phase slice: add `review` + `select path` smoke coverage.
+    - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
+    - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+  - [x] Isolate backend integration test auth/session state to reduce intermittent `401/404/500` failures.
+  - [x] Sync `docs/architecture_backend.md` with current course/recommendation/review model + service flow details.
 
 ## Sprint TBD — Pilot Validation (Planned Later)
 - [ ] Run 5 first-time-user usability tests and log confusion points.

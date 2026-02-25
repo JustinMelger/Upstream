@@ -57,3 +57,10 @@ def test_explore_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> 
             assert imports_nicegui
         else:
             assert not imports_nicegui
+
+
+@pytest.mark.unit
+def test_explore_article_cards_use_compact_mode() -> None:
+    src = (_EXPLORE_DIR / "list_sections.py").read_text(encoding="utf-8")
+    assert "render_article_card(" in src
+    assert "compact_mode=True" in src

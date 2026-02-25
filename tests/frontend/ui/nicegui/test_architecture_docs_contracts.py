@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+import re
+import tomllib
 
 import pytest
 
@@ -10,6 +12,7 @@ pytestmark = pytest.mark.architecture
 
 _PAGES_ROOT = Path("frontend/ui/nicegui/pages")
 _MAIN_FILE = Path("frontend/ui/nicegui/main.py")
+_PYPROJECT_FILE = Path("pyproject.toml")
 
 
 def _parse(path: Path) -> ast.Module:
@@ -221,13 +224,55 @@ def test_card_pages_use_view_model_mappers() -> None:
 
 def test_large_page_modules_stay_below_size_guardrail() -> None:
     """Keep large page modules from regressing while migration continues."""
-    max_lines = 550
-    guarded_pages = [
-        Path("frontend/ui/nicegui/pages/courses/page.py"),
-        Path("frontend/ui/nicegui/pages/paths/page.py"),
-        Path("frontend/ui/nicegui/pages/articles/page.py"),
-        Path("frontend/ui/nicegui/pages/learning/page.py"),
-    ]
-    for page_path in guarded_pages:
+    max_lines_by_page = {
+        Path("frontend/ui/nicegui/pages/courses/page.py"): 565,
+        Path("frontend/ui/nicegui/pages/paths/page.py"): 536,
+        Path("frontend/ui/nicegui/pages/articles/page.py"): 296,
+        Path("frontend/ui/nicegui/pages/learning/page.py"): 353,
+    }
+    for page_path, max_lines in max_lines_by_page.items():
         line_count = len(page_path.read_text(encoding="utf-8").splitlines())
         assert line_count <= max_lines, f"{page_path} is {line_count} lines (> {max_lines}); extract to package modules"
+
+
+def test_active_page_modules_do_not_add_complexity_noqa_markers() -> None:
+    """Guardrail: avoid adding local complexity suppressions in active page modules."""
+    complexity_noqa = re.compile(r"#\s*noqa:\s*.*\b(C901|PLR0911|PLR0912|PLR0913|PLR0915)\b")
+    active_module_patterns = (
+        "*/page.py",
+        "*/controller.py",
+        "*/orchestration.py",
+        "*/actions.py",
+        "*/ui_glue.py",
+    )
+    for pattern in active_module_patterns:
+        for path in sorted(_PAGES_ROOT.glob(pattern)):
+            src = path.read_text(encoding="utf-8")
+            if complexity_noqa.search(src):
+                raise AssertionError(f"Do not add complexity noqa markers in active page modules: {path}")
+
+
+def test_ruff_complexity_per_file_ignores_do_not_broaden_scope() -> None:
+    """Guardrail: keep complexity ignores constrained to approved module scopes."""
+    pyproject = tomllib.loads(_PYPROJECT_FILE.read_text(encoding="utf-8"))
+    per_file_ignores: dict[str, list[str]] = (
+        pyproject.get("tool", {}).get("ruff", {}).get("lint", {}).get("per-file-ignores", {})
+    )
+    complexity_codes = {"C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"}
+    complexity_ignore_targets = {
+        path
+        for path, codes in dict(per_file_ignores or {}).items()
+        if any(str(code) in complexity_codes for code in list(codes or []))
+    }
+
+    approved_targets = {
+        "tests/**/*.py",
+        "frontend/ui/nicegui/pages/*/page.py",
+        "frontend/ui/nicegui/pages/*/sections.py",
+        "frontend/ui/nicegui/pages/*/dialogs.py",
+        "frontend/ui/nicegui/pages/explore/page.py",
+    }
+    unexpected = sorted(complexity_ignore_targets - approved_targets)
+    assert not unexpected, (
+        f"Unexpected Ruff complexity ignore targets. Refactor modules instead of broadening per-file ignores: {unexpected}"
+    )

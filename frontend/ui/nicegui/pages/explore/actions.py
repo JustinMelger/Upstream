@@ -10,6 +10,7 @@ from frontend.ui.nicegui.pages.courses.actions import build_course_card_actions
 from frontend.ui.nicegui.pages.courses.ui_glue import format_short_date, normalize_course_view_mode
 from frontend.ui.nicegui.pages.explore.controller import ExplorePageController
 from frontend.ui.nicegui.pages.explore.detail_flow import (
+    ExploreCourseDetailsDeps,
     open_explore_article_details_dialog,
     open_explore_course_details_dialog,
 )
@@ -52,29 +53,31 @@ def build_explore_course_actions(
             focus_reviews=bool(focus),
             username=username,
             is_admin=is_admin,
-            state_tracking_by_course_id=state.tracking_by_course_id,
-            review_summary_by_course_id=state.course_review_summary_by_course_id,
-            recommendation_summary_by_course_id=state.course_recommendation_summary_by_course_id,
-            load_detail_bundle=lambda _cid, _scope: controller.load_course_detail_bundle(
-                course_id=int(_cid),
-                cache_scope=str(_scope or ""),
+            deps=ExploreCourseDetailsDeps(
+                state_tracking_by_course_id=state.tracking_by_course_id,
+                review_summary_by_course_id=state.course_review_summary_by_course_id,
+                recommendation_summary_by_course_id=state.course_recommendation_summary_by_course_id,
+                load_detail_bundle=lambda _cid, _scope: controller.load_course_detail_bundle(
+                    course_id=int(_cid),
+                    cache_scope=str(_scope or ""),
+                ),
+                save_review=lambda _cid, _rating, _text, _scope: controller.save_course_review(
+                    course_id=int(_cid),
+                    rating=int(_rating),
+                    text=str(_text or ""),
+                    cache_scope=str(_scope or ""),
+                ),
+                delete_review=lambda _cid, _review_id, _scope: controller.delete_course_review(
+                    course_id=int(_cid),
+                    review_id=int(_review_id),
+                    cache_scope=str(_scope or ""),
+                ),
+                on_set_tracking_status=_on_set_tracking_status,
+                on_clear_tracking_status=_on_clear_tracking_status,
+                on_tracking_changed=_on_tracking_changed,
+                normalize_course_view_mode=normalize_course_view_mode,
+                format_short_date=format_short_date,
             ),
-            save_review=lambda _cid, _rating, _text, _scope: controller.save_course_review(
-                course_id=int(_cid),
-                rating=int(_rating),
-                text=str(_text or ""),
-                cache_scope=str(_scope or ""),
-            ),
-            delete_review=lambda _cid, _review_id, _scope: controller.delete_course_review(
-                course_id=int(_cid),
-                review_id=int(_review_id),
-                cache_scope=str(_scope or ""),
-            ),
-            on_set_tracking_status=_on_set_tracking_status,
-            on_clear_tracking_status=_on_clear_tracking_status,
-            on_tracking_changed=_on_tracking_changed,
-            normalize_course_view_mode=normalize_course_view_mode,
-            format_short_date=format_short_date,
         )
 
     async def _open_course_details(cid: int, focus: bool) -> None:

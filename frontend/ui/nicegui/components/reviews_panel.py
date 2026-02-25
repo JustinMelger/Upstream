@@ -2,11 +2,35 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Awaitable, Callable
 
 from nicegui import ui
+from pydantic import BaseModel, ConfigDict
 
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
+
+
+class ReviewPanelText(BaseModel):
+    """Text labels/messages for the reusable reviews panel."""
+
+    model_config = ConfigDict(frozen=True)
+
+    section_title: str = "Reviews"
+    empty_text: str = "No reviews yet."
+    save_label: str = "Save review"
+    save_success_text: str = "Review saved"
+    delete_success_text: str = "Review deleted"
+    save_error_title: str = "Review submit failed"
+    delete_error_title: str = "Delete review failed"
+
+
+@dataclass(slots=True)
+class ReviewPanelHooks:
+    """Optional hooks for date formatting and parent-state synchronization."""
+
+    format_date: Callable[[Any], str] | None = None
+    on_changed: Callable[[list[dict[str, Any]]], None] | None = None
 
 
 def render_reviews_panel(
@@ -14,20 +38,15 @@ def render_reviews_panel(
     username: str,
     is_admin: bool,
     reviews: list[dict[str, Any]],
-    section_title: str = "Reviews",
-    empty_text: str = "No reviews yet.",
-    save_label: str = "Save review",
-    save_success_text: str = "Review saved",
-    delete_success_text: str = "Review deleted",
-    save_error_title: str = "Review submit failed",
-    delete_error_title: str = "Delete review failed",
     on_save: Callable[[int, str], Awaitable[dict[str, Any]]],
     on_delete: Callable[[int], Awaitable[bool | None]],
-    format_date: Callable[[Any], str] | None = None,
-    on_changed: Callable[[list[dict[str, Any]]], None] | None = None,
+    text: ReviewPanelText | None = None,
+    hooks: ReviewPanelHooks | None = None,
 ) -> None:
     """Render a review list + editor block with in-place updates."""
-    ui.label(section_title).classes("text-lg font-semibold")
+    resolved_text = text if text is not None else ReviewPanelText()
+    resolved_hooks = hooks if hooks is not None else ReviewPanelHooks()
+    ui.label(resolved_text.section_title).classes("text-lg font-semibold")
 
     def _find_my_review() -> dict[str, Any] | None:
         for r in reviews:
@@ -36,12 +55,12 @@ def render_reviews_panel(
         return None
 
     def _notify_changed() -> None:
-        if on_changed is not None:
-            on_changed(reviews)
+        if resolved_hooks.on_changed is not None:
+            resolved_hooks.on_changed(reviews)
 
     my_review = _find_my_review()
 
-    @guard_ui_action(title=delete_error_title)
+    @guard_ui_action(title=resolved_text.delete_error_title)
     async def _delete_review(review_id: int) -> None:
         nonlocal my_review
         await on_delete(int(review_id))
@@ -53,13 +72,13 @@ def render_reviews_panel(
             my_review_label.text = "Add a review"
         _notify_changed()
         reviews_list.refresh()
-        safe_notify(delete_success_text, type="positive")
+        safe_notify(resolved_text.delete_success_text, type="positive")
 
     @ui.refreshable
     def reviews_list() -> None:
         with ui.column().classes("w-full gap-2"):
             if not reviews:
-                ui.label(empty_text).classes("text-sm").style("color: var(--lp-muted)")
+                ui.label(resolved_text.empty_text).classes("text-sm").style("color: var(--lp-muted)")
                 return
             for r in reviews[:20]:
                 try:
@@ -68,7 +87,7 @@ def render_reviews_panel(
                     rating = 0
                 who = str(r.get("created_by") or "").strip()
                 when_raw = r.get("created_at")
-                when = format_date(when_raw) if format_date else str(when_raw or "").strip()
+                when = resolved_hooks.format_date(when_raw) if resolved_hooks.format_date else str(when_raw or "").strip()
                 text = str(r.get("text") or "").strip()
 
                 with ui.card().classes("lp-card w-full"):
@@ -99,7 +118,7 @@ def render_reviews_panel(
         ui.textarea("Comment (optional)", value=str((my_review or {}).get("text") or "")).props("autogrow").classes("w-full")
     )
 
-    @guard_ui_action(title=save_error_title)
+    @guard_ui_action(title=resolved_text.save_error_title)
     async def _submit_review() -> None:
         saved = await on_save(int(rating_in.value or 0), str(text_in.value or ""))
         try:
@@ -124,7 +143,7 @@ def render_reviews_panel(
         _notify_changed()
         my_review_label.text = "Your review" if _find_my_review() else "Add a review"
         reviews_list.refresh()
-        safe_notify(save_success_text, type="positive")
+        safe_notify(resolved_text.save_success_text, type="positive")
 
     with ui.row().classes("justify-end mt-2"):
-        ui.button(save_label, on_click=_submit_review).props("outline")
+        ui.button(resolved_text.save_label, on_click=_submit_review).props("outline")

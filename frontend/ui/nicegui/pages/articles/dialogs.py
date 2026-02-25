@@ -9,7 +9,7 @@ from typing import Any
 from nicegui import app, ui
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
-from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
+from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel, ReviewPanelHooks
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.metadata_fallback import build_article_metadata_fallback
@@ -439,12 +439,12 @@ async def open_article_details_dialog(
             username=username,
             is_admin=is_admin,
             reviews=reviews,
-            section_title="Reviews",
-            empty_text="No reviews yet.",
             on_save=_save_review,
             on_delete=_delete_review,
-            format_date=format_date,
-            on_changed=_sync_summary,
+            hooks=ReviewPanelHooks(
+                format_date=format_date,
+                on_changed=_sync_summary,
+            ),
         )
         with ui.row().classes("justify-end mt-4"):
             ui.button("Close", on_click=dialog.close).props("outline")

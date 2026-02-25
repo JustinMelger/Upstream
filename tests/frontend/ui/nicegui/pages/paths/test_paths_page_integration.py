@@ -157,7 +157,7 @@ async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch:
     captured_track_actions: list[Any] = []
 
     def _capture_path_card(**kwargs):  # noqa: ANN001
-        captured_track_actions.append(kwargs["on_track_toggle"])
+        captured_track_actions.append(kwargs["actions"].on_track_toggle)
 
     monkeypatch.setattr(paths_page, "render_path_card", _capture_path_card)
 
@@ -265,8 +265,8 @@ async def test_paths_select_keeps_optimistic_state_when_selected_reload_fails(mo
     captured_labels: list[str] = []
 
     def _capture_path_card(**kwargs):  # noqa: ANN001
-        captured_track_actions.append(kwargs["on_track_toggle"])
-        captured_labels.append(str(kwargs["tracking_label_text"]))
+        captured_track_actions.append(kwargs["actions"].on_track_toggle)
+        captured_labels.append(str(kwargs["display"].tracking_label_text))
 
     monkeypatch.setattr(paths_page, "render_path_card", _capture_path_card)
 

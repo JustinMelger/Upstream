@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 
 
-@dataclass(frozen=True)
-class ActiveFilterChip:
+class ActiveFilterChip(BaseModel):
     """Descriptor for a removable active-filter chip."""
+
+    model_config = ConfigDict(frozen=True)
 
     key: str
     label: str

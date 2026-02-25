@@ -32,13 +32,13 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     """Ensure every test is classified for marker-based runs.
 
     Rules:
-    - Keep explicit `unit`/`integration` markers as-is.
+    - Keep explicit `unit`/`integration`/`e2e` markers as-is.
     - Mark architecture guard tests as `architecture`.
     - Default other unclassified tests to `unit`.
     """
     for item in items:
         marker_names = {marker.name for marker in item.iter_markers()}
-        if "unit" in marker_names or "integration" in marker_names:
+        if "unit" in marker_names or "integration" in marker_names or "e2e" in marker_names:
             continue
         nodeid = item.nodeid.lower()
         is_architecture = "architecture" in nodeid or "test_page_package_" in nodeid
@@ -218,6 +218,7 @@ async def app_client(
                 await session.rollback()
                 raise
 
+    original_overrides = dict(app.dependency_overrides)
     app.dependency_overrides[app_get_session] = _override_get_session
 
     transport = ASGITransport(app=app)
@@ -227,4 +228,4 @@ async def app_client(
         try:
             yield client
         finally:
-            app.dependency_overrides.pop(app_get_session, None)
+            app.dependency_overrides = original_overrides

@@ -21,7 +21,11 @@ from frontend.ui.nicegui.pages.courses.reducers import filter_courses, sort_cour
 from frontend.ui.nicegui.pages.explore.actions import build_explore_course_actions, open_explore_article_details
 from frontend.ui.nicegui.pages.explore.controller import ExplorePageController
 from frontend.ui.nicegui.pages.explore.detail_flow import open_explore_path_details_dialog
-from frontend.ui.nicegui.pages.explore.list_sections import render_explore_empty_state, render_explore_sections
+from frontend.ui.nicegui.pages.explore.list_sections import (
+    ExploreSectionsDeps,
+    render_explore_empty_state,
+    render_explore_sections,
+)
 from frontend.ui.nicegui.pages.explore.sections import (
     ExploreFilterControls,
     render_explore_filters_dialog,
@@ -213,30 +217,32 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                 shown_courses=shown_courses,
                 shown_paths=shown_paths,
                 shown_articles=shown_articles,
-                state=state,
-                username=username,
-                is_admin=is_admin,
-                show_all_categories=bool(flags["show_all_categories"]),
-                feature_explore_cinema=settings.feature_explore_cinema,
-                course_actions_builder=lambda course_row, course_id, course_url: build_explore_course_actions(
-                    course_row=course_row,
-                    course_id=course_id,
-                    course_url=course_url,
+                deps=ExploreSectionsDeps(
+                    state=state,
                     username=username,
                     is_admin=is_admin,
-                    state=state,
-                    controller=controller,
+                    show_all_categories=bool(flags["show_all_categories"]),
+                    feature_explore_cinema=settings.feature_explore_cinema,
+                    course_actions_builder=lambda course_row, course_id, course_url: build_explore_course_actions(
+                        course_row=course_row,
+                        course_id=course_id,
+                        course_url=course_url,
+                        username=username,
+                        is_admin=is_admin,
+                        state=state,
+                        controller=controller,
+                        on_set_tracking=_set_tracking,
+                        on_clear_tracking=_clear_tracking,
+                    ),
                     on_set_tracking=_set_tracking,
                     on_clear_tracking=_clear_tracking,
+                    on_toggle_path_selection=_toggle_path_selection,
+                    open_path_details_dialog=lambda path_row, card_vm: open_explore_path_details_dialog(
+                        path_row=path_row,
+                        card_vm=card_vm,
+                    ),
+                    open_article_details=open_explore_article_details,
                 ),
-                on_set_tracking=_set_tracking,
-                on_clear_tracking=_clear_tracking,
-                on_toggle_path_selection=_toggle_path_selection,
-                open_path_details_dialog=lambda path_row, card_vm: open_explore_path_details_dialog(
-                    path_row=path_row,
-                    card_vm=card_vm,
-                ),
-                open_article_details=open_explore_article_details,
             )
 
         def _on_search_change(*_args: Any) -> None:

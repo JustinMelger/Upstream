@@ -218,9 +218,12 @@ erDiagram
 - Admin-only user management (create, reset, disable, delete, list).
 
 ### Course service
-- CRUD for courses (title, provider, category, level, duration, url).
+- CRUD for courses (`title`, `description`, `learning_outcomes`, `prerequisites`, `language`, `provider`, `category`, `level`, `duration_hours`, `url`).
 - Search and filter by query/provider/category/level.
 - Any authenticated user can create courses; only the creator (or admin) can edit/delete.
+- Validates create/update payloads at the service boundary via typed `_parse_mutation_payload`.
+- Enriches course payloads with computed `search_document` content and best-effort URL preview image URLs.
+- Enforces duplicate protection on create (`url`, normalized title+provider).
 
 ### Path service
 - CRUD for learning paths with ordered course lists.
@@ -354,21 +357,25 @@ classDiagram
   class CoursesRepository {
     +list_courses(query, provider, category, level): list[CourseRecord]
     +get_course_by_id(course_id): CourseRecord|None
-    +create_course(title, provider, category, level, duration_hours, url, created_at): int
-    +update_course(course_id, title, provider, category, level, duration_hours, url): int
+    +create_course(payload: CreateCoursePayload): int
+    +find_course_by_url(url): CourseRecord|None
+    +find_course_by_title_provider(title, provider): CourseRecord|None
+    +update_course(payload: UpdateCoursePayload): int
     +delete_course(course_id): int
   }
 
   class CourseReviewsService {
     +list_reviews(course_id): list[dict]
-    +create_review(course_id, payload, created_by): dict
+    +create_review(course_id, payload, created_by): dict (upsert per user)
+    +get_review_by_id(review_id): dict|None
     +delete_review(review_id): bool
     +summaries(course_ids): list[dict]
   }
 
   class CourseRecommendationsService {
     +list_recommendations(course_id): list[dict]
-    +create_recommendation(course_id, payload, created_by): dict
+    +create_recommendation(course_id, payload, created_by): dict (upsert per user)
+    +get_recommendation_by_id(recommendation_id): dict|None
     +delete_recommendation(recommendation_id): bool
     +summaries(course_ids): list[dict]
   }
@@ -426,6 +433,11 @@ erDiagram
 ```
 
 `search_document` is computed in `CoursesService` and returned in API payloads; it is not persisted as a physical database column.
+
+Course review/recommendation write model details:
+- `POST /courses/{course_id}/reviews` and `POST /courses/{course_id}/recommendations` are idempotent per user/course pair (create-or-update semantics).
+- DB uniqueness is enforced on `(course_id, created_by)` in both `course_reviews` and `course_recommendations`.
+- Mutation writes update `created_at` as the latest write timestamp (there is no separate `updated_at` column for these tables).
 
 ## Paths Architecture
 

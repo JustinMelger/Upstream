@@ -162,6 +162,7 @@ def render_article_card(
     thumbnail_url: str,
     view_action: Any,
     review_action: Any,
+    compact_mode: bool = False,
 ) -> None:
     """Render one article card with actions."""
     title = str(article_row.get("title") or "").strip()
@@ -177,7 +178,7 @@ def render_article_card(
         with render_card_main_row(classes="lp-article-card-main"):
             with render_card_content_column(classes="lp-article-card-content"):
                 ui.label(title).classes("text-lg font-semibold lp-card-title")
-                if url:
+                if url and (not compact_mode):
                     ui.link(url, url).props("target=_blank").classes("text-sm")
 
                 subtitle_parts = [part.strip() for part in str(subtitle_text or "").split("·") if str(part).strip()]
@@ -186,6 +187,13 @@ def render_article_card(
                         ui.label(subtitle_parts[0]).classes("text-xs lp-card-subtitle lp-article-byline")
                     if len(subtitle_parts) > 1:
                         ui.label(subtitle_parts[1]).classes("text-xs lp-card-subtitle lp-article-date")
+                if compact_mode:
+                    context_line = subtitle_parts[1] if len(subtitle_parts) > 1 else ""
+                    if not context_line and url:
+                        context_line = "Open source link"
+                    ui.label(context_line or "Shared in your team feed").classes(
+                        "text-xs lp-card-subtitle lp-article-context-line"
+                    )
 
                 with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
                     if tags:

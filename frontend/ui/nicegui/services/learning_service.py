@@ -72,6 +72,171 @@ async def save_recommended_path(*, api: ApiClient, path_id: int) -> None:
     await api.post(f"/paths/{int(path_id)}/select", {})
 
 
+def _int_id_list(rows: list[dict[str, Any]], *, key: str) -> list[int]:
+    out: list[int] = []
+    for row in rows:
+        raw = row.get(key)
+        if raw is None:
+            continue
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if value > 0:
+            out.append(value)
+    return out
+
+
+async def _load_selected_path_details(*, api: ApiClient, selected_ids: list[int]) -> dict[int, dict[str, Any]]:
+    if not selected_ids:
+        return {}
+    detail_results = await asyncio.gather(*(api.get(f"/paths/{pid}") for pid in selected_ids), return_exceptions=True)
+    ok_details: list[dict[str, Any]] = [payload for payload in detail_results if isinstance(payload, dict)]
+    return index_by_int_id(ok_details, key="id")
+
+
+async def _load_recommendation_summaries(
+    *,
+    api: ApiClient,
+    courses: list[dict[str, Any]],
+    paths: list[dict[str, Any]],
+) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+    all_course_ids = sorted(int(c.get("id") or 0) for c in courses if isinstance(c, dict) and int(c.get("id") or 0) > 0)
+    all_path_ids = sorted(int(p.get("id") or 0) for p in paths if isinstance(p, dict) and int(p.get("id") or 0) > 0)
+    course_map = await _load_summary_map(
+        api=api,
+        path="/courses/recommendations/summary",
+        param_key="course_ids",
+        ids=all_course_ids,
+        row_id_key="course_id",
+        log_context="all_course_recommendations",
+    )
+    path_map = await _load_summary_map(
+        api=api,
+        path="/paths/recommendations/summary",
+        param_key="path_ids",
+        ids=all_path_ids,
+        row_id_key="path_id",
+        log_context="all_path_recommendations",
+    )
+    return course_map, path_map
+
+
+async def _pending_review_ids(
+    *,
+    api: ApiClient,
+    ids: list[int],
+    username: str,
+    endpoint_builder: Any,
+) -> list[int]:
+    if not ids:
+        return []
+    review_rows = await asyncio.gather(*(api.get(endpoint_builder(int(item_id))) for item_id in ids), return_exceptions=True)
+    pending: list[int] = []
+    for item_id, rows in zip(ids, review_rows, strict=False):
+        if isinstance(rows, Exception) or not isinstance(rows, list):
+            continue
+        mine = any(isinstance(row, dict) and str(row.get("created_by") or "") == username for row in rows)
+        if not mine:
+            pending.append(int(item_id))
+    return pending
+
+
+def _recommended_courses_for_user(
+    *,
+    courses: list[dict[str, Any]],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+    username: str,
+    recommendation_summary_by_id: dict[int, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for course in courses:
+        cid = int(course.get("id") or 0)
+        if cid <= 0 or cid in tracking_by_course_id or str(course.get("created_by") or "") == username:
+            continue
+        count = int((recommendation_summary_by_id.get(cid) or {}).get("recommendation_count") or 0)
+        if count <= 0:
+            continue
+        out.append(
+            {"course_id": cid, "course": course, "recommendation_count": count, "why": f"{count} teammate recommendation(s)"}
+        )
+    return sorted(
+        out,
+        key=lambda row: (int(row.get("recommendation_count") or 0), int(row.get("course_id") or 0)),
+        reverse=True,
+    )[:5]
+
+
+def _recommended_paths_for_user(
+    *,
+    paths: list[dict[str, Any]],
+    selected_ids: list[int],
+    username: str,
+    recommendation_summary_by_id: dict[int, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    selected_set = {int(pid) for pid in selected_ids}
+    for path in paths:
+        pid = int(path.get("id") or 0)
+        if pid <= 0 or pid in selected_set or str(path.get("created_by") or "") == username:
+            continue
+        count = int((recommendation_summary_by_id.get(pid) or {}).get("recommendation_count") or 0)
+        if count <= 0:
+            continue
+        out.append({"path_id": pid, "path": path, "recommendation_count": count, "why": f"{count} teammate recommendation(s)"})
+    return sorted(
+        out,
+        key=lambda row: (int(row.get("recommendation_count") or 0), int(row.get("path_id") or 0)),
+        reverse=True,
+    )[:5]
+
+
+async def _load_shared_summaries(
+    *,
+    api: ApiClient,
+    shared_course_ids: list[int],
+    shared_path_ids: list[int],
+) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+    shared_course_reviews = await _load_summary_map(
+        api=api,
+        path="/courses/reviews/summary",
+        param_key="course_ids",
+        ids=shared_course_ids,
+        row_id_key="course_id",
+        log_context="shared_course_reviews",
+    )
+    shared_course_recommendations = await _load_summary_map(
+        api=api,
+        path="/courses/recommendations/summary",
+        param_key="course_ids",
+        ids=shared_course_ids,
+        row_id_key="course_id",
+        log_context="shared_course_recommendations",
+    )
+    shared_path_reviews = await _load_summary_map(
+        api=api,
+        path="/paths/reviews/summary",
+        param_key="path_ids",
+        ids=shared_path_ids,
+        row_id_key="path_id",
+        log_context="shared_path_reviews",
+    )
+    shared_path_recommendations = await _load_summary_map(
+        api=api,
+        path="/paths/recommendations/summary",
+        param_key="path_ids",
+        ids=shared_path_ids,
+        row_id_key="path_id",
+        log_context="shared_path_recommendations",
+    )
+    return (
+        shared_course_reviews,
+        shared_course_recommendations,
+        shared_path_reviews,
+        shared_path_recommendations,
+    )
+
+
 async def load_my_learning_data(
     *,
     api: ApiClient,
@@ -107,28 +272,8 @@ async def load_my_learning_data(
     tracking_by_course_id = index_tracking_by_course_id(tracking_rows)
 
     selected_paths = list(selected_paths_result or [])
-    selected_ids: list[int] = []
-    for row in selected_paths:
-        if not isinstance(row, dict):
-            continue
-        raw = row.get("id")
-        if raw is None:
-            continue
-        try:
-            selected_ids.append(int(raw))
-        except (TypeError, ValueError):
-            continue
-
-    path_details_by_id: dict[int, dict[str, Any]] = {}
-    if selected_ids:
-        detail_results = await asyncio.gather(*(api.get(f"/paths/{pid}") for pid in selected_ids), return_exceptions=True)
-        ok_details: list[dict[str, Any]] = []
-        for payload in detail_results:
-            if isinstance(payload, Exception):
-                continue
-            if isinstance(payload, dict):
-                ok_details.append(payload)
-        path_details_by_id = index_by_int_id(ok_details, key="id")
+    selected_ids = _int_id_list(selected_paths, key="id")
+    path_details_by_id = await _load_selected_path_details(api=api, selected_ids=selected_ids)
 
     paths = list(paths_result or [])
     articles = list(articles_result or [])
@@ -161,158 +306,50 @@ async def load_my_learning_data(
         log_context="selected_path_reviews",
     )
 
-    # Recommendation summaries for trust signals + "Recommended for you".
-    all_course_ids = sorted(int(c.get("id") or 0) for c in courses if isinstance(c, dict) and int(c.get("id") or 0) > 0)
-    all_path_ids = sorted(int(p.get("id") or 0) for p in paths if isinstance(p, dict) and int(p.get("id") or 0) > 0)
-
-    course_recommendation_summary_by_id = await _load_summary_map(
+    course_recommendation_summary_by_id, path_recommendation_summary_by_id = await _load_recommendation_summaries(
         api=api,
-        path="/courses/recommendations/summary",
-        param_key="course_ids",
-        ids=all_course_ids,
-        row_id_key="course_id",
-        log_context="all_course_recommendations",
+        courses=courses,
+        paths=paths,
     )
 
-    path_recommendation_summary_by_id = await _load_summary_map(
+    pending_course_review_ids = await _pending_review_ids(
         api=api,
-        path="/paths/recommendations/summary",
-        param_key="path_ids",
-        ids=all_path_ids,
-        row_id_key="path_id",
-        log_context="all_path_recommendations",
+        ids=tracked_ids_sorted,
+        username=username,
+        endpoint_builder=lambda cid: f"/courses/{int(cid)}/reviews",
+    )
+    pending_path_review_ids = await _pending_review_ids(
+        api=api,
+        ids=selected_ids_sorted,
+        username=username,
+        endpoint_builder=lambda pid: f"/paths/{int(pid)}/reviews",
     )
 
-    pending_course_review_ids: list[int] = []
-    if tracked_ids_sorted:
-        course_review_rows = await asyncio.gather(
-            *(api.get(f"/courses/{cid}/reviews") for cid in tracked_ids_sorted), return_exceptions=True
-        )
-        for cid, rows in zip(tracked_ids_sorted, course_review_rows, strict=False):
-            if isinstance(rows, Exception):
-                continue
-            if not isinstance(rows, list):
-                continue
-            mine = False
-            for row in rows:
-                if not isinstance(row, dict):
-                    continue
-                if str(row.get("created_by") or "") == username:
-                    mine = True
-                    break
-            if not mine:
-                pending_course_review_ids.append(int(cid))
-
-    pending_path_review_ids: list[int] = []
-    if selected_ids_sorted:
-        path_review_rows = await asyncio.gather(
-            *(api.get(f"/paths/{pid}/reviews") for pid in selected_ids_sorted), return_exceptions=True
-        )
-        for pid, rows in zip(selected_ids_sorted, path_review_rows, strict=False):
-            if isinstance(rows, Exception):
-                continue
-            if not isinstance(rows, list):
-                continue
-            mine = False
-            for row in rows:
-                if not isinstance(row, dict):
-                    continue
-                if str(row.get("created_by") or "") == username:
-                    mine = True
-                    break
-            if not mine:
-                pending_path_review_ids.append(int(pid))
-
-    recommended_courses_for_you: list[dict[str, Any]] = []
-    for c in courses:
-        if not isinstance(c, dict):
-            continue
-        cid = int(c.get("id") or 0)
-        if cid <= 0:
-            continue
-        if cid in tracking_by_course_id:
-            continue
-        if str(c.get("created_by") or "") == username:
-            continue
-        count = int((course_recommendation_summary_by_id.get(cid) or {}).get("recommendation_count") or 0)
-        if count <= 0:
-            continue
-        recommended_courses_for_you.append(
-            {"course_id": cid, "course": c, "recommendation_count": count, "why": f"{count} teammate recommendation(s)"}
-        )
-    recommended_courses_for_you = sorted(
-        recommended_courses_for_you,
-        key=lambda row: (
-            int(row.get("recommendation_count") or 0),
-            int(row.get("course_id") or 0),
-        ),
-        reverse=True,
-    )[:5]
-
-    recommended_paths_for_you: list[dict[str, Any]] = []
-    selected_set = {int(pid) for pid in selected_ids_sorted}
-    for p in paths:
-        if not isinstance(p, dict):
-            continue
-        pid = int(p.get("id") or 0)
-        if pid <= 0:
-            continue
-        if pid in selected_set:
-            continue
-        if str(p.get("created_by") or "") == username:
-            continue
-        count = int((path_recommendation_summary_by_id.get(pid) or {}).get("recommendation_count") or 0)
-        if count <= 0:
-            continue
-        recommended_paths_for_you.append(
-            {"path_id": pid, "path": p, "recommendation_count": count, "why": f"{count} teammate recommendation(s)"}
-        )
-    recommended_paths_for_you = sorted(
-        recommended_paths_for_you,
-        key=lambda row: (
-            int(row.get("recommendation_count") or 0),
-            int(row.get("path_id") or 0),
-        ),
-        reverse=True,
-    )[:5]
+    recommended_courses_for_you = _recommended_courses_for_user(
+        courses=courses,
+        tracking_by_course_id=tracking_by_course_id,
+        username=username,
+        recommendation_summary_by_id=course_recommendation_summary_by_id,
+    )
+    recommended_paths_for_you = _recommended_paths_for_user(
+        paths=paths,
+        selected_ids=selected_ids_sorted,
+        username=username,
+        recommendation_summary_by_id=path_recommendation_summary_by_id,
+    )
 
     shared_course_ids = sorted(int(c.get("id") or 0) for c in shared_courses if int(c.get("id") or 0) > 0)
     shared_path_ids = sorted(int(p.get("id") or 0) for p in shared_paths if int(p.get("id") or 0) > 0)
 
-    shared_course_review_summary_by_id = await _load_summary_map(
+    (
+        shared_course_review_summary_by_id,
+        shared_course_recommendation_summary_by_id,
+        shared_path_review_summary_by_id,
+        shared_path_recommendation_summary_by_id,
+    ) = await _load_shared_summaries(
         api=api,
-        path="/courses/reviews/summary",
-        param_key="course_ids",
-        ids=shared_course_ids,
-        row_id_key="course_id",
-        log_context="shared_course_reviews",
-    )
-
-    shared_course_recommendation_summary_by_id = await _load_summary_map(
-        api=api,
-        path="/courses/recommendations/summary",
-        param_key="course_ids",
-        ids=shared_course_ids,
-        row_id_key="course_id",
-        log_context="shared_course_recommendations",
-    )
-
-    shared_path_review_summary_by_id = await _load_summary_map(
-        api=api,
-        path="/paths/reviews/summary",
-        param_key="path_ids",
-        ids=shared_path_ids,
-        row_id_key="path_id",
-        log_context="shared_path_reviews",
-    )
-
-    shared_path_recommendation_summary_by_id = await _load_summary_map(
-        api=api,
-        path="/paths/recommendations/summary",
-        param_key="path_ids",
-        ids=shared_path_ids,
-        row_id_key="path_id",
-        log_context="shared_path_recommendations",
+        shared_course_ids=shared_course_ids,
+        shared_path_ids=shared_path_ids,
     )
 
     return {

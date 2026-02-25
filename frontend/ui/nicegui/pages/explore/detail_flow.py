@@ -3,14 +3,32 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 
 from nicegui import ui
 
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
-from frontend.ui.nicegui.pages.courses.detail_flow import open_course_details_dialog
+from frontend.ui.nicegui.pages.courses.detail_flow import CourseDetailsDialogDeps, open_course_details_dialog
 from frontend.ui.nicegui.pages.courses.state import CoursesPageState
+
+
+@dataclass(slots=True)
+class ExploreCourseDetailsDeps:
+    """Dependencies for opening Explore course details via Courses dialog flow."""
+
+    state_tracking_by_course_id: dict[int, dict[str, Any]]
+    review_summary_by_course_id: dict[int, dict[str, Any]]
+    recommendation_summary_by_course_id: dict[int, dict[str, Any]]
+    load_detail_bundle: Callable[[int, str], Awaitable[Any]]
+    save_review: Callable[[int, int, str, str], Awaitable[dict[str, Any]]]
+    delete_review: Callable[[int, int, str], Awaitable[bool]]
+    on_set_tracking_status: Callable[[str], Awaitable[None]]
+    on_clear_tracking_status: Callable[[], Awaitable[None]]
+    on_tracking_changed: Callable[[str], None]
+    normalize_course_view_mode: Callable[[bool], str]
+    format_short_date: Callable[[Any], str]
 
 
 def open_explore_path_details_dialog(*, path_row: dict[str, Any], card_vm: Any) -> None:
@@ -77,23 +95,13 @@ async def open_explore_course_details_dialog(
     focus_reviews: bool,
     username: str,
     is_admin: bool,
-    state_tracking_by_course_id: dict[int, dict[str, Any]],
-    review_summary_by_course_id: dict[int, dict[str, Any]],
-    recommendation_summary_by_course_id: dict[int, dict[str, Any]],
-    load_detail_bundle: Callable[[int, str], Awaitable[Any]],
-    save_review: Callable[[int, int, str, str], Awaitable[dict[str, Any]]],
-    delete_review: Callable[[int, int, str], Awaitable[bool]],
-    on_set_tracking_status: Callable[[str], Awaitable[None]],
-    on_clear_tracking_status: Callable[[], Awaitable[None]],
-    on_tracking_changed: Callable[[str], None],
-    normalize_course_view_mode: Callable[[bool], str],
-    format_short_date: Callable[[Any], str],
+    deps: ExploreCourseDetailsDeps,
 ) -> None:
     """Open course details dialog from Explore and sync local tracking state."""
     bridge_state = CoursesPageState(
-        tracking_by_course_id=state_tracking_by_course_id,
-        review_summary_by_course_id=review_summary_by_course_id,
-        recommendation_summary_by_course_id=recommendation_summary_by_course_id,
+        tracking_by_course_id=deps.state_tracking_by_course_id,
+        review_summary_by_course_id=deps.review_summary_by_course_id,
+        recommendation_summary_by_course_id=deps.recommendation_summary_by_course_id,
     )
     await open_course_details_dialog(
         course_id=int(course_id),
@@ -101,14 +109,16 @@ async def open_explore_course_details_dialog(
         username=username,
         is_admin=is_admin,
         state=bridge_state,
-        load_detail_bundle=load_detail_bundle,
-        save_review=save_review,
-        delete_review=delete_review,
-        current_status=str((state_tracking_by_course_id.get(int(course_id)) or {}).get("status") or ""),
-        on_set_tracking_status=on_set_tracking_status,
-        on_clear_tracking_status=on_clear_tracking_status,
-        on_tracking_changed=on_tracking_changed,
-        normalize_course_view_mode=normalize_course_view_mode,
-        format_review_summary=lambda row: format_review_summary(row, style="fraction"),
-        format_short_date=format_short_date,
+        deps=CourseDetailsDialogDeps(
+            load_detail_bundle=deps.load_detail_bundle,
+            save_review=deps.save_review,
+            delete_review=deps.delete_review,
+            current_status=str((deps.state_tracking_by_course_id.get(int(course_id)) or {}).get("status") or ""),
+            on_set_tracking_status=deps.on_set_tracking_status,
+            on_clear_tracking_status=deps.on_clear_tracking_status,
+            on_tracking_changed=deps.on_tracking_changed,
+            normalize_course_view_mode=deps.normalize_course_view_mode,
+            format_review_summary=lambda row: format_review_summary(row, style="fraction"),
+            format_short_date=deps.format_short_date,
+        ),
     )

@@ -12,6 +12,19 @@ lint:
 	uv run ruff check .
 	uv run ruff format --check .
 
+lint-ratchet range='HEAD~1..HEAD':
+	#!/usr/bin/env bash
+	set -euo pipefail
+	changed_py="$(git diff --name-only '{{range}}' -- '*.py' | grep -E '^(backend|frontend)/' || true)"
+	if [ -z "$changed_py" ]; then
+		echo "No changed backend/frontend Python files for ratchet checks."
+		exit 0
+	fi
+	echo "Changed Python files:"
+	echo "$changed_py"
+	uv run ruff check $changed_py
+	uv run mypy $changed_py
+
 unit:
 	DATABASE_URL={{DATABASE_URL}} uv run pytest -m unit
 
@@ -26,6 +39,12 @@ frontend-arch-guards:
 
 integration:
 	DATABASE_URL={{DATABASE_URL}} uv run pytest -m integration
+
+e2e:
+	E2E_API_URL=http://127.0.0.1:8000 E2E_UI_URL=http://127.0.0.1:8080 uv run pytest tests/e2e -m e2e
+
+e2e-update-baselines:
+	E2E_API_URL=http://127.0.0.1:8000 E2E_UI_URL=http://127.0.0.1:8080 E2E_UPDATE_VISUAL_BASELINES=1 uv run pytest tests/e2e -m e2e
 
 audit:
 	uv run pip-audit
