@@ -15,8 +15,8 @@ async def load_explore_courses(
     *,
     state: ExplorePageState,
     courses_controller: Any,
-    refresh_ui: Callable[[], None],
-    refresh_filter_options: Callable[[], None],
+    refresh_ui: Callable[..., Any],
+    refresh_filter_options: Callable[..., Any],
     spawn_background_loads: Callable[[], None],
 ) -> None:
     """Load courses and related summaries for Explore."""
@@ -41,7 +41,7 @@ async def load_explore_paths_background(
     *,
     state: ExplorePageState,
     paths_controller: Any,
-    refresh_ui: Callable[[], None],
+    refresh_ui: Callable[..., Any],
     notify_warning: Callable[[str], None],
 ) -> None:
     """Best-effort path load that should not block course rendering."""
@@ -77,8 +77,8 @@ async def load_explore_articles_background(
     state: ExplorePageState,
     feature_articles_enabled: bool,
     articles_controller: Any,
-    refresh_ui: Callable[[], None],
-    refresh_filter_options: Callable[[], None],
+    refresh_ui: Callable[..., Any],
+    refresh_filter_options: Callable[..., Any],
     notify_warning: Callable[[str], None],
 ) -> None:
     """Best-effort article load that should not block course rendering."""
@@ -111,7 +111,7 @@ async def set_explore_tracking_status(
     courses_controller: Any,
     course_id: int,
     status: str,
-    refresh_ui: Callable[[], None],
+    refresh_ui: Callable[..., Any],
 ) -> None:
     """Set course tracking status and update local state."""
     cid = int(course_id)
@@ -126,7 +126,7 @@ async def clear_explore_tracking_status(
     state: ExplorePageState,
     courses_controller: Any,
     course_id: int,
-    refresh_ui: Callable[[], None],
+    refresh_ui: Callable[..., Any],
 ) -> None:
     """Clear course tracking status and update local state."""
     cid = int(course_id)

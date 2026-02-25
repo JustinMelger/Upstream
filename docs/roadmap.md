@@ -206,6 +206,8 @@
   - [x] Phase slice: reduced rail width and lowered rail contrast/shadow intensity to shift visual focus back to the content column.
 - [x] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so primary content cards remain the dominant focal point.
 - [ ] Content-type hierarchy pass (in progress): tune card information priority per domain (Courses: progression/status; Articles: author/date/editorial metadata; Paths: milestones/progress sequencing).
+  - [x] Phase slice: accepted Explore course-card UX baseline (compact premium card rhythm, primary CTA clarity, and reduced metadata density).
+  - [ ] Phase slice: align Explore path and article cards to the same visual rhythm/slot model as the accepted course cards (title/meta/status/action baselines + spacing parity).
 - [x] Articles UX follow-up (empty-state composition): avoid hero + empty-card message duplication; introduce a compact empty variant so first-load pages do not feel content-sparse.
 - [x] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls for faster scan.
 - [x] Empty-state density polish (Articles): tighten headline/body spacing and reduce vertical whitespace in the empty block while preserving CTA prominence.
@@ -304,7 +306,11 @@ Execution sequencing (prioritized):
 - [x] Explore filtering: implement tab-based type filtering (`All`, `Courses`, `Paths`, `Articles`).
 - [x] Explore dedupe: remove duplicated `featured` logic inherited from `Courses`.
 - [x] Explore consistency: standardize card structure across content types.
+  - [x] Phase slice: course cards finalized as the Explore reference pattern.
+  - [ ] Phase slice: finish path/article card parity with course-card structure and CTA baseline alignment.
 - [x] Explore card actions: ensure one primary action per card.
+- [ ] Explore details navigation: replace hover/dialog-first detail behavior with dedicated detail routes per content type (course/path/article) and keep cards focused on scan + primary action.
+- [ ] Legacy catalog cleanup: convert `/courses`, `/paths`, and `/articles` to thin compatibility routes (deep-link/management only), remove duplicated discovery UI, and complete redirect/deprecation plan after Explore detail parity is stable.
 
 #### Phase 11E.5 — Visual & Action Density Reduction
 - [x] Card action limit: cap card controls to 1 primary CTA + 1 state control (`track`/`select`) + overflow for secondary actions.

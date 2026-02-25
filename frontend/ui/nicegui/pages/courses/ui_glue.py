@@ -139,3 +139,21 @@ def format_short_date(value: Any) -> str:
 def normalize_course_view_mode(focus_reviews: bool) -> str:
     """Map review-focus bool to stable dialog view mode."""
     return "reviews" if bool(focus_reviews) else "full"
+
+
+def normalize_course_tracking_status(value: str | None) -> str:
+    """Normalize to known tracking statuses used by CTA behavior."""
+    raw = str(value or "").strip()
+    if raw in {"interested", "in_progress", "completed"}:
+        return raw
+    return ""
+
+
+def primary_course_cta_label_for_status(value: str | None) -> str:
+    """Resolve the primary card CTA label from tracking status."""
+    status = normalize_course_tracking_status(value)
+    if status == "completed":
+        return "Review"
+    if status == "in_progress":
+        return "Continue"
+    return "Start"

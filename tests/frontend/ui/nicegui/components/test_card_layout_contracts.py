@@ -58,3 +58,10 @@ def test_load_more_footer_component_is_reused_across_pages() -> None:
     assert "render_load_more_footer(" in paths_src
     assert "render_load_more_footer(" in articles_sections_src
     assert "render_load_more_footer(" in courses_sections_src
+
+
+@pytest.mark.unit
+def test_course_primary_action_awaits_async_callbacks() -> None:
+    src = Path("frontend/ui/nicegui/pages/courses/sections.py").read_text(encoding="utf-8")
+    assert "await actions.on_view()" in src
+    assert "await actions.on_review()" in src

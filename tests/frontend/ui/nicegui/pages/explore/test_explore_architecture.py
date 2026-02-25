@@ -24,6 +24,7 @@ def _imports_for(path: Path) -> set[str]:
 @pytest.mark.unit
 def test_explore_pure_modules_do_not_import_nicegui() -> None:
     for filename in [
+        "controller.py",
         "orchestration.py",
         "state.py",
         "ui_glue.py",
@@ -36,7 +37,9 @@ def test_explore_pure_modules_do_not_import_nicegui() -> None:
 @pytest.mark.unit
 def test_explore_page_imports_page_package_modules() -> None:
     imports = _imports_for(_EXPLORE_DIR / "page.py")
-    assert "frontend.ui.nicegui.pages.explore.orchestration" in imports
+    assert "frontend.ui.nicegui.pages.explore.controller" in imports
+    assert "frontend.ui.nicegui.pages.explore.detail_flow" in imports
+    assert "frontend.ui.nicegui.pages.explore.list_sections" in imports
     assert "frontend.ui.nicegui.pages.explore.sections" in imports
     assert "frontend.ui.nicegui.pages.explore.state" in imports
     assert "frontend.ui.nicegui.pages.explore.ui_glue" in imports
@@ -46,7 +49,7 @@ def test_explore_page_imports_page_package_modules() -> None:
 
 @pytest.mark.unit
 def test_explore_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"page.py", "sections.py"}
+    expected_ui_modules = {"actions.py", "page.py", "sections.py", "detail_flow.py", "list_sections.py"}
     for path in sorted(_EXPLORE_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)

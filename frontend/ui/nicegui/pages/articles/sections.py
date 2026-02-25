@@ -177,18 +177,20 @@ def render_article_card(
                     ui.link(url, url).props("target=_blank").classes("text-sm")
 
                 subtitle_parts = [part.strip() for part in str(subtitle_text or "").split("·") if str(part).strip()]
-                with ui.row().classes("items-center gap-2 flex-wrap"):
+                with ui.row().classes("items-center gap-2 flex-wrap lp-article-meta-row"):
                     if subtitle_parts:
                         ui.label(subtitle_parts[0]).classes("text-xs lp-card-subtitle lp-article-byline")
                     if len(subtitle_parts) > 1:
                         ui.label(subtitle_parts[1]).classes("text-xs lp-card-subtitle lp-article-date")
 
-                if tags:
-                    with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
+                with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
+                    if tags:
                         for t in tags[:10]:
                             ui.label(t).classes("lp-meta-chip")
                         if len(tags) > 10:
                             ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
+                    else:
+                        ui.label("").classes("lp-article-tag-placeholder")
                 if summary_text:
                     ui.label(summary_text).classes("lp-meta-chip lp-article-summary-chip")
 

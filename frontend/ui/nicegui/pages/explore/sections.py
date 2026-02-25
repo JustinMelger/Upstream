@@ -33,6 +33,26 @@ class ExploreFilterControls:
     author_filter: Any
 
 
+def render_explore_share_dialog() -> Any:
+    """Render share dialog and return dialog handle."""
+    with ui.dialog() as share_dialog:
+        with ui.card().classes("lp-card lp-dialog w-[min(540px,95vw)]"):
+            ui.label("Share with your team").classes("text-lg font-semibold")
+            ui.label("Choose what you want to share.").classes("text-sm").style("color: var(--lp-muted)")
+
+            def _navigate_to_share(path: str) -> None:
+                share_dialog.close()
+                ui.navigate.to(str(path))
+
+            with ui.column().classes("w-full gap-2 mt-2"):
+                ui.button("Share course", on_click=lambda: _navigate_to_share("/courses?share=1")).props("unelevated")
+                ui.button("Share path", on_click=lambda: _navigate_to_share("/paths?share=1")).props("outline")
+                ui.button("Share article", on_click=lambda: _navigate_to_share("/articles?share=1")).props("outline")
+            with ui.row().classes("justify-end w-full mt-1"):
+                ui.button("Cancel", on_click=share_dialog.close).props("flat")
+    return share_dialog
+
+
 def render_explore_topbar(*, initial_tab: str, on_open_filters: Any, on_open_share: Any) -> ExploreTopbarControls:
     """Render Explore topbar and return control handles."""
     with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar w-full gap-2"):

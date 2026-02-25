@@ -63,7 +63,7 @@ def render_path_card(
                     ui.menu_item("Edit", on_edit)
                     ui.menu_item("Delete", on_delete)
 
-        with render_card_content_column():
+        with render_card_content_column(classes="lp-path-card-content lp-course-card-stack"):
             ui.label(path_row.get("name") or "").classes("text-lg font-semibold lp-card-title")
             with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-path-meta-row"):
                 if shared_by:
@@ -72,7 +72,7 @@ def render_path_card(
 
             if total_courses > 0:
                 if compact_mode:
-                    with ui.row().classes("items-center gap-2 flex-wrap w-full"):
+                    with ui.row().classes("items-center gap-2 flex-wrap w-full lp-path-context-line"):
                         ui.label(f"{completed}/{total_courses} completed").classes("text-xs lp-path-progress-label")
                         ui.label(milestone).classes(f"{milestone_class} lp-path-milestone")
                     if next_title:

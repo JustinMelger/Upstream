@@ -19,7 +19,11 @@ from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.pages.courses.media import render_youtube_embed
-from frontend.ui.nicegui.pages.courses.ui_glue import ActiveFilterChip
+from frontend.ui.nicegui.pages.courses.ui_glue import (
+    ActiveFilterChip,
+    normalize_course_tracking_status,
+    primary_course_cta_label_for_status,
+)
 
 
 @dataclass
@@ -252,11 +256,15 @@ def render_course_card(
 
     async def _on_primary_action() -> None:
         cid = int(course_row.get("id") or 0)
-        current_status = str((tracked_row or {}).get("status") or "").strip()
-        if current_status:
-            actions.on_view()
+        current_status = normalize_course_tracking_status((tracked_row or {}).get("status"))
+        if current_status == "completed":
+            await actions.on_review()
             return
-        await on_set_status(cid, "interested")
+        if current_status == "in_progress":
+            await actions.on_view()
+            return
+        await on_set_status(cid, "in_progress")
+        await actions.on_view()
 
     with ui.card().classes(f"w-full lp-course-card lp-course-card--surface lp-card--hover{card_vm.card_class_suffix}"):
         title = str(course_row.get("title") or "")
@@ -289,11 +297,31 @@ def render_course_card(
                         ui.label(card_vm.rating_badge).classes("lp-meta-chip lp-meta-chip--rating")
                     if card_vm.recommendation_badge:
                         ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
+                context_bits: list[str] = []
+                rating_text = str(card_vm.rating_badge or "").strip()
+                if rating_text:
+                    context_bits.append(rating_text)
+                category_text = str(course_row.get("category") or "").strip()
+                if category_text:
+                    context_bits.append(category_text)
+                duration_raw = course_row.get("duration_hours")
+                try:
+                    duration_value = float(duration_raw) if duration_raw is not None else 0.0
+                except (TypeError, ValueError):
+                    duration_value = 0.0
+                if duration_value > 0:
+                    duration_label = f"{int(duration_value)}h" if duration_value.is_integer() else f"{duration_value:.1f}h"
+                    context_bits.append(duration_label)
+                level_text = str(course_row.get("level") or "").strip()
+                if level_text:
+                    context_bits.append(level_text)
+                if context_bits:
+                    ui.label(" • ".join(context_bits)).classes("text-xs lp-card-subtitle lp-course-context-line")
                 if str(course_row.get("description") or "").strip():
                     ui.label(str(course_row.get("description") or "")).classes(
                         "text-sm text-gray-600 lp-card-body lp-course-summary"
                     )
-                current_status = str((tracked_row or {}).get("status") or "").strip()
+                current_status = normalize_course_tracking_status((tracked_row or {}).get("status"))
                 ui.label(f"Status: {tracking_label(current_status)}").classes("lp-course-status-line")
                 with ui.row().classes("items-center gap-2 flex-wrap lp-card-taxonomy"):
                     chips: list[str] = []
@@ -310,13 +338,14 @@ def render_course_card(
                     if len(chips) > max_chips:
                         ui.label(f"+{len(chips) - max_chips}").classes("lp-meta-chip lp-meta-chip--quiet")
 
-                    ui.label(card_vm.tracking_label_text).classes(f"{card_vm.tracking_chip_cls} lp-course-status-chip")
+                    if current_status != "interested":
+                        ui.label(card_vm.tracking_label_text).classes(f"{card_vm.tracking_chip_cls} lp-course-status-chip")
 
                 def _render_actions() -> None:
-                    primary_label = "Continue" if str((tracked_row or {}).get("status") or "").strip() else "Track"
+                    current_status = normalize_course_tracking_status((tracked_row or {}).get("status"))
+                    primary_label = primary_course_cta_label_for_status(current_status)
                     ui.button(primary_label, on_click=_on_primary_action).props("dense")
 
-                    current_status = str((tracked_row or {}).get("status") or "")
                     options_map = {
                         "": "Not tracked",
                         **{k: v for k, v in TRACKING_STATUS_OPTIONS},

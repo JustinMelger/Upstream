@@ -50,7 +50,8 @@
   - [x] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls.
   - [x] Empty-state density polish (Articles): tighten spacing and reduce vertical whitespace while preserving CTA prominence.
   - [x] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so cards remain dominant.
-  - [x] Explore card consistency follow-up: normalize Explore card slots/footprints across courses, paths, and articles.
+  - [x] Explore course-card UX baseline: finalize accepted course-card look/feel and CTA behavior in Explore.
+  - [ ] Explore parity follow-up: align path/article cards to the accepted course-card slot rhythm and baseline alignment in Explore.
 
 
 ## Sprint 5 — Hardening + Pilot Readiness (Non-UX)

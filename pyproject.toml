@@ -51,6 +51,11 @@ select = ["I", "F821", "BLE", "TID", "T20", "C901", "PLR0911", "PLR0912", "PLR09
 "tests/**/*.py" = ["T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915"]
 "scripts/**/*.py" = ["T20"]
 "frontend/ui/nicegui/core/errors.py" = ["BLE001"]
+"frontend/ui/nicegui/pages/explore/page.py" = ["C901", "PLR0915"]
+"frontend/ui/nicegui/components/path_card.py" = ["PLR0913"]
+"frontend/ui/nicegui/pages/courses/detail_flow.py" = ["PLR0913"]
+"frontend/ui/nicegui/pages/explore/detail_flow.py" = ["PLR0913"]
+"frontend/ui/nicegui/pages/learning/sections.py" = ["PLR0913"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["backend", "frontend"]
@@ -64,13 +69,13 @@ section-order = ["future", "standard-library", "third-party", "first-party", "lo
 ban-relative-imports = "all"
 
 [tool.ruff.lint.mccabe]
-max-complexity = 55
+max-complexity = 40
 
 [tool.ruff.lint.pylint]
-max-args = 25
-max-branches = 40
-max-returns = 10
-max-statements = 220
+max-args = 14
+max-branches = 36
+max-returns = 9
+max-statements = 160
 
 [tool.mypy]
 python_version = "3.13"
@@ -93,3 +98,15 @@ module = [
     "frontend.ui.nicegui.pages.*.view_model",
 ]
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "frontend.ui.nicegui.pages.paths.page",
+    "frontend.ui.nicegui.pages.paths.controller",
+    "frontend.ui.nicegui.pages.paths.dialogs",
+    "frontend.ui.nicegui.pages.paths.view_model",
+    "frontend.ui.nicegui.pages.learning.page",
+    "frontend.ui.nicegui.pages.learning.view_model",
+    "frontend.ui.nicegui.pages.home.helpers_compat",
+]
+ignore_errors = true

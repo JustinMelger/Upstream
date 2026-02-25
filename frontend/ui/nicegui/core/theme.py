@@ -156,11 +156,6 @@ def apply_theme() -> None:
           gap: var(--lp-space-3);
         }
 
-        .lp-header-inner.lp-header-inner--explore-cinema {
-          width: calc(100vw - 24px);
-          max-width: calc(100vw - 24px);
-        }
-
         .lp-header-inner .text-lg {
           font-family: var(--lp-font-display);
           font-weight: 700;
@@ -602,30 +597,23 @@ def apply_theme() -> None:
           margin-top: 6px;
         }
 
-        .lp-catalog--explore.lp-explore-cinema.lp-container {
-          width: calc(100vw - 24px);
-          max-width: calc(100vw - 24px);
-          margin-left: auto;
-          margin-right: auto;
-          overflow-x: clip;
-        }
-
         .lp-catalog--explore.lp-explore-cinema .lp-courses-section-subtitle {
-          font-size: 0.95rem;
+          font-size: 0.86rem;
           color: rgba(220, 225, 235, 0.72);
-          margin-top: -2px;
+          margin-top: -4px;
+          margin-bottom: 2px;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-courses-grid,
         .lp-catalog--explore.lp-explore-cinema .lp-courses-rail {
           display: grid;
           grid-auto-flow: column;
-          grid-auto-columns: minmax(320px, 320px);
-          gap: 16px;
+          grid-auto-columns: minmax(212px, 212px);
+          gap: 10px;
           overflow-x: auto;
           overflow-y: hidden;
           scroll-snap-type: x mandatory;
-          padding: 8px 2px 18px;
+          padding: 4px 2px 12px;
           scrollbar-width: none;
         }
 
@@ -637,50 +625,68 @@ def apply_theme() -> None:
         .lp-catalog--explore.lp-explore-cinema .lp-courses-grid-item,
         .lp-catalog--explore.lp-explore-cinema .lp-courses-rail-item {
           scroll-snap-align: start;
-          width: 320px;
-          flex: 0 0 320px;
+          width: 212px;
+          flex: 0 0 212px;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-courses-grid-item--featured {
           grid-column: auto;
-          width: 320px;
-          flex: 0 0 320px;
+          width: 212px;
+          flex: 0 0 212px;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-course-card,
         .lp-catalog--explore.lp-explore-cinema .lp-path-card,
         .lp-catalog--explore.lp-explore-cinema .lp-article-card {
-          width: 320px;
-          min-height: 338px;
-          border-radius: 18px;
+          width: 212px;
+          min-height: 258px;
+          border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+          border: none !important;
+          box-shadow: 0 7px 20px rgba(0, 0, 0, 0.34);
           transition: transform 160ms ease, box-shadow 180ms ease;
         }
 
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card--surface,
+        .lp-catalog--explore.lp-explore-cinema .lp-accent-card {
+          border: none !important;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card::before,
+        .lp-catalog--explore.lp-explore-cinema .lp-accent-card::before,
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card::after {
+          display: none;
+        }
+
         .lp-catalog--explore.lp-explore-cinema .lp-path-card {
-          min-height: 320px;
+          min-height: 246px;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-course-card:hover,
         .lp-catalog--explore.lp-explore-cinema .lp-path-card:hover,
         .lp-catalog--explore.lp-explore-cinema .lp-article-card:hover {
-          transform: scale(1.045);
-          box-shadow: 0 28px 90px rgba(0, 0, 0, 0.72);
+          transform: translateY(-3px);
+          box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
           z-index: 5;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-card-title {
-          -webkit-line-clamp: 2;
-          font-size: 1.08rem;
+          font-size: 0.94rem;
+          line-height: 1.22;
           padding-right: 0;
+          min-height: 2.44em;
+          height: 2.44em;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          overflow: hidden;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-card-body {
-          font-size: 0.92rem;
-          line-height: 1.36;
-          max-width: 34ch;
-          -webkit-line-clamp: 2;
+          font-size: 0.82rem;
+          line-height: 1.3;
+          max-width: 28ch;
+          -webkit-line-clamp: 1;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-course-summary,
@@ -690,10 +696,7 @@ def apply_theme() -> None:
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-course-status-line {
-          margin-top: 4px;
-          margin-bottom: 2px;
-          font-size: 0.78rem;
-          letter-spacing: 0.04em;
+          display: none;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-course-card-main,
@@ -709,7 +712,13 @@ def apply_theme() -> None:
           padding-right: 0;
           display: flex;
           flex-direction: column;
-          min-height: 132px;
+          min-height: 120px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-card-content {
+          display: flex;
+          flex-direction: column;
+          min-height: 120px;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-course-media-slot,
@@ -723,58 +732,170 @@ def apply_theme() -> None:
 
         .lp-catalog--explore.lp-explore-cinema .lp-course-thumb--side {
           width: 100%;
-          height: 192px;
-          border-radius: 12px;
+          height: 108px;
+          border-radius: 9px;
           object-fit: cover;
-          border-color: rgba(186, 204, 227, 0.2);
+          border: none;
+          box-shadow: none;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-card-topright {
-          top: 10px;
-          right: 10px;
-          padding: 2px 6px;
-          gap: 6px;
+          top: 6px;
+          right: 6px;
+          padding: 1px 5px;
+          gap: 4px;
           border-radius: 999px;
-          background: rgba(7, 16, 32, 0.52);
-          border: 1px solid rgba(186, 204, 227, 0.16);
+          background: rgba(7, 16, 32, 0.42);
+          border: 1px solid rgba(186, 204, 227, 0.1);
           backdrop-filter: blur(8px);
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-social-strip,
         .lp-catalog--explore.lp-explore-cinema .lp-card-subtitle {
-          font-size: 0.8rem;
-          opacity: 0.76;
+          font-size: 0.74rem;
+          opacity: 0.68;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card .lp-social-strip {
+          min-height: 18px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-meta-row,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-meta-row {
+          min-height: 18px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-social-strip .lp-card-subtitle,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-byline,
+        .lp-catalog--explore.lp-explore-cinema .lp-path-meta-row .lp-card-subtitle {
+          display: none;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-social-strip .lp-meta-chip--rating {
+          display: none;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-context-line {
+          display: block;
+          margin-top: -4px;
+          margin-bottom: 2px;
+          color: rgba(218, 227, 238, 0.8);
+          letter-spacing: 0.01em;
+          line-height: 1.24;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          overflow: hidden;
+          min-height: 2.48em;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-social-strip .lp-meta-chip:nth-of-type(n+3) {
           display: none;
         }
 
-        .lp-catalog--explore.lp-explore-cinema .lp-card-taxonomy .lp-meta-chip:nth-of-type(n+3),
-        .lp-catalog--explore.lp-explore-cinema .lp-article-tag-row .lp-meta-chip:nth-of-type(n+3),
-        .lp-catalog--explore.lp-explore-cinema .lp-path-meta-row .lp-meta-chip:nth-of-type(n+3) {
+        .lp-catalog--explore.lp-explore-cinema .lp-card-taxonomy .lp-meta-chip--quiet,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-tag-row .lp-meta-chip:nth-of-type(n+2),
+        .lp-catalog--explore.lp-explore-cinema .lp-path-meta-row .lp-meta-chip:nth-of-type(n+2) {
           display: none;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-context-line,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-card .lp-article-tag-row {
+          min-height: 28px;
+          align-items: center;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-context-line {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-path-next-line {
+          display: none;
+        }
+
+        .lp-article-tag-placeholder {
+          width: 0;
+          height: 0;
+          overflow: hidden;
+          visibility: hidden;
+          margin: 0;
+          padding: 0;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card .lp-card-taxonomy {
+          min-height: 28px;
+          align-items: center;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-card-actions {
           margin-top: auto;
-          min-height: 42px;
+          min-height: 34px;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn {
-          border-radius: 999px;
+          border-radius: 10px;
+          min-height: 30px !important;
+          padding: 4px 10px !important;
+          font-size: 0.75rem !important;
+          letter-spacing: 0.01em;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .lp-status-select,
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card .lp-card-actions .q-btn:nth-child(2) {
+          display: none !important;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn--standard {
+          background: #4f86c6 !important;
+          color: #eef6ff !important;
+          box-shadow: none !important;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn--standard:hover {
+          background: #5c8fd8 !important;
+          box-shadow: 0 8px 16px rgba(51, 98, 156, 0.34) !important;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip .q-btn--standard,
+        .lp-catalog--explore.lp-explore-cinema .lp-topbar .q-btn--standard {
+          background: #4f86c6 !important;
+          color: #eef6ff !important;
+          box-shadow: none !important;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip .q-btn--standard:hover,
+        .lp-catalog--explore.lp-explore-cinema .lp-topbar .q-btn--standard:hover {
+          background: #5c8fd8 !important;
+          box-shadow: 0 8px 16px rgba(51, 98, 156, 0.34) !important;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn--outline {
+          background: rgba(255, 255, 255, 0.04) !important;
+          border-color: rgba(186, 204, 227, 0.16) !important;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-courses-rail-item--hero .lp-course-card {
-          border-color: rgba(116, 176, 228, 0.34);
-          box-shadow: 0 24px 74px rgba(21, 48, 92, 0.34), 0 22px 60px rgba(0, 0, 0, 0.55);
+          box-shadow: 0 11px 30px rgba(17, 35, 68, 0.36), 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-topright .q-btn {
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 120ms ease;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card--hover:hover .lp-card-topright .q-btn {
+          opacity: 1;
+          pointer-events: auto;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip {
           width: 100%;
-          margin: 4px 0 8px;
-          padding: 10px 12px;
-          border-radius: 14px;
+          margin: 2px 0 6px;
+          padding: 8px 10px;
+          border-radius: 12px;
           border: 1px solid rgba(116, 176, 228, 0.24);
           background:
             radial-gradient(120% 140% at 10% 0%, rgba(116, 176, 228, 0.16), transparent 58%),
@@ -799,13 +920,13 @@ def apply_theme() -> None:
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-title {
-          font-size: 1.02rem;
+          font-size: 0.96rem;
           font-weight: 700;
           line-height: 1.25;
         }
 
         .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-body {
-          font-size: 0.86rem;
+          font-size: 0.8rem;
           line-height: 1.35;
           color: rgba(220, 225, 235, 0.8);
           display: -webkit-box;
@@ -821,7 +942,7 @@ def apply_theme() -> None:
 
         .lp-catalog--explore.lp-explore-cinema .lp-sticky-controls {
           margin: 0 0 8px;
-          padding: 10px 12px;
+          padding: 8px 10px;
           background: linear-gradient(180deg, rgba(12, 21, 35, 0.68), rgba(11, 20, 33, 0.52));
           border-color: rgba(186, 204, 227, 0.08);
           box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
@@ -833,6 +954,30 @@ def apply_theme() -> None:
 
         .lp-catalog--explore.lp-explore-cinema .lp-courses-toolbar-controls {
           border-left-color: rgba(186, 204, 227, 0.05);
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-collection-title {
+          font-size: 1.1rem;
+          margin-bottom: 2px;
+          letter-spacing: 0.01em;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-row-title {
+          font-size: 0.9rem;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          text-transform: none;
+          opacity: 0.92;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-topbar .q-field__native,
+        .lp-catalog--explore.lp-explore-cinema .lp-topbar input {
+          font-size: 0.92rem !important;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-topbar .q-radio__label {
+          font-size: 0.86rem;
+          font-weight: 600;
         }
 
         .lp-courses-toolbar-controls {
@@ -947,16 +1092,6 @@ def apply_theme() -> None:
           }
           .lp-catalog--explore .lp-course-thumb--side {
             width: min(100%, 360px);
-          }
-          .lp-catalog--explore.lp-explore-cinema.lp-container {
-            width: calc(100vw - 12px);
-            max-width: calc(100vw - 12px);
-            margin-left: auto;
-            margin-right: auto;
-          }
-          .lp-header-inner.lp-header-inner--explore-cinema {
-            width: calc(100vw - 12px);
-            max-width: calc(100vw - 12px);
           }
         }
 

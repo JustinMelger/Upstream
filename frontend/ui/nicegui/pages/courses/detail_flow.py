@@ -8,6 +8,8 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
+from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.courses.media import extract_youtube_video_id, render_youtube_embed, youtube_embed_url
 from frontend.ui.nicegui.pages.courses.state import CoursesPageState
@@ -23,6 +25,10 @@ async def open_course_details_dialog(
     load_detail_bundle: Callable[[int, str], Awaitable[Any]],
     save_review: Callable[[int, int, str, str], Awaitable[dict[str, Any]]],
     delete_review: Callable[[int, int, str], Awaitable[bool]],
+    current_status: str = "",
+    on_set_tracking_status: Callable[[str], Awaitable[None]] | None = None,
+    on_clear_tracking_status: Callable[[], Awaitable[None]] | None = None,
+    on_tracking_changed: Callable[[str], None] | None = None,
     normalize_course_view_mode: Callable[[bool], str],
     format_review_summary: Callable[[dict[str, Any] | None], str],
     format_short_date: Callable[[Any], str],
@@ -69,6 +75,32 @@ async def open_course_details_dialog(
                         icon="open_in_new",
                         on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True),
                     ).props("outline dense")
+
+            if on_set_tracking_status is not None or on_clear_tracking_status is not None:
+                status_options = {"": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}}
+                status_select = ui.select(status_options, value=str(current_status or ""), label="Status").props("dense outlined")
+                status_select.style("max-width: 220px")
+
+                async def _on_status_change(e: Any) -> None:
+                    selected = str(getattr(e, "value", status_select.value) or "")
+                    status_select.disable()
+                    try:
+                        if not selected:
+                            if on_clear_tracking_status is not None:
+                                await on_clear_tracking_status()
+                            if on_tracking_changed is not None:
+                                on_tracking_changed("")
+                            safe_notify("Removed status", type="positive")
+                            return
+                        if on_set_tracking_status is not None:
+                            await on_set_tracking_status(selected)
+                        if on_tracking_changed is not None:
+                            on_tracking_changed(selected)
+                        safe_notify("Updated status", type="positive")
+                    finally:
+                        status_select.enable()
+
+                status_select.on("update:model-value", _on_status_change)
 
             ui.separator()
             if video_id:
@@ -168,6 +200,14 @@ async def open_course_details_flow(
     format_short_date: Callable[[Any], str],
 ) -> None:
     """Open the course details dialog using controller/state callback wiring."""
+
+    def _on_tracking_changed(status: str) -> None:
+        value = str(status or "").strip()
+        if not value:
+            state.tracking_by_course_id.pop(int(course_id), None)
+            return
+        state.tracking_by_course_id[int(course_id)] = {"course_id": int(course_id), "status": value}
+
     await open_course_details_dialog(
         course_id=int(course_id),
         focus_reviews=focus_reviews,
@@ -189,6 +229,10 @@ async def open_course_details_flow(
             review_id=int(_review_id),
             cache_scope=str(_scope or ""),
         ),
+        current_status=str((state.tracking_by_course_id.get(int(course_id)) or {}).get("status") or ""),
+        on_set_tracking_status=lambda _status: controller.set_tracking_status(course_id=int(course_id), status=str(_status)),
+        on_clear_tracking_status=lambda: controller.clear_tracking_status(course_id=int(course_id)),
+        on_tracking_changed=_on_tracking_changed,
         normalize_course_view_mode=normalize_course_view_mode,
         format_review_summary=lambda row: format_review_summary(row, style="fraction"),
         format_short_date=format_short_date,
