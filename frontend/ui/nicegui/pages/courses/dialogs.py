@@ -195,6 +195,7 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
                 f"provider='{fallback_examples.get('provider', '')}', "
                 f"category='{fallback_examples.get('category', '')}'."
             )
+
         with ui.row().classes("items-center justify-between w-full -mt-2"):
             ui.label("Paste a link and auto-suggest metadata.").classes("text-xs").style("color: var(--lp-muted)")
 
@@ -234,7 +235,9 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
                 _cache_suggestion(suggestions=latest_suggestions, key="provider", value=suggested_provider)
                 _cache_suggestion(suggestions=latest_suggestions, key="category", value=suggested_category)
                 _cache_suggestion(suggestions=latest_suggestions, key="learning_outcomes", value=suggested_outcomes)
-                has_suggestions = any([suggested_title, suggested_description, suggested_provider, suggested_category, suggested_tags])
+                has_suggestions = any(
+                    [suggested_title, suggested_description, suggested_provider, suggested_category, suggested_tags]
+                )
                 fallback_examples.clear()
                 if not has_suggestions:
                     fallback_examples.update(build_course_metadata_fallback(url=normalized_url or source_url))
@@ -327,13 +330,16 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
                     await _suggest_from_url(auto_trigger=False)
                 changed = False
                 for key in ["title", "description", "provider", "category", "learning_outcomes"]:
-                    changed = _apply_course_suggestion(
-                        key=key,
-                        latest_suggestions=latest_suggestions,
-                        controls=suggestion_controls,
-                        suggested_values=suggested_values,
-                        only_if_empty=False,
-                    ) or changed
+                    changed = (
+                        _apply_course_suggestion(
+                            key=key,
+                            latest_suggestions=latest_suggestions,
+                            controls=suggestion_controls,
+                            suggested_values=suggested_values,
+                            only_if_empty=False,
+                        )
+                        or changed
+                    )
                 _refresh_suggestion_hints()
                 _save_draft_silent()
                 if changed:
@@ -462,7 +468,9 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
                             on_click=lambda cid=course_id: ui.navigate.to(f"/courses?course_id={int(cid)}"),
                         ).props("outline")
                     if source_url:
-                        ui.button("Open source", on_click=lambda u=source_url: ui.navigate.to(str(u), new_tab=True)).props("outline")
+                        ui.button("Open source", on_click=lambda u=source_url: ui.navigate.to(str(u), new_tab=True)).props(
+                            "outline"
+                        )
                         ui.button(
                             "Copy link",
                             on_click=lambda u=source_url: copy_text_to_clipboard(text=str(u)),
@@ -475,6 +483,7 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
             summary_dialog.open()
 
         with ui.row().classes("justify-end mt-4"):
+
             @guard_ui_action(title="Share course failed")
             async def _create_submit() -> None:
                 dh_raw = str(create_duration_hours.value or "")
@@ -512,10 +521,13 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
                     "category": "Category",
                 }
                 for key, label in field_labels.items():
-                    if suggestion_badge_text(
-                        current_value=str(payload.get(key) or ""),
-                        suggested_value=str(suggested_values.get(key) or ""),
-                    ) == "Suggested":
+                    if (
+                        suggestion_badge_text(
+                            current_value=str(payload.get(key) or ""),
+                            suggested_value=str(suggested_values.get(key) or ""),
+                        )
+                        == "Suggested"
+                    ):
                         autofilled_fields.append(label)
                 _open_success_summary(created_row=created_row, autofilled_fields=autofilled_fields)
 

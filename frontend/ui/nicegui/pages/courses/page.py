@@ -344,6 +344,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 str(status_filter.value or "").strip(),
                             ]
                         )
+
                         def _browse_all_courses() -> None:
                             scope_filter.value = "all"
                             _refresh_list()
@@ -401,6 +402,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 recommendation_summary_row=page_state.recommendation_summary_by_course_id.get(course_id),
                             )
                             is_preview_open = int(ui_state.preview_course_id or 0) == int(course_id)
+
                             def _toggle_preview(selected_course_id: int) -> None:
                                 if int(ui_state.preview_course_id or 0) == int(selected_course_id):
                                     ui_state.preview_course_id = None

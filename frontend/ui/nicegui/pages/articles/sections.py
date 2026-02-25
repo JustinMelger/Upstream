@@ -50,7 +50,9 @@ def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
         with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
             with ui.row().classes("items-center gap-2 justify-end flex-wrap"):
-                with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                with ui.row().classes(
+                    "items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"
+                ):
                     ui.label("Sort by").classes("lp-topbar-group-label")
                     sort_filter = (
                         ui.select(
@@ -67,7 +69,9 @@ def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
                         .style("min-width: 180px")
                         .classes("lp-topbar-secondary-control")
                     )
-                with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                with ui.row().classes(
+                    "items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"
+                ):
                     with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
                         ui.menu_item("Share article", on_share)
     return ArticlesTopbarControls(search_input=search_input, sort_filter=sort_filter, meta=meta)

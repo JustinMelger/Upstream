@@ -41,4 +41,3 @@ def should_show_home_intro(*, storage_user: MutableMapping[str, Any]) -> bool:
 def dismiss_home_intro(*, storage_user: MutableMapping[str, Any]) -> None:
     """Persist dismissal state for the first-login intro."""
     storage_user[HOME_INTRO_DISMISSED_KEY] = True
-

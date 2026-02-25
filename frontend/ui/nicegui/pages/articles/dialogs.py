@@ -294,16 +294,16 @@ def build_share_article_dialog(  # noqa: C901, PLR0915
 
             with ui.dialog() as summary_dialog, ui.card().classes("lp-card lp-dialog w-[min(620px,95vw)]"):
                 ui.label("Article shared").classes("text-lg font-semibold")
-                ui.label(f"{title} is now visible in the article stream.").classes("text-sm").style(
-                    "color: var(--lp-muted)"
-                )
+                ui.label(f"{title} is now visible in the article stream.").classes("text-sm").style("color: var(--lp-muted)")
                 if autofilled_fields:
                     ui.label("Autofilled fields: " + ", ".join(autofilled_fields)).classes("text-xs").style(
                         "color: var(--lp-muted)"
                     )
                 with ui.row().classes("justify-end mt-4 gap-2"):
                     if source_url:
-                        ui.button("Open source", on_click=lambda u=source_url: ui.navigate.to(str(u), new_tab=True)).props("outline")
+                        ui.button("Open source", on_click=lambda u=source_url: ui.navigate.to(str(u), new_tab=True)).props(
+                            "outline"
+                        )
                         ui.button(
                             "Copy link",
                             on_click=lambda u=source_url: copy_text_to_clipboard(text=str(u)),
@@ -331,15 +331,21 @@ def build_share_article_dialog(  # noqa: C901, PLR0915
                 _discard_draft(reset_form=False, notify=False)
                 share_dialog.close()
                 autofilled_fields: list[str] = []
-                if suggestion_badge_text(
-                    current_value=str(payload.get("title") or ""),
-                    suggested_value=str(suggested_values.get("title") or ""),
-                ) == "Suggested":
+                if (
+                    suggestion_badge_text(
+                        current_value=str(payload.get("title") or ""),
+                        suggested_value=str(suggested_values.get("title") or ""),
+                    )
+                    == "Suggested"
+                ):
                     autofilled_fields.append("Title")
-                if suggestion_badge_text(
-                    current_value=str(payload.get("tags") or ""),
-                    suggested_value=str(suggested_values.get("tags") or ""),
-                ) == "Suggested":
+                if (
+                    suggestion_badge_text(
+                        current_value=str(payload.get("tags") or ""),
+                        suggested_value=str(suggested_values.get("tags") or ""),
+                    )
+                    == "Suggested"
+                ):
                     autofilled_fields.append("Tags")
                 _open_success_summary(created_row=created_row, autofilled_fields=autofilled_fields)
 

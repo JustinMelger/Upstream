@@ -21,4 +21,3 @@ def test_home_intro_visibility_and_dismiss_persistence() -> None:
     dismiss_home_intro(storage_user=storage_user)
     assert storage_user.get(HOME_INTRO_DISMISSED_KEY) is True
     assert should_show_home_intro(storage_user=storage_user) is False
-

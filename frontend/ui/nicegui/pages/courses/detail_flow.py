@@ -78,7 +78,9 @@ async def open_course_details_dialog(
 
             if on_set_tracking_status is not None or on_clear_tracking_status is not None:
                 status_options = {"": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}}
-                status_select = ui.select(status_options, value=str(current_status or ""), label="Status").props("dense outlined")
+                status_select = ui.select(status_options, value=str(current_status or ""), label="Status").props(
+                    "dense outlined"
+                )
                 status_select.style("max-width: 220px")
 
                 async def _on_status_change(e: Any) -> None:

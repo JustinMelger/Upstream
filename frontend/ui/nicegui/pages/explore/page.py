@@ -60,206 +60,206 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
 
     explore_scope_classes = "lp-container lp-explore-cinema" if settings.feature_explore_cinema else "lp-container"
     with render_catalog_scope(variant="explore").classes(explore_scope_classes):
-            with ui.row().classes("w-full items-center"):
-                ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
-            # Sticky topbar uses a negative top margin; reserve vertical space so it
-            # doesn't visually overlap this subtitle line.
-            ui.element("div").classes("h-3")
-            share_dialog = render_explore_share_dialog()
+        with ui.row().classes("w-full items-center"):
+            ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
+        # Sticky topbar uses a negative top margin; reserve vertical space so it
+        # doesn't visually overlap this subtitle line.
+        ui.element("div").classes("h-3")
+        share_dialog = render_explore_share_dialog()
 
-            filter_controls: ExploreFilterControls | None = None
+        filter_controls: ExploreFilterControls | None = None
 
-            def _reset_filters() -> None:
-                assert filter_controls is not None
-                clear_explore_filter_controls(controls=filter_controls)
-                list_view.refresh()
+        def _reset_filters() -> None:
+            assert filter_controls is not None
+            clear_explore_filter_controls(controls=filter_controls)
+            list_view.refresh()
 
-            topbar = render_explore_topbar(
-                initial_tab=initial_tab,
-                on_open_filters=lambda: filter_controls.dialog.open() if filter_controls is not None else None,
-                on_open_share=share_dialog.open,
+        topbar = render_explore_topbar(
+            initial_tab=initial_tab,
+            on_open_filters=lambda: filter_controls.dialog.open() if filter_controls is not None else None,
+            on_open_share=share_dialog.open,
+        )
+        categories_btn = ui.button("More categories").props("outline dense")
+        filter_controls = render_explore_filters_dialog(on_reset=_reset_filters)
+
+        def _toggle_categories() -> None:
+            flags["show_all_categories"] = not bool(flags["show_all_categories"])
+            categories_btn.text = "Fewer categories" if flags["show_all_categories"] else "More categories"
+            categories_btn.update()
+            list_view.refresh()
+
+        categories_btn.on("click", lambda *_: _toggle_categories())
+
+        def _refresh_meta(*, course_count: int, path_count: int, article_count: int, tab_value: str) -> None:
+            topbar.meta.text = compute_explore_meta_text(
+                tab_value=tab_value,
+                course_count=course_count,
+                path_count=path_count,
+                article_count=article_count,
             )
-            categories_btn = ui.button("More categories").props("outline dense")
-            filter_controls = render_explore_filters_dialog(on_reset=_reset_filters)
 
-            def _toggle_categories() -> None:
-                flags["show_all_categories"] = not bool(flags["show_all_categories"])
-                categories_btn.text = "Fewer categories" if flags["show_all_categories"] else "More categories"
-                categories_btn.update()
-                list_view.refresh()
+        def _refresh_filter_options() -> None:
+            assert filter_controls is not None
+            apply_explore_filter_options(
+                controls=filter_controls,
+                courses=list(state.courses or []),
+                articles=list(state.articles or []),
+            )
 
-            categories_btn.on("click", lambda *_: _toggle_categories())
+        @guard_ui_action(title="Load explore failed")
+        async def _load() -> None:
+            await controller.load(
+                state=state,
+                refresh_ui=list_view.refresh,
+                refresh_filter_options=_refresh_filter_options,
+                notify_articles_warning=lambda message: safe_notify(
+                    f"Articles unavailable in Explore ({message})",
+                    type="warning",
+                ),
+                notify_paths_warning=lambda message: safe_notify(
+                    f"Paths unavailable in Explore ({message})",
+                    type="warning",
+                ),
+            )
 
-            def _refresh_meta(*, course_count: int, path_count: int, article_count: int, tab_value: str) -> None:
-                topbar.meta.text = compute_explore_meta_text(
-                    tab_value=tab_value,
-                    course_count=course_count,
-                    path_count=path_count,
-                    article_count=article_count,
+        async def _set_tracking(course_id: int, status: str) -> None:
+            await controller.set_tracking_status(
+                state=state,
+                course_id=int(course_id),
+                status=str(status),
+                refresh_ui=list_view.refresh,
+            )
+
+        async def _clear_tracking(course_id: int) -> None:
+            await controller.clear_tracking_status(
+                state=state,
+                course_id=int(course_id),
+                refresh_ui=list_view.refresh,
+            )
+
+        async def _toggle_path_selection(path_id: int) -> None:
+            await controller.toggle_path_selection(
+                state=state,
+                path_id=int(path_id),
+                refresh_ui=list_view.refresh,
+            )
+
+        @ui.refreshable
+        def list_view() -> None:
+            tab_value = normalize_tab(topbar.tab_filter.value)
+            sort_value = normalize_sort(topbar.sort_filter.value)
+            needle = str(topbar.search_input.value or "").strip()
+
+            if state.loading and not state.loaded_once:
+                with ui.column().classes("w-full gap-3"):
+                    render_card_skeletons(count=4)
+                return
+
+            shown_courses = filter_courses(
+                courses=list(state.courses or []),
+                tracking_by_course_id=dict(state.tracking_by_course_id or {}),
+                scope_value="all",
+                needle=needle,
+                provider_value=str(filter_controls.provider_filter.value or ""),
+                category_value=str(filter_controls.category_filter.value or ""),
+                level_value="",
+                status_value="",
+            )
+            shown_courses = sort_courses(
+                courses=shown_courses,
+                sort_value=sort_value,
+                review_summary_by_course_id=dict(state.course_review_summary_by_course_id or {}),
+                parse_iso_datetime=parse_iso_datetime,
+            )
+
+            shown_articles = derive_shown_articles(
+                articles=list(state.articles or []),
+                needle=needle,
+                tag_value=str(filter_controls.tag_filter.value or ""),
+                author_value=str(filter_controls.author_filter.value or ""),
+                sort_value=sort_value,
+            )
+            shown_paths = filter_paths_by_needle(list(state.paths or []), needle.lower())
+            shown_paths = sort_paths(
+                paths=shown_paths,
+                sort_value=sort_value,
+                path_review_summary_by_id=dict(state.path_review_summary_by_id or {}),
+                parse_iso_datetime=parse_iso_datetime,
+            )
+
+            shown_courses, shown_paths, shown_articles = apply_tab_scope(
+                tab_value=tab_value,
+                shown_courses=shown_courses,
+                shown_paths=shown_paths,
+                shown_articles=shown_articles,
+            )
+
+            _refresh_meta(
+                course_count=len(shown_courses),
+                path_count=len(shown_paths),
+                article_count=len(shown_articles),
+                tab_value=tab_value,
+            )
+
+            if not shown_courses and not shown_paths and not shown_articles:
+                render_explore_empty_state(
+                    loaded_once=state.loaded_once,
+                    on_refresh=_load,
+                    on_reset_filters=_reset_filters,
                 )
+                return
 
-            def _refresh_filter_options() -> None:
-                assert filter_controls is not None
-                apply_explore_filter_options(
-                    controls=filter_controls,
-                    courses=list(state.courses or []),
-                    articles=list(state.articles or []),
-                )
-
-            @guard_ui_action(title="Load explore failed")
-            async def _load() -> None:
-                await controller.load(
-                    state=state,
-                    refresh_ui=list_view.refresh,
-                    refresh_filter_options=_refresh_filter_options,
-                    notify_articles_warning=lambda message: safe_notify(
-                        f"Articles unavailable in Explore ({message})",
-                        type="warning",
-                    ),
-                    notify_paths_warning=lambda message: safe_notify(
-                        f"Paths unavailable in Explore ({message})",
-                        type="warning",
-                    ),
-                )
-
-            async def _set_tracking(course_id: int, status: str) -> None:
-                await controller.set_tracking_status(
-                    state=state,
-                    course_id=int(course_id),
-                    status=str(status),
-                    refresh_ui=list_view.refresh,
-                )
-
-            async def _clear_tracking(course_id: int) -> None:
-                await controller.clear_tracking_status(
-                    state=state,
-                    course_id=int(course_id),
-                    refresh_ui=list_view.refresh,
-                )
-
-            async def _toggle_path_selection(path_id: int) -> None:
-                await controller.toggle_path_selection(
-                    state=state,
-                    path_id=int(path_id),
-                    refresh_ui=list_view.refresh,
-                )
-
-            @ui.refreshable
-            def list_view() -> None:
-                tab_value = normalize_tab(topbar.tab_filter.value)
-                sort_value = normalize_sort(topbar.sort_filter.value)
-                needle = str(topbar.search_input.value or "").strip()
-
-                if state.loading and not state.loaded_once:
-                    with ui.column().classes("w-full gap-3"):
-                        render_card_skeletons(count=4)
-                    return
-
-                shown_courses = filter_courses(
-                    courses=list(state.courses or []),
-                    tracking_by_course_id=dict(state.tracking_by_course_id or {}),
-                    scope_value="all",
-                    needle=needle,
-                    provider_value=str(filter_controls.provider_filter.value or ""),
-                    category_value=str(filter_controls.category_filter.value or ""),
-                    level_value="",
-                    status_value="",
-                )
-                shown_courses = sort_courses(
-                    courses=shown_courses,
-                    sort_value=sort_value,
-                    review_summary_by_course_id=dict(state.course_review_summary_by_course_id or {}),
-                    parse_iso_datetime=parse_iso_datetime,
-                )
-
-                shown_articles = derive_shown_articles(
-                    articles=list(state.articles or []),
-                    needle=needle,
-                    tag_value=str(filter_controls.tag_filter.value or ""),
-                    author_value=str(filter_controls.author_filter.value or ""),
-                    sort_value=sort_value,
-                )
-                shown_paths = filter_paths_by_needle(list(state.paths or []), needle.lower())
-                shown_paths = sort_paths(
-                    paths=shown_paths,
-                    sort_value=sort_value,
-                    path_review_summary_by_id=dict(state.path_review_summary_by_id or {}),
-                    parse_iso_datetime=parse_iso_datetime,
-                )
-
-                shown_courses, shown_paths, shown_articles = apply_tab_scope(
-                    tab_value=tab_value,
-                    shown_courses=shown_courses,
-                    shown_paths=shown_paths,
-                    shown_articles=shown_articles,
-                )
-
-                _refresh_meta(
-                    course_count=len(shown_courses),
-                    path_count=len(shown_paths),
-                    article_count=len(shown_articles),
-                    tab_value=tab_value,
-                )
-
-                if not shown_courses and not shown_paths and not shown_articles:
-                    render_explore_empty_state(
-                        loaded_once=state.loaded_once,
-                        on_refresh=_load,
-                        on_reset_filters=_reset_filters,
-                    )
-                    return
-
-                render_explore_sections(
-                    shown_courses=shown_courses,
-                    shown_paths=shown_paths,
-                    shown_articles=shown_articles,
-                    state=state,
+            render_explore_sections(
+                shown_courses=shown_courses,
+                shown_paths=shown_paths,
+                shown_articles=shown_articles,
+                state=state,
+                username=username,
+                is_admin=is_admin,
+                show_all_categories=bool(flags["show_all_categories"]),
+                feature_explore_cinema=settings.feature_explore_cinema,
+                course_actions_builder=lambda course_row, course_id, course_url: build_explore_course_actions(
+                    course_row=course_row,
+                    course_id=course_id,
+                    course_url=course_url,
                     username=username,
                     is_admin=is_admin,
-                    show_all_categories=bool(flags["show_all_categories"]),
-                    feature_explore_cinema=settings.feature_explore_cinema,
-                    course_actions_builder=lambda course_row, course_id, course_url: build_explore_course_actions(
-                        course_row=course_row,
-                        course_id=course_id,
-                        course_url=course_url,
-                        username=username,
-                        is_admin=is_admin,
-                        state=state,
-                        controller=controller,
-                        on_set_tracking=_set_tracking,
-                        on_clear_tracking=_clear_tracking,
-                    ),
+                    state=state,
+                    controller=controller,
                     on_set_tracking=_set_tracking,
                     on_clear_tracking=_clear_tracking,
-                    on_toggle_path_selection=_toggle_path_selection,
-                    open_path_details_dialog=lambda path_row, card_vm: open_explore_path_details_dialog(
-                        path_row=path_row,
-                        card_vm=card_vm,
-                    ),
-                    open_article_details=open_explore_article_details,
-                )
+                ),
+                on_set_tracking=_set_tracking,
+                on_clear_tracking=_clear_tracking,
+                on_toggle_path_selection=_toggle_path_selection,
+                open_path_details_dialog=lambda path_row, card_vm: open_explore_path_details_dialog(
+                    path_row=path_row,
+                    card_vm=card_vm,
+                ),
+                open_article_details=open_explore_article_details,
+            )
 
-            def _on_search_change(*_args: Any) -> None:
-                if not bool(flags["search_telemetry_emitted"]) and str(topbar.search_input.value or "").strip():
-                    flags["search_telemetry_emitted"] = True
-                    track_ui_event_nowait(api=api, event_name="first_search", context={"page": "explore"})
-                list_view.refresh()
-
-            topbar.search_input.on("update:model-value", _on_search_change)
-            topbar.tab_filter.on("update:model-value", lambda *_: list_view.refresh())
-            topbar.sort_filter.on("update:model-value", lambda *_: list_view.refresh())
-
-            for control in [
-                filter_controls.provider_filter,
-                filter_controls.category_filter,
-                filter_controls.tag_filter,
-                filter_controls.author_filter,
-            ]:
-                control.on("update:model-value", lambda *_: list_view.refresh())
-
-            list_view()
-            await _load()
+        def _on_search_change(*_args: Any) -> None:
+            if not bool(flags["search_telemetry_emitted"]) and str(topbar.search_input.value or "").strip():
+                flags["search_telemetry_emitted"] = True
+                track_ui_event_nowait(api=api, event_name="first_search", context={"page": "explore"})
             list_view.refresh()
+
+        topbar.search_input.on("update:model-value", _on_search_change)
+        topbar.tab_filter.on("update:model-value", lambda *_: list_view.refresh())
+        topbar.sort_filter.on("update:model-value", lambda *_: list_view.refresh())
+
+        for control in [
+            filter_controls.provider_filter,
+            filter_controls.category_filter,
+            filter_controls.tag_filter,
+            filter_controls.author_filter,
+        ]:
+            control.on("update:model-value", lambda *_: list_view.refresh())
+
+        list_view()
+        await _load()
+        list_view.refresh()
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
