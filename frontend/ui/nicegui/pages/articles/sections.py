@@ -184,7 +184,7 @@ def render_article_card(
                         ui.label(subtitle_parts[1]).classes("text-xs lp-card-subtitle lp-article-date")
 
                 if tags:
-                    with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
+                    with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
                         for t in tags[:10]:
                             ui.label(t).classes("lp-meta-chip")
                         if len(tags) > 10:

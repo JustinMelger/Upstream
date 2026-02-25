@@ -50,7 +50,20 @@
   - [x] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls.
   - [x] Empty-state density polish (Articles): tighten spacing and reduce vertical whitespace while preserving CTA prominence.
   - [x] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so cards remain dominant.
-- [ ] Keep architecture quality gates green during Sprint 4:
-  - [ ] `uv run ruff check ...` on touched modules.
-  - [ ] `uv run mypy ...` on touched modules.
-  - [ ] Targeted `pytest` coverage for newly extracted helpers/orchestration.
+  - [x] Explore card consistency follow-up: normalize Explore card slots/footprints across courses, paths, and articles.
+
+
+## Sprint 5 — Hardening + Pilot Readiness (Non-UX)
+- [ ] Stabilize quality gates and type discipline:
+  - [ ] Resolve current `mypy` baseline errors in `frontend/ui/nicegui/pages/paths/*` and `frontend/ui/nicegui/pages/explore/page.py`.
+  - [ ] Keep `ruff` and `mypy` green on touched modules for every sprint slice.
+  - [ ] Add/update targeted tests for any extracted orchestration/controller helpers.
+- [ ] Complete open Phase `11D` engineering items:
+  - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
+  - [ ] Isolate backend integration test auth/session state to reduce intermittent `401/404/500` failures.
+  - [ ] Sync `docs/architecture_backend.md` with current course/recommendation/review model + service flow details.
+
+## Sprint TBD — Pilot Validation (Planned Later)
+- [ ] Run 5 first-time-user usability tests and log confusion points.
+- [ ] Fix top 5 confusion points before pilot launch.
+- [ ] Add pilot observer confusion-log template + triage rubric.

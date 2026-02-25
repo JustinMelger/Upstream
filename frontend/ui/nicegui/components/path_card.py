@@ -42,14 +42,16 @@ def render_path_card(
     track_toggle_label: str,
 ) -> None:
     """Render a single path card."""
-    with ui.card().classes(f"w-full lp-accent-card lp-card--hover lp-path-card{card_class_suffix}"):
+    suffix = str(card_class_suffix or "")
+    compact_mode = "lp-path-card--compact" in suffix
+    with ui.card().classes(f"w-full lp-accent-card lp-card--hover lp-path-card{suffix}"):
         with render_card_topright():
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
             elif is_updated:
                 ui.label("Updated").classes("lp-chip lp-chip--teal")
             if rating_badge:
-                ui.label(f"★ {rating_badge}").classes("lp-meta-chip")
+                ui.label(f"★ {rating_badge}").classes("lp-meta-chip lp-meta-chip--rating")
             if recommendation_badge:
                 ui.label(recommendation_badge).classes("lp-meta-chip")
 
@@ -63,24 +65,31 @@ def render_path_card(
 
         with render_card_content_column():
             ui.label(path_row.get("name") or "").classes("text-lg font-semibold lp-card-title")
-            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
+            with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-path-meta-row"):
                 if shared_by:
                     ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
                 ui.label(tracking_label_text).classes(tracking_chip_cls)
 
             if total_courses > 0:
-                with ui.row().classes("items-center justify-between w-full"):
-                    ui.label("Path progress").classes("text-xs lp-path-progress-label")
-                    ui.label(f"{completed}/{total_courses} completed").classes("text-sm lp-path-progress-count").style(
-                        "color: var(--lp-muted)"
-                    )
-                ui.linear_progress(progress, show_value=False).classes("w-full lp-path-progress-bar")
-                with ui.row().classes("items-center gap-2 lp-path-milestone-row"):
-                    ui.label(milestone).classes(f"{milestone_class} lp-path-milestone")
-                    ui.label(impact).classes("text-xs").style("color: var(--lp-muted)")
-                if next_title:
-                    ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
-            if str(path_row.get("description") or "").strip():
+                if compact_mode:
+                    with ui.row().classes("items-center gap-2 flex-wrap w-full"):
+                        ui.label(f"{completed}/{total_courses} completed").classes("text-xs lp-path-progress-label")
+                        ui.label(milestone).classes(f"{milestone_class} lp-path-milestone")
+                    if next_title:
+                        ui.label(f"Next: {next_title}").classes("text-xs lp-path-next-line").style("color: var(--lp-muted)")
+                else:
+                    with ui.row().classes("items-center justify-between w-full"):
+                        ui.label("Path progress").classes("text-xs lp-path-progress-label")
+                        ui.label(f"{completed}/{total_courses} completed").classes("text-sm lp-path-progress-count").style(
+                            "color: var(--lp-muted)"
+                        )
+                    ui.linear_progress(progress, show_value=False).classes("w-full lp-path-progress-bar")
+                    with ui.row().classes("items-center gap-2 lp-path-milestone-row"):
+                        ui.label(milestone).classes(f"{milestone_class} lp-path-milestone")
+                        ui.label(impact).classes("text-xs").style("color: var(--lp-muted)")
+                    if next_title:
+                        ui.label(f"Next: {next_title}").classes("text-xs").style("color: var(--lp-muted)")
+            if (not compact_mode) and str(path_row.get("description") or "").strip():
                 ui.label(path_row.get("description") or "").classes("text-sm text-gray-600 lp-card-body lp-path-description")
 
             def _render_actions() -> None:

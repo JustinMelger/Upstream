@@ -97,6 +97,25 @@ def render_explore_filters_dialog(*, on_reset: Any) -> ExploreFilterControls:
     )
 
 
+def render_explore_spotlight_strip(
+    *,
+    title: str,
+    description: str,
+    shared_by: str,
+    on_primary: Any,
+) -> None:
+    """Render a compact spotlight strip for Explore without hero-card height."""
+    with ui.element("div").classes("lp-explore-spotlight-strip"):
+        with ui.column().classes("gap-1"):
+            ui.label("Spotlight").classes("lp-explore-spotlight-eyebrow")
+            ui.label(str(title or "Top pick")).classes("lp-explore-spotlight-title")
+            if str(description or "").strip():
+                ui.label(str(description)).classes("lp-explore-spotlight-body")
+            if str(shared_by or "").strip():
+                ui.label(f"Shared by {shared_by}").classes("lp-explore-spotlight-meta")
+        ui.button("Continue", on_click=on_primary).props("dense unelevated")
+
+
 def bind_rail_arrow_visibility(*, rail_id: str, left_btn_id: str, right_btn_id: str) -> None:
     """Bind arrow visibility and edge behavior for one horizontal rail."""
     ui.run_javascript(
@@ -128,6 +147,10 @@ def render_explore_article_rails(
     *,
     shown_articles: list[dict[str, Any]],
     render_article_item: Any,
+    max_groups: int | None = None,
+    min_group_size: int = 1,
+    overflow_group_title: str = "More for you",
+    prioritize_larger_groups: bool = False,
 ) -> None:
     """Render grouped article rails for Explore."""
     with ui.column().classes("w-full gap-3 lp-courses-section"):
@@ -137,7 +160,33 @@ def render_explore_article_rails(
             group_name = str(row.get("_explore_group") or "General")
             grouped_articles.setdefault(group_name, []).append(row)
 
-        for row_idx, (group_name, rows) in enumerate(grouped_articles.items()):
+        if int(min_group_size) > 1:
+            compacted: dict[str, list[dict[str, Any]]] = {}
+            overflow_rows: list[dict[str, Any]] = []
+            for group_name, rows in grouped_articles.items():
+                if len(rows) < int(min_group_size):
+                    overflow_rows.extend(rows)
+                else:
+                    compacted[group_name] = rows
+            if overflow_rows:
+                compacted.setdefault(str(overflow_group_title or "More for you"), []).extend(overflow_rows)
+            grouped_articles = compacted
+
+        groups: list[tuple[str, list[dict[str, Any]]]] = list(grouped_articles.items())
+        if bool(prioritize_larger_groups):
+            groups = sorted(groups, key=lambda item: len(item[1]), reverse=True)
+        if max_groups is not None and int(max_groups) > 0 and len(groups) > int(max_groups):
+            keep_count = max(1, int(max_groups) - 1)
+            visible = groups[:keep_count]
+            hidden = groups[keep_count:]
+            hidden_rows: list[dict[str, Any]] = []
+            for _, rows in hidden:
+                hidden_rows.extend(rows)
+            if hidden_rows:
+                visible.append((str(overflow_group_title or "More for you"), hidden_rows))
+            groups = visible
+
+        for row_idx, (group_name, rows) in enumerate(groups):
             rail_id = f"lp-explore-articles-rail-{row_idx}"
             left_btn_id = f"{rail_id}-left"
             right_btn_id = f"{rail_id}-right"
@@ -169,6 +218,5 @@ def render_explore_article_rails(
                         ).props(f'dense flat round id="{right_btn_id}"').classes("lp-rail-nav-btn")
                 with ui.element("div").classes("lp-courses-rail").props(f'id="{rail_id}"'):
                     for article in rows:
-                        with ui.element("div").classes("lp-courses-rail-item"):
-                            render_article_item(article)
+                        render_article_item(article, item_classes="lp-courses-rail-item")
             bind_rail_arrow_visibility(rail_id=rail_id, left_btn_id=left_btn_id, right_btn_id=right_btn_id)

@@ -286,7 +286,7 @@ def render_course_card(
                     if shared_by:
                         ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
                     if card_vm.rating_badge:
-                        ui.label(card_vm.rating_badge).classes("lp-meta-chip")
+                        ui.label(card_vm.rating_badge).classes("lp-meta-chip lp-meta-chip--rating")
                     if card_vm.recommendation_badge:
                         ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
                 if str(course_row.get("description") or "").strip():
@@ -376,10 +376,15 @@ def render_courses_catalog(
     featured_title: str = "Featured course",
     featured_subtitle: str = "Top result from your current filters",
     collection_title: str = "Browse collection",
+    show_featured: bool = True,
+    max_groups: int | None = None,
+    min_group_size: int = 1,
+    overflow_group_title: str = "More for you",
+    prioritize_larger_groups: bool = False,
 ) -> None:
     """Render featured + streaming-rail catalog sections for the current page slice."""
-    featured_course = shown_page[0] if shown_page else None
-    remaining_courses = shown_page[1:] if len(shown_page) > 1 else []
+    featured_course = shown_page[0] if (shown_page and bool(show_featured)) else None
+    remaining_courses = shown_page[1:] if (len(shown_page) > 1 and bool(show_featured)) else list(shown_page or [])
 
     if featured_course:
         with ui.column().classes("w-full gap-2 lp-courses-section"):
@@ -399,9 +404,36 @@ def render_courses_catalog(
         category_key = str(row.get("category") or "").strip() or "General"
         grouped_by_category.setdefault(category_key, []).append(row)
 
+    if int(min_group_size) > 1:
+        compacted: dict[str, list[dict[str, Any]]] = {}
+        overflow_rows: list[dict[str, Any]] = []
+        for category_name, rows in grouped_by_category.items():
+            if len(rows) < int(min_group_size):
+                overflow_rows.extend(rows)
+            else:
+                compacted[category_name] = rows
+        if overflow_rows:
+            compacted.setdefault(str(overflow_group_title or "More for you"), []).extend(overflow_rows)
+        grouped_by_category = compacted
+
+    groups: list[tuple[str, list[dict[str, Any]]]] = list(grouped_by_category.items())
+    if bool(prioritize_larger_groups):
+        groups = sorted(groups, key=lambda item: len(item[1]), reverse=True)
+
+    if max_groups is not None and int(max_groups) > 0 and len(groups) > int(max_groups):
+        keep_count = max(1, int(max_groups) - 1)
+        visible = groups[:keep_count]
+        hidden = groups[keep_count:]
+        hidden_rows: list[dict[str, Any]] = []
+        for _, rows in hidden:
+            hidden_rows.extend(rows)
+        if hidden_rows:
+            visible.append((str(overflow_group_title or "More for you"), hidden_rows))
+        groups = visible
+
     with ui.column().classes("w-full gap-3 lp-courses-section"):
         ui.label(str(collection_title)).classes("lp-courses-collection-title")
-        for row_idx, (category_name, rows) in enumerate(grouped_by_category.items()):
+        for row_idx, (category_name, rows) in enumerate(groups):
             rail_id = f"lp-courses-rail-{row_idx}"
             left_btn_id = f"{rail_id}-left"
             right_btn_id = f"{rail_id}-right"
@@ -432,8 +464,11 @@ def render_courses_catalog(
                             ),
                         ).props(f'dense flat round id="{right_btn_id}"').classes("lp-rail-nav-btn")
                 with ui.element("div").classes("lp-courses-rail").props(f'id="{rail_id}"'):
-                    for c in rows:
-                        render_course_item(c, item_classes="lp-courses-rail-item")
+                    for idx, c in enumerate(rows):
+                        item_classes = "lp-courses-rail-item"
+                        if idx == 0:
+                            item_classes += " lp-courses-rail-item--hero"
+                        render_course_item(c, item_classes=item_classes)
             _bind_rail_arrow_visibility(
                 rail_id=rail_id,
                 left_btn_id=left_btn_id,

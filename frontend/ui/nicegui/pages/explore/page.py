@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from nicegui import ui
@@ -17,6 +18,7 @@ from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
@@ -26,9 +28,15 @@ from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
 from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
 from frontend.ui.nicegui.pages.courses.actions import build_course_card_actions
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
+from frontend.ui.nicegui.pages.courses.detail_flow import open_course_details_dialog
 from frontend.ui.nicegui.pages.courses.reducers import filter_courses, sort_courses
 from frontend.ui.nicegui.pages.courses.sections import render_course_card, render_courses_catalog
-from frontend.ui.nicegui.pages.courses.ui_glue import resolve_tracking_status_value
+from frontend.ui.nicegui.pages.courses.state import CoursesPageState
+from frontend.ui.nicegui.pages.courses.ui_glue import (
+    format_short_date,
+    normalize_course_view_mode,
+    resolve_tracking_status_value,
+)
 from frontend.ui.nicegui.pages.courses.view_model import map_course_card_view
 from frontend.ui.nicegui.pages.explore.orchestration import (
     clear_explore_tracking_status,
@@ -40,6 +48,7 @@ from frontend.ui.nicegui.pages.explore.orchestration import (
 from frontend.ui.nicegui.pages.explore.sections import (
     render_explore_article_rails,
     render_explore_filters_dialog,
+    render_explore_spotlight_strip,
     render_explore_topbar,
 )
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
@@ -49,6 +58,97 @@ from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.reducers import filter_paths_by_needle, sort_paths
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
 from frontend.ui.nicegui.pages.paths.view_model import map_path_card_view
+
+
+def _open_explore_path_details_dialog(*, path_row: dict[str, Any], card_vm: Any) -> None:
+    """Open a lightweight in-place path details dialog for Explore."""
+    title = str(path_row.get("name") or "").strip() or "Path"
+    description = str(path_row.get("description") or "").strip()
+    with ui.dialog() as details_dialog:
+        with ui.card().classes("lp-card lp-dialog w-[min(640px,95vw)]"):
+            ui.label(title).classes("text-lg font-semibold")
+            ui.label("Overview").classes("text-xs font-semibold mt-2").style("color: var(--lp-muted)")
+            ui.label(description or "No description provided yet.").classes("text-sm").style("color: var(--lp-muted)")
+            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
+                if card_vm.shared_by:
+                    ui.label(f"Shared by {card_vm.shared_by}").classes("lp-meta-chip lp-meta-chip--quiet")
+                ui.label(card_vm.tracking_label_text).classes(card_vm.tracking_chip_cls)
+            if card_vm.total_courses > 0:
+                ui.label(f"Progress: {card_vm.completed}/{card_vm.total_courses} completed").classes("text-sm").style(
+                    "color: var(--lp-muted)"
+                )
+                ui.linear_progress(card_vm.progress, show_value=False).classes("w-full mt-1")
+            if card_vm.next_title:
+                ui.label(f"Next: {card_vm.next_title}").classes("text-xs").style("color: var(--lp-muted)")
+            with ui.row().classes("justify-end items-center gap-2 w-full mt-3"):
+                ui.button("Close", on_click=details_dialog.close).props("outline")
+    details_dialog.open()
+
+
+def _open_explore_article_details_dialog(*, article_row: dict[str, Any], focus_reviews: bool) -> None:
+    """Open a lightweight in-place article details dialog for Explore."""
+    title = str(article_row.get("title") or "").strip() or "Article"
+    url = str(article_row.get("url") or "").strip()
+    summary = str(article_row.get("summary") or "").strip()
+    tags = parse_tags(str(article_row.get("tags") or ""))
+    shared_by = str(article_row.get("created_by") or "").strip()
+    created_at = str(article_row.get("created_at") or "").strip()
+    with ui.dialog() as details_dialog:
+        with ui.card().classes("lp-card lp-dialog w-[min(620px,95vw)]"):
+            ui.label(title).classes("text-lg font-semibold")
+            if url:
+                ui.link(url, url).props("target=_blank").classes("text-sm")
+            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
+                if shared_by:
+                    ui.label(f"Shared by {shared_by}").classes("lp-meta-chip lp-meta-chip--quiet")
+                if created_at:
+                    ui.label(created_at[:10]).classes("lp-meta-chip lp-meta-chip--quiet")
+            if tags:
+                with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
+                    for tag in tags[:6]:
+                        ui.label(tag).classes("lp-meta-chip")
+            ui.label("Overview").classes("text-xs font-semibold mt-2").style("color: var(--lp-muted)")
+            ui.label(summary or "No summary provided yet.").classes("text-sm mt-1").style("color: var(--lp-muted)")
+            if bool(focus_reviews):
+                ui.label("Open Reviews from the overflow menu on Articles for full review management.").classes(
+                    "text-xs mt-2"
+                ).style("color: var(--lp-muted)")
+            with ui.row().classes("justify-end items-center gap-2 w-full mt-3"):
+                ui.button("Close", on_click=details_dialog.close).props("outline")
+    details_dialog.open()
+
+
+def _render_explore_course_spotlight(
+    *,
+    enabled: bool,
+    shown_courses: list[dict[str, Any]],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+    course_actions_builder: Callable[[dict[str, Any], int, str], Any],
+    on_track: Callable[[int, str], Awaitable[None]],
+) -> None:
+    """Render compact Explore spotlight strip in cinema mode."""
+    if not bool(enabled) or not shown_courses:
+        return
+    spotlight = shown_courses[0]
+    spotlight_id = int(spotlight.get("id") or 0)
+    spotlight_tracked = isinstance(tracking_by_course_id.get(spotlight_id), dict)
+
+    async def _spotlight_primary() -> None:
+        if spotlight_tracked:
+            await course_actions_builder(
+                spotlight,
+                spotlight_id,
+                str(spotlight.get("url") or "").strip(),
+            ).on_view()
+            return
+        await on_track(spotlight_id, "interested")
+
+    render_explore_spotlight_strip(
+        title=str(spotlight.get("title") or ""),
+        description=str(spotlight.get("description") or ""),
+        shared_by=str(spotlight.get("created_by") or ""),
+        on_primary=_spotlight_primary,
+    )
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -74,13 +174,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         state = ExplorePageState()
 
-        with render_catalog_scope(variant="explore").classes("lp-container"):
+        explore_scope_classes = "lp-container lp-explore-cinema" if settings.feature_explore_cinema else "lp-container"
+        with render_catalog_scope(variant="explore").classes(explore_scope_classes):
             with ui.row().classes("w-full items-center"):
                 ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
             # Sticky topbar uses a negative top margin; reserve vertical space so it
             # doesn't visually overlap this subtitle line.
             ui.element("div").classes("h-3")
             search_telemetry_emitted = False
+            show_all_categories = False
 
             with ui.dialog() as share_dialog:
                 with ui.card().classes("lp-card lp-dialog w-[min(540px,95vw)]"):
@@ -116,7 +218,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 on_open_filters=lambda: filter_controls.dialog.open(),
                 on_open_share=share_dialog.open,
             )
+            categories_btn = ui.button("More categories").props("outline dense")
             filter_controls = render_explore_filters_dialog(on_reset=_reset_filters)
+
+            def _toggle_categories() -> None:
+                nonlocal show_all_categories
+                show_all_categories = not show_all_categories
+                categories_btn.text = "Fewer categories" if show_all_categories else "More categories"
+                categories_btn.update()
+                list_view.refresh()
+
+            categories_btn.on("click", lambda *_: _toggle_categories())
 
             def _refresh_meta(*, course_count: int, path_count: int, article_count: int, tab_value: str) -> None:
                 topbar.meta.text = compute_explore_meta_text(
@@ -239,9 +351,41 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     await _select_path(pid)
 
             def _course_actions(course_row: dict[str, Any], course_id: int, course_url: str) -> Any:
+                async def _open_explore_course_details(cid: int, focus: bool) -> None:
+                    _ = str(course_url or "")
+                    bridge_state = CoursesPageState(
+                        review_summary_by_course_id=state.course_review_summary_by_course_id,
+                        recommendation_summary_by_course_id=state.course_recommendation_summary_by_course_id,
+                    )
+                    await open_course_details_dialog(
+                        course_id=int(cid),
+                        focus_reviews=bool(focus),
+                        username=username,
+                        is_admin=is_admin,
+                        state=bridge_state,
+                        load_detail_bundle=lambda _cid, _scope: courses_controller.load_course_detail_bundle(
+                            course_id=int(_cid),
+                            cache_scope=str(_scope or ""),
+                        ),
+                        save_review=lambda _cid, _rating, _text, _scope: courses_controller.save_course_review(
+                            course_id=int(_cid),
+                            rating=int(_rating),
+                            text=str(_text or ""),
+                            cache_scope=str(_scope or ""),
+                        ),
+                        delete_review=lambda _cid, _review_id, _scope: courses_controller.delete_course_review(
+                            course_id=int(_cid),
+                            review_id=int(_review_id),
+                            cache_scope=str(_scope or ""),
+                        ),
+                        normalize_course_view_mode=normalize_course_view_mode,
+                        format_review_summary=lambda row: format_review_summary(row, style="fraction"),
+                        format_short_date=format_short_date,
+                    )
+
                 async def _open_course_details(cid: int, focus: bool) -> None:
-                    suffix = "&view=reviews" if bool(focus) else ""
-                    ui.navigate.to(f"/courses?course_id={int(cid)}{suffix}")
+                    _ = course_row
+                    await _open_explore_course_details(int(cid), bool(focus))
 
                 async def _open_course_recommend(cid: int) -> None:
                     ui.navigate.to(f"/courses?course_id={int(cid)}")
@@ -259,8 +403,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     on_confirm_delete=_open_course_delete,
                 )
 
-            async def _open_article_details(_: dict[str, Any], __: bool) -> None:
-                ui.navigate.to("/articles")
+            async def _open_article_details(article_row: dict[str, Any], focus_reviews: bool) -> None:
+                _open_explore_article_details_dialog(article_row=article_row, focus_reviews=bool(focus_reviews))
 
             @ui.refreshable
             def list_view() -> None:
@@ -367,60 +511,76 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             on_toggle_preview=lambda: None,
                         )
 
-                def _render_path_item(path: dict[str, Any]) -> None:
-                    path_id = int(path.get("id") or 0)
-                    is_tracked = path_id in state.selected_by_path_id
-                    can_edit = bool(is_admin or (str(path.get("created_by") or "") == username))
-                    card_vm = map_path_card_view(
-                        path_row=path,
-                        is_tracked=is_tracked,
-                        detail=state.selected_detail_by_path_id.get(path_id),
-                        tracking_by_course_id=dict(state.tracking_by_course_id or {}),
-                        review_summary_row=state.path_review_summary_by_id.get(path_id),
-                        recommendation_summary_row=state.path_recommendation_summary_by_id.get(path_id),
-                    )
-                    track_toggle_label = "Unselect" if is_tracked else "Select"
+                def _render_path_item(path: dict[str, Any], *, item_classes: str) -> None:
+                    with ui.element("div").classes(item_classes):
+                        path_id = int(path.get("id") or 0)
+                        is_tracked = path_id in state.selected_by_path_id
+                        can_edit = bool(is_admin or (str(path.get("created_by") or "") == username))
+                        card_vm = map_path_card_view(
+                            path_row=path,
+                            is_tracked=is_tracked,
+                            detail=state.selected_detail_by_path_id.get(path_id),
+                            tracking_by_course_id=dict(state.tracking_by_course_id or {}),
+                            review_summary_row=state.path_review_summary_by_id.get(path_id),
+                            recommendation_summary_row=state.path_recommendation_summary_by_id.get(path_id),
+                        )
+                        track_toggle_label = "Unselect" if is_tracked else "Select"
 
-                    async def _on_track_toggle() -> None:
-                        await _toggle_path_selection(path_id)
+                        async def _on_track_toggle() -> None:
+                            await _toggle_path_selection(path_id)
 
-                    render_path_card(
-                        path_row=path,
-                        card_class_suffix=card_vm.card_class_suffix,
-                        is_new=card_vm.is_new,
-                        is_updated=card_vm.is_updated,
-                        rating_badge=card_vm.rating_badge,
-                        recommendation_badge=card_vm.recommendation_badge,
-                        can_edit=can_edit,
-                        shared_by=card_vm.shared_by,
-                        tracking_label_text=card_vm.tracking_label_text,
-                        tracking_chip_cls=card_vm.tracking_chip_cls,
-                        completed=card_vm.completed,
-                        total_courses=card_vm.total_courses,
-                        progress=card_vm.progress,
-                        milestone=card_vm.milestone,
-                        milestone_class=card_vm.milestone_class,
-                        impact=card_vm.impact,
-                        next_title=card_vm.next_title,
-                        on_review=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}&view=reviews"),
-                        on_recommend=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
-                        on_copy_link=lambda _pid=path_id: copy_path_link(path_id=int(_pid)),
-                        on_edit=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
-                        on_delete=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
-                        on_view=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
-                        on_track_toggle=_on_track_toggle,
-                        track_toggle_label=track_toggle_label,
-                    )
+                        async def _open_path_details_inline() -> None:
+                            _open_explore_path_details_dialog(path_row=path, card_vm=card_vm)
+
+                        render_path_card(
+                            path_row=path,
+                            card_class_suffix=f"{card_vm.card_class_suffix} lp-path-card--compact",
+                            is_new=card_vm.is_new,
+                            is_updated=card_vm.is_updated,
+                            rating_badge=card_vm.rating_badge,
+                            recommendation_badge=card_vm.recommendation_badge,
+                            can_edit=can_edit,
+                            shared_by=card_vm.shared_by,
+                            tracking_label_text=card_vm.tracking_label_text,
+                            tracking_chip_cls=card_vm.tracking_chip_cls,
+                            completed=card_vm.completed,
+                            total_courses=card_vm.total_courses,
+                            progress=card_vm.progress,
+                            milestone=card_vm.milestone,
+                            milestone_class=card_vm.milestone_class,
+                            impact=card_vm.impact,
+                            next_title=card_vm.next_title,
+                            on_review=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}&view=reviews"),
+                            on_recommend=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
+                            on_copy_link=lambda _pid=path_id: copy_path_link(path_id=int(_pid)),
+                            on_edit=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
+                            on_delete=lambda _pid=path_id: ui.navigate.to(f"/paths?path_id={int(_pid)}"),
+                            on_view=_open_path_details_inline,
+                            on_track_toggle=_on_track_toggle,
+                            track_toggle_label=track_toggle_label,
+                        )
 
                 if shown_courses:
                     with ui.column().classes("w-full gap-2 lp-courses-section"):
                         ui.label("Course picks").classes("lp-courses-section-title")
+                    _render_explore_course_spotlight(
+                        enabled=settings.feature_explore_cinema,
+                        shown_courses=shown_courses,
+                        tracking_by_course_id=state.tracking_by_course_id,
+                        course_actions_builder=_course_actions,
+                        on_track=_set_tracking,
+                    )
                     render_courses_catalog(
                         shown_page=shown_courses,
                         render_course_item=_render_course_item,
                         featured_title="Spotlight course",
                         featured_subtitle="Top match for your current query",
                         collection_title="More courses",
+                        show_featured=not settings.feature_explore_cinema,
+                        max_groups=None if show_all_categories else 6,
+                        min_group_size=2,
+                        overflow_group_title="More for you",
+                        prioritize_larger_groups=True,
                     )
 
                 if shown_paths:
@@ -430,11 +590,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     featured_path = shown_paths[0]
                     remaining_paths = shown_paths[1:]
                     with ui.element("div").classes("lp-courses-grid"):
-                        _render_path_item(featured_path)
+                        _render_path_item(featured_path, item_classes="lp-courses-grid-item")
                     if remaining_paths:
-                        with ui.grid().classes("w-full gap-3 md:grid-cols-2"):
+                        with ui.element("div").classes("lp-courses-grid"):
                             for row in remaining_paths:
-                                _render_path_item(row)
+                                _render_path_item(row, item_classes="lp-courses-grid-item")
 
                 if shown_articles:
                     grouped_articles: list[dict[str, Any]] = []
@@ -443,38 +603,47 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         group_name = str(tags[0] if tags else "General")
                         grouped_articles.append({**row, "_explore_group": group_name})
 
-                    def _render_article_item(article: dict[str, Any]) -> None:
-                        article_id = int(article.get("id") or 0)
-                        vm = map_article_card_view(
-                            article_row=article,
-                            review_summary_row=state.article_review_summary_by_article_id.get(article_id),
-                        )
-                        actions = build_article_card_actions(
-                            article_row=article,
-                            on_open_details=_open_article_details,
-                        )
-                        render_article_card(
-                            article_row=article,
-                            is_new=vm.is_new,
-                            tags=vm.tags,
-                            summary_text=vm.summary_text,
-                            subtitle_text=vm.subtitle_text,
-                            thumbnail_url=vm.thumbnail_url,
-                            view_action=actions.on_view,
-                            review_action=actions.on_review,
-                        )
+                    def _render_article_item(article: dict[str, Any], *, item_classes: str) -> None:
+                        with ui.element("div").classes(item_classes):
+                            article_id = int(article.get("id") or 0)
+                            vm = map_article_card_view(
+                                article_row=article,
+                                review_summary_row=state.article_review_summary_by_article_id.get(article_id),
+                            )
+                            actions = build_article_card_actions(
+                                article_row=article,
+                                on_open_details=_open_article_details,
+                            )
+                            render_article_card(
+                                article_row=article,
+                                is_new=vm.is_new,
+                                tags=vm.tags[:4],
+                                summary_text=vm.summary_text,
+                                subtitle_text=vm.subtitle_text,
+                                thumbnail_url=vm.thumbnail_url,
+                                view_action=actions.on_view,
+                                review_action=actions.on_review,
+                            )
 
                     featured_article = grouped_articles[0]
                     remaining_articles = grouped_articles[1:]
                     with ui.column().classes("w-full gap-2 lp-courses-section"):
                         ui.label("Article picks").classes("lp-courses-section-title")
                         ui.label("Top match for your current query").classes("lp-courses-section-subtitle")
-                        _render_article_item(featured_article)
+                        with ui.element("div").classes("lp-courses-grid"):
+                            _render_article_item(
+                                featured_article,
+                                item_classes="lp-courses-grid-item lp-courses-grid-item--featured",
+                            )
 
                     if remaining_articles:
                         render_explore_article_rails(
                             shown_articles=remaining_articles,
                             render_article_item=_render_article_item,
+                            max_groups=None if show_all_categories else 6,
+                            min_group_size=2,
+                            overflow_group_title="More for you",
+                            prioritize_larger_groups=True,
                         )
 
             def _on_search_change(*_args: Any) -> None:

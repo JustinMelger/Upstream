@@ -156,6 +156,11 @@ def apply_theme() -> None:
           gap: var(--lp-space-3);
         }
 
+        .lp-header-inner.lp-header-inner--explore-cinema {
+          width: calc(100vw - 24px);
+          max-width: calc(100vw - 24px);
+        }
+
         .lp-header-inner .text-lg {
           font-family: var(--lp-font-display);
           font-weight: 700;
@@ -532,6 +537,304 @@ def apply_theme() -> None:
           min-height: 244px;
         }
 
+        .lp-catalog--explore .lp-courses-grid-item .lp-course-card,
+        .lp-catalog--explore .lp-courses-grid-item .lp-path-card,
+        .lp-catalog--explore .lp-courses-grid-item .lp-article-card,
+        .lp-catalog--explore .lp-courses-rail-item .lp-course-card,
+        .lp-catalog--explore .lp-courses-rail-item .lp-path-card,
+        .lp-catalog--explore .lp-courses-rail-item .lp-article-card {
+          width: 100%;
+          min-height: 214px;
+        }
+
+        .lp-catalog--explore .lp-course-card,
+        .lp-catalog--explore .lp-path-card,
+        .lp-catalog--explore .lp-article-card {
+          padding: 14px 14px 12px;
+        }
+
+        .lp-catalog--explore .lp-card-title {
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+          overflow: hidden;
+        }
+
+        .lp-catalog--explore .lp-course-summary,
+        .lp-catalog--explore .lp-path-description {
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          overflow: hidden;
+        }
+
+        .lp-catalog--explore .lp-path-next-line {
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+          overflow: hidden;
+        }
+
+        .lp-catalog--explore .lp-article-summary-chip {
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+          overflow: hidden;
+          white-space: normal;
+          line-height: 1.35;
+        }
+
+        .lp-catalog--explore .lp-course-media-slot,
+        .lp-catalog--explore .lp-article-media-slot {
+          width: 196px;
+          padding-top: 26px;
+          padding-right: 12px;
+        }
+
+        .lp-catalog--explore .lp-course-thumb--side {
+          width: 196px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-section-title {
+          font-size: 1.32rem;
+          text-transform: none;
+          letter-spacing: 0.01em;
+          margin-top: 6px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema.lp-container {
+          width: calc(100vw - 24px);
+          max-width: calc(100vw - 24px);
+          margin-left: auto;
+          margin-right: auto;
+          overflow-x: clip;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-section-subtitle {
+          font-size: 0.95rem;
+          color: rgba(220, 225, 235, 0.72);
+          margin-top: -2px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-grid,
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-rail {
+          display: grid;
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(320px, 320px);
+          gap: 16px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-snap-type: x mandatory;
+          padding: 8px 2px 18px;
+          scrollbar-width: none;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-grid::-webkit-scrollbar,
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-rail::-webkit-scrollbar {
+          display: none;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-grid-item,
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-rail-item {
+          scroll-snap-align: start;
+          width: 320px;
+          flex: 0 0 320px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-grid-item--featured {
+          grid-column: auto;
+          width: 320px;
+          flex: 0 0 320px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card,
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-card {
+          width: 320px;
+          min-height: 338px;
+          border-radius: 18px;
+          overflow: hidden;
+          box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+          transition: transform 160ms ease, box-shadow 180ms ease;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card {
+          min-height: 320px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card:hover,
+        .lp-catalog--explore.lp-explore-cinema .lp-path-card:hover,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-card:hover {
+          transform: scale(1.045);
+          box-shadow: 0 28px 90px rgba(0, 0, 0, 0.72);
+          z-index: 5;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-title {
+          -webkit-line-clamp: 2;
+          font-size: 1.08rem;
+          padding-right: 0;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-body {
+          font-size: 0.92rem;
+          line-height: 1.36;
+          max-width: 34ch;
+          -webkit-line-clamp: 2;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-summary,
+        .lp-catalog--explore.lp-explore-cinema .lp-path-description,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-summary-chip {
+          display: none;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-status-line {
+          margin-top: 4px;
+          margin-bottom: 2px;
+          font-size: 0.78rem;
+          letter-spacing: 0.04em;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card-main,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-card-main {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-card-content,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-card-content {
+          order: 2;
+          padding-right: 0;
+          display: flex;
+          flex-direction: column;
+          min-height: 132px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-media-slot,
+        .lp-catalog--explore.lp-explore-cinema .lp-article-media-slot {
+          order: 1;
+          width: 100%;
+          margin-left: 0;
+          padding: 0;
+          justify-content: stretch;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-course-thumb--side {
+          width: 100%;
+          height: 192px;
+          border-radius: 12px;
+          object-fit: cover;
+          border-color: rgba(186, 204, 227, 0.2);
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-topright {
+          top: 10px;
+          right: 10px;
+          padding: 2px 6px;
+          gap: 6px;
+          border-radius: 999px;
+          background: rgba(7, 16, 32, 0.52);
+          border: 1px solid rgba(186, 204, 227, 0.16);
+          backdrop-filter: blur(8px);
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-social-strip,
+        .lp-catalog--explore.lp-explore-cinema .lp-card-subtitle {
+          font-size: 0.8rem;
+          opacity: 0.76;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-social-strip .lp-meta-chip:nth-of-type(n+3) {
+          display: none;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-taxonomy .lp-meta-chip:nth-of-type(n+3),
+        .lp-catalog--explore.lp-explore-cinema .lp-article-tag-row .lp-meta-chip:nth-of-type(n+3),
+        .lp-catalog--explore.lp-explore-cinema .lp-path-meta-row .lp-meta-chip:nth-of-type(n+3) {
+          display: none;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-actions {
+          margin-top: auto;
+          min-height: 42px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-card-actions .q-btn {
+          border-radius: 999px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-rail-item--hero .lp-course-card {
+          border-color: rgba(116, 176, 228, 0.34);
+          box-shadow: 0 24px 74px rgba(21, 48, 92, 0.34), 0 22px 60px rgba(0, 0, 0, 0.55);
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip {
+          width: 100%;
+          margin: 4px 0 8px;
+          padding: 10px 12px;
+          border-radius: 14px;
+          border: 1px solid rgba(116, 176, 228, 0.24);
+          background:
+            radial-gradient(120% 140% at 10% 0%, rgba(116, 176, 228, 0.16), transparent 58%),
+            linear-gradient(145deg, rgba(16, 27, 44, 0.78), rgba(13, 22, 35, 0.72));
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-strip > .column {
+          max-width: 900px;
+          min-width: 0;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-eyebrow {
+          font-size: 0.72rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: rgba(116, 176, 228, 0.92);
+          font-weight: 700;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-title {
+          font-size: 1.02rem;
+          font-weight: 700;
+          line-height: 1.25;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-body {
+          font-size: 0.86rem;
+          line-height: 1.35;
+          color: rgba(220, 225, 235, 0.8);
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+          overflow: hidden;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-explore-spotlight-meta {
+          font-size: 0.78rem;
+          color: rgba(220, 225, 235, 0.66);
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-sticky-controls {
+          margin: 0 0 8px;
+          padding: 10px 12px;
+          background: linear-gradient(180deg, rgba(12, 21, 35, 0.68), rgba(11, 20, 33, 0.52));
+          border-color: rgba(186, 204, 227, 0.08);
+          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-topbar-group--secondary {
+          opacity: 0.84;
+        }
+
+        .lp-catalog--explore.lp-explore-cinema .lp-courses-toolbar-controls {
+          border-left-color: rgba(186, 204, 227, 0.05);
+        }
+
         .lp-courses-toolbar-controls {
           display: inline-flex;
           align-items: center;
@@ -577,6 +880,11 @@ def apply_theme() -> None:
           }
           .lp-courses-grid-item--featured .lp-course-card {
             min-height: 304px;
+          }
+          .lp-catalog--explore .lp-courses-grid-item--featured .lp-course-card,
+          .lp-catalog--explore .lp-courses-grid-item--featured .lp-path-card,
+          .lp-catalog--explore .lp-courses-grid-item--featured .lp-article-card {
+            min-height: 236px;
           }
         }
 
@@ -630,6 +938,25 @@ def apply_theme() -> None:
           }
           .lp-courses-rail {
             grid-auto-columns: minmax(320px, 82vw);
+          }
+          .lp-catalog--explore .lp-course-media-slot,
+          .lp-catalog--explore .lp-article-media-slot {
+            width: 100%;
+            padding-right: 0;
+            padding-top: 0;
+          }
+          .lp-catalog--explore .lp-course-thumb--side {
+            width: min(100%, 360px);
+          }
+          .lp-catalog--explore.lp-explore-cinema.lp-container {
+            width: calc(100vw - 12px);
+            max-width: calc(100vw - 12px);
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .lp-header-inner.lp-header-inner--explore-cinema {
+            width: calc(100vw - 12px);
+            max-width: calc(100vw - 12px);
           }
         }
 
@@ -1132,6 +1459,12 @@ def apply_theme() -> None:
           border-color: rgba(186, 204, 227, 0.22);
           background: rgba(255, 255, 255, 0.028);
           color: rgba(226, 234, 244, 0.76);
+        }
+
+        .lp-meta-chip--rating {
+          border-color: rgba(255, 204, 102, 0.36);
+          background: rgba(255, 204, 102, 0.11);
+          color: rgba(255, 214, 137, 0.96);
         }
 
         .q-card {

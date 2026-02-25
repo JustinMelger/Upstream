@@ -43,7 +43,9 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
     with ui.header().classes("lp-header"):
         # Keep header content aligned with `.lp-container` so page facets/cards
         # visually line up with the page title.
-        with ui.row().classes("lp-header-inner"):
+        with ui.row().classes("lp-header-inner") as header_row:
+            if str(title or "") == "Explore" and bool(settings.feature_explore_cinema):
+                header_row.classes("lp-header-inner--explore-cinema")
             ui.label(title).classes("text-lg font-semibold")
             with ui.row().classes("items-center gap-2"):
                 # A compact menu keeps navigation usable on small screens.
@@ -65,18 +67,6 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                         profile_item.classes("lp-nav-active")
 
                     ui.separator()
-                    courses_item = ui.menu_item("Courses", on_click=lambda: _nav_click(label="courses", target="/courses"))
-                    if _is_path_prefix_active("/courses"):
-                        courses_item.classes("lp-nav-active")
-                    paths_item = ui.menu_item("Paths", on_click=lambda: _nav_click(label="paths", target="/paths"))
-                    if _is_path_prefix_active("/paths"):
-                        paths_item.classes("lp-nav-active")
-                    if settings.feature_articles:
-                        articles_item = ui.menu_item(
-                            "Articles", on_click=lambda: _nav_click(label="articles", target="/articles")
-                        )
-                        if _is_path_prefix_active("/articles"):
-                            articles_item.classes("lp-nav-active")
                     if settings.feature_ai_curator:
                         ai_item = ui.menu_item("AI Curator", on_click=lambda: _nav_click(label="ai", target="/ai"))
                         if _is_path_prefix_active("/ai"):
