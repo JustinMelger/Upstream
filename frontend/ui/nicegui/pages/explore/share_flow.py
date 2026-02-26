@@ -82,9 +82,7 @@ def create_explore_share_bindings(
     open_article_share_dialog = build_share_article_dialog(
         username=username,
         on_submit=_submit_article_share,
-        on_suggest_from_url=lambda url: controller.suggest_article_from_url(
-            url_value=ExploreUrlValue(url=str(url or ""))
-        ),
+        on_suggest_from_url=lambda url: controller.suggest_article_from_url(url_value=ExploreUrlValue(url=str(url or ""))),
         is_duplicate_url=lambda url: controller.is_duplicate_article_url(
             state=state,
             url_value=ExploreUrlValue(url=str(url or "")),

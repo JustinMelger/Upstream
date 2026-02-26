@@ -128,7 +128,17 @@ def test_legacy_catalog_compat_modules_are_removed() -> None:
 
 
 def test_page_modules_do_not_navigate_to_legacy_discovery_routes() -> None:
-    forbidden = {"/courses", "/paths", "/articles", "/manage/courses", "/manage/paths", "/manage/articles", "/learning", "/activity", "/insights"}
+    forbidden = {
+        "/courses",
+        "/paths",
+        "/articles",
+        "/manage/courses",
+        "/manage/paths",
+        "/manage/articles",
+        "/learning",
+        "/activity",
+        "/insights",
+    }
     for page_path in sorted(_PAGES_ROOT.glob("*/page.py")):
         tree = _parse(page_path)
         for node in ast.walk(tree):
