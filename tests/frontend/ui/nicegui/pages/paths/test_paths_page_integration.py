@@ -7,8 +7,9 @@ from typing import Any
 
 import pytest
 
+from frontend.ui.nicegui.components import catalog_hero as catalog_hero_components, layout as layout_components
 from frontend.ui.nicegui.core import errors as core_errors
-from frontend.ui.nicegui.pages.paths import page as paths_page
+from frontend.ui.nicegui.pages.paths import page as paths_page, sections as paths_sections
 
 
 class _FakeElement:
@@ -71,8 +72,6 @@ class _FakeRefreshable:
 @dataclass(slots=True)
 class _RouteInit:
     initial_scope: str = "all"
-    initial_path_id: int = 0
-    initial_dialog_mode: str = "full"
 
 
 class _FakeUi:
@@ -125,6 +124,9 @@ class _FakeUi:
 async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     monkeypatch.setattr(paths_page, "ui", fake_ui)
+    monkeypatch.setattr(layout_components, "ui", fake_ui)
+    monkeypatch.setattr(catalog_hero_components, "ui", fake_ui)
+    monkeypatch.setattr(paths_sections, "ui", fake_ui)
     monkeypatch.setattr(core_errors, "ui", fake_ui)
     monkeypatch.setattr(paths_page, "app", SimpleNamespace(storage=SimpleNamespace(user={})))
 
@@ -141,9 +143,6 @@ async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch:
     monkeypatch.setattr(paths_page, "require_user", _require_user)
     monkeypatch.setattr(paths_page, "collect_active_filter_chips", lambda **_kwargs: [])
     monkeypatch.setattr(paths_page, "resolve_paths_route_init", lambda **_kwargs: _RouteInit())
-    monkeypatch.setattr(paths_page, "get_path_intent", lambda **_kwargs: None)
-    monkeypatch.setattr(paths_page, "intent_matches_path", lambda *_args, **_kwargs: False)
-    monkeypatch.setattr(paths_page, "pop_path_intent", lambda **_kwargs: None)
 
     async def _open_details_dialog(**_kwargs) -> None:  # noqa: ANN003
         return None
@@ -153,9 +152,9 @@ async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch:
     captured_track_actions: list[Any] = []
 
     def _capture_path_card(**kwargs):  # noqa: ANN001
-        captured_track_actions.append(kwargs["on_track_toggle"])
+        captured_track_actions.append(kwargs["actions"].on_track_toggle)
 
-    monkeypatch.setattr(paths_page, "render_path_card", _capture_path_card)
+    monkeypatch.setattr(paths_sections, "render_path_card", _capture_path_card)
 
     q = _FakeElement(value="")
     scope = _FakeElement(value="all")
@@ -217,7 +216,7 @@ async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch:
 
     api = _Api()
     paths_page.register(store=object(), api=api)  # type: ignore[arg-type]
-    handler = fake_ui.routes["/paths"]
+    handler = fake_ui.routes["/manage/paths"]
     await handler()
 
     assert captured_track_actions, "Expected at least one rendered path card action"
@@ -229,6 +228,9 @@ async def test_paths_track_does_not_refresh_list_before_select_post(monkeypatch:
 async def test_paths_select_keeps_optimistic_state_when_selected_reload_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     monkeypatch.setattr(paths_page, "ui", fake_ui)
+    monkeypatch.setattr(layout_components, "ui", fake_ui)
+    monkeypatch.setattr(catalog_hero_components, "ui", fake_ui)
+    monkeypatch.setattr(paths_sections, "ui", fake_ui)
     monkeypatch.setattr(core_errors, "ui", fake_ui)
     monkeypatch.setattr(paths_page, "app", SimpleNamespace(storage=SimpleNamespace(user={})))
 
@@ -245,9 +247,6 @@ async def test_paths_select_keeps_optimistic_state_when_selected_reload_fails(mo
     monkeypatch.setattr(paths_page, "require_user", _require_user)
     monkeypatch.setattr(paths_page, "collect_active_filter_chips", lambda **_kwargs: [])
     monkeypatch.setattr(paths_page, "resolve_paths_route_init", lambda **_kwargs: _RouteInit())
-    monkeypatch.setattr(paths_page, "get_path_intent", lambda **_kwargs: None)
-    monkeypatch.setattr(paths_page, "intent_matches_path", lambda *_args, **_kwargs: False)
-    monkeypatch.setattr(paths_page, "pop_path_intent", lambda **_kwargs: None)
 
     async def _open_details_dialog(**_kwargs) -> None:  # noqa: ANN003
         return None
@@ -258,10 +257,10 @@ async def test_paths_select_keeps_optimistic_state_when_selected_reload_fails(mo
     captured_labels: list[str] = []
 
     def _capture_path_card(**kwargs):  # noqa: ANN001
-        captured_track_actions.append(kwargs["on_track_toggle"])
-        captured_labels.append(str(kwargs["tracking_label_text"]))
+        captured_track_actions.append(kwargs["actions"].on_track_toggle)
+        captured_labels.append(str(kwargs["display"].tracking_label_text))
 
-    monkeypatch.setattr(paths_page, "render_path_card", _capture_path_card)
+    monkeypatch.setattr(paths_sections, "render_path_card", _capture_path_card)
 
     q = _FakeElement(value="")
     scope = _FakeElement(value="all")
@@ -326,7 +325,7 @@ async def test_paths_select_keeps_optimistic_state_when_selected_reload_fails(mo
 
     api = _Api()
     paths_page.register(store=object(), api=api)  # type: ignore[arg-type]
-    handler = fake_ui.routes["/paths"]
+    handler = fake_ui.routes["/manage/paths"]
     await handler()
 
     assert captured_track_actions, "Expected at least one rendered path card action"

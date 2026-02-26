@@ -17,34 +17,47 @@ def render_paths_topbar(
     Returns:
         Tuple of `(search_input, scope_filter, sort_filter, meta_label)`.
     """
-    with ui.row().classes("lp-topbar"):
-        search_input = ui.input("Search paths").props("clearable debounce=300").style("flex: 1")
-        with ui.row().classes("items-center gap-2").style("margin-left: auto"):
-            ui.button("Share", on_click=on_open_create_dialog).props("dense")
-            scope_filter = (
-                ui.radio(
-                    {"all": "All", "selected": "Selected"},
-                    value=initial_scope,
-                )
-                .props("inline dense")
-                .classes("text-sm")
+    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar w-full gap-2"):
+        with ui.row().classes("w-full items-center gap-2"):
+            search_input = (
+                ui.input("Search paths")
+                .props("clearable debounce=300 dense")
+                .classes("lp-topbar-search lp-courses-search")
+                .style("flex: 1")
             )
-            sort_filter = (
-                ui.select(
-                    {
-                        "": "Recommended",
-                        "top_rated": "Top rated",
-                        "most_reviewed": "Most reviewed",
-                        "newest": "Recently added",
-                        "name_az": "Name A-Z",
-                    },
-                    value="",
-                    label=None,
+            meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
+        with ui.row().classes("w-full items-center justify-end gap-2 flex-wrap"):
+            with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                ui.label("View").classes("lp-topbar-group-label")
+                scope_filter = (
+                    ui.radio(
+                        {"all": "All", "selected": "Selected"},
+                        value=initial_scope,
+                    )
+                    .props("inline dense")
+                    .classes("text-sm lp-topbar-secondary-control")
                 )
-                .props("dense")
-                .style("min-width: 180px")
-            )
-            meta = ui.label("").classes("lp-topbar-meta")
+            with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                ui.label("Sort").classes("lp-topbar-group-label")
+                sort_filter = (
+                    ui.select(
+                        {
+                            "": "Recommended",
+                            "top_rated": "Top rated",
+                            "most_reviewed": "Most reviewed",
+                            "newest": "Recently added",
+                            "name_az": "Name A-Z",
+                        },
+                        value="",
+                        label=None,
+                    )
+                    .props("dense")
+                    .style("min-width: 180px")
+                    .classes("lp-topbar-secondary-control")
+                )
+            with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
+                with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                    ui.menu_item("Share path", on_open_create_dialog)
     return search_input, scope_filter, sort_filter, meta
 
 

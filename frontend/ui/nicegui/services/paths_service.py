@@ -159,6 +159,36 @@ async def load_path_recommendation_summaries(*, api: ApiClient, path_ids: list[i
     return out
 
 
+def _selected_path_ids(selected_rows: list[dict[str, Any]]) -> list[int]:
+    """Extract numeric path ids from selected rows."""
+    out: list[int] = []
+    for row in selected_rows:
+        raw = row.get("id")
+        if raw is None:
+            continue
+        try:
+            out.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+async def _load_selected_path_details(
+    *,
+    api: ApiClient,
+    path_ids: list[int],
+) -> dict[int, dict[str, Any]]:
+    """Load detail payloads for selected path ids."""
+    if not path_ids:
+        return {}
+    detail_results = await asyncio.gather(*(api.get(f"/paths/{pid}") for pid in path_ids), return_exceptions=True)
+    details: dict[int, dict[str, Any]] = {}
+    for pid, payload in zip(path_ids, detail_results, strict=False):
+        if isinstance(payload, dict):
+            details[int(pid)] = payload
+    return details
+
+
 async def load_my_paths_page_data(
     *,
     api: ApiClient,
@@ -174,27 +204,7 @@ async def load_my_paths_page_data(
     )
     selected = list(selected_result or [])
     tracking_by_course_id = index_tracking_by_course_id(list(tracking_result or []))
-
-    path_ids: list[int] = []
-    for row in selected:
-        if not isinstance(row, dict):
-            continue
-        raw = row.get("id")
-        if raw is None:
-            continue
-        try:
-            path_ids.append(int(raw))
-        except (TypeError, ValueError):
-            continue
-
-    details: dict[int, dict[str, Any]] = {}
-    if path_ids:
-        # Fetch path details in parallel so the UI can compute progress-at-a-glance.
-        detail_results = await asyncio.gather(*(api.get(f"/paths/{pid}") for pid in path_ids), return_exceptions=True)
-        for pid, payload in zip(path_ids, detail_results, strict=False):
-            if isinstance(payload, Exception):
-                continue
-            if isinstance(payload, dict):
-                details[int(pid)] = payload
+    path_ids = _selected_path_ids(selected)
+    details = await _load_selected_path_details(api=api, path_ids=path_ids)
 
     return selected, details, tracking_by_course_id

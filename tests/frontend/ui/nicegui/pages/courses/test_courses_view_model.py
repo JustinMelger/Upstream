@@ -20,6 +20,7 @@ def test_map_course_card_view_for_tracked_updated_course() -> None:
         "created_by": "admin",
         "created_at": "2026-02-18T00:00:00Z",
         "updated_at": "2026-02-20T00:00:00Z",
+        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     }
     tracked = {"status": "in_progress"}
     vm = view_model.map_course_card_view(
@@ -36,11 +37,22 @@ def test_map_course_card_view_for_tracked_updated_course() -> None:
     assert vm.recommendation_badge == "↗ 2 rec"
     assert vm.tracking_label_text == "In Progress"
     assert vm.tracking_chip_cls.startswith("lp-chip")
+    assert vm.has_video_preview is True
+    assert vm.video_embed_url == "https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0"
+    assert vm.thumbnail_url == "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
+    assert vm.thumbnail_fallback_url == "https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
 
 
 @pytest.mark.unit
 def test_map_course_card_view_for_untracked_course() -> None:
-    row = {"id": 7, "created_by": "alice", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}
+    row = {
+        "id": 7,
+        "created_by": "alice",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "url": "https://example.com/course",
+        "preview_image_url": "https://cdn.example.com/cover.png",
+    }
     vm = view_model.map_course_card_view(
         course_row=row,
         tracked_row=None,
@@ -51,3 +63,28 @@ def test_map_course_card_view_for_untracked_course() -> None:
     assert vm.rating_badge == ""
     assert vm.recommendation_badge == ""
     assert vm.tracking_label_text == "Not tracked"
+    assert vm.has_video_preview is False
+    assert vm.video_embed_url == ""
+    assert vm.thumbnail_url == "https://cdn.example.com/cover.png"
+    assert vm.thumbnail_fallback_url == ""
+
+
+@pytest.mark.unit
+def test_map_course_card_view_uses_favicon_fallback_for_non_youtube_without_preview() -> None:
+    row = {
+        "id": 9,
+        "created_by": "alice",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "url": "https://fastapi.tiangolo.com/tutorial/testing/",
+        "preview_image_url": "",
+    }
+    vm = view_model.map_course_card_view(
+        course_row=row,
+        tracked_row=None,
+        review_summary_row=None,
+        recommendation_summary_row=None,
+    )
+    assert vm.has_video_preview is False
+    assert vm.thumbnail_url == "https://www.google.com/s2/favicons?domain=fastapi.tiangolo.com&sz=256"
+    assert vm.thumbnail_fallback_url == ""

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
-from frontend.ui.nicegui.pages.ai_curator.ui_glue import (
+from frontend.ui.nicegui.services.ai_curator_transforms import (
     build_path_payload,
     draft_course_to_create_payload,
     normalize_draft_courses,

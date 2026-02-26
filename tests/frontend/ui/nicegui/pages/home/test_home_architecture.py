@@ -30,12 +30,16 @@ def test_home_pure_modules_do_not_import_nicegui() -> None:
 
 
 @pytest.mark.unit
-def test_home_page_imports_controller_and_state() -> None:
+def test_home_page_redirect_module_stays_decoupled_from_home_page_stack() -> None:
     imports = _imports_for(_HOME_DIR / "page.py")
-    assert "frontend.ui.nicegui.pages.home.controller" in imports
-    assert "frontend.ui.nicegui.pages.home.sections" in imports
-    assert "frontend.ui.nicegui.pages.home.state" in imports
-    assert "frontend.ui.nicegui.pages.home.transitions" in imports
+    assert "nicegui" in imports
+    assert "frontend.ui.nicegui.core.api_client" in imports
+    assert "frontend.ui.nicegui.core.guards" in imports
+    assert "frontend.ui.nicegui.core.session_store" in imports
+    assert "frontend.ui.nicegui.pages.home.controller" not in imports
+    assert "frontend.ui.nicegui.pages.home.sections" not in imports
+    assert "frontend.ui.nicegui.pages.home.state" not in imports
+    assert "frontend.ui.nicegui.pages.home.transitions" not in imports
 
 
 @pytest.mark.unit

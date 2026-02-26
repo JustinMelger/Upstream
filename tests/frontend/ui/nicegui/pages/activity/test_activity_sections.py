@@ -69,3 +69,31 @@ def test_render_activity_items_skips_invalid_target_id_and_logs_warning(monkeypa
     assert len(warnings) == 1
     assert isinstance(warnings[0], dict)
     assert len(fake_ui.buttons) == 1
+
+
+def test_render_empty_activity_exposes_primary_explore_action(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _fake_render_empty_block(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(activity_sections, "render_empty_block", _fake_render_empty_block)
+
+    activity_sections.render_empty_activity(current_tab="team", on_primary=lambda: None)
+
+    assert captured.get("primary_label") == "Explore"
+    assert callable(captured.get("on_primary"))
+
+
+def test_render_activity_error_exposes_retry_action(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _fake_render_error_block(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(activity_sections, "render_error_block", _fake_render_error_block)
+
+    activity_sections.render_activity_error(message="boom", on_retry=lambda: None)
+
+    assert captured.get("retry_label") == "Retry"
+    assert callable(captured.get("on_retry"))

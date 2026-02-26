@@ -7,7 +7,7 @@ from backend.database.async_repositories.articles import ArticlesRepository
 from backend.database.async_repositories.auth import AuthRepository
 from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
 from backend.database.async_repositories.course_reviews import CourseReviewsRepository
-from backend.database.async_repositories.courses import CoursesRepository
+from backend.database.async_repositories.courses import CoursesRepository, CreateCoursePayload
 from backend.database.async_repositories.path_recommendations import PathRecommendationsRepository
 from backend.database.async_repositories.path_reviews import PathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository
@@ -91,18 +91,20 @@ async def test_content_review_recommendation_repos_accept_datetime_and_return_is
     now = datetime.now(timezone.utc)
     async with db_session.begin():
         course_id = await courses_repo.create_course(
-            title="Temporal course",
-            description="d",
-            learning_outcomes=None,
-            prerequisites=None,
-            language=None,
-            provider=None,
-            category=None,
-            level=None,
-            duration_hours=None,
-            url=None,
-            created_at=now,
-            created_by="alice",
+            payload=CreateCoursePayload(
+                title="Temporal course",
+                description="d",
+                learning_outcomes=None,
+                prerequisites=None,
+                language=None,
+                provider=None,
+                category=None,
+                level=None,
+                duration_hours=None,
+                url=None,
+                created_at=now,
+                created_by="alice",
+            )
         )
         article_id = await articles_repo.create_article(
             title="Temporal article",

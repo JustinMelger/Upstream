@@ -24,3 +24,4 @@ class CoursesPageUiState:
     visible_count: int = 10
     loading: bool = False
     loaded_once: bool = False
+    preview_course_id: int | None = None

@@ -20,6 +20,12 @@ class NotificationsRepository(RepositoryDateTimeCodec):
     """Read-only repository for notifications/activity feed data."""
 
     def __init__(self, session: AsyncSession):
+        """Initialize the repository.
+
+        Args:
+            session: Active async SQLAlchemy session.
+
+        """
         self.session = session
 
     async def list_recent_course_share_events(self, *, limit: int) -> list[dict]:

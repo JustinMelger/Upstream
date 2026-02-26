@@ -10,6 +10,13 @@ class LoginPageController:
     """Imperative auth workflows for `/login`."""
 
     def __init__(self, *, store: SessionStore, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            store: Session store for token persistence.
+            api: Shared API client.
+
+        """
         self._store = store
         self._api = api
 

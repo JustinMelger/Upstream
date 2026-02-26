@@ -46,26 +46,26 @@ async def login(payload: LoginRequest, auth: AuthService = Depends(get_auth_serv
     if not await auth.has_users():
         if username != settings.bootstrap_admin_username or password != settings.bootstrap_admin_password:
             raise HTTPException(status_code=401, detail="invalid_credentials")
-        user = await auth.create_user(username, password, "admin")
+        created_user = await auth.create_user(username, password, "admin")
         session = await auth.create_session(username)
         return {
             "token": session["token"],
             "expires_at": session["expires_at"],
-            "username": user["username"],
-            "role": user["role"],
+            "username": created_user["username"],
+            "role": created_user["role"],
             "bootstrap": True,
         }
 
-    user = await auth.authenticate_user(username, password)
-    if not user:
+    authenticated_user = await auth.authenticate_user(username, password)
+    if not authenticated_user:
         raise HTTPException(status_code=401, detail="invalid_credentials")
 
     session = await auth.create_session(username)
     return {
         "token": session["token"],
         "expires_at": session["expires_at"],
-        "username": user["username"],
-        "role": user["role"],
+        "username": authenticated_user["username"],
+        "role": authenticated_user["role"],
     }
 
 

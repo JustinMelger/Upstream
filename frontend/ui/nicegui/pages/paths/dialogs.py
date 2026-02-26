@@ -85,9 +85,17 @@ async def open_edit_path_dialog(
     on_save: Callable[[dict[str, Any]], Awaitable[None]],
 ) -> None:
     """Open an edit-path dialog."""
-    ordered_course_ids: list[int] = [
-        int(c.get("id")) for c in (detail.get("courses") or []) if isinstance(c, dict) and c.get("id") is not None
-    ]
+    ordered_course_ids: list[int] = []
+    for row in list(detail.get("courses") or []):
+        if not isinstance(row, dict):
+            continue
+        raw_id = row.get("id")
+        if raw_id is None:
+            continue
+        try:
+            ordered_course_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
 
     with ui.dialog() as edit_dialog, ui.card().classes("lp-card lp-dialog w-[min(900px,95vw)]"):
         ui.label("Edit Path").classes("text-xl font-semibold")

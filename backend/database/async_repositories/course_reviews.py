@@ -34,7 +34,7 @@ class CourseReviewsRepository(RepositoryDateTimeCodec):
                 rating=int(r.rating),
                 text=r.text,
                 created_by=str(r.created_by),
-                created_at=self._as_iso(r.created_at),
+                created_at=self._as_iso_or_empty(r.created_at),
             )
             for r in rows
         ]
@@ -77,7 +77,7 @@ class CourseReviewsRepository(RepositoryDateTimeCodec):
             rating=int(row.rating),
             text=row.text,
             created_by=str(row.created_by),
-            created_at=self._as_iso(row.created_at),
+            created_at=self._as_iso_or_empty(row.created_at),
         )
 
     async def update_review(
@@ -98,7 +98,7 @@ class CourseReviewsRepository(RepositoryDateTimeCodec):
             .where(CourseReviewModel.id == int(review_id))
             .values(rating=int(rating), text=text, created_at=self._as_datetime(created_at))
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def delete_review(self, *, review_id: int) -> int:
         """Delete a review by id.
@@ -107,7 +107,7 @@ class CourseReviewsRepository(RepositoryDateTimeCodec):
             Number of rows deleted.
         """
         result = await self.session.execute(delete(CourseReviewModel).where(CourseReviewModel.id == int(review_id)))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def summaries_for_courses(self, *, course_ids: list[int]) -> dict[int, tuple[float, int]]:
         """Return (avg_rating, count) per course id for the given ids."""
@@ -142,5 +142,5 @@ class CourseReviewsRepository(RepositoryDateTimeCodec):
             rating=int(row.rating),
             text=row.text,
             created_by=str(row.created_by),
-            created_at=self._as_iso(row.created_at),
+            created_at=self._as_iso_or_empty(row.created_at),
         )

@@ -37,8 +37,6 @@ def _index_review_summary(rows: list[dict[str, Any]] | None) -> dict[int, dict[s
     """Index review summary rows by course_id."""
     out: dict[int, dict[str, Any]] = {}
     for r in list(rows or []):
-        if not isinstance(r, dict):
-            continue
         try:
             cid = int(r.get("course_id") or 0)
         except (TypeError, ValueError):
@@ -102,6 +100,114 @@ async def _load_path_detail(*, api: ApiClient, path_id: int) -> dict[str, Any] |
     return dict(detail or {}) if isinstance(detail, dict) else None
 
 
+def _collect_colleague_ids(team_stats_by_user: list[dict[str, Any]]) -> list[str]:
+    """Collect unique colleague ids preserving first-seen order."""
+    colleague_ids: list[str] = []
+    seen_ids: set[str] = set()
+    for row in team_stats_by_user:
+        who = str(row.get("colleague_id") or "").strip()
+        if not who or who in seen_ids:
+            continue
+        seen_ids.add(who)
+        colleague_ids.append(who)
+    return colleague_ids
+
+
+async def _load_team_tracking_rows(*, api: ApiClient, colleague_ids: list[str]) -> list[dict[str, Any]]:
+    """Load tracking rows for all colleagues, skipping failed payloads."""
+    if not colleague_ids:
+        return []
+    payloads = await asyncio.gather(
+        *(api.get("/tracking", params={"colleague_id": who}) for who in colleague_ids),
+        return_exceptions=True,
+    )
+    rows: list[dict[str, Any]] = []
+    for payload in payloads:
+        if not isinstance(payload, list):
+            continue
+        rows.extend(dict(row) for row in payload if isinstance(row, dict))
+    return rows
+
+
+async def _load_admin_panels(*, api: ApiClient) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Load admin-only dashboard panels."""
+    team_stats_by_user, team_recent = await asyncio.gather(
+        api.get("/tracking/stats/users"),
+        api.get("/tracking/recent", params={"limit": 100}),
+    )
+    return list(team_stats_by_user or []), list(team_recent or [])
+
+
+def _snapshot_stats_task(*, api: ApiClient, username: str, is_admin: bool, mode_value: str) -> asyncio.Task[Any]:
+    """Create task loading dashboard snapshot stats for the selected mode."""
+    if is_admin and mode_value == "team":
+        return asyncio.create_task(api.get("/tracking/stats"))
+    return asyncio.create_task(api.get("/tracking/stats", params={"colleague_id": username}))
+
+
+async def _load_base_dashboard_lists(
+    *, api: ApiClient, username: str, is_admin: bool, mode_value: str
+) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    dict[str, int],
+]:
+    """Load always-required dashboard datasets."""
+    courses, paths, selected_paths, tracking_rows, snapshot_stats = await asyncio.gather(
+        api.get("/courses"),
+        api.get("/paths"),
+        api.get("/paths/selected/list"),
+        api.get("/tracking"),
+        _snapshot_stats_task(api=api, username=username, is_admin=is_admin, mode_value=mode_value),
+    )
+    return (
+        list(courses or []),
+        list(paths or []),
+        list(selected_paths or []),
+        list(tracking_rows or []),
+        dict(snapshot_stats or {}),
+    )
+
+
+async def _load_selected_path_details(*, api: ApiClient, selected_paths: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Load details for the first selected paths used on dashboard."""
+    shown = selected_paths[:5]
+    details = await asyncio.gather(*[(_load_path_detail(api=api, path_id=int(p.get("id") or 0))) for p in shown])
+    return [d for d in details if d]
+
+
+def _collect_next_up_ids(
+    *,
+    selected_path_details: list[dict[str, Any]],
+    tracking: dict[int, str],
+) -> list[int]:
+    """Collect first non-completed course per selected path."""
+    next_up_ids: list[int] = []
+    for detail in selected_path_details:
+        for course in list(detail.get("courses") or []):
+            try:
+                cid = int(course.get("id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if cid > 0 and tracking.get(cid, "") != "completed":
+                next_up_ids.append(cid)
+                break
+    return next_up_ids
+
+
+def _collect_recent_course_ids(courses: list[dict[str, Any]]) -> list[int]:
+    """Collect up to 3 recent course ids."""
+    ids: list[int] = []
+    for course in courses[:3]:
+        try:
+            ids.append(int(course.get("id") or 0))
+        except (TypeError, ValueError):
+            continue
+    return ids
+
+
 async def load_dashboard_data(
     *,
     api: ApiClient,
@@ -120,95 +226,29 @@ async def load_dashboard_data(
     Returns:
         `DashboardData` containing all datasets needed to render the dashboard.
     """
-    tasks: list[asyncio.Future[Any] | asyncio.Task[Any]] = [
-        asyncio.create_task(api.get("/courses")),
-        asyncio.create_task(api.get("/paths")),
-        asyncio.create_task(api.get("/paths/selected/list")),
-        asyncio.create_task(api.get("/tracking")),
-    ]
-
-    # Stats snapshot
-    if is_admin and mode_value == "team":
-        tasks.append(asyncio.create_task(api.get("/tracking/stats")))
-    else:
-        tasks.append(asyncio.create_task(api.get("/tracking/stats", params={"colleague_id": username})))
-
-    # Admin-only panels
-    if is_admin:
-        tasks.append(asyncio.create_task(api.get("/tracking/stats/users")))
-        tasks.append(asyncio.create_task(api.get("/tracking/recent", params={"limit": 100})))
-
-    results = await asyncio.gather(*tasks)
-    idx = 0
-    courses = list(results[idx] or [])
-    idx += 1
-    paths = list(results[idx] or [])
-    idx += 1
-    selected_paths = list(results[idx] or [])
-    idx += 1
-    tracking_rows = list(results[idx] or [])
-    idx += 1
-    snapshot_stats = dict(results[idx] or {})
-    idx += 1
+    courses, paths, selected_paths, tracking_rows, snapshot_stats = await _load_base_dashboard_lists(
+        api=api,
+        username=username,
+        is_admin=is_admin,
+        mode_value=mode_value,
+    )
 
     team_stats_by_user: list[dict[str, Any]] = []
     team_recent: list[dict[str, Any]] = []
     team_tracking_rows: list[dict[str, Any]] = []
     if is_admin:
-        team_stats_by_user = list(results[idx] or [])
-        idx += 1
-        team_recent = list(results[idx] or [])
-        idx += 1
+        team_stats_by_user, team_recent = await _load_admin_panels(api=api)
+        team_tracking_rows = await _load_team_tracking_rows(
+            api=api,
+            colleague_ids=_collect_colleague_ids(team_stats_by_user),
+        )
 
-        colleague_ids: list[str] = []
-        seen_ids: set[str] = set()
-        for row in team_stats_by_user:
-            if not isinstance(row, dict):
-                continue
-            who = str(row.get("colleague_id") or "").strip()
-            if not who or who in seen_ids:
-                continue
-            seen_ids.add(who)
-            colleague_ids.append(who)
-        if colleague_ids:
-            team_tracking_payloads = await asyncio.gather(
-                *(api.get("/tracking", params={"colleague_id": who}) for who in colleague_ids),
-                return_exceptions=True,
-            )
-            for payload in team_tracking_payloads:
-                if isinstance(payload, Exception):
-                    continue
-                for row in list(payload or []):
-                    if isinstance(row, dict):
-                        team_tracking_rows.append(row)
-
-    # Prefetch selected-path details (limit for UX).
-    shown = selected_paths[:5]
-    details = await asyncio.gather(*[(_load_path_detail(api=api, path_id=int(p.get("id") or 0))) for p in shown])
-    selected_path_details = [d for d in details if d]
+    selected_path_details = await _load_selected_path_details(api=api, selected_paths=selected_paths)
 
     tracking = _tracking_map(tracking_rows)
     in_progress_ids = [cid for cid, st in tracking.items() if st == "in_progress"]
-    next_up_ids: list[int] = []
-    for detail in selected_path_details:
-        courses_in_path = list(detail.get("courses") or [])
-        for c in courses_in_path:
-            try:
-                cid = int(c.get("id") or 0)
-            except (TypeError, ValueError):
-                continue
-            if cid <= 0:
-                continue
-            if tracking.get(cid, "") != "completed":
-                next_up_ids.append(cid)
-                break
-
-    recent_course_ids: list[int] = []
-    for c in courses[:3]:
-        try:
-            recent_course_ids.append(int(c.get("id") or 0))
-        except (TypeError, ValueError):
-            continue
+    next_up_ids = _collect_next_up_ids(selected_path_details=selected_path_details, tracking=tracking)
+    recent_course_ids = _collect_recent_course_ids(courses)
 
     summary_ids = list({cid for cid in (in_progress_ids[:3] + next_up_ids[:5] + recent_course_ids) if int(cid) > 0})
     review_summary_by_course_id = await _load_review_summaries(api=api, course_ids=summary_ids)

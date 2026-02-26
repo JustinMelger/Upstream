@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Callable
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
-from sqlalchemy.exc import IntegrityError
 
-from backend.core.errors import error_handler, ServiceError
+from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.path_reviews import PathReviewsRepository
 from backend.database.tx import session_scope
+from backend.services.review_upsert import upsert_review_id
 
 
 class PathReviewsServiceError(ServiceError):
@@ -18,7 +19,17 @@ class PathReviewsServiceError(ServiceError):
 def path_reviews_error_handler(
     message: str = "An unexpected error occurred while handling path reviews",
     status_code: int = 500,
-):
+) -> Callable[[F], F]:
+    """Build an error-handler decorator for path review service methods.
+
+    Args:
+        message: Default fallback error message.
+        status_code: Default HTTP status code for unexpected failures.
+
+    Returns:
+        Decorator wrapping uncaught errors as `PathReviewsServiceError`.
+
+    """
     return error_handler(
         service_error=PathReviewsServiceError,
         message=message,
@@ -39,10 +50,37 @@ class PathReviewsService:
     """Path reviews service."""
 
     def __init__(self, repo: PathReviewsRepository):
+        """Initialize the service.
+
+        Args:
+            repo: Path reviews repository.
+
+        """
         self._repo = repo
+
+    @staticmethod
+    def _coerce_rating(value: int | float | str | None) -> int:
+        if value is None:
+            raise PathReviewsServiceError(detail="invalid_rating", status_code=400)
+        try:
+            rating_i = int(value)
+        except (TypeError, ValueError):
+            raise PathReviewsServiceError(detail="invalid_rating", status_code=400)
+        if rating_i < 1 or rating_i > 5:
+            raise PathReviewsServiceError(detail="invalid_rating", status_code=400)
+        return rating_i
 
     @path_reviews_error_handler()
     async def list_reviews(self, *, path_id: int) -> list[dict]:
+        """List review rows for one path.
+
+        Args:
+            path_id: Path identifier.
+
+        Returns:
+            Serialized review rows.
+
+        """
         async with session_scope(self._repo.session):
             rows = await self._repo.list_for_path(path_id=path_id)
         return [
@@ -61,46 +99,37 @@ class PathReviewsService:
     async def create_review(self, *, path_id: int, payload: dict, created_by: str) -> dict:
         """Create or update the current user's review for a path."""
         data = self._parse_mutation_payload(payload)
-        rating = data.rating
-        try:
-            rating_i = int(rating)
-        except (TypeError, ValueError):
-            raise PathReviewsServiceError(detail="invalid_rating", status_code=400)
-        if rating_i < 1 or rating_i > 5:
-            raise PathReviewsServiceError(detail="invalid_rating", status_code=400)
+        rating_i = self._coerce_rating(data.rating)
 
         text = str(data.text or "").strip() or None
         created_at = datetime.now(timezone.utc).isoformat()
-
-        review_id: int | None = None
         async with session_scope(self._repo.session):
-            existing = await self._repo.get_review_for_path_by_user(path_id=int(path_id), created_by=str(created_by))
-            if existing:
-                await self._repo.update_review(review_id=existing.id, rating=rating_i, text=text, created_at=created_at)
-                review_id = existing.id
-            else:
-                try:
-                    review_id = await self._repo.create_review(
-                        path_id=int(path_id),
-                        rating=rating_i,
-                        text=text,
-                        created_by=str(created_by),
-                        created_at=created_at,
-                    )
-                except IntegrityError:
-                    concurrent = await self._repo.get_review_for_path_by_user(path_id=int(path_id), created_by=str(created_by))
-                    if not concurrent:
-                        raise
-                    await self._repo.update_review(
-                        review_id=concurrent.id,
-                        rating=rating_i,
-                        text=text,
-                        created_at=created_at,
-                    )
-                    review_id = concurrent.id
+            review_id = await upsert_review_id(
+                get_existing=lambda: self._repo.get_review_for_path_by_user(
+                    path_id=int(path_id),
+                    created_by=str(created_by),
+                ),
+                create=lambda: self._repo.create_review(
+                    path_id=int(path_id),
+                    rating=rating_i,
+                    text=text,
+                    created_by=str(created_by),
+                    created_at=created_at,
+                ),
+                get_concurrent=lambda: self._repo.get_review_for_path_by_user(
+                    path_id=int(path_id),
+                    created_by=str(created_by),
+                ),
+                update=lambda review_id: self._repo.update_review(
+                    review_id=int(review_id),
+                    rating=rating_i,
+                    text=text,
+                    created_at=created_at,
+                ),
+            )
 
         async with session_scope(self._repo.session):
-            created = await self._repo.get_review_by_id(int(review_id or 0))
+            created = await self._repo.get_review_by_id(int(review_id))
         if not created:
             raise PathReviewsServiceError(detail="create_failed", status_code=500)
         return {

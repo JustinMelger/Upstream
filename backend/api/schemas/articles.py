@@ -11,6 +11,7 @@ class ArticlePayload(APIModel):
     id: int
     title: str
     url: str
+    preview_image_url: str = ""
     tags: Optional[str] = None
     created_by: str
     created_at: str

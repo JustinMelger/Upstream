@@ -110,3 +110,59 @@ async def test_courses_service_works_inside_existing_transaction_scope(db_sessio
         listed = await courses.list_courses(query="nested")
     assert int(created["id"]) > 0
     assert len(listed) == 1
+
+
+@pytest.mark.unit
+async def test_list_courses_includes_preview_image_url_from_preview_service(db_session):
+    """List payload includes resolved preview image URLs."""
+
+    class _PreviewService:
+        async def resolve_image_url(self, *, source_url: str) -> str:
+            if "youtube.com" in source_url:
+                return "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
+            return "https://cdn.example.com/og.png"
+
+    courses = CoursesService(CoursesRepository(db_session), url_preview_service=_PreviewService())
+    await courses.create_course(
+        {
+            "title": "Video course",
+            "description": "desc",
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        }
+    )
+    await courses.create_course(
+        {
+            "title": "Docs course",
+            "description": "desc",
+            "url": "https://docs.example.com/page",
+        }
+    )
+
+    rows = await courses.list_courses()
+    by_title = {str(r.get("title")): r for r in rows}
+    assert by_title["Video course"]["preview_image_url"].endswith("/dQw4w9WgXcQ/hqdefault.jpg")
+    assert by_title["Docs course"]["preview_image_url"] == "https://cdn.example.com/og.png"
+
+
+@pytest.mark.unit
+async def test_list_courses_preview_resolver_skips_rows_without_url(db_session):
+    """Preview resolver runs only for rows that have a URL."""
+    calls: list[str] = []
+
+    class _PreviewService:
+        async def resolve_image_url(self, *, source_url: str) -> str:
+            calls.append(str(source_url))
+            return "https://cdn.example.com/shared.png"
+
+    courses = CoursesService(CoursesRepository(db_session), url_preview_service=_PreviewService())
+    url = "https://docs.example.com/shared"
+    await courses.create_course({"title": "A", "description": "desc", "url": url})
+    await courses.create_course({"title": "B", "description": "desc"})
+    calls.clear()
+
+    rows = await courses.list_courses()
+    assert len(rows) == 2
+    assert calls == [url]
+    by_title = {str(r.get("title")): r for r in rows}
+    assert by_title["A"]["preview_image_url"] == "https://cdn.example.com/shared.png"
+    assert by_title["B"]["preview_image_url"] == ""

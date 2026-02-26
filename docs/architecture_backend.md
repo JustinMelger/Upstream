@@ -9,6 +9,12 @@ The backend is a FastAPI application organized as:
 - Repositories (persistence).
 - Postgres (schema managed via Alembic).
 
+The backend also includes an observability layer:
+- OpenTelemetry traces + metrics initialization at app startup.
+- Authenticated frontend product-event ingestion via `POST /telemetry/events`.
+- OTLP export to an OpenTelemetry Collector (fan-out to Tempo/Prometheus).
+- Logs shipped by Promtail into Loki for Grafana log exploration.
+
 ## High-Level Diagram
 
 ```mermaid
@@ -21,6 +27,7 @@ flowchart LR
     Paths[Path Service]
     Tracking[Tracking Service]
     Notifications[Notifications Service]
+    Telemetry[Telemetry Service]
   end
 
   UI --> Auth
@@ -28,6 +35,7 @@ flowchart LR
   UI --> Paths
   UI --> Tracking
   UI --> Notifications
+  UI --> Telemetry
 
   DB[(Postgres)]
   Auth --> DB
@@ -35,7 +43,63 @@ flowchart LR
   Paths --> DB
   Tracking --> DB
   Notifications --> DB
+
+  OTel[OpenTelemetry SDK]
+  Collector[OpenTelemetry Collector]
+  Prom[Prometheus]
+  Tempo[Grafana Tempo]
+  Loki[Grafana Loki]
+  Promtail[Promtail]
+  DockerLogs[Docker container logs]
+  Grafana[Grafana UI]
+  API --> OTel
+  OTel --> Collector
+  Collector --> Prom
+  Collector --> Tempo
+  DockerLogs --> Promtail
+  Promtail --> Loki
+  Prom --> Grafana
+  Tempo --> Grafana
+  Loki --> Grafana
 ```
+
+## Observability Architecture
+
+### Runtime wiring
+- `backend/main.py` initializes observability with `configure_observability(app)` when `OTEL_ENABLED=1`.
+- `backend/core/observability.py` configures:
+  - Tracer provider + OTLP trace exporter.
+  - Meter provider + OTLP metrics exporter.
+  - FastAPI / HTTPX / SQLAlchemy instrumentation.
+
+### Telemetry ingestion flow
+- Frontend emits product events to `POST /telemetry/events` (authenticated).
+- Router: `backend/api/telemetry.py`
+- Service: `backend/services/telemetry_service.py`
+- Current behavior:
+  - Increments metric counter `frontend_events_total`.
+  - Emits span `frontend.event` with event attributes.
+  - Logs a structured fallback line for operational debugging.
+
+### Key environment settings
+- `OTEL_ENABLED`
+- `OTEL_SERVICE_NAME`
+- `OTEL_SERVICE_VERSION`
+- `OTEL_DEPLOYMENT_ENVIRONMENT`
+- `OTEL_TRACES_SAMPLE_RATIO`
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
+- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`
+- `OTEL_EXPORTER_OTLP_HEADERS`
+
+### Local Grafana stack wiring
+- Observability stack runs separately via `docker-compose.observability.yml`.
+- Collector exports traces to Tempo (`TEMPO_OTLP_ENDPOINT`, default `http://tempo:4318/v1/traces`).
+- Collector exports metrics in Prometheus format on `:9464`; Prometheus scrapes Collector.
+- Promtail discovers Docker containers and ships logs to Loki.
+- Grafana is configured with provisioned datasources for:
+  - Prometheus (`http://prometheus:9090`)
+  - Tempo (`http://tempo:3200`)
+  - Loki (`http://loki:3100`)
 
 ## Auth Architecture
 
@@ -154,9 +218,12 @@ erDiagram
 - Admin-only user management (create, reset, disable, delete, list).
 
 ### Course service
-- CRUD for courses (title, provider, category, level, duration, url).
+- CRUD for courses (`title`, `description`, `learning_outcomes`, `prerequisites`, `language`, `provider`, `category`, `level`, `duration_hours`, `url`).
 - Search and filter by query/provider/category/level.
 - Any authenticated user can create courses; only the creator (or admin) can edit/delete.
+- Validates create/update payloads at the service boundary via typed `_parse_mutation_payload`.
+- Enriches course payloads with computed `search_document` content and best-effort URL preview image URLs.
+- Enforces duplicate protection on create (`url`, normalized title+provider).
 
 ### Path service
 - CRUD for learning paths with ordered course lists.
@@ -179,6 +246,11 @@ erDiagram
 ### Notifications service
 - Aggregates share/recommend/review events into activity feed payloads.
 - Supports mailbox-style scopes: `inbox` (personal) and `team` (team-wide timeline).
+
+### Telemetry service
+- Accepts low-risk frontend product telemetry events (`event_name`, optional context, timestamp).
+- Records event count + tracing attributes for product-loop analysis and operability.
+- Keeps ingestion auth-protected via `require_session`.
 
 ## API Error Handling
 
@@ -285,21 +357,25 @@ classDiagram
   class CoursesRepository {
     +list_courses(query, provider, category, level): list[CourseRecord]
     +get_course_by_id(course_id): CourseRecord|None
-    +create_course(title, provider, category, level, duration_hours, url, created_at): int
-    +update_course(course_id, title, provider, category, level, duration_hours, url): int
+    +create_course(payload: CreateCoursePayload): int
+    +find_course_by_url(url): CourseRecord|None
+    +find_course_by_title_provider(title, provider): CourseRecord|None
+    +update_course(payload: UpdateCoursePayload): int
     +delete_course(course_id): int
   }
 
   class CourseReviewsService {
     +list_reviews(course_id): list[dict]
-    +create_review(course_id, payload, created_by): dict
+    +create_review(course_id, payload, created_by): dict (upsert per user)
+    +get_review_by_id(review_id): dict|None
     +delete_review(review_id): bool
     +summaries(course_ids): list[dict]
   }
 
   class CourseRecommendationsService {
     +list_recommendations(course_id): list[dict]
-    +create_recommendation(course_id, payload, created_by): dict
+    +create_recommendation(course_id, payload, created_by): dict (upsert per user)
+    +get_recommendation_by_id(recommendation_id): dict|None
     +delete_recommendation(recommendation_id): bool
     +summaries(course_ids): list[dict]
   }
@@ -357,6 +433,11 @@ erDiagram
 ```
 
 `search_document` is computed in `CoursesService` and returned in API payloads; it is not persisted as a physical database column.
+
+Course review/recommendation write model details:
+- `POST /courses/{course_id}/reviews` and `POST /courses/{course_id}/recommendations` are idempotent per user/course pair (create-or-update semantics).
+- DB uniqueness is enforced on `(course_id, created_by)` in both `course_reviews` and `course_recommendations`.
+- Mutation writes update `created_at` as the latest write timestamp (there is no separate `updated_at` column for these tables).
 
 ## Paths Architecture
 

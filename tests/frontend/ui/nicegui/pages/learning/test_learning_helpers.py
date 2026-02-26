@@ -47,5 +47,5 @@ def test_compute_path_progress_counts_completed() -> None:
 
 @pytest.mark.unit
 def test_learning_navigation_urls_include_id_and_view() -> None:
-    assert build_courses_deep_link(course_id=42, view="reviews") == "/courses?tab=tracked&course_id=42&view=reviews"
-    assert build_paths_deep_link(path_id=7, view="full") == "/paths?tab=selected&path_id=7&view=full"
+    assert build_courses_deep_link(course_id=42, view="reviews") == "/explore/courses/42?view=reviews"
+    assert build_paths_deep_link(path_id=7, view="full") == "/explore/paths/7"

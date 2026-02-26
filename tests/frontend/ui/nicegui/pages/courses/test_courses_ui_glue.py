@@ -5,6 +5,8 @@ from frontend.ui.nicegui.pages.courses.ui_glue import (
     compute_courses_meta_text,
     compute_expanded_visible_count,
     default_courses_filter_reset_state,
+    normalize_course_tracking_status,
+    primary_course_cta_label_for_status,
     resolve_tracking_status_value,
 )
 
@@ -71,3 +73,18 @@ def test_compute_courses_meta_text() -> None:
 def test_compute_expanded_visible_count_caps_total() -> None:
     assert compute_expanded_visible_count(current_visible=10, total_count=25, page_size=10) == 20
     assert compute_expanded_visible_count(current_visible=20, total_count=25, page_size=10) == 25
+
+
+def test_normalize_course_tracking_status_accepts_only_known_values() -> None:
+    assert normalize_course_tracking_status("interested") == "interested"
+    assert normalize_course_tracking_status("in_progress") == "in_progress"
+    assert normalize_course_tracking_status("completed") == "completed"
+    assert normalize_course_tracking_status("unknown") == ""
+    assert normalize_course_tracking_status(None) == ""
+
+
+def test_primary_course_cta_label_for_status_maps_expected_actions() -> None:
+    assert primary_course_cta_label_for_status("in_progress") == "Continue"
+    assert primary_course_cta_label_for_status("completed") == "Review"
+    assert primary_course_cta_label_for_status("interested") == "Start"
+    assert primary_course_cta_label_for_status("") == "Start"

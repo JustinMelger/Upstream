@@ -15,6 +15,12 @@ class AiCuratorPageController:
     """Imperative API workflows for `/ai`."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def generate_plan(self, *, goal: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:

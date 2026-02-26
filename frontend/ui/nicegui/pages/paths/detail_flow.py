@@ -7,10 +7,11 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.path_detail_sections import (
+    PathDetailLearningView,
     render_path_detail_header,
     render_path_detail_learning_section,
 )
-from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel
+from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel, ReviewPanelHooks, ReviewPanelText
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
@@ -92,17 +93,19 @@ async def open_path_details_dialog(
                 safe_notify("Next course has no URL yet", type="warning")
 
             render_path_detail_learning_section(
-                total_courses=total_courses,
-                completed=completed,
-                progress=progress,
-                milestone=str(outcomes.get("milestone") or ""),
-                milestone_class=str(outcomes.get("milestone_class") or ""),
-                impact=str(outcomes.get("impact") or ""),
-                is_tracked=is_tracked,
-                tracking_label_text=path_tracking_label(is_tracked),
-                next_title=str(next_course.get("title") or "").strip() if isinstance(next_course, dict) else "",
+                view=PathDetailLearningView(
+                    total_courses=total_courses,
+                    completed=completed,
+                    progress=progress,
+                    milestone=str(outcomes.get("milestone") or ""),
+                    milestone_class=str(outcomes.get("milestone_class") or ""),
+                    impact=str(outcomes.get("impact") or ""),
+                    is_tracked=is_tracked,
+                    tracking_label_text=path_tracking_label(is_tracked),
+                    next_title=str(next_course.get("title") or "").strip() if isinstance(next_course, dict) else "",
+                    courses_rows=courses_rows,
+                ),
                 on_open_next=_open_next if isinstance(next_course, dict) else None,
-                courses_rows=courses_rows,
             )
 
         ui.separator().classes("my-2")
@@ -124,11 +127,13 @@ async def open_path_details_dialog(
             username=username,
             is_admin=is_admin,
             reviews=path_reviews,
-            section_title="Path reviews",
-            empty_text="No path reviews yet.",
             on_save=_save_path_review,
             on_delete=_delete_path_review,
-            on_changed=_sync_path_summary,
+            text=ReviewPanelText(
+                section_title="Path reviews",
+                empty_text="No path reviews yet.",
+            ),
+            hooks=ReviewPanelHooks(on_changed=_sync_path_summary),
         )
 
         with ui.row().classes("justify-end mt-4"):

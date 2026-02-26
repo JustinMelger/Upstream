@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiError
@@ -14,6 +15,21 @@ from frontend.ui.nicegui.pages.paths.transitions import (
     clear_paths_state_on_load_error,
     finalize_paths_load,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class LoadAllPathsDeps:
+    """Dependencies required to refresh full paths page state."""
+
+    controller: Any
+    refresh_btn: Any
+    meta: Any
+    create_course_ids: Any
+    compute_course_options: Callable[[list[dict[str, Any]] | None], dict[int, str]]
+    recompute_facet_options: Callable[[], None]
+    refresh_paths_list_ui: Callable[[], None]
+    notify_error: Callable[[str], None]
+    compute_meta_text: Callable[[int], str]
 
 
 def refresh_paths_list(
@@ -153,15 +169,7 @@ async def load_all_paths(
     *,
     ui_state: PathsPageUiState,
     controller_state: PathsPageState,
-    controller: Any,
-    refresh_btn: Any,
-    meta: Any,
-    create_course_ids: Any,
-    compute_course_options: Callable[[list[dict[str, Any]] | None], dict[int, str]],
-    recompute_facet_options: Callable[[], None],
-    refresh_paths_list_ui: Callable[[], None],
-    notify_error: Callable[[str], None],
-    compute_meta_text: Callable[[int], str],
+    deps: LoadAllPathsDeps,
 ) -> None:
     """Reload all path page data and refresh controls."""
     if ui_state.loading:
@@ -170,25 +178,25 @@ async def load_all_paths(
     load_start = begin_paths_load(page_size=ui_state.page_size)
     ui_state.loading = load_start.loading
     ui_state.visible_count = load_start.visible_count
-    refresh_btn.disable()
-    meta.text = load_start.meta_text
-    refresh_paths_list_ui()
+    deps.refresh_btn.disable()
+    deps.meta.text = load_start.meta_text
+    deps.refresh_paths_list_ui()
     try:
-        await controller.load_all(state=controller_state)
-        create_course_ids.options = compute_course_options(controller_state.courses)
-        create_course_ids.update()
-        recompute_facet_options()
-        refresh_paths_list_ui()
+        await deps.controller.load_all(state=controller_state)
+        deps.create_course_ids.options = deps.compute_course_options(controller_state.courses)
+        deps.create_course_ids.update()
+        deps.recompute_facet_options()
+        deps.refresh_paths_list_ui()
         ok = True
     except ApiError as exc:
-        notify_error(str(exc))
+        deps.notify_error(str(exc))
         clear_paths_state_on_load_error(state=controller_state)
-        recompute_facet_options()
-        refresh_paths_list_ui()
+        deps.recompute_facet_options()
+        deps.refresh_paths_list_ui()
     finally:
         load_done = finalize_paths_load(ok=ok, path_count=len(controller_state.paths))
-        meta.text = compute_meta_text(len(controller_state.paths))
+        deps.meta.text = deps.compute_meta_text(len(controller_state.paths))
         ui_state.loading = load_done.loading
         ui_state.loaded_once = load_done.loaded_once
-        refresh_btn.enable()
-        refresh_paths_list_ui()
+        deps.refresh_btn.enable()
+        deps.refresh_paths_list_ui()

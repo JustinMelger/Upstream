@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import html
 from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.components.card_actions import render_view_review_actions
+from frontend.ui.nicegui.components.card_frame import (
+    render_card_actions_row,
+    render_card_content_column,
+    render_card_main_row,
+    render_card_topright,
+)
+from frontend.ui.nicegui.components.feedback import render_empty_block
+from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.pages.articles.ui_glue import ActiveFilterChip
 
 
@@ -31,25 +39,41 @@ class ArticlesTopbarControls:
 
 def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
     """Render articles topbar and return controls."""
-    with ui.row().classes("lp-topbar"):
-        search_input = ui.input("Search articles").props("clearable debounce=300").style("flex: 1")
-        with ui.row().classes("items-center gap-2").style("margin-left: auto"):
-            ui.button("Share", on_click=on_share).props("dense")
-            sort_filter = (
-                ui.select(
-                    {
-                        "": "Recommended",
-                        "newest": "Newest",
-                        "title_az": "Title A–Z",
-                        "author_az": "Author A–Z",
-                    },
-                    value="",
-                    label=None,
-                )
-                .props("dense")
-                .style("min-width: 180px")
+    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar w-full gap-2"):
+        with ui.row().classes("w-full items-center gap-2"):
+            search_input = (
+                ui.input("Search articles")
+                .props("clearable debounce=300 dense")
+                .classes("lp-topbar-search lp-courses-search")
+                .style("flex: 1")
             )
-            meta = ui.label("").classes("lp-topbar-meta")
+        with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
+            meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
+            with ui.row().classes("items-center gap-2 justify-end flex-wrap"):
+                with ui.row().classes(
+                    "items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"
+                ):
+                    ui.label("Sort by").classes("lp-topbar-group-label")
+                    sort_filter = (
+                        ui.select(
+                            {
+                                "": "Recommended",
+                                "newest": "Newest",
+                                "title_az": "Title A–Z",
+                                "author_az": "Author A–Z",
+                            },
+                            value="",
+                            label=None,
+                        )
+                        .props("dense")
+                        .style("min-width: 180px")
+                        .classes("lp-topbar-secondary-control")
+                    )
+                with ui.row().classes(
+                    "items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"
+                ):
+                    with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                        ui.menu_item("Share article", on_share)
     return ArticlesTopbarControls(search_input=search_input, sort_filter=sort_filter, meta=meta)
 
 
@@ -66,7 +90,9 @@ def render_filters_rail(
     ui.label("Tip: share useful resources with colleagues.").classes("text-xs").style("color: var(--lp-muted)")
 
     tag_filter = ui.select({"": "Any tag"}, label="Tag", value="").props("dense").classes("w-full")
-    author_filter = ui.select({"": "Anyone"}, label="Shared by", value="").props("dense").classes("w-full")
+    with ui.expansion("More filters").props("dense"):
+        with ui.column().classes("w-full"):
+            author_filter = ui.select({"": "Anyone"}, label="Shared by", value="").props("dense").classes("w-full")
     ui.button("Reset all", on_click=on_reset).props("outline").classes("w-full mt-2")
 
     return ArticlesFilterControls(
@@ -109,15 +135,21 @@ def render_articles_empty_state(
 ) -> None:
     """Render empty states for the articles list."""
     if not has_articles and not any_filters:
-        ui.label("No articles yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Share the first link to get started.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.button("Share an article", on_click=on_share).props("outline")
+        render_empty_block(
+            title="No reading stream yet.",
+            description="Share the first article and start the editorial feed.",
+            primary_label="Share an article",
+            on_primary=on_share,
+            compact=True,
+        )
         return
 
-    ui.label("No articles match your filters.").classes("text-sm").style("color: var(--lp-muted)")
-    with ui.row().classes("items-center gap-2"):
-        ui.button("Reset all", on_click=on_reset).props("outline")
-        ui.button("Refresh", on_click=on_refresh).props("outline")
+    render_empty_block(
+        title="No reads match this filter set.",
+        primary_label="Reset all",
+        on_primary=on_reset,
+        compact=True,
+    )
 
 
 def render_article_card(
@@ -127,32 +159,85 @@ def render_article_card(
     tags: list[str],
     summary_text: str,
     subtitle_text: str,
+    thumbnail_url: str,
     view_action: Any,
     review_action: Any,
+    compact_mode: bool = False,
 ) -> None:
     """Render one article card with actions."""
     title = str(article_row.get("title") or "").strip()
     url = str(article_row.get("url") or "").strip()
 
-    with ui.card().classes("w-full lp-card lp-card--hover"):
-        with ui.element("div").classes("lp-card-topright"):
+    with ui.card().classes("w-full lp-card lp-card--hover lp-article-card"):
+        with render_card_topright():
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
+            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                ui.menu_item("Review", review_action)
 
-        ui.label(title).classes("text-lg font-semibold")
-        if url:
-            ui.link(url, url).props("target=_blank").classes("text-sm")
+        with render_card_main_row(classes="lp-article-card-main"):
+            with render_card_content_column(classes="lp-article-card-content"):
+                ui.label(title).classes("text-lg font-semibold lp-card-title")
+                if url and (not compact_mode):
+                    ui.link(url, url).props("target=_blank").classes("text-sm")
 
-        ui.label(subtitle_text).classes("text-xs").style("color: var(--lp-muted)")
+                subtitle_parts = [part.strip() for part in str(subtitle_text or "").split("·") if str(part).strip()]
+                with ui.row().classes("items-center gap-2 flex-wrap lp-article-meta-row"):
+                    if subtitle_parts:
+                        ui.label(subtitle_parts[0]).classes("text-xs lp-card-subtitle lp-article-byline")
+                    if len(subtitle_parts) > 1:
+                        ui.label(subtitle_parts[1]).classes("text-xs lp-card-subtitle lp-article-date")
+                if compact_mode:
+                    context_line = subtitle_parts[1] if len(subtitle_parts) > 1 else ""
+                    if not context_line and url:
+                        context_line = "Source link"
+                    ui.label(context_line or "Shared by teammate").classes("text-xs lp-card-subtitle lp-article-context-line")
 
-        if tags:
-            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
-                for t in tags[:10]:
-                    ui.label(t).classes("lp-meta-chip")
-                if len(tags) > 10:
-                    ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
-        if summary_text:
-            ui.label(summary_text).classes("lp-meta-chip")
+                with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
+                    if tags:
+                        for t in tags[:10]:
+                            ui.label(t).classes("lp-meta-chip")
+                        if len(tags) > 10:
+                            ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
+                    else:
+                        ui.label("").classes("lp-article-tag-placeholder")
+                if summary_text:
+                    ui.label(summary_text).classes("lp-meta-chip lp-article-summary-chip")
 
-        with ui.row().classes("items-center gap-2 mt-2"):
-            render_view_review_actions(on_view=view_action, on_review=review_action, review_tooltip="Reviews")
+                def _render_actions() -> None:
+                    ui.button("Open details", on_click=view_action).props("dense")
+
+                render_card_actions_row(render_actions=_render_actions)
+
+            safe_src = html.escape(str(thumbnail_url or "").strip(), quote=True)
+            if safe_src:
+                with ui.element("div").classes("lp-article-media-slot"):
+                    ui.html(
+                        (
+                            '<img class="lp-course-thumb lp-course-thumb--side lp-article-thumb" '
+                            f'src="{safe_src}" '
+                            'alt="Article thumbnail" loading="lazy" referrerpolicy="no-referrer">'
+                        ),
+                        sanitize=False,
+                    )
+
+
+def render_articles_catalog(
+    *,
+    shown_page: list[dict[str, Any]],
+    total_count: int,
+    render_article_item: Any,
+    on_load_more: Any,
+) -> None:
+    """Render article cards for the current page and an optional load-more footer."""
+    for article in list(shown_page or []):
+        render_article_item(article)
+
+    if int(total_count) <= len(list(shown_page or [])):
+        return
+
+    render_load_more_footer(
+        shown_page_count=len(list(shown_page or [])),
+        shown_total_count=int(total_count),
+        on_load_more=on_load_more,
+    )

@@ -14,6 +14,12 @@ class ArticleReviewsRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of article review persistence."""
 
     def __init__(self, session: AsyncSession):
+        """Initialize the repository.
+
+        Args:
+            session: Active async SQLAlchemy session.
+
+        """
         self.session = session
 
     async def list_for_article(self, *, article_id: int) -> list[ArticleReviewRecord]:
@@ -31,7 +37,7 @@ class ArticleReviewsRepository(RepositoryDateTimeCodec):
                 rating=int(r.rating),
                 text=r.text,
                 created_by=str(r.created_by),
-                created_at=self._as_iso(r.created_at),
+                created_at=self._as_iso_or_empty(r.created_at),
             )
             for r in rows
         ]
@@ -74,7 +80,7 @@ class ArticleReviewsRepository(RepositoryDateTimeCodec):
             rating=int(row.rating),
             text=row.text,
             created_by=str(row.created_by),
-            created_at=self._as_iso(row.created_at),
+            created_at=self._as_iso_or_empty(row.created_at),
         )
 
     async def update_review(
@@ -91,12 +97,12 @@ class ArticleReviewsRepository(RepositoryDateTimeCodec):
             .where(ArticleReviewModel.id == int(review_id))
             .values(rating=int(rating), text=text, created_at=self._as_datetime(created_at))
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def delete_review(self, *, review_id: int) -> int:
         """Delete a review by id."""
         result = await self.session.execute(delete(ArticleReviewModel).where(ArticleReviewModel.id == int(review_id)))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def summaries_for_articles(self, *, article_ids: list[int]) -> dict[int, tuple[float, int]]:
         """Return (avg_rating, count) per article id."""
@@ -131,5 +137,5 @@ class ArticleReviewsRepository(RepositoryDateTimeCodec):
             rating=int(row.rating),
             text=row.text,
             created_by=str(row.created_by),
-            created_at=self._as_iso(row.created_at),
+            created_at=self._as_iso_or_empty(row.created_at),
         )

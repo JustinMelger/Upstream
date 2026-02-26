@@ -27,6 +27,22 @@ class PathCardActions:
 
 
 @dataclass(slots=True)
+class PathCardActionDeps:
+    """Dependencies needed to build one path-card action bundle."""
+
+    username: str
+    get_user_note: Callable[[int, str], Awaitable[str]]
+    save_recommendation: Callable[[int, str], Awaitable[dict[str, Any]]]
+    on_saved: Callable[[], Awaitable[None]]
+    get_path_detail: Callable[[int], Awaitable[dict[str, Any]]]
+    on_open_edit: Callable[[int, dict[str, Any]], Awaitable[None]]
+    on_delete: Callable[[int], Awaitable[None]]
+    on_open_details: Callable[[int, str], Awaitable[None]]
+    on_select: Callable[[int], Awaitable[bool | None]]
+    on_unselect: Callable[[int], Awaitable[bool | None]]
+
+
+@dataclass(slots=True)
 class PathsFilterControls:
     """UI controls used by filter-clear/reset handlers."""
 
@@ -79,7 +95,7 @@ def resolve_paths_empty_state(
 
 def path_share_link(*, path_id: int) -> str:
     """Build a copyable app-relative deep link for a path."""
-    return f"/paths?path_id={int(path_id)}&view=full"
+    return f"/explore/paths/{int(path_id)}"
 
 
 def copy_path_link(*, path_id: int) -> None:
@@ -105,14 +121,14 @@ def build_track_toggle(
             if ok is True and on_after_toggle is not None:
                 on_after_toggle()
 
-        return _do_unselect, "Untrack"
+        return _do_unselect, "Unselect"
 
     async def _do_select() -> None:
         ok = await on_select(int(path_id))
         if ok is True and on_after_toggle is not None:
             on_after_toggle()
 
-    return _do_select, "Track"
+    return _do_select, "Select"
 
 
 async def open_recommend_dialog(
@@ -142,7 +158,7 @@ async def open_recommend_dialog(
                 dialog.close()
                 await on_saved()
 
-            ui.button("Save", on_click=_save)
+            ui.button("Recommend", on_click=_save)
             ui.button("Cancel", on_click=dialog.close).props("outline")
 
     dialog.open()
@@ -152,16 +168,7 @@ def build_path_card_actions(
     *,
     path_id: int,
     is_tracked: bool,
-    username: str,
-    get_user_note: Callable[[int, str], Awaitable[str]],
-    save_recommendation: Callable[[int, str], Awaitable[dict[str, Any]]],
-    on_saved: Callable[[], Awaitable[None]],
-    get_path_detail: Callable[[int], Awaitable[dict[str, Any]]],
-    on_open_edit: Callable[[int, dict[str, Any]], Awaitable[None]],
-    on_delete: Callable[[int], Awaitable[None]],
-    on_open_details: Callable[[int, str], Awaitable[None]],
-    on_select: Callable[[int], Awaitable[bool | None]],
-    on_unselect: Callable[[int], Awaitable[bool | None]],
+    deps: PathCardActionDeps,
     on_after_toggle: Callable[[], None] | None = None,
 ) -> PathCardActions:
     """Build per-card callbacks to keep page view logic minimal."""
@@ -169,33 +176,33 @@ def build_path_card_actions(
     async def _recommend() -> None:
         await open_recommend_dialog(
             path_id=int(path_id),
-            username=username,
-            get_user_note=get_user_note,
-            save_recommendation=save_recommendation,
-            on_saved=on_saved,
+            username=deps.username,
+            get_user_note=deps.get_user_note,
+            save_recommendation=deps.save_recommendation,
+            on_saved=deps.on_saved,
         )
 
     def _copy_link() -> None:
         copy_path_link(path_id=int(path_id))
 
     async def _review() -> None:
-        await on_open_details(int(path_id), "reviews")
+        await deps.on_open_details(int(path_id), "reviews")
 
     async def _edit() -> None:
-        detail = await get_path_detail(int(path_id))
-        await on_open_edit(int(path_id), detail)
+        detail = await deps.get_path_detail(int(path_id))
+        await deps.on_open_edit(int(path_id), detail)
 
     async def _delete() -> None:
-        await on_delete(int(path_id))
+        await deps.on_delete(int(path_id))
 
     async def _view() -> None:
-        await on_open_details(int(path_id), "full")
+        await deps.on_open_details(int(path_id), "full")
 
     on_track_toggle, track_toggle_label = build_track_toggle(
         path_id=int(path_id),
         is_tracked=is_tracked,
-        on_select=on_select,
-        on_unselect=on_unselect,
+        on_select=deps.on_select,
+        on_unselect=deps.on_unselect,
         on_after_toggle=on_after_toggle,
     )
 

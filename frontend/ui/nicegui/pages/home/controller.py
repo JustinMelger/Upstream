@@ -21,6 +21,12 @@ class HomePageController:
     """Imperative API workflows for `/insights`."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def load_overview(
@@ -41,7 +47,7 @@ class HomePageController:
             team_payload = list(team_payload_raw or [])
         else:
             stats_payload = await self._api.get("/tracking/stats", params={"colleague_id": user})
-            team_payload: list[dict[str, Any]] = []
+            team_payload = []
 
         return HomeOverviewBundle(
             snapshot_stats=dict(stats_payload or {}),

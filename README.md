@@ -8,13 +8,22 @@ A simple internal learning hub where colleagues can browse curated courses, trac
 
 ## Docs
 - Architecture: [docs/architecture.md](docs/architecture.md)
+- Architecture & coding standards (one-pager): [docs/architecture_standards.md](docs/architecture_standards.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)
+
+## Prerequisites
+- Python 3.13
+- `uv`
+- `just`
+- Docker + Docker Compose (for local Postgres / containerized run)
 
 ## Run locally (Docker)
 ### Quick start
-1. Build and start services:
+1. Start observability stack (separate deploy):
+   - `docker compose -f docker-compose.observability.yml up -d`
+2. Build and start app services:
    - `docker compose up --build`
-2. Open the UI:
+3. Open the UI:
    - `http://localhost:8080`
 
 ## Database migrations (Postgres)
@@ -25,9 +34,11 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 ### Live reload (Docker Compose watch)
 1. Ensure Docker Compose supports `watch`:
    - `docker compose version`
-2. Start services with file sync + reload:
+2. Start observability stack:
+   - `docker compose -f docker-compose.observability.yml up -d`
+3. Start app services with file sync + reload:
    - `docker compose -f docker-compose.watch.yml watch`
-3. Open the UI:
+4. Open the UI:
    - `http://localhost:8080`
 
 ### Environment variables
@@ -36,6 +47,14 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 - `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist (API).
 - `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage (UI).
 - `DATABASE_URL`: Postgres connection string (API).
+- `OTEL_ENABLED`: enable OpenTelemetry in API (`0` or `1`).
+- `OTEL_SERVICE_NAME`: OpenTelemetry service name for backend traces/metrics.
+- `OTEL_SERVICE_VERSION`: OpenTelemetry service version.
+- `OTEL_DEPLOYMENT_ENVIRONMENT`: environment label (e.g. `dev`, `staging`, `prod`).
+- `OTEL_TRACES_SAMPLE_RATIO`: trace sample ratio (`0.0` - `1.0`).
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`: OTLP HTTP traces endpoint (default `http://localhost:4318/v1/traces`).
+- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`: OTLP HTTP metrics endpoint (default `http://localhost:4318/v1/metrics`).
+- `OTEL_EXPORTER_OTLP_HEADERS`: optional comma-separated OTLP headers (`k=v,k2=v2`).
 
 ## Run locally (without Docker)
 1. Install dependencies:
@@ -45,19 +64,54 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 3. Start the UI (in a new terminal):
    - `just ui`
 4. Open the UI:
-    - `http://localhost:8080`
+   - `http://localhost:8080`
+
+## Contributor quick start
+1. Install dependencies:
+   - `uv sync --group dev`
+2. Start Postgres + migrate:
+   - `just db-init`
+3. Start backend:
+   - `just backend`
+4. Start UI (new terminal):
+   - `just ui`
+
+Optional:
+- Start backend + UI together after DB init: `just dev`
+
+## Development commands
+- Format: `just fmt`
+- Lint: `just lint`
+- Lint ratchet + strict core quality gate: `just lint-ratchet`
+- Unit tests: `just unit`
+- Integration tests: `just integration`
+- Architecture tests: `just architecture`
+- Full local gate: `just test`
+- Frontend architecture guards: `just frontend-arch-guards`
+- Architecture docs sync guard: `just architecture-sync-check`
+
+Optional local commit hooks:
+- Install: `uv run pre-commit install`
+- Run on all files: `uv run pre-commit run --all-files`
 
 ## Pages
-- Home (Dashboard): progress snapshot, path progress, recent activity, featured paths, and recently added courses.
-- Courses: browse + add/remove to My Courses (admins can edit/delete).
-- My Courses: update status and remove tracked courses.
-- Paths: browse and add to My Paths (admins can edit/delete and set order).
-- My Paths: manage selected paths and update course status.
-- Admin: create user accounts (admin only).
+- Insights (`/insights`): team-level progress and contribution visibility.
+- My learning (`/learning`): personal execution view (tracked/selected/recommended/shared items).
+- Activity (`/activity`): mailbox-style activity feed (personal + team activity tab).
+- Courses (`/courses`): browse/share/review/recommend courses and manage tracking status.
+- Paths (`/paths`): browse/share/select/review/recommend paths and update path status.
+- Articles (`/articles`): share and review knowledge links.
+- Admin (`/admin/users`): user management (admin only).
 
 ## Login (username + password)
 - First login bootstraps an admin user (if no users exist yet) using the bootstrap credentials.
-- Admins can create additional user accounts from the Dashboard.
+- Admins can create additional user accounts from the Admin page.
+
+## Feature snapshot
+- Social learning flows: share/review/recommend courses and paths.
+- Activity mailbox and team activity view.
+- My learning execution view (`Learning` and `Shared` tabs).
+- AI draft planner endpoint (`POST /ai/plan`) for proposed learning plans.
 
 ## Conventional commits
 We use Conventional Commits for automated release notes.
@@ -79,21 +133,49 @@ Examples:
 
 ## API endpoints (read-first)
 - `GET /health`
-- `POST /auth/login`
-- `GET /auth/me`
-- `POST /auth/logout`
-- `GET /courses`
-- `GET /courses/{id}`
-- `GET /paths`
-- `GET /paths/{id}`
-- `GET /tracking?colleague_id=...`
-- `POST /tracking`
-- `POST /tracking/delete`
-- `GET /tracking/stats?colleague_id=...`
-- `POST /paths/{id}/select`
-- `POST /paths/{id}/unselect`
-- `GET /articles`
-- `POST /articles`
+- `POST /telemetry/events` (authenticated frontend product events sink)
+
+Endpoint families:
+- Auth/session: `/auth/*`
+- Courses (+ reviews/recommendations): `/courses/*`
+- Paths (+ select/status + reviews/recommendations): `/paths/*`
+- Articles (+ reviews): `/articles/*`
+- Tracking/stats: `/tracking/*`
+- Notifications/activity: `/notifications/*`
+- Telemetry/events: `/telemetry/*`
+- AI draft planning: `/ai/*`
+
+## Observability (OpenTelemetry + Prometheus + Grafana)
+- Start observability independently:
+  - `docker compose -f docker-compose.observability.yml up -d`
+- Observability stack includes:
+  - OpenTelemetry Collector on `4317`/`4318`
+  - Tempo on `http://localhost:3200` (trace backend)
+  - Loki on `http://localhost:3100` (log backend)
+  - Promtail (ships Docker logs to Loki)
+  - Prometheus on `http://localhost:9090`
+  - Grafana on `http://localhost:3000` (default `admin` / `admin`)
+  - Collector Prometheus metrics endpoint on `http://localhost:9464/metrics`
+- API exports traces + metrics via OTLP HTTP to Collector.
+  - App containers send OTLP to `host.docker.internal:4318`, so observability can run in a separate Compose project.
+- Collector config lives at:
+  - `deploy/observability/otel-collector-config.yaml`
+  - `deploy/observability/prometheus.yml`
+  - `deploy/observability/tempo.yaml`
+  - `deploy/observability/loki-config.yaml`
+  - `deploy/observability/promtail-config.yaml`
+  - `deploy/observability/grafana/provisioning/datasources/datasources.yml`
+  - `deploy/observability/grafana/provisioning/dashboards/dashboards.yml`
+  - `deploy/observability/grafana/provisioning/dashboards/json/learning-platform-observability.json`
+- Collector trace export target env vars (in observability compose):
+  - `TEMPO_OTLP_ENDPOINT` (default `http://tempo:4318/v1/traces`)
+  - `TEMPO_OTLP_AUTH_HEADER` (optional)
+- Grafana auto-loads the starter dashboard:
+  - `Learning Platform Observability`
+
+OpenAPI docs:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
 Admin-only:
 - `POST /auth/users`
@@ -115,15 +197,40 @@ Owner/admin-only (creator or admin):
 - Users can create courses and paths; they can edit/delete only the ones they created.
 
 ## Tracking
-- Set status per course: `interested`, `in_progress`, or `completed` (My Courses or My Paths).
-- Remove a tracked course from My Courses if needed.
+- Set status per course: `interested`, `in_progress`, or `completed`.
+- Tracking is managed from `Courses`, `Paths` details, and `My learning`.
 
 ## Paths
 - Create learning paths by selecting courses and ordering them.
-- Add a path to My Paths from the Paths page.
-- Update per-course status inside My Paths.
+- Select a path from the Paths page.
+- Update per-path status (`not_selected`, `selected`, `completed`) and per-course tracking status.
 - Delete paths you created (admins can delete any).
 
 ## Data
 - Schema is managed via Alembic migrations (`just migrate`).
 - The API starts with an empty database. Use the admin endpoints to create data.
+
+## Example `.env`
+```env
+DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
+BACKEND_URL=http://127.0.0.1:8000
+SESSION_DAYS=7
+BOOTSTRAP_ADMIN_USERNAME=admin
+BOOTSTRAP_ADMIN_PASSWORD=change-me
+NICEGUI_STORAGE_SECRET=change-me-too
+```
+
+## Troubleshooting
+- Migrations fail / schema mismatch:
+  - Run `just db-init` (or `just db-up` + `just migrate`).
+- UI cannot reach API:
+  - Verify backend is on `http://127.0.0.1:8000` and `BACKEND_URL` matches.
+- Login bootstrap not working:
+  - Ensure database is empty and bootstrap env vars are set.
+- Port conflict:
+  - Check/stop processes on ports `8000` (API) and `8080` (UI).
+
+## Production notes
+- Use a managed Postgres instance and run Alembic migrations during deploy.
+- Keep secrets in environment/secret manager (never commit credentials).
+- Disable bootstrap admin credentials after initial setup.

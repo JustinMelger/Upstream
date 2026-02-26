@@ -34,6 +34,10 @@ Rules:
 - Keep frontend controllers focused on UI workflow orchestration.
 - Keep page modules thin and avoid large closure/nonlocal state when a typed model can be used.
 - Page package `__init__.py` should export `register` only; tests should import helper functions from their source modules.
+- Keep dependency direction one-way:
+  - `pages/*` may depend on page-local modules, components, core helpers, and services via controllers.
+  - `services/*` must not depend on `pages/*` modules.
+  - If shared transforms are needed by both page/controller and service, place them in `services/*` (or `core/*`) and import from there.
 
 Reference implementation (current):
 
@@ -85,6 +89,13 @@ The current implementation now standardizes several frontend patterns across pag
   - `frontend/ui/nicegui/pages/__init__.py` no longer eagerly imports all pages.
   - `frontend/ui/nicegui/pages/ai_curator/__init__.py` uses a lazy `register(...)` proxy.
   - This keeps service-layer tests import-safe when run in isolation.
+
+- Architecture enforcement tests:
+  - `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`
+    - Enforces that service modules do not import page modules.
+    - Enforces page/controller boundaries and complexity guardrails.
+  - `tests/frontend/ui/nicegui/pages/explore/test_explore_architecture.py`
+    - Enforces Explore page package UI/pure-module boundaries.
 
 ## NiceGUI Sequence
 
@@ -163,13 +174,18 @@ Notes:
 Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 
 - `/login`: Authenticate and create a session.
-- `/`: Redirect to `/learning`.
-- `/courses`: Browse/search courses.
-- `/paths`: Browse learning paths.
-- `/learning`: Personal learning workspace (tracked/shared/recommended).
-- `/activity`: Inbox + team activity feed.
-- `/articles`: Share and browse colleague-submitted links ("Articles").
-- `/insights`: Statistics/overview page.
+- `/`: Redirect to `/home`.
+- `/home`: Primary action hub (continue learning + review nudges + personal workspace).
+- `/manage/courses`: Course management and sharing surface.
+- `/manage/paths`: Path management and sharing surface.
+- `/manage/articles`: Article management and sharing surface.
+- `/explore`: Unified discovery hub.
+- `/explore/courses/{course_id}`: Course detail route.
+- `/explore/paths/{path_id}`: Path detail route.
+- `/explore/articles/{article_id}`: Article detail route.
+- `/teams`: Inbox + team activity feed.
+- `/profile`: Profile landing route (redirects to `/profile/stats`).
+- `/profile/stats`: Full statistics dashboard.
 - `/admin/users`: User management (admin only).
 
 Notes:
@@ -199,17 +215,21 @@ Backend endpoints:
 - `POST /auth/login`
 - `GET /auth/me` (optional post-login verification)
 
-### HomePage (`/`)
+### HomePage (`/home`)
 Responsibilities:
 
-- Render current user and role.
-- Show quick links to Courses, Paths, and Tracking.
-- Optionally show recent team activity for admins.
+- Render the primary personal workspace (tracked/selected/shared content).
+- Keep "continue learning" and next-action workflows prominent.
+- Provide clear transition into discovery (`Explore`) and collaboration (`Teams`).
 
 Backend endpoints (optional):
 
 - `GET /auth/me`
-- `GET /tracking/recent` (admin)
+- `GET /tracking`
+- `GET /paths/selected/list`
+- `GET /courses`
+- `GET /paths`
+- `GET /articles`
 
 ### CoursesPage (`/courses`)
 Responsibilities:
@@ -280,7 +300,7 @@ Backend endpoints:
 - `POST /articles/{id}/reviews`
 - `DELETE /articles/{id}/reviews/{review_id}`
 
-### MyLearningPage (`/learning`)
+### Home Workspace (`/home`)
 Responsibilities:
 
 - Provide a single personal overview split into two intents:
@@ -306,6 +326,29 @@ Notes:
 - `GET /courses?created_by=alice`
 - `GET /paths?created_by=alice`
 - `GET /articles?created_by=alice`
+
+### TeamsPage (`/teams`)
+Responsibilities:
+
+- Show inbox/team activity feed for collaboration updates.
+- Allow tab-based filtering between personal inbox and team timeline.
+- Route activity targets to course/path/article detail pages.
+
+Backend endpoints:
+
+- `GET /notifications/activity`
+
+### ProfilePage (`/profile`, `/profile/stats`)
+Responsibilities:
+
+- Redirect `/profile` to `/profile/stats`.
+- Show detailed user stats and (for admins) team stats breakdown.
+- Keep snapshot stats discoverable from Home while full breakdown stays in Profile.
+
+Backend endpoints:
+
+- `GET /tracking/stats`
+- `GET /tracking/stats/users`
 
 ## Expanded Domain Model
 
@@ -353,24 +396,23 @@ classDiagram
   }
 
   class LoginPage { +render() }
-  class InsightsPage { +render() }
+  class HomePage { +render() }
   class PathsPage { +render() }
   class CoursesPage { +render() }
   class ArticlesPage { +render() }
-  class MyLearningPage { +render() }
-  class ActivityPage { +render() }
+  class TeamsPage { +render() }
+  class ProfilePage { +render() }
   class AdminUsersPage { +render() }
   class AiCuratorPage { +render() }
 
   LoginPage --> SessionStore
-  InsightsPage --> SessionStore
-  InsightsPage --> TrackingService
+  HomePage --> MyLearningService
   PathsPage --> PathsService
   CoursesPage --> TrackingService
   CoursesPage --> PathsService
   ArticlesPage --> ArticlesService
-  MyLearningPage --> MyLearningService
-  ActivityPage --> ApiClient
+  TeamsPage --> ApiClient
+  ProfilePage --> TrackingService
   AdminUsersPage --> UsersAdminService
   AiCuratorPage --> ApiClient
 

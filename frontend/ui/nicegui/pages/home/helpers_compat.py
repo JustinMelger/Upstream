@@ -32,8 +32,6 @@ def _recent_tracking(rows: list[dict[str, Any]], *, limit: int = 5) -> list[dict
     """Sort tracking rows by updated_at descending, skipping invalid timestamps."""
     parsed: list[tuple[datetime, dict[str, Any]]] = []
     for row in list(rows or []):
-        if not isinstance(row, dict):
-            continue
         dt = _parse_iso_ts(row.get("updated_at"))
         if not dt:
             continue
@@ -46,8 +44,6 @@ def _recent_courses(courses: list[dict[str, Any]], *, limit: int = 5) -> list[di
     """Sort courses by created_at descending, skipping invalid timestamps."""
     parsed: list[tuple[datetime, dict[str, Any]]] = []
     for course in list(courses or []):
-        if not isinstance(course, dict):
-            continue
         dt = _parse_iso_ts(course.get("created_at"))
         if not dt:
             continue
@@ -60,8 +56,6 @@ def _top_contributors(rows: list[dict[str, Any]], *, limit: int = 5) -> list[dic
     """Rank teammates by a weighted activity score."""
     ranked: list[dict[str, Any]] = []
     for row in list(rows or []):
-        if not isinstance(row, dict):
-            continue
         who = str(row.get("colleague_id") or "").strip()
         if not who:
             continue

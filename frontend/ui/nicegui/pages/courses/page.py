@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import timezone
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
 from nicegui import app, ui
 
-from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
+from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
+from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
@@ -16,10 +17,7 @@ from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.mutation_flow import run_optimistic_mutation
 from frontend.ui.nicegui.core.navigation_intents import (
-    get_course_intent,
-    get_course_storage_intent,
-    pop_course_intent,
-    pop_course_storage_intent,
+    pop_catalog_share_storage_intent,
 )
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.courses.actions import (
@@ -57,10 +55,11 @@ from frontend.ui.nicegui.pages.courses.reducers import (
     filter_courses,
     sort_courses,
 )
-from frontend.ui.nicegui.pages.courses.route_init import intent_matches_course, resolve_courses_route_init
+from frontend.ui.nicegui.pages.courses.route_init import resolve_courses_route_init
 from frontend.ui.nicegui.pages.courses.sections import (
     render_active_filter_chips,
     render_course_card,
+    render_courses_catalog,
     render_courses_empty_state,
     render_courses_topbar,
     render_filters_rail,
@@ -76,35 +75,15 @@ from frontend.ui.nicegui.pages.courses.ui_glue import (
     build_active_filter_chips,
     compute_courses_meta_text,
     compute_expanded_visible_count,
+    format_short_date,
+    normalize_course_view_mode,
+    parse_duration_hours,
     resolve_tracking_status_value,
 )
 from frontend.ui.nicegui.pages.courses.view_model import map_course_card_view
 
 
-def _parse_duration_hours(raw: str) -> float | None:
-    s = raw.strip()
-    if not s:
-        return None
-    try:
-        return float(s)
-    except ValueError:
-        return None
-
-
 _parse_iso_datetime = parse_iso_datetime
-
-
-def _format_short_date(value: Any) -> str:
-    """Format an ISO datetime into a compact human-readable date (e.g., 'Feb 13, 2026')."""
-    dt = _parse_iso_datetime(value)
-    if dt is None:
-        return str(value or "").strip()
-    return dt.astimezone(timezone.utc).strftime("%b %d, %Y")
-
-
-def _normalize_course_view_mode(focus_reviews: bool) -> str:
-    """Map bool focus flag to stable view mode string."""
-    return "reviews" if bool(focus_reviews) else "full"
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -115,32 +94,35 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         api: API client.
     """
 
-    @ui.page("/courses")
+    @ui.page("/manage/courses")
     async def courses_page() -> None:
         user = await require_user(store, api)
         if user is None:
             return
+        request = getattr(ui.context.client, "request", None)
+        share_intent = pop_catalog_share_storage_intent(storage_user=app.storage.user)
         render_shell(title="Courses", store=store, api=api)
         username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
         controller = CoursesPageController(api=api)
 
-        with render_container():
+        with render_catalog_scope(variant="courses").classes("lp-container"):
             page_state = CoursesPageState()
             ui_state = CoursesPageUiState()
 
-            request = getattr(ui.context.client, "request", None)
-            intent = get_course_storage_intent(storage_user=app.storage.user)
-            nav_intent = get_course_intent(username=username)
-            route_init = resolve_courses_route_init(
-                request=request,
-                storage_intent=intent if isinstance(intent, dict) else None,
-                nav_intent=nav_intent if isinstance(nav_intent, dict) else None,
-            )
+            open_share_from_intent = str(share_intent or "") == "course"
+            route_init = resolve_courses_route_init(request=request)
+            _open_create_dialog: Callable[[], None] = lambda: None
+            filters_dialog: Any = None
+
+            def _open_filters_dialog() -> None:
+                if filters_dialog is not None:
+                    filters_dialog.open()
 
             topbar = render_courses_topbar(
                 initial_scope=route_init.initial_scope,
                 on_share=lambda: _open_create_dialog(),
+                on_open_filters=_open_filters_dialog,
             )
             q = topbar.search_input
             scope_filter = topbar.scope_filter
@@ -206,9 +188,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     refresh_btn=refresh_btn,
                     meta=meta,
                     recompute_facet_options=_recompute_facet_options,
-                    refresh_courses_list_ui=courses_list.refresh,
+                    refresh_courses_list_ui=_refresh_courses_list_ui,
                     notify_error=lambda message: safe_notify(message, type="negative"),
-                    compute_meta_text=compute_courses_meta_text,
+                    compute_meta_text=lambda course_count: compute_courses_meta_text(course_count=course_count),
                 )
 
             async def _reload_tracking_only() -> bool:
@@ -216,7 +198,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     page_state=page_state,
                     controller=controller,
                     recompute_facet_options=_recompute_facet_options,
-                    refresh_courses_list_ui=courses_list.refresh,
+                    refresh_courses_list_ui=_refresh_courses_list_ui,
                     notify_error=lambda message: safe_notify(message, type="negative"),
                 )
 
@@ -234,11 +216,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         controller=controller,
                         page_state=page_state,
                         recompute_facet_options=_recompute_facet_options,
-                        refresh_courses_list_ui=courses_list.refresh,
+                        refresh_courses_list_ui=_refresh_courses_list_ui,
                         notify_error=lambda message: safe_notify(message, type="negative"),
                     ),
                     rollback=lambda snapshot: rollback_optimistic_tracking(state=page_state, snapshot=snapshot),
-                    refresh_ui=courses_list.refresh,
+                    refresh_ui=_refresh_courses_list_ui,
                     on_success=lambda: safe_notify("Updated status", type="positive"),
                 )
 
@@ -251,21 +233,27 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         controller=controller,
                         page_state=page_state,
                         recompute_facet_options=_recompute_facet_options,
-                        refresh_courses_list_ui=courses_list.refresh,
+                        refresh_courses_list_ui=_refresh_courses_list_ui,
                         notify_error=lambda message: safe_notify(message, type="negative"),
                     ),
                     rollback=lambda snapshot: rollback_optimistic_tracking(state=page_state, snapshot=snapshot),
-                    refresh_ui=courses_list.refresh,
+                    refresh_ui=_refresh_courses_list_ui,
                     on_success=lambda: safe_notify("Removed status", type="positive"),
                 )
 
             _open_create_dialog = build_share_course_dialog(
                 username=username,
-                parse_duration_hours=_parse_duration_hours,
+                parse_duration_hours=parse_duration_hours,
                 on_submit=lambda payload: perform_create_course(
                     payload=payload,
                     controller=controller,
                     reload_page=_load,
+                ),
+                on_suggest_from_url=lambda url: controller.suggest_course_from_url(url=str(url or "")),
+                is_duplicate_url=lambda raw_url: any(
+                    str(row.get("url") or "").strip().lower() == str(raw_url or "").strip().lower()
+                    for row in list(page_state.courses or [])
+                    if isinstance(row, dict)
                 ),
             )
 
@@ -278,8 +266,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     is_admin=is_admin,
                     state=page_state,
                     controller=controller,
-                    normalize_course_view_mode=_normalize_course_view_mode,
-                    format_short_date=_format_short_date,
+                    normalize_course_view_mode=normalize_course_view_mode,
+                    format_short_date=format_short_date,
                 )
 
             @guard_ui_action(title="Recommend failed")
@@ -298,7 +286,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         username=username,
                         controller=controller,
                         page_state=page_state,
-                        refresh_courses_list_ui=courses_list.refresh,
+                        refresh_courses_list_ui=_refresh_courses_list_ui,
                     ),
                 )
 
@@ -345,11 +333,16 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                 str(status_filter.value or "").strip(),
                             ]
                         )
+
+                        def _browse_all_courses() -> None:
+                            scope_filter.value = "all"
+                            _refresh_list()
+
                         render_courses_empty_state(
                             scope_value=normalized.scope,
                             any_filters=bool(any_filters),
                             has_any_courses=bool(page_state.courses),
-                            on_browse_all=lambda: setattr(scope_filter, "value", "all") or _refresh_list(),
+                            on_browse_all=_browse_all_courses,
                             on_share=lambda: _open_create_dialog(),
                             on_reset_all=_reset_all,
                             on_refresh=_load,
@@ -359,55 +352,77 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     shown_total = len(shown)
                     shown_page = shown[: max(0, int(ui_state.visible_count))]
 
-                    for c in shown_page:
-                        course_id = int(c.get("id") or 0)
-                        tracked = page_state.tracking_by_course_id.get(course_id)
-                        can_edit = is_admin or (str(c.get("created_by") or "") == username)
-                        url = str(c.get("url") or "").strip()
-                        actions = build_course_card_actions(
-                            course_id=course_id,
-                            course_url=url,
-                            course_row=c,
-                            on_open_details=lambda _cid, _focus_reviews: _open_details(_cid, focus_reviews=_focus_reviews),
-                            on_open_recommend=_open_recommend_dialog,
-                            on_open_edit=lambda course: open_edit_course_dialog(
-                                course=course,
-                                parse_duration_hours=_parse_duration_hours,
-                                on_save=partial(
-                                    perform_update_course,
-                                    controller=controller,
-                                    reload_page=_load,
+                    def _render_course_card_item(course: dict[str, Any], *, item_classes: str) -> None:
+                        with ui.element("div").classes(item_classes):
+                            course_id = int(course.get("id") or 0)
+                            tracked = page_state.tracking_by_course_id.get(course_id)
+                            can_edit = is_admin or (str(course.get("created_by") or "") == username)
+                            url = str(course.get("url") or "").strip()
+                            actions = build_course_card_actions(
+                                course_id=course_id,
+                                course_url=url,
+                                course_row=course,
+                                on_open_details=lambda _cid, _focus_reviews: _open_details(_cid, focus_reviews=_focus_reviews),
+                                on_open_recommend=_open_recommend_dialog,
+                                on_open_edit=lambda row: open_edit_course_dialog(
+                                    course=row,
+                                    parse_duration_hours=parse_duration_hours,
+                                    on_save=partial(
+                                        perform_update_course,
+                                        controller=controller,
+                                        reload_page=_load,
+                                    ),
                                 ),
-                            ),
-                            on_confirm_delete=partial(
-                                open_delete_course_confirmation,
-                                open_delete_dialog=open_delete_course_dialog,
-                                on_delete_course=partial(
-                                    perform_delete_course_from_dialog,
-                                    controller=controller,
-                                    reload_page=_load,
+                                on_confirm_delete=partial(
+                                    open_delete_course_confirmation,
+                                    open_delete_dialog=open_delete_course_dialog,
+                                    on_delete_course=partial(
+                                        perform_delete_course_from_dialog,
+                                        controller=controller,
+                                        reload_page=_load,
+                                    ),
                                 ),
-                            ),
-                        )
+                            )
 
-                        card_vm = map_course_card_view(
-                            course_row=c,
-                            tracked_row=tracked if isinstance(tracked, dict) else None,
-                            review_summary_row=page_state.review_summary_by_course_id.get(course_id),
-                            recommendation_summary_row=page_state.recommendation_summary_by_course_id.get(course_id),
-                        )
-                        render_course_card(
-                            course_row=c,
-                            tracked_row=tracked if isinstance(tracked, dict) else None,
-                            card_vm=card_vm,
-                            can_edit=can_edit,
-                            has_url=bool(url),
-                            actions=actions,
-                            is_tracked_course=lambda _cid: int(_cid) in page_state.tracking_by_course_id,
-                            resolve_status_value=resolve_tracking_status_value,
-                            on_set_status=_set_tracking,
-                            on_clear_status=_clear_tracking,
-                        )
+                            card_vm = map_course_card_view(
+                                course_row=course,
+                                tracked_row=tracked if isinstance(tracked, dict) else None,
+                                review_summary_row=page_state.review_summary_by_course_id.get(course_id),
+                                recommendation_summary_row=page_state.recommendation_summary_by_course_id.get(course_id),
+                            )
+                            is_preview_open = int(ui_state.preview_course_id or 0) == int(course_id)
+
+                            def _toggle_preview(selected_course_id: int) -> None:
+                                if int(ui_state.preview_course_id or 0) == int(selected_course_id):
+                                    ui_state.preview_course_id = None
+                                else:
+                                    ui_state.preview_course_id = int(selected_course_id)
+                                courses_list.refresh()
+
+                            render_course_card(
+                                course_row=course,
+                                tracked_row=tracked if isinstance(tracked, dict) else None,
+                                card_vm=card_vm,
+                                can_edit=can_edit,
+                                has_url=bool(url),
+                                actions=actions,
+                                is_tracked_course=lambda _cid: int(_cid) in page_state.tracking_by_course_id,
+                                resolve_status_value=resolve_tracking_status_value,
+                                on_set_status=_set_tracking,
+                                on_clear_status=_clear_tracking,
+                                has_video_preview=bool(card_vm.has_video_preview),
+                                is_preview_open=bool(is_preview_open),
+                                preview_embed_url=str(card_vm.video_embed_url or ""),
+                                on_toggle_preview=lambda _cid=course_id: _toggle_preview(int(_cid)),
+                            )
+
+                    render_courses_catalog(
+                        shown_page=shown_page,
+                        render_course_item=_render_course_card_item,
+                        featured_title="Featured course",
+                        featured_subtitle="Best match from your current filters",
+                        collection_title="Browse by category",
+                    )
 
                     def _load_more() -> None:
                         ui_state.visible_count = compute_expanded_visible_count(
@@ -423,12 +438,18 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         on_load_more=_load_more,
                     )
 
+            def _refresh_active_filters_ui() -> None:
+                active_filters.refresh()
+
+            def _refresh_courses_list_ui() -> None:
+                courses_list.refresh()
+
             def _refresh_list(*_: Any) -> None:
                 refresh_courses_list(
                     ui_state=ui_state,
                     recompute_facet_options=_recompute_facet_options,
-                    refresh_active_filters=active_filters.refresh,
-                    refresh_courses_list_ui=courses_list.refresh,
+                    refresh_active_filters=_refresh_active_filters_ui,
+                    refresh_courses_list_ui=_refresh_courses_list_ui,
                 )
 
             def _clear_filter_values() -> None:
@@ -442,8 +463,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         status_filter=status_filter,
                         sort_filter=sort_filter,
                     ),
-                    refresh_active_filters=active_filters.refresh,
-                    refresh_courses_list_ui=courses_list.refresh,
+                    refresh_active_filters=_refresh_active_filters_ui,
+                    refresh_courses_list_ui=_refresh_courses_list_ui,
                 )
 
             @guard_ui_action(title="Reset filters failed")
@@ -503,16 +524,22 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 status_filter = controls.status_filter
                 refresh_btn = controls.refresh_btn
 
-            def _render_main() -> None:
+            with ui.dialog().props("position=right") as filters_dialog:
+                with ui.card().classes("lp-dialog lp-courses-filter-drawer"):
+                    with ui.row().classes("items-center justify-between w-full"):
+                        ui.label("Course filters").classes("text-lg font-semibold")
+                        ui.button(icon="close", on_click=filters_dialog.close).props("flat dense")
+                    _render_rail()
+
+            with ui.column().classes("w-full gap-3"):
+                render_catalog_hero(
+                    eyebrow="Learning momentum",
+                    title="Build practical skills with curated courses",
+                    subtitle="Track progress, revisit what matters, and keep momentum through each category.",
+                )
                 active_filters()
                 courses_list()
 
-            render_split_layout(rail=_render_rail, main=_render_main, rail_classes="lp-rail--bar")
-
             await _load()
-            if route_init.initial_course_id > 0:
-                await _open_details(route_init.initial_course_id, focus_reviews=route_init.initial_focus_reviews)
-                if intent_matches_course(intent if isinstance(intent, dict) else None, route_init.initial_course_id):
-                    pop_course_storage_intent(storage_user=app.storage.user)
-                if intent_matches_course(nav_intent if isinstance(nav_intent, dict) else None, route_init.initial_course_id):
-                    pop_course_intent(username=username)
+            if open_share_from_intent:
+                _open_create_dialog()

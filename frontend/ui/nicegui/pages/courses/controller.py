@@ -31,6 +31,12 @@ class CoursesPageController:
     """Imperative API workflow orchestration for Courses page."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def load_list_bundle(self, *, params: dict[str, Any] | None = None) -> CoursesListBundle:
@@ -58,9 +64,14 @@ class CoursesPageController:
         """Remove tracking status for one course."""
         await self._api.post("/tracking/delete", {"course_id": int(course_id)})
 
-    async def create_course(self, *, payload: dict[str, Any]) -> None:
+    async def create_course(self, *, payload: dict[str, Any]) -> dict[str, Any]:
         """Create a course."""
-        await self._api.post("/courses", dict(payload or {}))
+        return dict(await self._api.post("/courses", dict(payload or {})) or {})
+
+    async def suggest_course_from_url(self, *, url: str) -> dict[str, Any]:
+        """Resolve URL metadata suggestions for the share dialog."""
+        payload = {"url": str(url or "").strip()}
+        return dict(await self._api.post("/url-preview/metadata", payload) or {})
 
     async def update_course(self, *, course_id: int, payload: dict[str, Any]) -> None:
         """Update a course."""

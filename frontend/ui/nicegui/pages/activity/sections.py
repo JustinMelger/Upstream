@@ -2,39 +2,48 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 import logging
 from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.feedback import render_empty_block, render_error_block
 from frontend.ui.nicegui.pages.activity.ui_glue import coerce_target_id, format_when
 
 
 logger = logging.getLogger(__name__)
 
 
-def render_empty_activity(*, current_tab: str) -> None:
+def render_empty_activity(*, current_tab: str, on_primary: Callable[[], None]) -> None:
     """Render empty-state card for activity list."""
-    with ui.card().classes("lp-card w-full"):
-        ui.label("No activity yet.").classes("text-base")
-        if str(current_tab or "inbox") == "team":
-            ui.label("When teammates share, recommend, or rate content, updates will appear here.").classes("text-sm").style(
-                "color: var(--lp-muted)"
-            )
-        else:
-            ui.label("When teammates review or recommend your shared content, updates will appear here.").classes(
-                "text-sm"
-            ).style("color: var(--lp-muted)")
+    if str(current_tab or "inbox") == "team":
+        render_empty_block(
+            title="No activity yet.",
+            description="When teammates share, recommend, or rate content, updates will appear here.",
+            primary_label="Explore",
+            on_primary=on_primary,
+        )
+        return
+    render_empty_block(
+        title="No activity yet.",
+        description="When teammates review or recommend your shared content, updates will appear here.",
+        primary_label="Explore",
+        on_primary=on_primary,
+    )
 
 
-def render_activity_error(*, message: str) -> None:
+def render_activity_error(*, message: str, on_retry: Callable[[], Any]) -> None:
     """Render load-error state card for activity list."""
-    with ui.card().classes("lp-card w-full"):
-        ui.label("Could not load activity.").classes("text-base")
-        ui.label(str(message or "Unexpected error")).classes("text-sm").style("color: var(--lp-muted)")
+    render_error_block(
+        title="Could not load activity.",
+        message=str(message or "Unexpected error"),
+        retry_label="Retry",
+        on_retry=on_retry,
+    )
 
 
-def render_activity_items(*, events: list[dict[str, Any]], on_open: Any) -> None:
+def render_activity_items(*, events: list[dict[str, Any]], on_open: Callable[[str, int], Any]) -> None:
     """Render activity cards."""
     with ui.column().classes("w-full gap-3"):
         for row in list(events or []):

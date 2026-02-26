@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 
 
-@dataclass(frozen=True)
-class ActiveFilterChip:
+class ActiveFilterChip(BaseModel):
     """Descriptor for a removable active-filter chip."""
+
+    model_config = ConfigDict(frozen=True)
 
     key: str
     label: str
@@ -50,7 +52,7 @@ def build_active_filter_chips(
 
     author = str(author_value or "").strip()
     if author:
-        chips.append(ActiveFilterChip(key="author", label=f"Shared by: {author}"))
+        chips.append(ActiveFilterChip(key="author", label=f"Shared by teammate: {author}"))
 
     sort_key = str(sort_value or "").strip()
     if sort_key:
@@ -58,7 +60,7 @@ def build_active_filter_chips(
     return chips
 
 
-def compute_articles_meta_text(*, article_count: int) -> str:
+def compute_articles_meta_text(article_count: int) -> str:
     """Build the top-bar list meta text."""
     return f"{int(article_count)} articles"
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.courses.page import _normalize_course_view_mode
+from frontend.ui.nicegui.pages.courses.ui_glue import normalize_course_view_mode
 from frontend.ui.nicegui.pages.paths.page import _normalize_path_view_mode, _path_matches_state
 from frontend.ui.nicegui.services import paths_service
 
@@ -26,8 +26,8 @@ def test_path_tracked_untracked_filter_behavior() -> None:
 
 @pytest.mark.unit
 def test_review_only_modal_mode_flags_are_stable() -> None:
-    assert _normalize_course_view_mode(True) == "reviews"
-    assert _normalize_course_view_mode(False) == "full"
+    assert normalize_course_view_mode(True) == "reviews"
+    assert normalize_course_view_mode(False) == "full"
 
     assert _normalize_path_view_mode("reviews") == "reviews"
     assert _normalize_path_view_mode("full") == "full"

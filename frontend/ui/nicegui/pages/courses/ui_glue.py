@@ -2,21 +2,27 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from datetime import timezone
 from typing import Any
 
+from pydantic import BaseModel, ConfigDict
 
-@dataclass(frozen=True)
-class ActiveFilterChip:
+from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
+
+
+class ActiveFilterChip(BaseModel):
     """Descriptor for a removable active-filter chip."""
+
+    model_config = ConfigDict(frozen=True)
 
     key: str
     label: str
 
 
-@dataclass(frozen=True)
-class CoursesFilterResetState:
+class CoursesFilterResetState(BaseModel):
     """Default filter state for a full reset action."""
+
+    model_config = ConfigDict(frozen=True)
 
     scope: str
     search: str
@@ -112,3 +118,45 @@ def resolve_tracking_status_value(
                     return str(key)
         return ""
     return str(raw or fallback_value or "")
+
+
+def parse_duration_hours(raw: str) -> float | None:
+    """Parse optional duration input into float hours."""
+    s = str(raw or "").strip()
+    if not s:
+        return None
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def format_short_date(value: Any) -> str:
+    """Format an ISO datetime into a compact UTC date label."""
+    dt = parse_iso_datetime(value)
+    if dt is None:
+        return str(value or "").strip()
+    return dt.astimezone(timezone.utc).strftime("%b %d, %Y")
+
+
+def normalize_course_view_mode(focus_reviews: bool) -> str:
+    """Map review-focus bool to stable dialog view mode."""
+    return "reviews" if bool(focus_reviews) else "full"
+
+
+def normalize_course_tracking_status(value: str | None) -> str:
+    """Normalize to known tracking statuses used by CTA behavior."""
+    raw = str(value or "").strip()
+    if raw in {"interested", "in_progress", "completed"}:
+        return raw
+    return ""
+
+
+def primary_course_cta_label_for_status(value: str | None) -> str:
+    """Resolve the primary card CTA label from tracking status."""
+    status = normalize_course_tracking_status(value)
+    if status == "completed":
+        return "Review"
+    if status == "in_progress":
+        return "Continue"
+    return "Start"

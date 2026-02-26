@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import logging
-from typing import Any, Awaitable, Callable, cast, TypeVar
+from typing import Any, Awaitable, Callable, cast, Literal, TypeVar
 
 from nicegui import ui
 
@@ -24,6 +24,7 @@ from frontend.ui.nicegui.core.api_client import ApiError
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+NotificationType = Literal["positive", "negative", "warning", "info", "ongoing"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,7 +55,7 @@ def _message_for_exception(exc: Exception) -> str:
     return str(exc) or "Unexpected error"
 
 
-def safe_notify(message: str, *, type: str = "info") -> None:  # noqa: A002
+def safe_notify(message: str, *, type: NotificationType = "info") -> None:  # noqa: A002
     """Best-effort UI notification that tolerates missing/deleted UI context."""
     try:
         ui.notify(message, type=type)

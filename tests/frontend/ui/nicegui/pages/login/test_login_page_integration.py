@@ -121,7 +121,7 @@ async def test_login_page_redirects_when_token_exists(monkeypatch: pytest.Monkey
     handler = fake_ui.routes["/login"]
     await handler()
 
-    assert fake_ui.navigations == ["/learning"]
+    assert fake_ui.navigations == ["/home"]
 
 
 @pytest.mark.anyio
@@ -158,4 +158,4 @@ async def test_login_page_submit_calls_store_login_and_navigates(monkeypatch: py
     await fake_ui.buttons["Login"].emit("click")
 
     assert calls == [("alice", "secret")]
-    assert "/learning" in fake_ui.navigations
+    assert "/home" in fake_ui.navigations

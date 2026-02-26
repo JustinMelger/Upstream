@@ -18,6 +18,7 @@ class ArticleCardView:
     tags: list[str]
     summary_text: str
     subtitle_text: str
+    thumbnail_url: str
 
 
 def map_article_card_view(
@@ -38,4 +39,5 @@ def map_article_card_view(
         tags=parse_tags(str(article_row.get("tags") or "")),
         summary_text=f"★ {summary}" if summary else "",
         subtitle_text=" · ".join([bit for bit in subtitle_bits if bit]),
+        thumbnail_url=str(article_row.get("preview_image_url") or "").strip(),
     )

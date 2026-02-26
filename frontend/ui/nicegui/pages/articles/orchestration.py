@@ -61,10 +61,11 @@ async def perform_create_article(
     payload: dict[str, Any],
     controller: Any,
     reload_page: Callable[[], Any],
-) -> None:
+) -> dict[str, Any]:
     """Create an article, then refresh page data."""
-    await controller.create_article(payload=dict(payload or {}))
+    created = dict(await controller.create_article(payload=dict(payload or {})) or {})
     await reload_page()
+    return created
 
 
 def refresh_articles_list(

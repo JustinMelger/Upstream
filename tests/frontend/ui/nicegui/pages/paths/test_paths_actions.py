@@ -8,6 +8,7 @@ from frontend.ui.nicegui.pages.paths.actions import (
     build_track_toggle,
     clear_path_filter_by_key,
     path_share_link,
+    PathCardActionDeps,
     PathsFilterControls,
     recompute_path_status_filter,
     reset_path_filter_controls,
@@ -17,7 +18,7 @@ from frontend.ui.nicegui.pages.paths.actions import (
 
 @pytest.mark.unit
 def test_path_share_link_builds_expected_deep_link() -> None:
-    assert path_share_link(path_id=42) == "/paths?path_id=42&view=full"
+    assert path_share_link(path_id=42) == "/explore/paths/42"
 
 
 @pytest.mark.unit
@@ -43,7 +44,7 @@ async def test_build_track_toggle_select_branch_runs_select_and_after_hook() -> 
         on_unselect=_unselect,
         on_after_toggle=_after,
     )
-    assert label == "Track"
+    assert label == "Select"
     await action()
     assert calls == ["select:7", "after"]
 
@@ -71,7 +72,7 @@ async def test_build_track_toggle_unselect_branch_runs_unselect_and_after_hook()
         on_unselect=_unselect,
         on_after_toggle=_after,
     )
-    assert label == "Untrack"
+    assert label == "Unselect"
     await action()
     assert calls == ["unselect:9", "after"]
 
@@ -100,7 +101,7 @@ async def test_build_track_toggle_does_not_run_after_hook_when_select_fails() ->
         on_unselect=_unselect,
         on_after_toggle=_after,
     )
-    assert label == "Track"
+    assert label == "Select"
     await action()
     assert calls == ["select:12"]
 
@@ -128,7 +129,7 @@ async def test_build_track_toggle_does_not_run_after_hook_when_unselect_returns_
         on_unselect=_unselect,
         on_after_toggle=_after,
     )
-    assert label == "Untrack"
+    assert label == "Unselect"
     await action()
     assert calls == ["unselect:13"]
 
@@ -179,20 +180,22 @@ async def test_build_path_card_actions_wires_callbacks(monkeypatch: pytest.Monke
     cb = build_path_card_actions(
         path_id=5,
         is_tracked=False,
-        username="alice",
-        get_user_note=_get_user_note,
-        save_recommendation=_save_recommendation,
-        on_saved=_on_saved,
-        get_path_detail=_get_path_detail,
-        on_open_edit=_on_open_edit,
-        on_delete=_on_delete,
-        on_open_details=_on_open_details,
-        on_select=_on_select,
-        on_unselect=_on_unselect,
+        deps=PathCardActionDeps(
+            username="alice",
+            get_user_note=_get_user_note,
+            save_recommendation=_save_recommendation,
+            on_saved=_on_saved,
+            get_path_detail=_get_path_detail,
+            on_open_edit=_on_open_edit,
+            on_delete=_on_delete,
+            on_open_details=_on_open_details,
+            on_select=_on_select,
+            on_unselect=_on_unselect,
+        ),
         on_after_toggle=_after,
     )
 
-    assert cb.track_toggle_label == "Track"
+    assert cb.track_toggle_label == "Select"
     await cb.on_recommend()
     await cb.on_review()
     await cb.on_edit()

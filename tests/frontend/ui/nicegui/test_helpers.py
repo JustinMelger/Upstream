@@ -13,7 +13,7 @@ import pytest
 
 from frontend.ui.nicegui.components.filters import filter_selected_paths
 from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, tracking_chip_class, tracking_label
-from frontend.ui.nicegui.pages.courses.page import _parse_duration_hours
+from frontend.ui.nicegui.pages.courses.ui_glue import parse_duration_hours
 from frontend.ui.nicegui.pages.home.helpers_compat import (
     _ids_by_status,
     _parse_iso_ts,
@@ -103,5 +103,5 @@ def test_course_helpers_are_deterministic() -> None:
     assert tracking_label(None) == "Not tracked"
 
     assert tracking_chip_class("in_progress").startswith("lp-chip")
-    assert _parse_duration_hours("1.5") == 1.5
-    assert _parse_duration_hours("bad") is None
+    assert parse_duration_hours("1.5") == 1.5
+    assert parse_duration_hours("bad") is None

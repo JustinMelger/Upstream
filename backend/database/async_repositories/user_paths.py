@@ -94,7 +94,7 @@ class UserPathsRepository(RepositoryDateTimeCodec):
             .where(func.lower(UserPathModel.colleague_id) == func.lower(colleague_id))
             .where(UserPathModel.path_id == path_id)
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def update_user_path_status(self, colleague_id: str, path_id: int, status: str, now: str | datetime) -> int:
         """Update status for a selected path.
@@ -114,4 +114,4 @@ class UserPathsRepository(RepositoryDateTimeCodec):
             .where(UserPathModel.path_id == path_id)
             .values(status=status, updated_at=self._as_datetime(now))
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)

@@ -35,6 +35,47 @@ class LearningTabView:
     recommended_paths: list[dict[str, Any]]
 
 
+def build_recently_shared_in_teams(
+    *,
+    data: dict[str, Any],
+    username: str,
+    limit: int = 6,
+) -> list[dict[str, Any]]:
+    """Return a recency-sorted mixed feed of teammate-shared content."""
+
+    def _append_rows(content_type: str, rows: list[dict[str, Any]], title_key: str) -> None:
+        for row in rows:
+            owner = str(row.get("created_by") or "").strip()
+            if not owner or owner == username:
+                continue
+            try:
+                item_id = int(row.get("id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if item_id <= 0:
+                continue
+            title = str(row.get(title_key) or "").strip()
+            if not title:
+                continue
+            updated_at = str(row.get("updated_at") or row.get("created_at") or "").strip()
+            feed.append(
+                {
+                    "type": content_type,
+                    "id": item_id,
+                    "title": title,
+                    "created_by": owner,
+                    "updated_at": updated_at,
+                }
+            )
+
+    feed: list[dict[str, Any]] = []
+    _append_rows("course", list(data.get("courses") or []), "title")
+    _append_rows("path", list(data.get("paths") or []), "name")
+    _append_rows("article", list(data.get("articles") or []), "title")
+    feed.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
+    return feed[: max(0, int(limit))]
+
+
 def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
     """Build typed shared-tab projection from raw page data payload."""
     return SharedTabView(

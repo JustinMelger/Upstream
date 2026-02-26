@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Callable
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 from sqlalchemy.exc import IntegrityError
 
-from backend.core.errors import error_handler, ServiceError
+from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
 from backend.database.tx import session_scope
 
@@ -18,7 +19,17 @@ class CourseRecommendationsServiceError(ServiceError):
 def course_recommendations_error_handler(
     message: str = "An unexpected error occurred while handling course recommendations",
     status_code: int = 500,
-):
+) -> Callable[[F], F]:
+    """Build an error-handler decorator for course recommendation methods.
+
+    Args:
+        message: Default fallback error message.
+        status_code: Default HTTP status code for unexpected failures.
+
+    Returns:
+        Decorator wrapping uncaught errors as `CourseRecommendationsServiceError`.
+
+    """
     return error_handler(
         service_error=CourseRecommendationsServiceError,
         message=message,
@@ -38,10 +49,25 @@ class CourseRecommendationsService:
     """Course recommendations service."""
 
     def __init__(self, repo: CourseRecommendationsRepository):
+        """Initialize the service.
+
+        Args:
+            repo: Course recommendations repository.
+
+        """
         self._repo = repo
 
     @course_recommendations_error_handler()
     async def list_recommendations(self, *, course_id: int) -> list[dict]:
+        """List recommendation rows for one course.
+
+        Args:
+            course_id: Course identifier.
+
+        Returns:
+            Serialized recommendation rows.
+
+        """
         async with session_scope(self._repo.session):
             rows = await self._repo.list_for_course(course_id=course_id)
         return [

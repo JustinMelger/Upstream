@@ -184,10 +184,11 @@ async def perform_create_course(
     payload: dict[str, Any],
     controller: Any,
     reload_page: Callable[[], Awaitable[None]],
-) -> None:
+) -> dict[str, Any]:
     """Create a course, then reload page data."""
-    await controller.create_course(payload=dict(payload or {}))
+    created = dict(await controller.create_course(payload=dict(payload or {})) or {})
     await reload_page()
+    return created
 
 
 async def perform_update_course(

@@ -3,11 +3,12 @@ from __future__ import annotations
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import PathCourseRecord, PathRecord
 from backend.database.orm_models import Course as CourseModel, Path as PathModel, PathCourse as PathCourseModel
 
 
-class PathsRepository:
+class PathsRepository(RepositoryDateTimeCodec):
     """Async SQLAlchemy implementation of paths persistence."""
 
     def __init__(self, session: AsyncSession):
@@ -151,7 +152,7 @@ class PathsRepository:
                     for idx, course_id in enumerate(course_ids)
                 ]
             )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def delete_path_with_courses(self, path_id: int) -> int:
         """Delete a path and its course links.
@@ -164,4 +165,4 @@ class PathsRepository:
         """
         await self.session.execute(delete(PathCourseModel).where(PathCourseModel.path_id == path_id))
         result = await self.session.execute(delete(PathModel).where(PathModel.id == path_id))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)

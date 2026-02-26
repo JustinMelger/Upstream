@@ -2,8 +2,19 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable
+
+from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values, PathsFilterValues
+
+
+@dataclass(frozen=True, slots=True)
+class PathsListSlice:
+    """Derived normalized filter values and shown list rows."""
+
+    normalized: PathsFilterValues
+    shown: list[dict[str, Any]]
 
 
 def filter_paths_by_needle(paths: list[dict[str, Any]] | None, needle: str) -> list[dict[str, Any]]:
@@ -133,3 +144,39 @@ def build_status_options(*, scope_value: str, counts: dict[str, int]) -> dict[st
         "not_tracked": f"Not tracked ({counts.get('not_tracked', 0)})",
         "tracked": f"Tracked ({counts.get('tracked', 0)})",
     }
+
+
+def derive_paths_list_slice(
+    *,
+    paths: list[dict[str, Any]],
+    selected_by_id: dict[int, dict[str, Any]],
+    path_review_summary_by_id: dict[int, dict[str, Any]],
+    scope_value: str,
+    search_value: str,
+    status_value: str,
+    sort_value: str,
+    path_matches_state: Callable[[int, dict[int, dict[str, Any]], str], bool],
+    parse_iso_datetime: Callable[[Any], datetime | None],
+) -> PathsListSlice:
+    """Derive normalized filter values + shown list rows."""
+    normalized = normalize_paths_filter_values(
+        scope_value=scope_value,
+        search_value=search_value,
+        status_value=status_value,
+        sort_value=sort_value,
+    )
+    shown = filter_paths_by_needle(paths, normalized.search)
+    shown = apply_scope_and_status(
+        paths=shown,
+        selected_by_id=selected_by_id,
+        scope_value=normalized.scope,
+        status_value=normalized.status,
+        path_matches_state=path_matches_state,
+    )
+    shown = sort_paths(
+        paths=shown,
+        sort_value=normalized.sort,
+        path_review_summary_by_id=path_review_summary_by_id,
+        parse_iso_datetime=parse_iso_datetime,
+    )
+    return PathsListSlice(normalized=normalized, shown=shown)

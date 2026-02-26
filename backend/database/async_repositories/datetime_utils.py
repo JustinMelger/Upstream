@@ -28,3 +28,8 @@ class RepositoryDateTimeCodec:
     def _as_iso_or_empty(cls, value: datetime | str | None) -> str:
         """Normalize a datetime/string value into ISO string, fallback to empty."""
         return str(cls._as_iso(value) or "")
+
+    @staticmethod
+    def _rowcount(result: object) -> int:
+        """Safely extract SQLAlchemy rowcount for typed contexts."""
+        return int(getattr(result, "rowcount", 0) or 0)

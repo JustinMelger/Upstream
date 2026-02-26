@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import delete, func, select, update
@@ -112,22 +113,7 @@ class CoursesRepository(RepositoryDateTimeCodec):
             created_by=row.created_by,
         )
 
-    async def create_course(
-        self,
-        *,
-        title: str,
-        description: str,
-        learning_outcomes: str | None,
-        prerequisites: str | None,
-        language: str | None,
-        provider: str | None,
-        category: str | None,
-        level: str | None,
-        duration_hours: float | None,
-        url: str | None,
-        created_at: str | datetime | None,
-        created_by: str | None,
-    ) -> int:
+    async def create_course(self, *, payload: "CreateCoursePayload") -> int:
         """Create a course.
 
         Args:
@@ -143,18 +129,18 @@ class CoursesRepository(RepositoryDateTimeCodec):
             Newly created course ID.
         """
         row = CourseModel(
-            title=title,
-            description=description,
-            learning_outcomes=learning_outcomes,
-            prerequisites=prerequisites,
-            language=language,
-            provider=provider,
-            category=category,
-            level=level,
-            duration_hours=duration_hours,
-            url=url,
-            created_at=self._as_datetime(created_at),
-            created_by=created_by,
+            title=payload.title,
+            description=payload.description,
+            learning_outcomes=payload.learning_outcomes,
+            prerequisites=payload.prerequisites,
+            language=payload.language,
+            provider=payload.provider,
+            category=payload.category,
+            level=payload.level,
+            duration_hours=payload.duration_hours,
+            url=payload.url,
+            created_at=self._as_datetime(payload.created_at),
+            created_by=payload.created_by,
         )
         self.session.add(row)
         await self.session.flush()
@@ -224,21 +210,7 @@ class CoursesRepository(RepositoryDateTimeCodec):
             created_by=row.created_by,
         )
 
-    async def update_course(
-        self,
-        *,
-        course_id: int,
-        title: str,
-        description: str,
-        learning_outcomes: str | None,
-        prerequisites: str | None,
-        language: str | None,
-        provider: str | None,
-        category: str | None,
-        level: str | None,
-        duration_hours: float | None,
-        url: str | None,
-    ) -> int:
+    async def update_course(self, *, payload: "UpdateCoursePayload") -> int:
         """Update a course.
 
         Args:
@@ -255,21 +227,21 @@ class CoursesRepository(RepositoryDateTimeCodec):
         """
         result = await self.session.execute(
             update(CourseModel)
-            .where(CourseModel.id == course_id)
+            .where(CourseModel.id == payload.course_id)
             .values(
-                title=title,
-                description=description,
-                learning_outcomes=learning_outcomes,
-                prerequisites=prerequisites,
-                language=language,
-                provider=provider,
-                category=category,
-                level=level,
-                duration_hours=duration_hours,
-                url=url,
+                title=payload.title,
+                description=payload.description,
+                learning_outcomes=payload.learning_outcomes,
+                prerequisites=payload.prerequisites,
+                language=payload.language,
+                provider=payload.provider,
+                category=payload.category,
+                level=payload.level,
+                duration_hours=payload.duration_hours,
+                url=payload.url,
             )
         )
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
 
     async def delete_course(self, course_id: int) -> int:
         """Delete a course.
@@ -281,4 +253,39 @@ class CoursesRepository(RepositoryDateTimeCodec):
             Number of rows deleted.
         """
         result = await self.session.execute(delete(CourseModel).where(CourseModel.id == course_id))
-        return int(result.rowcount or 0)
+        return self._rowcount(result)
+
+
+@dataclass(frozen=True, slots=True)
+class CreateCoursePayload:
+    """Typed input for course creation writes."""
+
+    title: str
+    description: str
+    learning_outcomes: str | None
+    prerequisites: str | None
+    language: str | None
+    provider: str | None
+    category: str | None
+    level: str | None
+    duration_hours: float | None
+    url: str | None
+    created_at: str | datetime | None
+    created_by: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateCoursePayload:
+    """Typed input for course update writes."""
+
+    course_id: int
+    title: str
+    description: str
+    learning_outcomes: str | None
+    prerequisites: str | None
+    language: str | None
+    provider: str | None
+    category: str | None
+    level: str | None
+    duration_hours: float | None
+    url: str | None

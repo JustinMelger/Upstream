@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from pydantic import BaseModel, ConfigDict
 
 
-@dataclass(slots=True)
-class ActiveFilterChip:
+class ActiveFilterChip(BaseModel):
     """UI chip metadata for active filter badges."""
+
+    model_config = ConfigDict(frozen=True)
 
     key: str
     label: str

@@ -21,6 +21,12 @@ class ArticlesPageController:
     """Imperative API workflows for `/articles`."""
 
     def __init__(self, *, api: ApiClient):
+        """Initialize the controller.
+
+        Args:
+            api: Shared API client.
+
+        """
         self._api = api
 
     async def load_list_bundle(self) -> ArticlesListBundle:
@@ -47,6 +53,11 @@ class ArticlesPageController:
     async def create_article(self, *, payload: dict[str, Any]) -> dict[str, Any]:
         """Create a new article row."""
         return dict(await self._api.post("/articles", dict(payload or {})) or {})
+
+    async def suggest_article_from_url(self, *, url: str) -> dict[str, Any]:
+        """Resolve URL metadata suggestions for the share dialog."""
+        payload = {"url": str(url or "").strip()}
+        return dict(await self._api.post("/url-preview/metadata", payload) or {})
 
     async def load_article_reviews(self, *, article_id: int) -> list[dict[str, Any]]:
         """Load article reviews for details dialog."""

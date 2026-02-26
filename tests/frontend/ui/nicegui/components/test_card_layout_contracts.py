@@ -6,26 +6,38 @@ import pytest
 
 
 @pytest.mark.unit
-def test_courses_card_uses_bottom_action_row_not_right_column() -> None:
+def test_shared_card_frame_helpers_exist() -> None:
+    src = Path("frontend/ui/nicegui/components/card_frame.py").read_text(encoding="utf-8")
+    assert "def render_card_topright" in src
+    assert "def render_card_main_row" in src
+    assert "def render_card_content_column" in src
+    assert "def render_card_actions_row" in src
+
+
+@pytest.mark.unit
+def test_courses_card_uses_shared_card_frame_helpers() -> None:
     src = Path("frontend/ui/nicegui/pages/courses/sections.py").read_text(encoding="utf-8")
-    assert 'with ui.element("div").classes("lp-card-topright")' in src
-    assert 'with ui.row().classes("items-center gap-2 mt-2")' in src
-    # Regression guard: old layout used a separate right-aligned column which collapsed on short cards.
-    assert 'with ui.column().classes("items-end gap-2")' not in src
+    assert "render_card_topright" in src
+    assert "render_card_main_row" in src
+    assert "render_card_content_column" in src
+    assert "render_card_actions_row" in src
 
 
 @pytest.mark.unit
-def test_paths_card_keeps_topright_badges_and_bottom_actions() -> None:
+def test_paths_card_uses_shared_card_frame_helpers() -> None:
     src = Path("frontend/ui/nicegui/components/path_card.py").read_text(encoding="utf-8")
-    assert 'with ui.element("div").classes("lp-card-topright")' in src
-    assert 'with ui.row().classes("items-center gap-2 mt-2")' in src
+    assert "render_card_topright" in src
+    assert "render_card_content_column" in src
+    assert "render_card_actions_row" in src
 
 
 @pytest.mark.unit
-def test_articles_card_keeps_topright_badge_and_bottom_actions() -> None:
+def test_articles_card_uses_shared_card_frame_helpers() -> None:
     src = Path("frontend/ui/nicegui/pages/articles/sections.py").read_text(encoding="utf-8")
-    assert 'with ui.element("div").classes("lp-card-topright")' in src
-    assert 'with ui.row().classes("items-center gap-2 mt-2")' in src
+    assert "render_card_topright" in src
+    assert "render_card_main_row" in src
+    assert "render_card_content_column" in src
+    assert "render_card_actions_row" in src
 
 
 @pytest.mark.unit
@@ -39,10 +51,17 @@ def test_courses_and_articles_topbar_are_componentized_in_sections() -> None:
 @pytest.mark.unit
 def test_load_more_footer_component_is_reused_across_pages() -> None:
     pagination_src = Path("frontend/ui/nicegui/components/pagination.py").read_text(encoding="utf-8")
-    paths_src = Path("frontend/ui/nicegui/pages/paths/page.py").read_text(encoding="utf-8")
-    articles_src = Path("frontend/ui/nicegui/pages/articles/page.py").read_text(encoding="utf-8")
+    paths_sections_src = Path("frontend/ui/nicegui/pages/paths/sections.py").read_text(encoding="utf-8")
+    articles_sections_src = Path("frontend/ui/nicegui/pages/articles/sections.py").read_text(encoding="utf-8")
     courses_sections_src = Path("frontend/ui/nicegui/pages/courses/sections.py").read_text(encoding="utf-8")
     assert "def render_load_more_footer" in pagination_src
-    assert "render_load_more_footer(" in paths_src
-    assert "render_load_more_footer(" in articles_src
+    assert "render_load_more_footer(" in paths_sections_src
+    assert "render_load_more_footer(" in articles_sections_src
     assert "render_load_more_footer(" in courses_sections_src
+
+
+@pytest.mark.unit
+def test_course_primary_action_awaits_async_callbacks() -> None:
+    src = Path("frontend/ui/nicegui/pages/courses/sections.py").read_text(encoding="utf-8")
+    assert "await actions.on_view()" in src
+    assert "await actions.on_review()" in src

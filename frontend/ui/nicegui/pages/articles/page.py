@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from nicegui import ui
+from nicegui import app, ui
 
-from frontend.ui.nicegui.components.layout import render_container, render_shell, render_split_layout
+from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
+from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell, render_split_layout
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.navigation_intents import pop_catalog_share_storage_intent
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.articles.actions import (
     build_article_card_actions,
@@ -33,6 +34,7 @@ from frontend.ui.nicegui.pages.articles.reducers import derive_shown_articles
 from frontend.ui.nicegui.pages.articles.sections import (
     render_active_filter_chips,
     render_article_card,
+    render_articles_catalog,
     render_articles_empty_state,
     render_articles_topbar,
     render_filters_rail,
@@ -47,35 +49,44 @@ from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
-    """Register the `/articles` route."""
+    """Register the articles routes."""
 
-    @ui.page("/articles")
+    @ui.page("/manage/articles")
     async def articles_page() -> None:
         user = await require_user(store, api)
         if user is None:
             return
+        share_intent = pop_catalog_share_storage_intent(storage_user=app.storage.user)
         username = str(user.get("username") or "")
         is_admin = str(user.get("role") or "") == "admin"
         controller = ArticlesPageController(api=api)
 
         render_shell(title="Articles", store=store, api=api)
-
+        open_share_from_intent = str(share_intent or "") == "article"
         state = ArticlesPageState()
-
         tag_filter: Any = None
         author_filter: Any = None
         sort_filter: Any = None
         refresh_btn: Any = None
         meta: Any = None
 
-        async def _submit_share(payload: dict[str, Any]) -> None:
-            await perform_create_article(
+        async def _submit_share(payload: dict[str, Any]) -> dict[str, Any]:
+            return await perform_create_article(
                 payload=payload,
                 controller=controller,
                 reload_page=_load,
             )
 
-        _open_share_dialog = build_share_article_dialog(on_submit=_submit_share)
+        _open_share_dialog = build_share_article_dialog(
+            username=username,
+            on_submit=_submit_share,
+            on_suggest_from_url=lambda url: controller.suggest_article_from_url(url=str(url or "")),
+            is_duplicate_url=lambda raw_url: any(
+                str(row.get("url") or "").strip().lower() == str(raw_url or "").strip().lower()
+                for row in list(state.articles or [])
+                if isinstance(row, dict)
+            ),
+        )
 
         def _facet_controls() -> Any:
             return build_articles_facet_controls(
@@ -85,6 +96,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 sort_filter=sort_filter,
             )
 
+        def _refresh_active_filters_ui() -> None:
+            active_filters.refresh()
+
+        def _refresh_articles_list_ui() -> None:
+            articles_list.refresh()
+
         def _refresh_list(*_: Any) -> None:
             refresh_articles_list(
                 state=state,
@@ -93,8 +110,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     articles=state.articles,
                     search_value=str(q.value or "").strip(),
                 ),
-                refresh_active_filters=active_filters.refresh,
-                refresh_articles_list_ui=articles_list.refresh,
+                refresh_active_filters=_refresh_active_filters_ui,
+                refresh_articles_list_ui=_refresh_articles_list_ui,
             )
 
         def _reset_filters() -> None:
@@ -106,8 +123,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     articles=state.articles,
                     search_value="",
                 ),
-                refresh_active_filters=active_filters.refresh,
-                refresh_articles_list_ui=articles_list.refresh,
+                refresh_active_filters=_refresh_active_filters_ui,
+                refresh_articles_list_ui=_refresh_articles_list_ui,
             )
 
         @guard_ui_action(title="Load failed")
@@ -122,8 +139,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     articles=state.articles,
                     search_value=str(q.value or "").strip(),
                 ),
-                refresh_active_filters=active_filters.refresh,
-                refresh_articles_list_ui=articles_list.refresh,
+                refresh_active_filters=_refresh_active_filters_ui,
+                refresh_articles_list_ui=_refresh_articles_list_ui,
                 notify_error=lambda message: safe_notify(message, type="negative"),
                 compute_meta_text=compute_articles_meta_text,
             )
@@ -139,7 +156,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 state=state,
             )
 
-        with render_container():
+        with render_catalog_scope(variant="articles").classes("lp-container"):
             topbar = render_articles_topbar(on_share=_open_share_dialog)
             q = topbar.search_input
             sort_filter = topbar.sort_filter
@@ -197,7 +214,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     if state.loading or not state.loaded_once:
                         render_card_skeletons(count=3)
                         return
-
                     if not shown:
                         any_filters = any([normalized.search, normalized.tag, normalized.author])
                         render_articles_empty_state(
@@ -208,47 +224,55 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             on_refresh=_load,
                         )
                         return
+                    with ui.column().classes("w-full gap-1 lp-courses-section"):
+                        ui.label("Latest reads").classes("lp-courses-section-title")
+                        ui.label("Resources shared by teammates").classes("lp-courses-section-subtitle")
 
                     total = len(shown)
                     shown_page = shown[: max(0, int(state.visible_count))]
 
-                    for a in shown_page:
-                        article_id = int(a.get("id") or 0)
+                    def _render_article_item(article_row: dict[str, Any]) -> None:
+                        article_id = int(article_row.get("id") or 0)
                         card_vm = map_article_card_view(
-                            article_row=a,
+                            article_row=article_row,
                             review_summary_row=state.review_summary_by_article_id.get(article_id),
                         )
                         actions = build_article_card_actions(
-                            article_row=a,
+                            article_row=article_row,
                             on_open_details=lambda _a, _focus: _open_details(_a, focus_reviews=bool(_focus)),
                         )
                         render_article_card(
-                            article_row=a,
+                            article_row=article_row,
                             is_new=card_vm.is_new,
                             tags=card_vm.tags,
                             summary_text=card_vm.summary_text,
                             subtitle_text=card_vm.subtitle_text,
+                            thumbnail_url=card_vm.thumbnail_url,
                             view_action=actions.on_view,
                             review_action=actions.on_review,
                         )
 
-                    if total > len(shown_page):
-
-                        def _load_more() -> None:
-                            state.visible_count = compute_expanded_visible_count(
-                                current_visible=int(state.visible_count),
-                                total_count=total,
-                                page_size=state.page_size,
-                            )
-                            articles_list.refresh()
-
-                        render_load_more_footer(
-                            shown_page_count=len(shown_page),
-                            shown_total_count=total,
-                            on_load_more=_load_more,
+                    def _load_more() -> None:
+                        state.visible_count = compute_expanded_visible_count(
+                            current_visible=int(state.visible_count),
+                            total_count=total,
+                            page_size=state.page_size,
                         )
+                        articles_list.refresh()
+
+                    render_articles_catalog(
+                        shown_page=shown_page,
+                        total_count=total,
+                        render_article_item=_render_article_item,
+                        on_load_more=_load_more,
+                    )
 
             def _render_main() -> None:
+                render_catalog_hero(
+                    eyebrow="Editorial stream",
+                    title="Read what your team is sharing now",
+                    subtitle="Scan trusted links fast, then open details when you want deeper context.",
+                )
                 active_filters()
                 articles_list()
 
@@ -262,3 +286,5 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 author_filter.on("update:model-value", _refresh_list)
 
             await _load()
+            if open_share_from_intent:
+                _open_share_dialog()

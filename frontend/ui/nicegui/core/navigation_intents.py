@@ -5,71 +5,30 @@ from __future__ import annotations
 from typing import Any
 
 
-_COURSE_INTENTS: dict[str, dict[str, Any]] = {}
-_PATH_INTENTS: dict[str, dict[str, Any]] = {}
-_COURSE_STORAGE_KEY = "courses_open_intent"
-_PATH_STORAGE_KEY = "paths_open_intent"
+_CATALOG_SHARE_STORAGE_KEY = "catalog_share_intent"
 
 
-def set_course_intent(*, username: str, course_id: int, view: str) -> None:
-    """Set one-shot course dialog intent for a user."""
-    _COURSE_INTENTS[str(username)] = {"course_id": int(course_id), "view": str(view or "full")}
+def set_catalog_share_storage_intent(*, storage_user: dict[str, Any], target: str) -> None:
+    """Set one-shot catalog share intent in UI storage."""
+    normalized = str(target or "").strip().lower()
+    if normalized not in {"course", "path", "article"}:
+        return
+    storage_user[_CATALOG_SHARE_STORAGE_KEY] = normalized
 
 
-def get_course_intent(*, username: str) -> dict[str, Any] | None:
-    """Read course dialog intent without consuming it."""
-    return _COURSE_INTENTS.get(str(username))
+def get_catalog_share_storage_intent(*, storage_user: dict[str, Any]) -> str | None:
+    """Read catalog share intent from UI storage without consuming it."""
+    value = storage_user.get(_CATALOG_SHARE_STORAGE_KEY)
+    if not isinstance(value, str):
+        return None
+    normalized = str(value).strip().lower()
+    return normalized if normalized in {"course", "path", "article"} else None
 
 
-def pop_course_intent(*, username: str) -> dict[str, Any] | None:
-    """Consume course dialog intent for a user."""
-    return _COURSE_INTENTS.pop(str(username), None)
-
-
-def set_path_intent(*, username: str, path_id: int, view: str) -> None:
-    """Set one-shot path dialog intent for a user."""
-    _PATH_INTENTS[str(username)] = {"path_id": int(path_id), "view": str(view or "full")}
-
-
-def get_path_intent(*, username: str) -> dict[str, Any] | None:
-    """Read path dialog intent without consuming it."""
-    return _PATH_INTENTS.get(str(username))
-
-
-def pop_path_intent(*, username: str) -> dict[str, Any] | None:
-    """Consume path dialog intent for a user."""
-    return _PATH_INTENTS.pop(str(username), None)
-
-
-def set_course_storage_intent(*, storage_user: dict[str, Any], course_id: int, view: str) -> None:
-    """Set one-shot course dialog intent in UI storage."""
-    storage_user[_COURSE_STORAGE_KEY] = {"course_id": int(course_id), "view": str(view or "full")}
-
-
-def get_course_storage_intent(*, storage_user: dict[str, Any]) -> dict[str, Any] | None:
-    """Read course dialog intent from UI storage without consuming it."""
-    value = storage_user.get(_COURSE_STORAGE_KEY)
-    return value if isinstance(value, dict) else None
-
-
-def pop_course_storage_intent(*, storage_user: dict[str, Any]) -> dict[str, Any] | None:
-    """Consume course dialog intent from UI storage."""
-    value = storage_user.pop(_COURSE_STORAGE_KEY, None)
-    return value if isinstance(value, dict) else None
-
-
-def set_path_storage_intent(*, storage_user: dict[str, Any], path_id: int, view: str) -> None:
-    """Set one-shot path dialog intent in UI storage."""
-    storage_user[_PATH_STORAGE_KEY] = {"path_id": int(path_id), "view": str(view or "full")}
-
-
-def get_path_storage_intent(*, storage_user: dict[str, Any]) -> dict[str, Any] | None:
-    """Read path dialog intent from UI storage without consuming it."""
-    value = storage_user.get(_PATH_STORAGE_KEY)
-    return value if isinstance(value, dict) else None
-
-
-def pop_path_storage_intent(*, storage_user: dict[str, Any]) -> dict[str, Any] | None:
-    """Consume path dialog intent from UI storage."""
-    value = storage_user.pop(_PATH_STORAGE_KEY, None)
-    return value if isinstance(value, dict) else None
+def pop_catalog_share_storage_intent(*, storage_user: dict[str, Any]) -> str | None:
+    """Consume catalog share intent from UI storage."""
+    value = storage_user.pop(_CATALOG_SHARE_STORAGE_KEY, None)
+    if not isinstance(value, str):
+        return None
+    normalized = str(value).strip().lower()
+    return normalized if normalized in {"course", "path", "article"} else None

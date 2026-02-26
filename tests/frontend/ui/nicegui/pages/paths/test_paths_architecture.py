@@ -42,20 +42,22 @@ def test_paths_pure_modules_do_not_import_nicegui() -> None:
 
 @pytest.mark.unit
 def test_paths_page_uses_page_package_modules_for_logic() -> None:
-    imports = _imports_for(_PATHS_DIR / "page.py")
+    page_imports = _imports_for(_PATHS_DIR / "page.py")
+    flow_imports = _imports_for(_PATHS_DIR / "filter_flow.py")
+    sections_imports = _imports_for(_PATHS_DIR / "sections.py")
     # Keep business/state orchestration in paths package modules; avoid reaching into services from view.
-    assert "frontend.ui.nicegui.services.paths_service" not in imports
-    assert "frontend.ui.nicegui.services.courses_service" not in imports
-    assert "frontend.ui.nicegui.pages.paths.controller" in imports
-    assert "frontend.ui.nicegui.pages.paths.filters" in imports
-    assert "frontend.ui.nicegui.pages.paths.reducers" in imports
-    assert "frontend.ui.nicegui.pages.paths.transitions" in imports
-    assert "frontend.ui.nicegui.pages.paths.view_model" in imports
+    assert "frontend.ui.nicegui.services.paths_service" not in page_imports
+    assert "frontend.ui.nicegui.services.courses_service" not in page_imports
+    assert "frontend.ui.nicegui.pages.paths.controller" in page_imports
+    assert "frontend.ui.nicegui.pages.paths.reducers" in page_imports
+    assert "frontend.ui.nicegui.pages.paths.transitions" in page_imports
+    assert "frontend.ui.nicegui.pages.paths.filters" in flow_imports
+    assert "frontend.ui.nicegui.pages.paths.view_model" in sections_imports
 
 
 @pytest.mark.unit
 def test_paths_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"actions.py", "detail_flow.py", "dialogs.py", "page.py"}
+    expected_ui_modules = {"actions.py", "detail_flow.py", "dialogs.py", "page.py", "sections.py"}
     for path in sorted(_PATHS_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)
