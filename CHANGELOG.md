@@ -1,3 +1,22 @@
+# [0.9.0](https://github.com/JustinMelger/learning-platform/compare/v0.8.1...v0.9.0) (2026-02-26)
+
+
+### Bug Fixes
+
+* architecture check cicd ([c7d1b5a](https://github.com/JustinMelger/learning-platform/commit/c7d1b5aead4b48cfd75adeb3eeaafa7605d84809))
+* architecture check cicd ([cb73052](https://github.com/JustinMelger/learning-platform/commit/cb73052184521286ee0df0304a9d9e12cf343c2c))
+* architecture check cicd ([2998122](https://github.com/JustinMelger/learning-platform/commit/2998122bd3bfdf3c779b9f099115a0e8b2b8b21c))
+* architecture check cicd ([4d9ff72](https://github.com/JustinMelger/learning-platform/commit/4d9ff727f9f208b13bdfa989e0496f73ed92eaeb))
+
+
+### Features
+
+* add image preview + autofill suggest for course articles ([408b75e](https://github.com/JustinMelger/learning-platform/commit/408b75e627137337103d41df82d6bf37abc3d683))
+* add intro first time user ([67f63de](https://github.com/JustinMelger/learning-platform/commit/67f63de3240918c7a64c98d875cc24036093a8f0))
+* add telemetery ([c76701c](https://github.com/JustinMelger/learning-platform/commit/c76701c860f44bb1e27c55eeb68499d4e89fdda0))
+* persist user draft ([837310c](https://github.com/JustinMelger/learning-platform/commit/837310ce9935d28f18e0efcb275361149a01b703))
+* url validation, success summary ([6ecf32e](https://github.com/JustinMelger/learning-platform/commit/6ecf32e22627a52020afa950868c3b4faceb1224))
+
 ## [0.8.1](https://github.com/JustinMelger/learning-platform/compare/v0.8.0...v0.8.1) (2026-02-20)
 
 
