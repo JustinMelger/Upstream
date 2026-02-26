@@ -25,9 +25,13 @@ def _imports_for(path: Path) -> set[str]:
 def test_explore_pure_modules_do_not_import_nicegui() -> None:
     for filename in [
         "controller.py",
+        "event_bindings.py",
+        "list_flow.py",
+        "mutations_flow.py",
         "orchestration.py",
         "state.py",
         "ui_glue.py",
+        "view_model.py",
     ]:
         imports = _imports_for(_EXPLORE_DIR / filename)
         assert "nicegui" not in imports
@@ -39,10 +43,18 @@ def test_explore_page_imports_page_package_modules() -> None:
     imports = _imports_for(_EXPLORE_DIR / "page.py")
     assert "frontend.ui.nicegui.pages.explore.controller" in imports
     assert "frontend.ui.nicegui.pages.explore.detail_page" in imports
+    assert "frontend.ui.nicegui.pages.explore.event_bindings" in imports
+    assert "frontend.ui.nicegui.pages.explore.list_flow" in imports
     assert "frontend.ui.nicegui.pages.explore.list_sections" in imports
+    assert "frontend.ui.nicegui.pages.explore.mutations_flow" in imports
+    assert "frontend.ui.nicegui.pages.explore.share_flow" in imports
     assert "frontend.ui.nicegui.pages.explore.sections" in imports
     assert "frontend.ui.nicegui.pages.explore.state" in imports
     assert "frontend.ui.nicegui.pages.explore.ui_glue" in imports
+    assert "frontend.ui.nicegui.pages.explore.view_model" in imports
+    assert "frontend.ui.nicegui.pages.courses.controller" not in imports
+    assert "frontend.ui.nicegui.pages.paths.controller" not in imports
+    assert "frontend.ui.nicegui.pages.articles.controller" not in imports
     assert "frontend.ui.nicegui.services.courses_service" not in imports
     assert "frontend.ui.nicegui.services.articles_service" not in imports
 

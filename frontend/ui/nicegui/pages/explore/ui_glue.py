@@ -115,3 +115,13 @@ def apply_explore_filter_options(
     controls.tag_filter.update()
     controls.author_filter.options = author_options
     controls.author_filter.update()
+
+
+def should_emit_first_search(*, search_value: str, telemetry_emitted: bool) -> bool:
+    """Return whether first-search telemetry should be emitted now."""
+    return (not bool(telemetry_emitted)) and bool(str(search_value or "").strip())
+
+
+def toggle_show_all_categories(*, current_value: bool) -> bool:
+    """Flip the Explore category rail expansion state."""
+    return not bool(current_value)

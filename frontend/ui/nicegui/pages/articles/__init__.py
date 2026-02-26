@@ -1,6 +1,4 @@
-"""Articles page package exports."""
-
-from frontend.ui.nicegui.pages.articles.page import register
+"""Articles page package."""
 
 
-__all__ = ["register"]
+__all__: list[str] = []

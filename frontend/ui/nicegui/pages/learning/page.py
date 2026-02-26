@@ -319,7 +319,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     on_clear_tracking_status=_clear_tracking_status,
                     on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
                     on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
-                    on_open_selected_paths=lambda: ui.navigate.to("/manage/paths?tab=selected"),
+                    on_open_selected_paths=lambda: ui.navigate.to("/explore?tab=paths"),
                     on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
                     recently_shared_in_teams=recently_shared_in_teams,
                     on_open_recently_shared_item=lambda row: (

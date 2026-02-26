@@ -3,12 +3,12 @@ from __future__ import annotations
 import pytest
 
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.pages.paths.page import _path_matches_state
 from frontend.ui.nicegui.pages.paths.reducers import (
     apply_scope_and_status,
     build_status_options,
     compute_status_counts,
     filter_paths_by_needle,
+    path_matches_state,
     sort_paths,
 )
 
@@ -32,7 +32,7 @@ def test_apply_scope_and_status_uses_selected_map_and_status_matcher() -> None:
         selected_by_id=selected,
         scope_value="selected",
         status_value="",
-        path_matches_state=_path_matches_state,
+        path_matches_state=path_matches_state,
     )
     assert [int(r["id"]) for r in scoped] == [2]
 
@@ -41,7 +41,7 @@ def test_apply_scope_and_status_uses_selected_map_and_status_matcher() -> None:
         selected_by_id=selected,
         scope_value="all",
         status_value="not_tracked",
-        path_matches_state=_path_matches_state,
+        path_matches_state=path_matches_state,
     )
     assert [int(r["id"]) for r in status_filtered] == [1, 3]
 

@@ -16,13 +16,10 @@ from frontend.ui.nicegui.core.theme import apply_theme
 from frontend.ui.nicegui.pages import (
     admin_users,
     ai_curator,
-    articles,
-    courses,
     explore,
     home,
     learning,
     login,
-    paths,
     profile,
     teams,
 )
@@ -43,10 +40,6 @@ def create_app() -> None:
     profile.register(store=store, api=api)
     if settings.feature_ai_curator:
         ai_curator.register(store=store, api=api)
-    courses.register(store=store, api=api)
-    paths.register(store=store, api=api)
-    if settings.feature_articles:
-        articles.register(store=store, api=api)
     admin_users.register(store=store, api=api)
 
 

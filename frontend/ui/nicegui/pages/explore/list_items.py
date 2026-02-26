@@ -94,16 +94,16 @@ def render_path_item(
             ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
 
         def _open_path_recommend() -> None:
-            ui.navigate.to(f"/manage/paths?path_id={path_id}")
+            ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
 
         def _copy_path_link() -> None:
             copy_path_link(path_id=path_id)
 
         def _open_path_edit() -> None:
-            ui.navigate.to(f"/manage/paths?path_id={path_id}")
+            ui.navigate.to(f"/explore/paths/{path_id}")
 
         def _open_path_delete() -> None:
-            ui.navigate.to(f"/manage/paths?path_id={path_id}")
+            ui.navigate.to(f"/explore/paths/{path_id}")
 
         render_path_card(
             display=PathCardDisplay(

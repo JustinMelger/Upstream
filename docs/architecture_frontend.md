@@ -176,9 +176,6 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 - `/login`: Authenticate and create a session.
 - `/`: Redirect to `/home`.
 - `/home`: Primary action hub (continue learning + review nudges + personal workspace).
-- `/manage/courses`: Course management and sharing surface.
-- `/manage/paths`: Path management and sharing surface.
-- `/manage/articles`: Article management and sharing surface.
 - `/explore`: Unified discovery hub.
 - `/explore/courses/{course_id}`: Course detail route.
 - `/explore/paths/{path_id}`: Path detail route.
@@ -199,7 +196,7 @@ Notes:
 The UI supports a small set of runtime feature flags (read from environment variables):
 
 - `FEATURE_AI_CURATOR=0|1`: Enables the AI Curator route (`/ai`) and shows/hides it in navigation.
-- `FEATURE_ARTICLES=0|1`: Enables the Articles route (`/articles`) and shows/hides it in navigation.
+- `FEATURE_ARTICLES=0|1`: Enables article data in Explore/Home surfaces.
 
 ## Page Responsibilities
 
@@ -231,13 +228,13 @@ Backend endpoints (optional):
 - `GET /paths`
 - `GET /articles`
 
-### CoursesPage (`/courses`)
+### ExplorePage (`/explore`)
 Responsibilities:
 
-- Render filters (query/provider/category/level).
-- Call `CoursesService.list_courses(...)`.
-- Create courses (any authenticated user).
-- Edit/delete courses only when the current user is the creator (or an admin).
+- Render unified discovery for courses, paths, and articles.
+- Provide share actions for course/path/article creation.
+- Provide tracking/select actions and deep-link into detail routes.
+- Keep list/detail flows in Explore-local controller/orchestration modules.
 
 Backend endpoints:
 
@@ -245,19 +242,6 @@ Backend endpoints:
 - `POST /courses`
 - `PUT /courses/{id}` (owner/admin)
 - `DELETE /courses/{id}` (owner/admin)
-
-### PathsPage (`/paths`)
-Responsibilities:
-
-- Render all paths (name, description).
-- Open path detail view (courses ordered).
-- Track/untrack paths (binary state only).
-- On track: auto-seed untracked path courses as `interested`.
-- Create paths (any authenticated user).
-- Edit/delete paths only when the current user is the creator (or an admin).
-
-Backend endpoints:
-
 - `GET /paths`
 - `GET /paths/{id}`
 - `POST /paths`
@@ -266,6 +250,12 @@ Backend endpoints:
 - `POST /paths/{id}/select`
 - `POST /paths/{id}/unselect`
 - `POST /tracking` (for auto-seeding path courses)
+- `GET /articles`
+- `POST /articles`
+- `GET /articles/reviews/summary`
+- `GET /articles/{id}/reviews`
+- `POST /articles/{id}/reviews`
+- `DELETE /articles/{id}/reviews/{review_id}`
 
 ### AdminUsersPage (`/admin/users`)
 Responsibilities:
@@ -283,22 +273,6 @@ Backend endpoints:
 - `POST /auth/users/reset`
 - `POST /auth/users/disable`
 - `DELETE /auth/users/{username}`
-
-### ArticlesPage (`/articles`)
-Responsibilities:
-
-- Allow colleagues to share links (title, URL, optional tags).
-- Browse/search shared links.
-- Create/update/delete article reviews (owner/admin delete).
-
-Backend endpoints:
-
-- `GET /articles`
-- `POST /articles`
-- `GET /articles/reviews/summary`
-- `GET /articles/{id}/reviews`
-- `POST /articles/{id}/reviews`
-- `DELETE /articles/{id}/reviews/{review_id}`
 
 ### Home Workspace (`/home`)
 Responsibilities:

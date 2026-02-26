@@ -151,14 +151,14 @@ Sprint 7 acceptance criteria:
     - [x] `frontend/ui/nicegui/pages/paths/compat.py`
     - [x] `frontend/ui/nicegui/pages/articles/compat.py`
 - [x] Remove legacy navigation/query compatibility behavior:
-  - [x] Delete `?share=1` compatibility checks in `/manage/*` pages after Explore-native share flow is confirmed stable.
+  - [x] Delete `?share=1` compatibility checks from legacy compatibility routes after Explore-native share flow is confirmed stable.
   - [x] Remove obsolete route/query init helpers tied to legacy entry model where no longer used.
 - [x] Remove legacy theme branches and simplify theme system:
   - [x] Remove `feature_explore_cinema`-specific layout/theme branches from:
     - [x] `frontend/ui/nicegui/components/layout.py`
     - [x] `frontend/ui/nicegui/pages/explore/page.py`
     - [x] `frontend/ui/nicegui/core/theme.py`
-  - [x] Keep one canonical visual system for Explore and management pages.
+  - [x] Keep one canonical visual system for Explore.
   - [x] Remove unused catalog-variant CSS selectors that no longer have route-level consumers.
 - [x] Strengthen architecture and route guards:
   - [x] Update route-contract tests to assert only canonical routes are registered.

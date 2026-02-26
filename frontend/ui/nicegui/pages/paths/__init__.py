@@ -1,6 +1,4 @@
-"""Paths page package (MVC layout)."""
-
-from frontend.ui.nicegui.pages.paths.page import register
+"""Paths page package."""
 
 
-__all__ = ["register"]
+__all__: list[str] = []

@@ -21,14 +21,12 @@ def test_pages_expose_register_callable() -> None:
     from frontend.ui.nicegui.pages import (
         admin_users,
         ai_curator,
-        courses,
         home,
         learning,
         login,
-        paths,
     )
 
-    for mod in [ai_curator, admin_users, courses, home, learning, login, paths]:
+    for mod in [ai_curator, admin_users, home, learning, login]:
         assert callable(getattr(mod, "register", None))
 
 

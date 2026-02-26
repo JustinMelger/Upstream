@@ -91,9 +91,6 @@ def test_documented_routes_exist_in_page_modules() -> None:
         "/teams",
         "/profile",
         "/profile/stats",
-        "/manage/courses",
-        "/manage/paths",
-        "/manage/articles",
         "/explore",
         "/explore/courses/{course_id}",
         "/explore/paths/{path_id}",
@@ -131,7 +128,7 @@ def test_legacy_catalog_compat_modules_are_removed() -> None:
 
 
 def test_page_modules_do_not_navigate_to_legacy_discovery_routes() -> None:
-    forbidden = {"/courses", "/paths", "/articles", "/learning", "/activity", "/insights"}
+    forbidden = {"/courses", "/paths", "/articles", "/manage/courses", "/manage/paths", "/manage/articles", "/learning", "/activity", "/insights"}
     for page_path in sorted(_PAGES_ROOT.glob("*/page.py")):
         tree = _parse(page_path)
         for node in ast.walk(tree):
@@ -153,15 +150,16 @@ def test_page_modules_do_not_navigate_to_legacy_discovery_routes() -> None:
                 continue
             value = str(first.value)
             if value in forbidden or any(value.startswith(f"{route}?") for route in forbidden):
-                raise AssertionError(f"Use Explore or /manage routes instead of legacy discovery route in {page_path}: {value}")
+                raise AssertionError(f"Use Explore routes instead of legacy discovery route in {page_path}: {value}")
 
 
 def test_main_create_app_keeps_feature_flag_gates() -> None:
     source = _MAIN_FILE.read_text(encoding="utf-8")
     assert "if settings.feature_ai_curator:" in source
     assert "ai_curator.register(store=store, api=api)" in source
-    assert "if settings.feature_articles:" in source
-    assert "articles.register(store=store, api=api)" in source
+    assert "courses.register(store=store, api=api)" not in source
+    assert "paths.register(store=store, api=api)" not in source
+    assert "articles.register(store=store, api=api)" not in source
 
 
 def test_pages_and_services_do_not_import_httpx_directly() -> None:
@@ -244,18 +242,6 @@ def test_page_package_modules_do_not_use_broad_exception_handlers() -> None:
 def test_card_pages_use_view_model_mappers() -> None:
     """Guard view-model boundary: page modules should call page-local view-model mappers."""
     expected: dict[Path, tuple[str, tuple[str, ...]]] = {
-        Path("frontend/ui/nicegui/pages/courses/page.py"): (
-            "frontend.ui.nicegui.pages.courses.view_model",
-            ("map_course_card_view",),
-        ),
-        Path("frontend/ui/nicegui/pages/paths/page.py"): (
-            "frontend.ui.nicegui.pages.paths.view_model",
-            ("map_path_card_view",),
-        ),
-        Path("frontend/ui/nicegui/pages/articles/page.py"): (
-            "frontend.ui.nicegui.pages.articles.view_model",
-            ("map_article_card_view",),
-        ),
         Path("frontend/ui/nicegui/pages/learning/page.py"): (
             "frontend.ui.nicegui.pages.learning.view_model",
             ("build_learning_tab_view", "build_shared_tab_view"),
@@ -263,31 +249,16 @@ def test_card_pages_use_view_model_mappers() -> None:
     }
     for page_path, (module_name, mapper_names) in expected.items():
         imports = _imports_for(page_path)
-        if page_path == Path("frontend/ui/nicegui/pages/paths/page.py"):
-            section_path = Path("frontend/ui/nicegui/pages/paths/sections.py")
-            section_imports = _imports_for(section_path)
-            assert module_name in imports or module_name in section_imports, (
-                f"Expected {page_path} or {section_path} to import {module_name}"
-            )
-        else:
-            assert module_name in imports, f"Expected {page_path} to import {module_name}"
+        assert module_name in imports, f"Expected {page_path} to import {module_name}"
         for mapper_name in mapper_names:
-            if page_path == Path("frontend/ui/nicegui/pages/paths/page.py"):
-                section_path = Path("frontend/ui/nicegui/pages/paths/sections.py")
-                assert _calls_function_named(page_path, mapper_name) or _calls_function_named(section_path, mapper_name), (
-                    f"Expected {page_path} or {section_path} to call {mapper_name}"
-                )
-            else:
-                assert _calls_function_named(page_path, mapper_name), f"Expected {page_path} to call {mapper_name}"
+            assert _calls_function_named(page_path, mapper_name), f"Expected {page_path} to call {mapper_name}"
 
 
 def test_large_page_modules_stay_below_size_guardrail() -> None:
     """Keep large page modules from regressing while migration continues."""
     max_lines_by_page = {
-        Path("frontend/ui/nicegui/pages/courses/page.py"): 565,
-        Path("frontend/ui/nicegui/pages/paths/page.py"): 537,
-        Path("frontend/ui/nicegui/pages/articles/page.py"): 296,
         Path("frontend/ui/nicegui/pages/learning/page.py"): 353,
+        Path("frontend/ui/nicegui/pages/explore/page.py"): 280,
     }
     for page_path, max_lines in max_lines_by_page.items():
         line_count = len(page_path.read_text(encoding="utf-8").splitlines())
@@ -326,10 +297,11 @@ def test_ruff_complexity_per_file_ignores_do_not_broaden_scope() -> None:
 
     approved_targets = {
         "tests/**/*.py",
-        "frontend/ui/nicegui/pages/*/page.py",
-        "frontend/ui/nicegui/pages/*/sections.py",
-        "frontend/ui/nicegui/pages/*/dialogs.py",
-        "frontend/ui/nicegui/pages/explore/page.py",
+        "frontend/ui/nicegui/pages/admin_users/page.py",
+        "frontend/ui/nicegui/pages/ai_curator/page.py",
+        "frontend/ui/nicegui/pages/learning/page.py",
+        "frontend/ui/nicegui/pages/courses/sections.py",
+        "frontend/ui/nicegui/pages/learning/sections.py",
     }
     unexpected = sorted(complexity_ignore_targets - approved_targets)
     assert not unexpected, (

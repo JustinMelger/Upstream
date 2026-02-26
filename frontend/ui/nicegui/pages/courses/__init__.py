@@ -1,6 +1,4 @@
-"""Courses page package (migration in progress)."""
-
-from frontend.ui.nicegui.pages.courses.page import register
+"""Courses page package."""
 
 
-__all__ = ["register"]
+__all__: list[str] = []

@@ -26,3 +26,11 @@ class ExplorePageState:
     articles: list[dict[str, Any]] = field(default_factory=list)
     article_review_summary_by_article_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     preview_course_id: int | None = None
+
+
+@dataclass(slots=True)
+class ExploreUiFlags:
+    """Mutable UI-only flags for Explore page event behavior."""
+
+    search_telemetry_emitted: bool = False
+    show_all_categories: bool = False

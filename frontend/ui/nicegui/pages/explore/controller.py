@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
@@ -16,6 +16,7 @@ from frontend.ui.nicegui.pages.explore.orchestration import (
     load_explore_paths_background,
     set_explore_tracking_status,
 )
+from frontend.ui.nicegui.pages.explore.share_models import ExploreSharePayload, ExploreUrlValue
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
 
@@ -169,3 +170,87 @@ class ExplorePageController:
             review_id=int(review_id),
             cache_scope=str(cache_scope or ""),
         )
+
+    async def create_course_share(
+        self,
+        *,
+        state: ExplorePageState,
+        payload: ExploreSharePayload,
+        reload_data: Callable[[], Awaitable[None]],
+        refresh_ui: Callable[..., Any],
+    ) -> dict[str, Any]:
+        """Create a course from Explore share dialog and refresh the list view."""
+        created = await self._gateway.courses.create_course(payload=dict(payload.payload or {}))
+        await reload_data()
+        refresh_ui()
+        return created
+
+    async def create_path_share(
+        self,
+        *,
+        state: ExplorePageState,
+        payload: ExploreSharePayload,
+        reload_data: Callable[[], Awaitable[None]],
+        refresh_ui: Callable[..., Any],
+    ) -> None:
+        """Create a path from Explore share dialog and refresh the list view."""
+        _ = state
+        await self._gateway.paths.create_path(payload=dict(payload.payload or {}))
+        await reload_data()
+        refresh_ui()
+
+    async def create_article_share(
+        self,
+        *,
+        state: ExplorePageState,
+        payload: ExploreSharePayload,
+        reload_data: Callable[[], Awaitable[None]],
+        refresh_ui: Callable[..., Any],
+    ) -> dict[str, Any]:
+        """Create an article from Explore share dialog and refresh the list view."""
+        _ = state
+        created = await self._gateway.articles.create_article(payload=dict(payload.payload or {}))
+        await reload_data()
+        refresh_ui()
+        return created
+
+    async def suggest_course_from_url(self, *, url_value: ExploreUrlValue) -> dict[str, Any]:
+        """Suggest course metadata from URL for Explore share dialog."""
+        return await self._gateway.courses.suggest_course_from_url(url=str(url_value.url or ""))
+
+    async def suggest_article_from_url(self, *, url_value: ExploreUrlValue) -> dict[str, Any]:
+        """Suggest article metadata from URL for Explore share dialog."""
+        return await self._gateway.articles.suggest_article_from_url(url=str(url_value.url or ""))
+
+    def is_duplicate_course_url(self, *, state: ExplorePageState, url_value: ExploreUrlValue) -> bool:
+        """Check whether a course URL already exists in loaded Explore results."""
+        normalized = str(url_value.url or "").strip().lower()
+        if not normalized:
+            return False
+        for row in list(state.courses or []):
+            if str(row.get("url") or "").strip().lower() == normalized:
+                return True
+        return False
+
+    def is_duplicate_article_url(self, *, state: ExplorePageState, url_value: ExploreUrlValue) -> bool:
+        """Check whether an article URL already exists in loaded Explore results."""
+        normalized = str(url_value.url or "").strip().lower()
+        if not normalized:
+            return False
+        for row in list(state.articles or []):
+            if str(row.get("url") or "").strip().lower() == normalized:
+                return True
+        return False
+
+    def build_path_share_course_options(self, *, state: ExplorePageState) -> dict[int, str]:
+        """Build course options map used by Explore path-share dialog."""
+        options: dict[int, str] = {}
+        for row in list(state.courses or []):
+            try:
+                cid = int(row.get("id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if cid <= 0:
+                continue
+            options[cid] = f"{str(row.get('title') or '').strip()} (#{cid})"
+        return options
