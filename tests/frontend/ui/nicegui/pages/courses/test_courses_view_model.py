@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from frontend.ui.nicegui.pages.courses import view_model
@@ -15,11 +17,12 @@ def test_course_badge_formatters() -> None:
 
 @pytest.mark.unit
 def test_map_course_card_view_for_tracked_updated_course() -> None:
+    now = datetime.now(timezone.utc)
     row = {
         "id": 5,
         "created_by": "admin",
-        "created_at": "2026-02-18T00:00:00Z",
-        "updated_at": "2026-02-20T00:00:00Z",
+        "created_at": (now - timedelta(days=3)).isoformat(),
+        "updated_at": (now - timedelta(days=1)).isoformat(),
         "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     }
     tracked = {"status": "in_progress"}
