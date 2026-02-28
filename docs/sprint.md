@@ -5,6 +5,68 @@
 - Complete all open non-user-testing items in Phase `11` before starting Phase `14` user testing/pilot validation work.
 - Keep roadmap as strategy/source of truth and use this file for sprint execution tracking.
 
+## Sprint 10 — UX + Style Modernization (Active)
+Goal: deliver a coherent, modern visual system and interaction polish across `Home`, `Explore`, and detail surfaces, while finishing first-time clarity gaps.
+
+Timebox:
+- [ ] 2 weeks (start next working day)
+
+In scope:
+- [ ] `11A.1` Modernization Sprint 1 (typography scale, spacing rhythm, single component language).
+- [ ] `11A.4` Motion polish for refreshes/filter state/card updates.
+- [ ] `11A.4` Page identity pass (distinct section language + hero treatments).
+- [ ] `11E.3` + `11E.7` first-time clarity completion (intro/empty states/next-step clarity consistency).
+- [ ] Accessibility style essentials from `11C` that are part of UX polish (focus visibility, icon-label clarity, keyboard/focus behavior in high-traffic controls).
+- [ ] Design review + targeted page redesign for high-traffic surfaces (`Home`, `Explore`, and one detail page).
+
+Out of scope:
+- [ ] Media pipeline/backend ingestion work (`11A.3` thumbnail fetch/persistence/quality gates).
+- [ ] Activity feed v2 behavior expansion (`11B` filters/unread/grouping/pagination).
+- [ ] Phase `12+` analytics and AI-curation expansion.
+
+Execution slices:
+- [ ] Slice 10.0: design review baseline (audit + decisions)
+  - [ ] Run UX/UI audit on `Home`, `Explore`, `Teams`, `Profile`, and detail pages against clarity/hierarchy/consistency criteria.
+  - [ ] Capture current-state screenshots and annotate top friction points (scanability, CTA hierarchy, density, visual consistency).
+  - [ ] Produce a prioritized redesign list: `must-change now` vs `defer`.
+- [ ] Slice 10.1: design tokens + component language baseline
+  - [ ] Finalize typography hierarchy and spacing scale in `frontend/ui/nicegui/core/theme.py`.
+  - [ ] Normalize card/button/chip/input treatment across `Explore`, `Home`, and detail pages.
+  - [ ] Remove remaining visual one-offs that conflict with canonical component styling.
+- [ ] Slice 10.2: motion + interaction polish
+  - [ ] Add 120-200ms transitions for list/filter/sort state changes.
+  - [ ] Add subtle stagger/enter animations for key card lists.
+  - [ ] Standardize inline feedback patterns for save/track/select/review actions.
+- [ ] Slice 10.3: page identity pass
+  - [ ] Strengthen page-specific hero language and section framing for `Home` and `Explore`.
+  - [ ] Keep interaction model unchanged while making each primary page visually distinct.
+- [ ] Slice 10.3b: targeted page redesign implementation
+  - [ ] Redesign `Home` hero + first-scroll section layout for stronger “what to do next” clarity.
+  - [ ] Redesign `Explore` top section and card-density rhythm for faster scan + action.
+  - [ ] Redesign one detail page template (`course` preferred) as the new reference pattern.
+  - [ ] Reuse redesigned template patterns in path/article details where low-risk.
+- [ ] Slice 10.4: first-time clarity + accessibility polish
+  - [ ] Complete any remaining onboarding intro and empty-state next-action inconsistencies.
+  - [ ] Ensure visible focus states and keyboard flow for menus/dropdowns/dialog triggers.
+  - [ ] Ensure icon-only actions expose clear ARIA labels and visible tooltips/text hints where needed.
+- [ ] Slice 10.5: visual quality gate hardening
+  - [ ] Commit stable visual baselines and enable strict visual-regression enforcement in CI (`11D` remaining item).
+
+Validation and acceptance criteria:
+- [ ] Core pages (`Home`, `Explore`, detail pages) use one consistent typography/spacing/component language.
+- [ ] Interaction transitions are present, subtle, and consistent (no abrupt state jumps on major list/filter/card updates).
+- [ ] First-time clarity goals are measurably improved:
+  - [ ] no ambiguous empty-state next steps on primary pages.
+  - [ ] intro/onboarding flow is dismissible and non-blocking.
+- [ ] Accessibility UX polish passes focused checks for keyboard navigation + visible focus + icon-action labeling on touched surfaces.
+- [ ] CI enforces visual snapshots strictly with committed stable baselines.
+- [ ] Design review output is documented and actionable (before/after evidence + accepted redesign decisions).
+
+Tracking:
+- [ ] Update roadmap checkboxes for completed `11A/11C/11D/11E` UX-style items at sprint close.
+- [ ] Record before/after screenshots for `Home`, `Explore`, and one detail page variant in CI artifacts.
+- [ ] Add a short design-review log section in this file (decision, rationale, affected pages/components).
+
 ## Sprint 1 — IA foundation (11E-first)
 - [x] Complete `11E.0` instrumentation baseline for first-action and nav/search events.
 - [x] Complete `11E.1` top-level navigation simplification (`Home`, `Explore`, `Teams`, `Profile`) + legacy redirects.
