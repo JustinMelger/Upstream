@@ -152,3 +152,26 @@ class PathRecommendationRecord:
     note: str | None
     created_by: str
     created_at: str
+
+
+@dataclass(frozen=True)
+class TeamRecord:
+    """Team row representation."""
+
+    id: int
+    name: str
+    description: str | None
+    owner_user_id: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True)
+class TeamMemberRecord:
+    """Team membership row representation."""
+
+    team_id: int
+    user_id: str
+    role: str
+    created_at: str
+    updated_at: str

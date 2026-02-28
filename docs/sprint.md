@@ -132,12 +132,62 @@ Tracking:
   - [x] Add architecture regression guard for complexity in active page modules (prevent new regressions).
   - [x] Keep legacy-page excludes fixed (no broadened ignore scope).
   - [x] Roll out CI ratchet mode: fail on new violations first, then enforce full thresholds.
-- [ ] Complete open Phase `11D` engineering items:
+  - [ ] Complete open Phase `11D` engineering items:
   - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
     - [x] Phase slice: add Playwright smoke coverage for `login` + `track` and upload screenshots/log artifacts in CI.
     - [x] Phase slice: add `review` + `select path` smoke coverage.
     - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
     - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+
+## Sprint 11 — Social Learning Hub v1 (Teams + Scoped Sharing)
+- [ ] Align execution to roadmap `Phase 11F`.
+
+- [ ] Slice 11.0: UX flow baseline (no-team and first-team activation)
+  - [ ] `/teams` empty state: primary `Create team` action and optional `Join team` secondary action.
+  - [ ] `Home` no-team social placeholders: low-noise cards with clear CTA to `/teams`.
+  - [ ] Post-create activation: auto-open team detail with add-member/share-first prompts.
+
+- [ ] Slice 11.1: share audience model (API + persistence)
+  - [ ] Add audience scope to shares (`public`, `my_teams`, `selected_teams`).
+  - [ ] Add team-target persistence model for selected-team shares.
+  - [ ] Add backend filtering so visibility matches selected scope.
+
+- [ ] Slice 11.2: Explore share dialog audience selector
+  - [ ] Add audience selector to share flows.
+  - [ ] Add team multi-select UI when `selected_teams` is chosen.
+  - [ ] Add concise “who can see this” helper copy and confirmation context.
+
+- [ ] Slice 11.3: Home + Teams + Shared-tab semantic alignment
+  - [ ] Add consistent audience badges on shared items.
+  - [ ] Ensure social modules on Home reflect team-scoped relevance.
+  - [ ] Align Shared tab wording and visuals to same scope semantics.
+
+- [ ] Slice 11.4: team review-request loop (v1.1)
+  - [ ] Add backend `review_requests` schema + migration + API endpoints.
+  - [ ] Add `Request review` action on team-scoped shared items.
+  - [ ] Add “Conversations needing you” integration from open review requests.
+  - [ ] Add completion/dismiss/cancel request flows.
+
+- [ ] Slice 11.5: conversational course discussions (v1.2)
+  - [ ] Add backend discussion thread/message schema + migration.
+  - [ ] Add discussion API endpoints for create/list/reply/resolve/reopen.
+  - [ ] Add frontend discussion entry point (`Discuss`) on course surfaces.
+  - [ ] Add compact thread timeline view in course detail.
+  - [ ] Integrate open mentions/replies into “Conversations needing you.”
+
+- [ ] Slice 11.6: tests and quality gates
+  - [ ] API tests for audience scope and visibility enforcement.
+  - [ ] API tests for review-request permissions and lifecycle.
+  - [ ] API tests for discussion thread/message lifecycle and permissions.
+  - [ ] Frontend integration tests for no-team and first-team flows.
+  - [ ] Frontend integration tests for review-request UX states.
+  - [ ] Frontend integration tests for discussion thread UX states.
+  - [ ] Keep `ruff` and scoped `mypy` green for all touched modules.
+
+- [ ] Exit criteria
+  - [ ] New user can create/join a team in under 60 seconds (instrumented).
+  - [ ] Visibility model is explicit in UI (no ambiguity about share audience).
+  - [ ] No regression for users who only use solo learning/discovery.
   - [x] Isolate backend integration test auth/session state to reduce intermittent `401/404/500` failures.
   - [x] Sync `docs/architecture_backend.md` with current course/recommendation/review model + service flow details.
 

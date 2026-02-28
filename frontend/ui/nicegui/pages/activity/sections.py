@@ -45,7 +45,7 @@ def render_activity_error(*, message: str, on_retry: Callable[[], Any]) -> None:
 
 def render_activity_items(*, events: list[dict[str, Any]], on_open: Callable[[str, int], Any]) -> None:
     """Render activity cards."""
-    with ui.column().classes("w-full gap-3"):
+    with ui.column().classes("w-full gap-3 lp-teams-feed"):
         for row in list(events or []):
             message = str(row.get("message") or "").strip()
             actor = str(row.get("actor") or "").strip()
@@ -56,13 +56,15 @@ def render_activity_items(*, events: list[dict[str, Any]], on_open: Callable[[st
             if target_id is None:
                 logger.warning("Skipping activity row with invalid target_id", extra={"activity_row": row})
                 continue
-            with ui.card().classes("lp-card w-full"):
-                with ui.row().classes("items-center justify-between w-full"):
-                    ui.label(message or "Activity update").classes("text-sm")
-                    ui.label(format_when(created_at)).classes("text-xs").style("color: var(--lp-muted)")
-                with ui.row().classes("items-center justify-between w-full mt-2"):
+            with ui.card().classes("lp-card w-full lp-teams-item"):
+                with ui.row().classes("items-center justify-between w-full lp-teams-item-head"):
+                    ui.label(message or "Activity update").classes("text-sm lp-teams-item-title")
+                    ui.label(format_when(created_at)).classes("text-xs lp-teams-item-time").style("color: var(--lp-muted)")
+                with ui.row().classes("items-center justify-between w-full mt-2 lp-teams-item-foot"):
                     meta = actor
                     if target_label:
                         meta = f"{meta} · {target_label}" if meta else target_label
-                    ui.label(meta).classes("text-xs").style("color: var(--lp-muted)")
-                    ui.button("Open", on_click=lambda t=target_type, tid=target_id: on_open(t, tid)).props("dense outline")
+                    ui.label(meta).classes("text-xs lp-teams-item-meta").style("color: var(--lp-muted)")
+                    ui.button("Open", on_click=lambda t=target_type, tid=target_id: on_open(t, tid)).props("dense outline").classes(
+                        "lp-teams-open-btn"
+                    )

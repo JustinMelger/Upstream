@@ -38,15 +38,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         with render_container():
             request = getattr(ui.context.client, "request", None)
             initial_tab = resolve_activity_tab(request=request)
-            ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600")
+            ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600 lp-teams-subtitle")
 
-            with ui.row().classes("items-center justify-between w-full"):
+            with ui.row().classes("items-center justify-between w-full lp-teams-topbar"):
                 tab_filter = (
                     ui.radio({"inbox": "Inbox", "team": "Team activity"}, value=initial_tab)
                     .props("inline dense")
-                    .classes("text-sm")
+                    .classes("text-sm lp-teams-tabs")
                 )
-                refresh_btn = ui.button("Refresh").props("dense outline")
+                refresh_btn = ui.button("Refresh").props("dense outline").classes("lp-teams-refresh")
 
             @ui.refreshable
             def activity_list() -> None:

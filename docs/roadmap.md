@@ -381,8 +381,111 @@ Implementation map (routes + files, ordered):
   - Validation/testing harness: add/update integration tests under `tests/frontend/ui/nicegui/pages/home/` and `tests/frontend/ui/nicegui/pages/explore/` for one-clear-next-action empty states and intro dismiss behavior.
 - [ ] Sprint-level execution plan: track active sprint tasks in `docs/sprint.md`.
 
+### Phase 11F — Social Learning Hub v1 (Teams + Scoped Sharing)
+
+Goal: ship a clear collaboration model where discovery stays broad, but social context is team-relevant and privacy-explicit.
+
+Product model (v1):
+- [ ] Discovery model: keep `Explore` global for all authenticated users.
+- [ ] Sharing audience model: each share supports audience scope (`public`, `my_teams`, `selected_teams`).
+- [ ] Visibility contract: every shared item shows an audience badge (who can see this).
+- [ ] Home contract: prioritize “what needs my attention” and team-social actions above passive content.
+- [ ] Teams contract: team page is the collaboration workspace (members + activity + share context), not only an activity feed.
+
+User flow design (v1):
+- [ ] New user with no team:
+  - [ ] `Home`: keep learning workflow usable; show lightweight social placeholders with CTA to `/teams`.
+  - [ ] `/teams`: show empty state with one primary action (`Create team`) and optional secondary action (`Join team`) when invite flow exists.
+- [ ] Team creator activation:
+  - [ ] After create, auto-open created team detail.
+  - [ ] Show inline “add first member” and “share first item” prompts.
+- [ ] Team member with no activity:
+  - [ ] Show members and team context.
+  - [ ] Show clear empty team-activity state with next action CTA (`Explore to share`).
+
+Backend/API execution (v1+):
+- [x] Team domain baseline:
+  - [x] `teams`, `team_members` schema + migration.
+  - [x] Core endpoints: `POST /teams`, `GET /teams/mine`, `GET /teams/{id}`, member add/remove, team activity.
+- [ ] Share audience scoping:
+  - [ ] Add team targeting to share persistence (`team_id` or share-target join table).
+  - [ ] Add share visibility filtering by audience scope.
+  - [ ] Keep backwards compatibility for legacy global shares.
+- [ ] Team activity correctness:
+  - [ ] Drive activity primarily from team-scoped share/review/recommendation events.
+  - [ ] Ensure non-members cannot infer private team activity/content.
+
+Frontend/UI execution (v1+):
+- [x] Teams page foundation:
+  - [x] My Teams list, create team dialog, team detail, member add/remove, team activity view.
+- [ ] Explore share dialog:
+  - [ ] Add audience selector (`Public`, `My teams`, `Selected teams`).
+  - [ ] Add team multi-select when `Selected teams` is chosen.
+  - [ ] Show privacy explanation copy before submit.
+- [ ] Home social alignment:
+  - [ ] If user has no teams, collapse social panels into low-noise activation placeholders.
+  - [ ] If user has teams, show scoped team-social actions (reviews/recommendations/shares needing attention).
+- [ ] Shared-tab alignment:
+  - [ ] Use the same audience badges and scope semantics as Teams/Home.
+  - [ ] Keep visual language consistent with Explore/Home dark professional theme.
+
+Review-request collaboration loop (v1.1):
+- [ ] Team review requests:
+  - [ ] Add `Request review` action for team-scoped shared items.
+  - [ ] Allow selecting one or more reviewers from the same team.
+  - [ ] Support optional request note/context.
+- [ ] Review-request domain model:
+  - [ ] Add `review_requests` persistence (`team_id`, `share_type`, `share_id`, `requested_by`, `requested_for`, `status`, timestamps, note).
+  - [ ] Enforce one active open request per `(share, reviewer)` to avoid duplicate noise.
+  - [ ] Status lifecycle: `open -> completed | dismissed | canceled`.
+- [ ] Review-request API:
+  - [ ] `POST /teams/{id}/review-requests`
+  - [ ] `GET /teams/{id}/review-requests?status=open`
+  - [ ] `GET /review-requests/mine?status=open`
+  - [ ] `POST /review-requests/{id}/complete`
+  - [ ] `POST /review-requests/{id}/dismiss`
+  - [ ] `DELETE /review-requests/{id}` (cancel by requester/admin)
+- [ ] Review-request UX:
+  - [ ] Home “Conversations needing you” source uses open review requests.
+  - [ ] Teams detail exposes open team review requests.
+  - [ ] Completing a review offers direct request-completion path.
+
+Conversational course discussions (v1.2):
+- [ ] Discussion model (separate from reviews):
+  - [ ] Keep reviews as summary feedback (rating + review text), not threaded discussion.
+  - [ ] Add thread/message entities for conversational collaboration on courses.
+  - [ ] Support team-scoped threads to keep context relevant and private where required.
+- [ ] Discussion domain model:
+  - [ ] Add `course_discussion_threads` (`id`, `course_id`, `team_id?`, `created_by`, `title`, `status`, timestamps).
+  - [ ] Add `course_discussion_messages` (`id`, `thread_id`, `created_by`, `message`, timestamps).
+  - [ ] Thread lifecycle: `open -> resolved -> reopened`.
+- [ ] Discussion API:
+  - [ ] `POST /courses/{id}/discussions` (create thread)
+  - [ ] `GET /courses/{id}/discussions`
+  - [ ] `GET /discussions/{id}`
+  - [ ] `POST /discussions/{id}/messages`
+  - [ ] `POST /discussions/{id}/resolve`
+  - [ ] `POST /discussions/{id}/reopen`
+- [ ] Discussion UX:
+  - [ ] Add “Discuss” action on course cards/details where collaboration is available.
+  - [ ] Render compact thread timeline in course detail.
+  - [ ] Integrate open mentions/replies into “Conversations needing you.”
+
+Success criteria:
+- [ ] A first-time user can create or join a team in under 60 seconds.
+- [ ] A user can understand “who can see this share” without opening docs/help.
+- [ ] Team activity relevance improves (events are attributable to explicit team scope).
+- [ ] No regression in core solo-learning loop for users not in teams.
+- [ ] Team review requests improve collaboration responsiveness (measured by open->completed conversion and median completion time).
+- [ ] Users can have multi-step, thread-based collaboration on courses without overloading review records.
+
 ## Phase 12 — Analytics + Data Durability
 - [ ] Colleague profiles with interest/completion tracking.
+- [ ] Profile avatars:
+  - [ ] Allow users to upload/select a profile avatar.
+  - [ ] Add backend avatar metadata/storage support (URL/path, size/type validation, replace/remove).
+  - [ ] Add profile UI for avatar create/update/remove with preview + fallback initials.
+  - [ ] Show avatars consistently across `Home`, `Teams`, `Profile`, and activity/conversation feeds.
 - [ ] Basic analytics (popular courses, completion rates).
 - [ ] Import/export tools for course data.
 - [ ] UI polish + accessibility improvements.

@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from backend.api import ai, articles, auth, courses, notifications, paths, telemetry, tracking, url_preview
+from backend.api import ai, articles, auth, courses, notifications, paths, teams, telemetry, tracking, url_preview
 from backend.api.schemas import HealthResponse
 from backend.core.config import settings
 from backend.core.errors import (
@@ -22,6 +22,7 @@ app.include_router(auth.router)
 app.include_router(ai.router)
 app.include_router(articles.router)
 app.include_router(notifications.router)
+app.include_router(teams.router)
 app.include_router(url_preview.router)
 app.include_router(telemetry.router)
 

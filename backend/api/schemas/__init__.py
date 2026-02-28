@@ -61,6 +61,15 @@ from backend.api.schemas.paths import (
     SelectPathResponse,
     UnselectPathResponse,
 )
+from backend.api.schemas.teams import (
+    TeamActivityItem,
+    TeamCreateRequest,
+    TeamDetailPayload,
+    TeamMemberAddRequest,
+    TeamMemberDeleteResponse,
+    TeamMemberPayload,
+    TeamPayload,
+)
 from backend.api.schemas.telemetry import TelemetryEventRequest, TelemetryEventResponse
 from backend.api.schemas.tracking import (
     TrackingDeleteRequest,
@@ -131,6 +140,13 @@ __all__ = [
     "PathStatusResponse",
     "SelectedPathItem",
     "NotificationActivityItem",
+    "TeamCreateRequest",
+    "TeamMemberAddRequest",
+    "TeamMemberPayload",
+    "TeamPayload",
+    "TeamDetailPayload",
+    "TeamMemberDeleteResponse",
+    "TeamActivityItem",
     "TrackingUpsertRequest",
     "TrackingDeleteRequest",
     "TrackingRecordPayload",

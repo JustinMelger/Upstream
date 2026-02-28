@@ -505,20 +505,26 @@ def render_conversations_section(
 ) -> None:
     """Render social conversation queue with inline actions and review nudges."""
     total_pending_reviews = len(pending_course_review_ids) + len(pending_path_review_ids)
-    with ui.column().classes("w-full lp-home-flat-section"):
+    with ui.column().classes("w-full gap-2 lp-home-recent-shell"):
         with ui.row().classes("items-center gap-1"):
             ui.icon("forum").classes("text-sm")
             ui.label("Conversations Needing You").classes("lp-home-section-title")
             ui.label(str(min(3, len(items)) + total_pending_reviews)).classes("lp-chip lp-chip--sky")
         ui.separator().classes("lp-home-recent-separator")
 
-        with ui.row().classes("items-center gap-2 flex-wrap"):
-            ui.label(f"Courses: {len(pending_course_review_ids)}").classes("lp-chip lp-chip--muted")
-            ui.label(f"Paths: {len(pending_path_review_ids)}").classes("lp-chip lp-chip--muted")
+        with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
+            with ui.row().classes("items-center gap-2 flex-wrap"):
+                ui.label(f"Courses: {len(pending_course_review_ids)}").classes("lp-chip lp-chip--muted")
+                ui.label(f"Paths: {len(pending_path_review_ids)}").classes("lp-chip lp-chip--muted")
+                if total_pending_reviews > 0:
+                    ui.label(f"{total_pending_reviews} reviews waiting").classes("text-xs lp-home-track-meta").style(
+                        "color: var(--lp-muted)"
+                    )
             if total_pending_reviews > 0:
-                ui.label(f"{total_pending_reviews} reviews waiting").classes("text-xs lp-home-track-meta").style(
-                    "color: var(--lp-muted)"
-                )
+                if pending_course_review_ids:
+                    ui.button("Review next", on_click=on_open_first_course_review).props("dense outline")
+                elif pending_path_review_ids:
+                    ui.button("Review next", on_click=on_open_first_path_review).props("dense outline")
 
         if not items:
             empty_copy = (
@@ -527,12 +533,6 @@ def render_conversations_section(
                 else "No conversations or reviews pending right now."
             )
             ui.label(empty_copy).classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
-            if total_pending_reviews > 0:
-                with ui.row().classes("w-full justify-end"):
-                    if pending_course_review_ids:
-                        ui.button("Review next", on_click=on_open_first_course_review).props("dense outline")
-                    elif pending_path_review_ids:
-                        ui.button("Review next", on_click=on_open_first_path_review).props("dense outline")
             return
 
         for row in items[:3]:
@@ -546,13 +546,6 @@ def render_conversations_section(
                     ui.label("1h ago").classes("text-xs lp-home-track-meta")
                 with ui.row().classes("w-full justify-end"):
                     ui.button("Reply", on_click=lambda _row=dict(row): on_open_item(_row)).props("dense outline")
-
-        if total_pending_reviews > 0:
-            with ui.row().classes("w-full justify-end"):
-                if pending_course_review_ids:
-                    ui.button("Review next", on_click=on_open_first_course_review).props("dense outline")
-                elif pending_path_review_ids:
-                    ui.button("Review next", on_click=on_open_first_path_review).props("dense outline")
 
 
 def render_shared_tab(

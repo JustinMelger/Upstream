@@ -32,6 +32,9 @@ async def test_migrations_create_expected_foreign_keys(db_session):
     assert ("course_reviews", "created_by", "users", "username") in fks
     assert ("path_reviews", "path_id", "paths", "id") in fks
     assert ("path_reviews", "created_by", "users", "username") in fks
+    assert ("teams", "owner_user_id", "users", "username") in fks
+    assert ("team_members", "team_id", "teams", "id") in fks
+    assert ("team_members", "user_id", "users", "username") in fks
 
 
 @pytest.mark.unit
