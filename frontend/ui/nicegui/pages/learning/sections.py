@@ -155,16 +155,17 @@ def render_tracked_courses_section(
                                 provider = str(c.get("provider") or "").strip()
                                 duration_raw = c.get("duration_hours")
                                 duration = ""
-                                try:
-                                    duration_value = float(duration_raw)
-                                    if duration_value > 0:
-                                        duration = (
-                                            f"{int(duration_value)}h"
-                                            if duration_value.is_integer()
-                                            else f"{duration_value:.1f}h"
-                                        )
-                                except (TypeError, ValueError):
-                                    duration = ""
+                                if duration_raw is not None:
+                                    try:
+                                        duration_value = float(duration_raw)
+                                        if duration_value > 0:
+                                            duration = (
+                                                f"{int(duration_value)}h"
+                                                if duration_value.is_integer()
+                                                else f"{duration_value:.1f}h"
+                                            )
+                                    except (TypeError, ValueError):
+                                        duration = ""
                                 level = str(c.get("level") or "").strip()
                                 bits = [b for b in [provider, duration, level] if b]
                                 if bits:
