@@ -418,17 +418,17 @@ def render_home_hero_panel(
 
         nxt = dict(next_course.get("course") or {})
         title = str(nxt.get("title") or "").strip() or "Continue your top track"
-        ui.label(title).classes("text-lg font-semibold")
+        ui.label(title).classes("lp-home-hero-heading")
         ui.label(
             f"{max(0, teammates_progressing)} active learners · {max(0, new_comments_count)} new comments · {max(0, reviews_count)} reviews"
-        ).classes("text-xs lp-home-track-meta").style("color: var(--lp-muted)")
+        ).classes("text-xs lp-home-hero-meta").style("color: var(--lp-muted)")
         if teammates_progressing > 0:
-            ui.label(f"{teammates_progressing} teammates progressing").classes("text-xs lp-home-track-meta").style(
+            ui.label(f"{teammates_progressing} teammates progressing").classes("text-xs lp-home-hero-meta").style(
                 "color: var(--lp-muted)"
             )
 
         if teammate_usernames:
-            with ui.row().classes("items-center gap-1"):
+            with ui.row().classes("items-center gap-1 lp-home-hero-avatars"):
                 for teammate in teammate_usernames[:3]:
                     initials = "".join(part[:1] for part in teammate.split() if part)[:2].upper() or teammate[:2].upper()
                     ui.label(initials).classes("lp-home-avatar-chip")
@@ -489,7 +489,7 @@ def render_team_snapshot_section(
                         }
                     ],
                 }
-            ).classes("w-full h-14")
+            ).classes("w-full h-10")
         with ui.row().classes("w-full justify-end"):
             ui.button("Open stats", on_click=on_open_full_stats).props("dense flat")
 
@@ -510,6 +510,8 @@ def render_conversations_section(
             ui.icon("forum").classes("text-sm")
             ui.label("Conversations Needing You").classes("lp-home-section-title")
             ui.label(str(min(3, len(items)) + total_pending_reviews)).classes("lp-chip lp-chip--sky")
+            if items:
+                ui.label("").classes("lp-home-live-dot")
         ui.separator().classes("lp-home-recent-separator")
 
         with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
@@ -536,16 +538,16 @@ def render_conversations_section(
             return
 
         for row in items[:3]:
-            with ui.element("div").classes("lp-home-track-row"):
+            with ui.element("div").classes("lp-home-convo-row"):
                 with ui.row().classes("w-full items-center justify-between gap-2"):
                     with ui.row().classes("items-center gap-2"):
                         who = str(row.get("created_by") or "").strip()
                         initials = "".join(part[:1] for part in who.split() if part)[:2].upper() or who[:2].upper() or "TM"
                         ui.label(initials).classes("lp-home-avatar-chip")
                         ui.label(f"{who} shared {str(row.get('title') or '')}").classes("text-sm")
-                    ui.label("1h ago").classes("text-xs lp-home-track-meta")
-                with ui.row().classes("w-full justify-end"):
-                    ui.button("Reply", on_click=lambda _row=dict(row): on_open_item(_row)).props("dense outline")
+                    with ui.row().classes("items-center gap-2"):
+                        ui.label("1h ago").classes("text-xs lp-home-track-meta")
+                        ui.button("Open", on_click=lambda _row=dict(row): on_open_item(_row)).props("dense outline")
 
 
 def render_shared_tab(

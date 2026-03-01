@@ -1894,7 +1894,7 @@ def apply_theme() -> None:
         }
 
         .lp-home-row-grid--social {
-          grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+          grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.9fr);
         }
 
         .lp-home-row-grid--balanced {
@@ -1902,10 +1902,10 @@ def apply_theme() -> None:
         }
 
         .lp-home-hero-panel {
-          border-color: rgba(186, 204, 227, 0.12);
+          border-color: rgba(186, 204, 227, 0.1);
           border-left: 2px solid rgba(116, 176, 228, 0.52);
-          background: linear-gradient(160deg, rgba(17, 28, 46, 0.72), rgba(13, 22, 36, 0.64));
-          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+          background: linear-gradient(160deg, rgba(17, 28, 46, 0.68), rgba(13, 22, 36, 0.6));
+          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
         }
 
         .lp-home-hero-eyebrow {
@@ -1918,7 +1918,7 @@ def apply_theme() -> None:
 
         .lp-home-hero-heading {
           font-family: var(--lp-font-display);
-          font-size: clamp(1.08rem, 1.6vw, 1.3rem);
+          font-size: clamp(1.2rem, 1.9vw, 1.5rem);
           font-weight: 600;
           line-height: 1.2;
         }
@@ -1926,7 +1926,11 @@ def apply_theme() -> None:
         .lp-home-hero-meta {
           color: var(--lp-muted);
           font-size: var(--lp-type-xs);
-          opacity: 0.78;
+          opacity: 0.7;
+        }
+
+        .lp-home-hero-avatars {
+          margin-top: 2px;
         }
 
         .lp-home-hero-focus {
@@ -1965,7 +1969,7 @@ def apply_theme() -> None:
         }
 
         .lp-home-scope .lp-card {
-          border-color: rgba(186, 204, 227, 0.12);
+          border-color: rgba(186, 204, 227, 0.1);
           border-radius: var(--lp-radius-md);
         }
 
@@ -2061,6 +2065,15 @@ def apply_theme() -> None:
 
         .lp-home-track-row:last-child {
           margin-bottom: 0;
+        }
+
+        .lp-home-convo-row {
+          padding: 8px 0 10px;
+          border-bottom: 1px solid rgba(186, 204, 227, 0.1);
+        }
+
+        .lp-home-convo-row:last-child {
+          border-bottom: none;
         }
 
         .lp-home-track-col-course { flex: 1 1 auto; min-width: 0; }
@@ -2357,6 +2370,22 @@ def apply_theme() -> None:
 
         .lp-home-activity-item:last-child {
           border-bottom: none;
+        }
+
+        .lp-home-live-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: rgba(116, 176, 228, 0.9);
+          box-shadow: 0 0 0 0 rgba(116, 176, 228, 0.38);
+          animation: lp-home-live-pulse 1.8s ease-out infinite;
+          margin-left: 3px;
+        }
+
+        @keyframes lp-home-live-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(116, 176, 228, 0.38); }
+          70% { box-shadow: 0 0 0 8px rgba(116, 176, 228, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(116, 176, 228, 0); }
         }
 
         .lp-teams-subtitle {
