@@ -191,6 +191,53 @@ Tracking:
   - [x] Isolate backend integration test auth/session state to reduce intermittent `401/404/500` failures.
   - [x] Sync `docs/architecture_backend.md` with current course/recommendation/review model + service flow details.
 
+## Sprint 12 — Open Items Timebox (Phase 11 Closure, Queued)
+Goal: close the highest-value open roadmap items in Phase `11` with a strict timebox and ship-ready quality gates.
+
+Dependency:
+- [ ] Start only after Sprint 10 exit criteria are fully completed.
+- [ ] Keep Sprint 12 in queued state while Sprint 10 is active.
+
+Timebox:
+- [ ] 2 weeks
+
+Scope priorities:
+- [ ] P0: `11F` collaboration model and UX flow baseline (`11.0` through `11.3` slices from Sprint 11).
+- [ ] P1: `11D` strict visual baseline enforcement in CI.
+- [ ] P1: `11E` remaining open clarity/consistency acceptance checks.
+- [ ] P2: `11F` v1.1/v1.2 collaboration expansion (`review_requests`, threaded discussions) if P0/P1 complete early.
+
+Execution slices:
+- [ ] Slice 12.0: open-item lock and sequencing
+  - [ ] Freeze active open-item list from `docs/roadmap.md` (Phase `11` only).
+  - [ ] Tag each item as `must-close-now` vs `defer`.
+  - [ ] Map each `must-close-now` item to an owning sprint slice and test gate.
+- [ ] Slice 12.1: teams + no-team activation UX
+  - [ ] `/teams` empty state with `Create team` primary CTA and `Join team` secondary path.
+  - [ ] `Home` no-team social placeholder with direct CTA to `/teams`.
+  - [ ] Post-create activation flow with add-member/share-first prompts.
+- [ ] Slice 12.2: audience scoping and visibility semantics
+  - [ ] Share audience scope (`public`, `my_teams`, `selected_teams`) in API + persistence.
+  - [ ] Explore share dialog audience selector + team multi-select.
+  - [ ] Audience badges and wording alignment across `Home`, `Teams`, and `Shared` surfaces.
+- [ ] Slice 12.3: CI quality gate completion
+  - [ ] Commit stable visual snapshots.
+  - [ ] Enable strict visual-regression enforcement in pipeline.
+  - [ ] Keep `ruff` primary style gate green on all touched modules.
+- [ ] Slice 12.4: optional collaboration expansion (only if capacity remains)
+  - [ ] Review-request loop (`review_requests` model/API/UX).
+  - [ ] Threaded course discussion baseline (model/API/UX entrypoint).
+
+Acceptance criteria:
+- [ ] Highest-priority Phase `11` open items are reduced with no regression in solo learning flows.
+- [ ] Team onboarding path is clear for users with zero teams (create/join in under 60s target, instrumented).
+- [ ] Share visibility semantics are explicit and consistent across primary pages.
+- [ ] CI runs with strict visual baseline enforcement and passes required gates (`ruff`, scoped `mypy`, tests).
+
+Tracking:
+- [ ] Update `docs/roadmap.md` checkboxes for each closed item during the sprint.
+- [ ] Record sprint-end delta: `Phase 11 open before` vs `Phase 11 open after`.
+
 ## Sprint TBD — Phase 14 User Testing + Pilot Validation
 - [ ] Run 5 first-time-user usability tests and log confusion points.
 - [ ] Fix top 5 confusion points before pilot launch.

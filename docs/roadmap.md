@@ -429,6 +429,58 @@ Frontend/UI execution (v1+):
   - [ ] Use the same audience badges and scope semantics as Teams/Home.
   - [ ] Keep visual language consistent with Explore/Home dark professional theme.
 
+Teams workspace UX v2 (mockup alignment):
+- [ ] Three-column workspace refinement:
+  - [ ] Left rail as persistent workspace navigation (`Inbox`, `My teams`, `Team activity`, `Explore teams`).
+  - [ ] Middle rail as compact team list with soft dividers + activity preview per team.
+  - [ ] Right pane as active-team workspace (team context, inbox state, and timeline).
+- [ ] Social feed integration:
+  - [ ] Promote right-pane activity feed as primary timeline surface.
+  - [ ] Add lightweight social signals (avatars, reaction counts, recent activity highlights) where data exists.
+  - [ ] Avoid duplicated feed concepts across columns (clear scope per column).
+- [ ] Visual polish pass (enterprise calm):
+  - [ ] Reduce heavy texture/glow intensity and border contrast.
+  - [ ] Normalize iconography and button hierarchy.
+  - [ ] Remove redundant actions (single clear `Create team` primary affordance).
+  - [ ] Improve vertical rhythm and panel alignment consistency.
+
+Profile UX v2 (scoped responsibilities):
+- [ ] Responsibility boundary enforcement:
+  - [ ] `Profile` owns identity, personal progress, and lightweight recent activity.
+  - [ ] `Teams` owns full collaboration workspace and social feed depth.
+  - [ ] Avoid duplicating full social timeline behavior on Profile.
+- [ ] Profile layout contract:
+  - [ ] Identity block (avatar, name, role/tagline, joined date) with profile edit affordance.
+  - [ ] One dominant personal progress module above the fold.
+  - [ ] One compact insights module with clear link to full stats.
+  - [ ] Lightweight recent activity preview (3-5 items) with “View all activity”.
+- [ ] CTA hierarchy contract:
+  - [ ] Keep one primary CTA on Profile (`Edit profile` or `View full stats`), not multiple competing primaries.
+  - [ ] Demote secondary actions to subtle links/outline controls.
+- [ ] Visual balance constraints:
+  - [ ] Reduce texture/glow intensity to preserve readability.
+  - [ ] Keep clear typography hierarchy between identity, progress, and metadata.
+  - [ ] Prevent top-half visual competition between progress and insights cards.
+
+Primary page responsibility matrix (explicit anti-overlap contract):
+- [ ] `Home` responsibility:
+  - [ ] Operational “what should I do next” surface (next action, pending reviews, momentum).
+  - [ ] Prioritize immediate actions over historical summaries.
+- [ ] `Profile` responsibility:
+  - [ ] Personal identity + trajectory summary (profile, personal progress, lightweight recent history).
+  - [ ] No deep team collaboration timeline duplication.
+- [ ] `Teams` responsibility:
+  - [ ] Team collaboration workspace (inbox, team activity, team management context).
+  - [ ] Social/team interaction depth lives here, not on Profile.
+- [ ] `Profile > Stats` responsibility:
+  - [ ] Deep analytics and detailed chart/table views.
+  - [ ] Keep advanced metrics out of `Home` and out of default `Profile` surface.
+- [ ] Placement decision rubric:
+  - [ ] If actionable now -> `Home`
+  - [ ] If identity/personal trajectory -> `Profile`
+  - [ ] If team interaction/collaboration -> `Teams`
+  - [ ] If deep metrics/analysis -> `Profile > Stats`
+
 Review-request collaboration loop (v1.1):
 - [ ] Team review requests:
   - [ ] Add `Request review` action for team-scoped shared items.
