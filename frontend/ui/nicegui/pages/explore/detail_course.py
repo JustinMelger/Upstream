@@ -44,7 +44,7 @@ async def _load_course_detail_payload(
 
 
 def _render_course_badges(*, course: dict[str, Any]) -> None:
-    with ui.row().classes("items-center gap-2 flex-wrap"):
+    with ui.row().classes("items-center gap-2 flex-wrap lp-explore-detail-meta-row"):
         for label in [str(course.get("provider") or "").strip(), str(course.get("category") or "").strip()]:
             if label:
                 ui.label(label).classes("lp-meta-chip")
@@ -72,7 +72,7 @@ def _rating_stars(*, avg: float) -> str:
 
 
 def _render_course_content_card(*, course: dict[str, Any], source_url: str, view_mode: str) -> None:
-    with ui.card().classes("lp-card w-full lp-explore-detail-card"):
+    with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface"):
         with ui.row().classes("w-full items-center justify-between"):
             ui.label("Course Content").classes("text-base font-semibold")
             ui.icon("chevron_right").classes("lp-explore-detail-muted")
@@ -154,7 +154,7 @@ def _render_course_main_panel(
         _render_course_badges(course=course)
         _render_course_content_card(course=course, source_url=source_url, view_mode=view_mode)
 
-        with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-reviews-panel"):
+        with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
             if review_count <= 0:
                 ui.label("Be the first to review this course.").classes("lp-explore-detail-muted")
             render_reviews_panel(
@@ -226,9 +226,9 @@ def _render_course_info_panel(
         if current_status == "interested":
             primary_label = "Start course"
         elif current_status == "in_progress":
-            primary_label = "Continue"
+            primary_label = "Continue course"
         elif current_status == "completed":
-            primary_label = "Review"
+            primary_label = "Review course"
         ui.button(primary_label, on_click=_run_primary_action).props("unelevated")
 
         if can_edit:

@@ -45,7 +45,7 @@ def _render_path_main_panel(
                 ui.label(f"by {owner}").classes("lp-explore-detail-muted")
             if str(detail.get("description") or "").strip():
                 ui.label(str(detail.get("description") or "")).classes("lp-explore-detail-body")
-        with ui.row().classes("items-center gap-2 flex-wrap"):
+        with ui.row().classes("items-center gap-2 flex-wrap lp-explore-detail-meta-row"):
             ui.label(f"{len(courses)} courses").classes("lp-meta-chip")
 
         if view_mode != "reviews":
@@ -53,7 +53,7 @@ def _render_path_main_panel(
             for idx, row in enumerate(courses, start=1):
                 ui.label(f"{idx}. {str(row.get('title') or 'Course')}").classes("lp-explore-detail-muted")
 
-        with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-reviews-panel"):
+        with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
             if not path_reviews:
                 ui.label("Be the first to review this path.").classes("lp-explore-detail-muted")
             render_reviews_panel(

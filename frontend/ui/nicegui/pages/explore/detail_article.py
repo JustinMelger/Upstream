@@ -60,10 +60,10 @@ async def render_explore_article_detail_page(*, store: SessionStore, api: ApiCli
                         ui.label(f"by {owner}").classes("lp-explore-detail-muted")
                     if str(article.get("summary") or "").strip():
                         ui.label(str(article.get("summary") or "")).classes("lp-explore-detail-body")
-                with ui.row().classes("items-center gap-2 flex-wrap"):
+                with ui.row().classes("items-center gap-2 flex-wrap lp-explore-detail-meta-row"):
                     for tag in tags[:6]:
                         ui.label(tag).classes("lp-meta-chip")
-                with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-reviews-panel"):
+                with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
                     if not reviews:
                         ui.label("Be the first to review this article.").classes("lp-explore-detail-muted")
                     render_reviews_panel(
