@@ -7,6 +7,7 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.errors import FrontendError, safe_notify
 
@@ -183,11 +184,14 @@ def render_tracked_courses_section(
                                     "lp-track-continue-btn"
                                 )
 
-                            with (
+                            overflow_menu = apply_icon_button_a11y(
                                 ui.dropdown_button("", icon="more_horiz", auto_close=True)
                                 .props("dense outline")
-                                .classes("lp-home-row-overflow")
-                            ):
+                                .classes("lp-home-row-overflow"),
+                                label="Open tracking actions",
+                                tooltip="Tracking actions",
+                            )
+                            with overflow_menu:
 
                                 async def _clear_status_click(_cid: int = cid) -> None:
                                     await on_clear_status(_cid)
@@ -442,6 +446,42 @@ def render_home_hero_panel(
                 ui.button("Continue", on_click=on_open_selected_paths).props("unelevated")
 
 
+def render_home_focus_queue_panel(
+    *,
+    pending_course_review_ids: list[int],
+    pending_path_review_ids: list[int],
+    selected_paths_count: int,
+    tracked_courses_count: int,
+    on_open_first_course_review: Any,
+    on_open_first_path_review: Any,
+    on_open_selected_paths: Any,
+    on_browse_courses: Any,
+) -> None:
+    """Render compact next-step queue next to the home hero."""
+    pending_reviews = len(pending_course_review_ids) + len(pending_path_review_ids)
+    with ui.card().classes("lp-card w-full lp-home-focus-queue-panel lp-home-focus-shell"):
+        with ui.column().classes("w-full gap-2"):
+            with ui.row().classes("items-center gap-1"):
+                ui.icon("flag").classes("text-sm")
+                ui.label("Focus Queue").classes("lp-home-hero-eyebrow")
+            ui.label("Your next highest-impact actions").classes("lp-home-queue-title")
+            with ui.row().classes("items-center gap-2 flex-wrap"):
+                ui.label(f"{max(0, pending_reviews)} reviews pending").classes("lp-chip lp-chip--sky")
+                ui.label(f"{max(0, selected_paths_count)} selected paths").classes("lp-chip lp-chip--muted")
+                ui.label(f"{max(0, tracked_courses_count)} tracked courses").classes("lp-chip lp-chip--muted")
+
+            with ui.column().classes("w-full gap-2"):
+                if pending_course_review_ids:
+                    ui.button("Review next course", on_click=on_open_first_course_review).props("dense outline")
+                elif pending_path_review_ids:
+                    ui.button("Review next path", on_click=on_open_first_path_review).props("dense outline")
+                elif selected_paths_count > 0:
+                    ui.button("Continue selected path", on_click=on_open_selected_paths).props("dense outline")
+                else:
+                    ui.button("Track a course", on_click=on_browse_courses).props("dense outline")
+                ui.button("Open selected paths", on_click=on_open_selected_paths).props("dense flat")
+
+
 def render_team_snapshot_section(
     *,
     tracking_by_course_id: dict[int, dict[str, Any]],
@@ -615,7 +655,7 @@ def render_learning_tab(
     new_comments_count = max(0, min(8, shares_count * 2))
 
     with ui.column().classes("w-full gap-4"):
-        with ui.element("section").classes("lp-home-row-grid lp-home-row-grid--single"):
+        with ui.element("section").classes("lp-home-row-grid lp-home-row-grid--primary"):
             render_home_hero_panel(
                 next_course=next_course,
                 teammates_progressing=active_learners,
@@ -625,8 +665,18 @@ def render_learning_tab(
                 on_join_discussion=lambda: ui.navigate.to("/teams"),
                 on_open_selected_paths=on_open_selected_paths,
             )
+            render_home_focus_queue_panel(
+                pending_course_review_ids=learning_vm.pending_course_review_ids,
+                pending_path_review_ids=learning_vm.pending_path_review_ids,
+                selected_paths_count=len(learning_vm.selected_paths),
+                tracked_courses_count=len(learning_vm.tracked_courses),
+                on_open_first_course_review=first_course_review_action,
+                on_open_first_path_review=first_path_review_action,
+                on_open_selected_paths=on_open_selected_paths,
+                on_browse_courses=on_browse_courses,
+            )
 
-        with ui.element("section").classes("lp-home-row-grid lp-home-row-grid--social"):
+        with ui.element("section").classes("lp-home-row-grid lp-home-row-grid--single"):
             render_conversations_section(
                 items=recently_shared_in_teams,
                 pending_course_review_ids=learning_vm.pending_course_review_ids,
@@ -635,6 +685,8 @@ def render_learning_tab(
                 on_open_first_course_review=first_course_review_action,
                 on_open_first_path_review=first_path_review_action,
             )
+
+        with ui.element("section").classes("lp-home-row-grid lp-home-row-grid--single"):
             render_team_snapshot_section(
                 tracking_by_course_id=learning_vm.tracking_by_course_id,
                 active_learners=active_learners,

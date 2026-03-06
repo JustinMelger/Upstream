@@ -7,6 +7,7 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.pages.explore.ui_glue import SORT_OPTIONS, TAB_OPTIONS
 
 
@@ -78,7 +79,7 @@ def render_explore_topbar(*, initial_tab: str, on_open_filters: Any, on_open_sha
             search_input = (
                 ui.input("Search courses, paths, and articles")
                 .props("clearable debounce=300 dense")
-                .classes("lp-topbar-search lp-courses-search")
+                .classes("lp-topbar-search lp-courses-search lp-transition-field")
                 .style("flex: 1")
             )
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
@@ -96,7 +97,7 @@ def render_explore_topbar(*, initial_tab: str, on_open_filters: Any, on_open_sha
                     ui.select(SORT_OPTIONS, value="", label=None)
                     .props("dense")
                     .style("min-width: 180px")
-                    .classes("lp-topbar-secondary-control")
+                    .classes("lp-topbar-secondary-control lp-transition-field")
                 )
                 share_btn = ui.button("Share", on_click=on_open_share).props("dense")
                 filters_btn = ui.button("Filters", on_click=on_open_filters).props("dense outline").classes("lp-topbar-share")
@@ -117,11 +118,31 @@ def render_explore_filters_dialog(*, on_reset: Any) -> ExploreFilterControls:
         with ui.card().classes("lp-dialog lp-courses-filter-drawer"):
             with ui.row().classes("items-center justify-between w-full"):
                 ui.label("Explore filters").classes("text-lg font-semibold")
-                ui.button(icon="close", on_click=filters_dialog.close).props("flat dense")
-            provider_filter = ui.select({"": "Any provider"}, label="Course provider", value="").props("dense")
-            category_filter = ui.select({"": "Any category"}, label="Course category", value="").props("dense")
-            tag_filter = ui.select({"": "Any tag"}, label="Article tag", value="").props("dense")
-            author_filter = ui.select({"": "Anyone"}, label="Article author", value="").props("dense")
+                apply_icon_button_a11y(
+                    ui.button(icon="close", on_click=filters_dialog.close).props("flat dense"),
+                    label="Close filters panel",
+                    tooltip="Close",
+                )
+            provider_filter = (
+                ui.select({"": "Any provider"}, label="Course provider", value="")
+                .props("dense")
+                .classes("lp-transition-field")
+            )
+            category_filter = (
+                ui.select({"": "Any category"}, label="Course category", value="")
+                .props("dense")
+                .classes("lp-transition-field")
+            )
+            tag_filter = (
+                ui.select({"": "Any tag"}, label="Article tag", value="")
+                .props("dense")
+                .classes("lp-transition-field")
+            )
+            author_filter = (
+                ui.select({"": "Anyone"}, label="Article author", value="")
+                .props("dense")
+                .classes("lp-transition-field")
+            )
             with ui.row().classes("items-center gap-2 w-full"):
                 ui.button("Reset", on_click=on_reset).props("outline dense")
                 ui.button("Apply", on_click=filters_dialog.close).props("dense")
@@ -232,7 +253,7 @@ def render_explore_article_rails(
                 with ui.row().classes("items-center justify-between w-full lp-courses-row-head"):
                     ui.label(group_name).classes("lp-courses-row-title")
                     with ui.row().classes("items-center gap-2 lp-courses-rail-controls"):
-                        ui.button(
+                        left_btn = ui.button(
                             icon="chevron_left",
                             on_click=lambda _rid=rail_id: ui.run_javascript(
                                 (
@@ -243,7 +264,8 @@ def render_explore_article_rails(
                                 )
                             ),
                         ).props(f'dense flat round id="{left_btn_id}"').classes("lp-rail-nav-btn")
-                        ui.button(
+                        apply_icon_button_a11y(left_btn, label=f"Scroll {group_name} left", tooltip="Scroll left")
+                        right_btn = ui.button(
                             icon="chevron_right",
                             on_click=lambda _rid=rail_id: ui.run_javascript(
                                 (
@@ -254,6 +276,7 @@ def render_explore_article_rails(
                                 )
                             ),
                         ).props(f'dense flat round id="{right_btn_id}"').classes("lp-rail-nav-btn")
+                        apply_icon_button_a11y(right_btn, label=f"Scroll {group_name} right", tooltip="Scroll right")
                 with ui.element("div").classes("lp-courses-rail").props(f'id="{rail_id}"'):
                     for article in rows:
                         render_article_item(article, item_classes="lp-courses-rail-item")

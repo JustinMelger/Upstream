@@ -7,8 +7,10 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel, ReviewPanelHooks
-from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.core.action_feedback import tracking_cleared_message, tracking_set_message
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
@@ -48,37 +50,53 @@ def _render_course_badges(*, course: dict[str, Any]) -> None:
                 ui.label(label).classes("lp-meta-chip")
         if str(course.get("duration_hours") or "").strip():
             ui.label(f"{course.get('duration_hours')}h").classes("lp-meta-chip")
-        if str(course.get("created_by") or "").strip():
-            ui.label(f"Shared by {course.get('created_by')}").classes("lp-meta-chip lp-meta-chip--quiet")
 
 
-def _render_course_overview(*, course: dict[str, Any], source_url: str, view_mode: str) -> None:
-    _render_course_badges(course=course)
-    video_id = extract_youtube_video_id(source_url)
-    if video_id and view_mode != "reviews":
-        with ui.element("div").classes("lp-video-wrap mt-2"):
-            ui.html(render_youtube_embed(youtube_embed_url(video_id)), sanitize=False)
-    if view_mode != "reviews":
-        ui.label("Course content").classes("text-base font-semibold mt-2")
+def _rating_metrics(*, reviews: list[dict[str, Any]]) -> tuple[float, int]:
+    ratings: list[int] = []
+    for row in list(reviews or []):
+        try:
+            rating = int(row.get("rating") or 0)
+        except (TypeError, ValueError):
+            continue
+        if 1 <= rating <= 5:
+            ratings.append(rating)
+    if not ratings:
+        return 0.0, 0
+    return float(sum(ratings)) / float(len(ratings)), len(ratings)
+
+
+def _rating_stars(*, avg: float) -> str:
+    rounded = max(0, min(5, int(round(float(avg)))))
+    return ("★" * rounded) + ("☆" * (5 - rounded))
+
+
+def _render_course_content_card(*, course: dict[str, Any], source_url: str, view_mode: str) -> None:
+    with ui.card().classes("lp-card w-full lp-explore-detail-card"):
+        with ui.row().classes("w-full items-center justify-between"):
+            ui.label("Course Content").classes("text-base font-semibold")
+            ui.icon("chevron_right").classes("lp-explore-detail-muted")
+
+        if view_mode == "reviews":
+            ui.label("Content hidden in reviews mode.").classes("lp-explore-detail-muted")
+            return
+
+        video_id = extract_youtube_video_id(source_url)
+        if video_id:
+            with ui.element("div").classes("lp-video-wrap mt-1"):
+                ui.html(render_youtube_embed(youtube_embed_url(video_id)), sanitize=False)
+
         learning_outcomes = str(course.get("learning_outcomes") or "").strip()
         prerequisites = str(course.get("prerequisites") or "").strip()
-        if learning_outcomes:
-            ui.label(learning_outcomes).classes("lp-explore-detail-body")
-        if prerequisites:
-            ui.label(f"Prerequisites: {prerequisites}").classes("lp-explore-detail-muted")
+        description = str(course.get("description") or "").strip()
+        if learning_outcomes or prerequisites:
+            if learning_outcomes:
+                ui.label(learning_outcomes).classes("lp-explore-detail-body")
+            if prerequisites:
+                ui.label(f"Prerequisites: {prerequisites}").classes("lp-explore-detail-muted")
+            return
 
-
-def _render_course_resources(*, course: dict[str, Any], recommendations: list[dict[str, Any]], source_url: str) -> None:
-    ui.separator()
-    ui.label("Resources").classes("text-sm font-semibold")
-    if source_url:
-        ui.link(str(course.get("title") or "Open source"), source_url).props("target=_blank")
-    for row in recommendations[:5]:
-        by = str(row.get("created_by") or "").strip()
-        note = str(row.get("note") or "").strip()
-        text = f"{by}: {note}" if by and note else by or note
-        if text:
-            ui.label(text).classes("lp-explore-detail-muted")
+        ui.label(description or "No content yet").classes("lp-explore-detail-muted")
 
 
 def _bind_course_status_select(
@@ -98,12 +116,166 @@ def _bind_course_status_select(
         selected = str(getattr(e, "value", status_select.value) or "")
         if not selected:
             await controller.clear_tracking_status(course_id=course_id)
-            safe_notify("Removed status", type="positive")
+            safe_notify(tracking_cleared_message(), type="positive")
             return
         await controller.set_tracking_status(course_id=course_id, status=selected)
-        safe_notify("Updated status", type="positive")
+        safe_notify(tracking_set_message(status=selected), type="positive")
 
     status_select.on("update:model-value", _on_status_change)
+
+
+def _render_course_main_panel(
+    *,
+    controller: CoursesPageController,
+    cid: int,
+    username: str,
+    is_admin: bool,
+    course: dict[str, Any],
+    reviews: list[dict[str, Any]],
+    source_url: str,
+    view_mode: str,
+    avg_rating: float,
+    review_count: int,
+) -> None:
+    with ui.column().classes("lp-explore-detail-main"):
+        with ui.element("header").classes("lp-explore-detail-hero"):
+            owner = str(course.get("created_by") or "").strip()
+            ui.label("Course").classes("lp-explore-detail-eyebrow")
+            ui.label(str(course.get("title") or "Course")).classes("lp-explore-detail-title")
+            if review_count > 0:
+                with ui.row().classes("items-center gap-2 flex-wrap"):
+                    ui.label(_rating_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
+                    ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
+                    ui.label(f"{review_count} reviews").classes("lp-explore-detail-muted")
+            if owner:
+                ui.label(f"by {owner}").classes("lp-explore-detail-muted")
+            if str(course.get("description") or "").strip():
+                ui.label(str(course.get("description") or "")).classes("lp-explore-detail-body")
+        _render_course_badges(course=course)
+        _render_course_content_card(course=course, source_url=source_url, view_mode=view_mode)
+
+        with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-reviews-panel"):
+            if review_count <= 0:
+                ui.label("Be the first to review this course.").classes("lp-explore-detail-muted")
+            render_reviews_panel(
+                username=username,
+                is_admin=is_admin,
+                reviews=reviews,
+                on_save=lambda rating, text: controller.save_course_review(
+                    course_id=cid,
+                    rating=int(rating),
+                    text=str(text or ""),
+                    cache_scope=username,
+                ),
+                on_delete=lambda review_id: controller.delete_course_review(
+                    course_id=cid,
+                    review_id=int(review_id),
+                    cache_scope=username,
+                ),
+                hooks=ReviewPanelHooks(format_date=format_short_date),
+            )
+
+
+def _render_course_info_panel(
+    *,
+    controller: CoursesPageController,
+    cid: int,
+    course: dict[str, Any],
+    current_status: str,
+    source_url: str,
+    can_edit: bool,
+    recommendations: list[dict[str, Any]],
+) -> None:
+    with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):
+        ui.label("Course Info").classes("text-base font-semibold")
+        with ui.row().classes("items-center gap-2"):
+            owner = str(course.get("created_by") or "").strip() or "Unknown"
+            initials = "".join(part[:1] for part in owner.split() if part)[:2].upper() or owner[:2].upper()
+            ui.label(initials).classes("lp-home-avatar-chip")
+            ui.label(owner).classes("text-base")
+        ui.label(f"Status: {tracking_label(current_status)}").classes("lp-explore-detail-muted")
+
+        _bind_course_status_select(
+            controller=controller,
+            course_id=cid,
+            current_status=current_status,
+        )
+
+        @guard_ui_action(title="Primary action failed")
+        async def _run_primary_action() -> None:
+            normalized_status = str(current_status or "").strip()
+            if normalized_status == "":
+                await controller.set_tracking_status(course_id=cid, status="interested")
+                safe_notify(tracking_set_message(status="interested"), type="positive")
+                return
+            if normalized_status == "interested":
+                await controller.set_tracking_status(course_id=cid, status="in_progress")
+                safe_notify(tracking_set_message(status="in_progress"), type="positive")
+                if source_url:
+                    ui.navigate.to(source_url, new_tab=True)
+                return
+            if normalized_status == "in_progress":
+                if source_url:
+                    ui.navigate.to(source_url, new_tab=True)
+                else:
+                    safe_notify("No source URL available yet.", type="warning")
+                return
+            ui.navigate.to(f"/explore/courses/{cid}?view=reviews")
+
+        primary_label = "Track course"
+        if current_status == "interested":
+            primary_label = "Start course"
+        elif current_status == "in_progress":
+            primary_label = "Continue"
+        elif current_status == "completed":
+            primary_label = "Review"
+        ui.button(primary_label, on_click=_run_primary_action).props("unelevated")
+
+        if can_edit:
+
+            @guard_ui_action(title="Open edit failed")
+            async def _open_edit_course() -> None:
+                async def _save(course_id: int, payload: dict[str, Any]) -> None:
+                    await controller.update_course(course_id=int(course_id), payload=dict(payload or {}))
+                    ui.navigate.to(f"/explore/courses/{cid}")
+
+                open_edit_course_dialog(
+                    course=course,
+                    parse_duration_hours=parse_duration_hours,
+                    on_save=_save,
+                )
+
+            @guard_ui_action(title="Delete course failed")
+            async def _delete_course() -> None:
+                await controller.delete_course(course_id=cid)
+                safe_notify("Course deleted", type="positive")
+                ui.navigate.to("/explore?tab=courses")
+
+            ui.button("Edit", icon="edit", on_click=_open_edit_course).props("outline")
+
+        share_url = f"/explore/courses/{cid}"
+        ui.button(
+            "Share",
+            icon="share",
+            on_click=lambda: copy_text_to_clipboard(
+                text=source_url or share_url,
+                success_message=f"Course link copied: {share_url}",
+            ),
+        ).props("outline")
+        if can_edit:
+            ui.button("Delete", icon="delete", on_click=_delete_course).props("outline color=negative")
+
+        if source_url:
+            ui.button("Open source", on_click=lambda: ui.navigate.to(source_url, new_tab=True)).props("flat")
+        if recommendations:
+            ui.separator()
+            ui.label("Recent recommendations").classes("text-sm font-semibold")
+            for row in recommendations[:3]:
+                by = str(row.get("created_by") or "").strip()
+                note = str(row.get("note") or "").strip()
+                text = f"{by}: {note}" if by and note else by or note
+                if text:
+                    ui.label(text).classes("lp-explore-detail-muted")
 
 
 async def render_explore_course_detail_page(*, store: SessionStore, api: ApiClient, course_id: str) -> None:
@@ -139,59 +311,27 @@ async def render_explore_course_detail_page(*, store: SessionStore, api: ApiClie
         current_status = str((tracking_by_course_id.get(cid) or {}).get("status") or "")
         source_url = str(course.get("url") or "").strip()
         can_edit = bool(is_admin or (str(course.get("created_by") or "").strip() == username))
+        avg_rating, review_count = _rating_metrics(reviews=reviews)
 
-        with ui.row().classes("w-full items-start gap-4"):
-            with ui.column().classes("lp-explore-detail-main"):
-                ui.label(str(course.get("title") or "Course")).classes("lp-explore-detail-title")
-                if str(course.get("description") or "").strip():
-                    ui.label(str(course.get("description") or "")).classes("lp-explore-detail-body")
-                _render_course_overview(course=course, source_url=source_url, view_mode=view_mode)
-
-                render_reviews_panel(
-                    username=username,
-                    is_admin=is_admin,
-                    reviews=reviews,
-                    on_save=lambda rating, text: controller.save_course_review(
-                        course_id=cid,
-                        rating=int(rating),
-                        text=str(text or ""),
-                        cache_scope=username,
-                    ),
-                    on_delete=lambda review_id: controller.delete_course_review(
-                        course_id=cid,
-                        review_id=int(review_id),
-                        cache_scope=username,
-                    ),
-                    hooks=ReviewPanelHooks(format_date=format_short_date),
-                )
-
-            with ui.column().classes("lp-explore-detail-side"):
-                ui.label("Actions").classes("text-sm font-semibold")
-                if source_url:
-                    ui.button("Open source", on_click=lambda: ui.navigate.to(source_url, new_tab=True)).props("outline")
-                if can_edit:
-
-                    @guard_ui_action(title="Open edit failed")
-                    async def _open_edit_course() -> None:
-                        async def _save(course_id: int, payload: dict[str, Any]) -> None:
-                            await controller.update_course(course_id=int(course_id), payload=dict(payload or {}))
-                            ui.navigate.to(f"/explore/courses/{cid}")
-
-                        open_edit_course_dialog(
-                            course=course,
-                            parse_duration_hours=parse_duration_hours,
-                            on_save=_save,
-                        )
-
-                    ui.button("Edit", icon="edit", on_click=_open_edit_course).props("outline")
-
-                _bind_course_status_select(
-                    controller=controller,
-                    course_id=cid,
-                    current_status=current_status,
-                )
-                _render_course_resources(
-                    course=course,
-                    recommendations=recommendations,
-                    source_url=source_url,
-                )
+        with ui.row().classes("w-full items-start gap-4 lp-refresh-region"):
+            _render_course_main_panel(
+                controller=controller,
+                cid=cid,
+                username=username,
+                is_admin=is_admin,
+                course=course,
+                reviews=reviews,
+                source_url=source_url,
+                view_mode=view_mode,
+                avg_rating=avg_rating,
+                review_count=review_count,
+            )
+            _render_course_info_panel(
+                controller=controller,
+                cid=cid,
+                course=course,
+                current_status=current_status,
+                source_url=source_url,
+                can_edit=can_edit,
+                recommendations=recommendations,
+            )

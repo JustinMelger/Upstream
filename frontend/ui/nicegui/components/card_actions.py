@@ -6,6 +6,8 @@ from typing import Any, Callable
 
 from nicegui import ui
 
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
+
 
 def render_view_review_actions(
     *,
@@ -15,7 +17,19 @@ def render_view_review_actions(
     on_copy: Callable[..., Any] | None = None,
 ) -> None:
     """Render shared icon actions used on content cards."""
-    ui.button("", icon="visibility", on_click=on_view).props("outline dense").tooltip("View")
-    ui.button("", icon="rate_review", on_click=on_review).props("outline dense").tooltip(review_tooltip)
+    apply_icon_button_a11y(
+        ui.button("", icon="visibility", on_click=on_view).props("outline dense"),
+        label="View details",
+        tooltip="View",
+    )
+    apply_icon_button_a11y(
+        ui.button("", icon="rate_review", on_click=on_review).props("outline dense"),
+        label="Review item",
+        tooltip=review_tooltip,
+    )
     if on_copy is not None:
-        ui.button("", icon="content_copy", on_click=on_copy).props("outline dense").tooltip("Copy link")
+        apply_icon_button_a11y(
+            ui.button("", icon="content_copy", on_click=on_copy).props("outline dense"),
+            label="Copy link",
+            tooltip="Copy link",
+        )

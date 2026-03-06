@@ -6,6 +6,7 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.core.api_client import ApiClient
@@ -67,6 +68,11 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
     with render_catalog_scope(variant="explore").classes("lp-container"):
         with ui.row().classes("w-full items-center"):
             ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
+        render_catalog_hero(
+            eyebrow="Discovery",
+            title="Find the next course, path, or article worth sharing",
+            subtitle="Search broadly, then narrow by scope and filters to move from browse to action quickly.",
+        )
         # Sticky topbar uses a negative top margin; reserve vertical space so it
         # doesn't visually overlap this subtitle line.
         ui.element("div").classes("h-3")
@@ -123,7 +129,9 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             on_open_filters=lambda: filter_controls.dialog.open() if filter_controls is not None else None,
             on_open_share=share_dialog.open,
         )
-        categories_btn = ui.button("More categories").props("outline dense")
+        with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-explore-rhythm-strip"):
+            ui.label("Start with spotlight, then scan the rails by content type.").classes("text-xs lp-home-track-meta")
+            categories_btn = ui.button("More categories").props("outline dense")
         filter_controls = render_explore_filters_dialog(on_reset=_reset_filters)
 
         def _toggle_categories() -> None:
@@ -165,32 +173,33 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             )
             topbar.meta.text = results.meta_text
 
-            if not results.shown_courses and not results.shown_paths and not results.shown_articles:
-                render_explore_empty_state(
-                    loaded_once=state.loaded_once,
-                    on_refresh=_load,
-                    on_reset_filters=_reset_filters,
-                )
-                return
+            with ui.element("div").classes("w-full lp-refresh-region"):
+                if not results.shown_courses and not results.shown_paths and not results.shown_articles:
+                    render_explore_empty_state(
+                        loaded_once=state.loaded_once,
+                        on_refresh=_load,
+                        on_reset_filters=_reset_filters,
+                    )
+                    return
 
-            render_explore_sections(
-                shown_courses=results.shown_courses,
-                shown_paths=results.shown_paths,
-                shown_articles=results.shown_articles,
-                deps=build_sections_deps(
-                    state=state,
-                    username=username,
-                    is_admin=is_admin,
-                    show_all_categories=bool(ui_flags.show_all_categories),
-                    controller=controller,
-                    on_set_tracking=mutation_handlers.set_tracking,
-                    on_clear_tracking=mutation_handlers.clear_tracking,
-                    on_toggle_path_selection=mutation_handlers.toggle_path_selection,
-                    on_open_path_details=lambda path_row, card_vm: ui.navigate.to(
-                        f"/explore/paths/{int(path_row.get('id') or 0)}"
+                render_explore_sections(
+                    shown_courses=results.shown_courses,
+                    shown_paths=results.shown_paths,
+                    shown_articles=results.shown_articles,
+                    deps=build_sections_deps(
+                        state=state,
+                        username=username,
+                        is_admin=is_admin,
+                        show_all_categories=bool(ui_flags.show_all_categories),
+                        controller=controller,
+                        on_set_tracking=mutation_handlers.set_tracking,
+                        on_clear_tracking=mutation_handlers.clear_tracking,
+                        on_toggle_path_selection=mutation_handlers.toggle_path_selection,
+                        on_open_path_details=lambda path_row, card_vm: ui.navigate.to(
+                            f"/explore/paths/{int(path_row.get('id') or 0)}"
+                        ),
                     ),
-                ),
-            )
+                )
 
         def _on_search_change(*_args: Any) -> None:
             if should_emit_first_search(

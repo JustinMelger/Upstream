@@ -986,6 +986,21 @@ def apply_theme() -> None:
           opacity: 0.84;
         }
 
+        .lp-explore-rhythm-strip {
+          margin-top: -2px;
+          margin-bottom: 4px;
+          padding: 6px 10px;
+          border-radius: 10px;
+          border: 1px solid rgba(186, 204, 227, 0.08);
+          background: rgba(10, 18, 31, 0.42);
+        }
+
+        .lp-explore-section-block {
+          border-top: 1px solid rgba(186, 204, 227, 0.09);
+          padding-top: 8px;
+          margin-top: 2px;
+        }
+
         .lp-catalog--explore .lp-courses-toolbar-controls {
           border-left-color: rgba(186, 204, 227, 0.05);
         }
@@ -1776,6 +1791,12 @@ def apply_theme() -> None:
           display: flex;
           flex-direction: column;
           gap: var(--lp-space-3);
+          transform: translateX(0);
+          transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        body .q-dialog__inner--right .lp-courses-filter-drawer {
+          animation: lp-drawer-slide-in 180ms ease both;
         }
 
         body .q-menu,
@@ -1936,6 +1957,21 @@ def apply_theme() -> None:
         .lp-home-hero-focus {
           border: 1px solid rgba(186, 204, 227, 0.17);
           background: rgba(7, 16, 32, 0.44);
+        }
+
+        .lp-home-focus-queue-panel {
+          border-color: rgba(186, 204, 227, 0.1);
+          border-left: 2px solid rgba(75, 192, 178, 0.48);
+          background: linear-gradient(160deg, rgba(15, 30, 40, 0.7), rgba(10, 24, 35, 0.62));
+          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+        }
+
+        .lp-home-queue-title {
+          font-family: var(--lp-font-display);
+          font-size: clamp(1rem, 1.35vw, 1.2rem);
+          line-height: 1.2;
+          font-weight: 600;
+          letter-spacing: 0.01em;
         }
 
         .lp-home-snapshot-panel .grid {
@@ -2757,6 +2793,61 @@ def apply_theme() -> None:
           letter-spacing: 0.02em;
         }
 
+        .lp-transition-field .q-field__control,
+        .lp-transition-field .q-field__native,
+        .lp-transition-field .q-select__dropdown-icon,
+        .lp-topbar .q-btn,
+        .lp-topbar .q-radio {
+          transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease,
+            transform 140ms ease;
+        }
+
+        .lp-refresh-region > * {
+          animation: lp-refresh-fade 200ms ease both;
+        }
+
+        .lp-refresh-region > *:nth-child(2) {
+          animation-delay: 24ms;
+        }
+
+        .lp-refresh-region > *:nth-child(3) {
+          animation-delay: 48ms;
+        }
+
+        .lp-refresh-region > *:nth-child(4) {
+          animation-delay: 72ms;
+        }
+
+        .lp-refresh-region > *:nth-child(5) {
+          animation-delay: 96ms;
+        }
+
+        .lp-refresh-region > *:nth-child(6) {
+          animation-delay: 120ms;
+        }
+
+        @keyframes lp-refresh-fade {
+          from {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes lp-drawer-slide-in {
+          from {
+            opacity: 0;
+            transform: translateX(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
         .lp-explore-detail {
           --lp-max-content: 1380px;
         }
@@ -2782,6 +2873,60 @@ def apply_theme() -> None:
             linear-gradient(180deg, rgba(18, 30, 48, 0.72), rgba(12, 22, 38, 0.64)),
             radial-gradient(720px 360px at 24% -12%, rgba(124, 184, 235, 0.12), transparent 60%);
           box-shadow: var(--lp-shadow-sm);
+        }
+
+        .lp-explore-detail-hero {
+          padding: 4px 0 2px;
+          border-bottom: 1px solid rgba(186, 204, 227, 0.1);
+          margin-bottom: 2px;
+        }
+
+        .lp-explore-detail-eyebrow {
+          font-size: var(--lp-type-xs);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-weight: 700;
+          color: color-mix(in srgb, var(--lp-page-accent-strong) 74%, rgba(220, 225, 235, 0.92));
+        }
+
+        .lp-explore-rating-stars {
+          letter-spacing: 0.03em;
+          color: rgba(255, 206, 110, 0.94);
+          font-weight: 700;
+        }
+
+        .lp-explore-rating-score {
+          font-size: var(--lp-type-sm);
+          font-weight: 600;
+          color: rgba(235, 241, 249, 0.92);
+        }
+
+        .lp-explore-detail-card {
+          border-radius: 12px;
+          border: 1px solid rgba(186, 204, 227, 0.13);
+          background: linear-gradient(160deg, rgba(18, 30, 47, 0.64), rgba(11, 22, 36, 0.58));
+          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+        }
+
+        .lp-explore-reviews-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+          gap: 12px;
+          width: 100%;
+        }
+
+        .lp-explore-reviews-summary {
+          min-height: 164px;
+        }
+
+        .lp-explore-reviews-panel {
+          min-height: 164px;
+        }
+
+        .lp-explore-info-card {
+          border-color: rgba(186, 204, 227, 0.15);
+          background: linear-gradient(165deg, rgba(11, 24, 40, 0.78), rgba(8, 19, 31, 0.7));
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
         }
 
         .lp-explore-detail-side {
@@ -2817,6 +2962,9 @@ def apply_theme() -> None:
         @media (max-width: 1040px) {
           .lp-explore-detail-side {
             flex-basis: 100%;
+          }
+          .lp-explore-reviews-grid {
+            grid-template-columns: minmax(0, 1fr);
           }
         }
 

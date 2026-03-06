@@ -34,21 +34,21 @@ Execution slices:
   - [ ] Normalize card/button/chip/input treatment across `Explore`, `Home`, and detail pages.
   - [ ] Remove remaining visual one-offs that conflict with canonical component styling.
 - [ ] Slice 10.2: motion + interaction polish
-  - [ ] Add 120-200ms transitions for list/filter/sort state changes.
-  - [ ] Add subtle stagger/enter animations for key card lists.
-  - [ ] Standardize inline feedback patterns for save/track/select/review actions.
+  - [x] Add 120-200ms transitions for list/filter/sort state changes.
+  - [x] Add subtle stagger/enter animations for key card lists.
+  - [x] Standardize inline feedback patterns for save/track/select/review actions.
 - [ ] Slice 10.3: page identity pass
-  - [ ] Strengthen page-specific hero language and section framing for `Home` and `Explore`.
-  - [ ] Keep interaction model unchanged while making each primary page visually distinct.
+  - [x] Strengthen page-specific hero language and section framing for `Home` and `Explore`.
+  - [x] Keep interaction model unchanged while making each primary page visually distinct.
 - [ ] Slice 10.3b: targeted page redesign implementation
-  - [ ] Redesign `Home` hero + first-scroll section layout for stronger “what to do next” clarity.
-  - [ ] Redesign `Explore` top section and card-density rhythm for faster scan + action.
-  - [ ] Redesign one detail page template (`course` preferred) as the new reference pattern.
-  - [ ] Reuse redesigned template patterns in path/article details where low-risk.
+  - [x] Redesign `Home` hero + first-scroll section layout for stronger “what to do next” clarity.
+  - [x] Redesign `Explore` top section and card-density rhythm for faster scan + action.
+  - [x] Redesign one detail page template (`course` preferred) as the new reference pattern.
+  - [x] Reuse redesigned template patterns in path/article details where low-risk.
 - [ ] Slice 10.4: first-time clarity + accessibility polish
   - [ ] Complete any remaining onboarding intro and empty-state next-action inconsistencies.
   - [ ] Ensure visible focus states and keyboard flow for menus/dropdowns/dialog triggers.
-  - [ ] Ensure icon-only actions expose clear ARIA labels and visible tooltips/text hints where needed.
+  - [x] Ensure icon-only actions expose clear ARIA labels and visible tooltips/text hints where needed.
 - [ ] Slice 10.5: visual quality gate hardening
   - [ ] Commit stable visual baselines and enable strict visual-regression enforcement in CI (`11D` remaining item).
 

@@ -6,6 +6,13 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
+from frontend.ui.nicegui.core.action_feedback import (
+    path_selected_message,
+    path_unselected_message,
+    tracking_cleared_message,
+    tracking_set_message,
+)
+from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.pages.explore.controller import ExplorePageController
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
 
@@ -34,6 +41,7 @@ def build_mutation_handlers(
             status=str(status),
             refresh_ui=refresh_ui,
         )
+        safe_notify(tracking_set_message(status=str(status)), type="positive")
 
     async def _clear_tracking(course_id: int) -> None:
         await controller.clear_tracking_status(
@@ -41,13 +49,16 @@ def build_mutation_handlers(
             course_id=int(course_id),
             refresh_ui=refresh_ui,
         )
+        safe_notify(tracking_cleared_message(), type="positive")
 
     async def _toggle_path_selection(path_id: int) -> None:
+        was_selected = int(path_id) in state.selected_by_path_id
         await controller.toggle_path_selection(
             state=state,
             path_id=int(path_id),
             refresh_ui=refresh_ui,
         )
+        safe_notify(path_unselected_message() if was_selected else path_selected_message(), type="positive")
 
     return ExploreMutationHandlers(
         set_tracking=_set_tracking,

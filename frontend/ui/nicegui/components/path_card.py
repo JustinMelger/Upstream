@@ -12,6 +12,7 @@ from frontend.ui.nicegui.components.card_frame import (
     render_card_content_column,
     render_card_topright,
 )
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 
 
 @dataclass(slots=True)
@@ -52,7 +53,12 @@ class PathCardCallbacks:
 
 
 def _render_path_menu(*, display: PathCardDisplay, actions: PathCardCallbacks) -> None:
-    with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+    path_menu = apply_icon_button_a11y(
+        ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+        label="Open path actions",
+        tooltip="Path actions",
+    )
+    with path_menu:
         ui.menu_item("Review", actions.on_review)
         ui.menu_item("Recommend", actions.on_recommend)
         ui.menu_item("Copy link", actions.on_copy_link)

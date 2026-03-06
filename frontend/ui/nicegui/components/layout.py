@@ -8,6 +8,7 @@ from typing import Literal
 
 from nicegui import ui
 
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.errors import guard_ui_action
@@ -80,10 +81,14 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                     await store.logout(api)
                     ui.navigate.to("/login")
 
-                activity_btn = ui.button(
-                    icon="markunread_mailbox", on_click=lambda: _nav_click(label="teams", target="/teams")
-                ).props("outline dense")
-                activity_btn.tooltip("Teams")
+                activity_btn = apply_icon_button_a11y(
+                    ui.button(
+                        icon="markunread_mailbox",
+                        on_click=lambda: _nav_click(label="teams", target="/teams"),
+                    ).props("outline dense"),
+                    label="Open teams inbox",
+                    tooltip="Teams",
+                )
                 if _is_active("/teams"):
                     activity_btn.classes("lp-nav-active")
 

@@ -10,6 +10,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel, ReviewPanelHooks
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.core.action_feedback import tracking_cleared_message, tracking_set_message
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.courses.media import extract_youtube_video_id, render_youtube_embed, youtube_embed_url
@@ -81,13 +82,13 @@ def _render_tracking_status_select(*, deps: CourseDetailsDialogDeps) -> None:
                     await deps.on_clear_tracking_status()
                 if deps.on_tracking_changed is not None:
                     deps.on_tracking_changed("")
-                safe_notify("Removed status", type="positive")
+                safe_notify(tracking_cleared_message(), type="positive")
                 return
             if deps.on_set_tracking_status is not None:
                 await deps.on_set_tracking_status(selected)
             if deps.on_tracking_changed is not None:
                 deps.on_tracking_changed(selected)
-            safe_notify("Updated status", type="positive")
+            safe_notify(tracking_set_message(status=selected), type="positive")
         finally:
             status_select.enable()
 

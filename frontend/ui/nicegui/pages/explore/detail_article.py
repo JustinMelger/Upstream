@@ -6,6 +6,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel, ReviewPanelHooks
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -49,30 +50,52 @@ async def render_explore_article_detail_page(*, store: SessionStore, api: ApiCli
         url = str(article.get("url") or "").strip()
         tags = parse_tags(str(article.get("tags") or ""))
 
-        with ui.row().classes("w-full items-start gap-4"):
+        with ui.row().classes("w-full items-start gap-4 lp-refresh-region"):
             with ui.column().classes("lp-explore-detail-main"):
-                ui.label(str(article.get("title") or "Article")).classes("lp-explore-detail-title")
-                if str(article.get("summary") or "").strip():
-                    ui.label(str(article.get("summary") or "")).classes("lp-explore-detail-body")
+                with ui.element("header").classes("lp-explore-detail-hero"):
+                    owner = str(article.get("created_by") or "").strip()
+                    ui.label("Article").classes("lp-explore-detail-eyebrow")
+                    ui.label(str(article.get("title") or "Article")).classes("lp-explore-detail-title")
+                    if owner:
+                        ui.label(f"by {owner}").classes("lp-explore-detail-muted")
+                    if str(article.get("summary") or "").strip():
+                        ui.label(str(article.get("summary") or "")).classes("lp-explore-detail-body")
                 with ui.row().classes("items-center gap-2 flex-wrap"):
-                    if str(article.get("created_by") or "").strip():
-                        ui.label(f"Shared by {article.get('created_by')}").classes("lp-meta-chip lp-meta-chip--quiet")
                     for tag in tags[:6]:
                         ui.label(tag).classes("lp-meta-chip")
-                render_reviews_panel(
-                    username=username,
-                    is_admin=is_admin,
-                    reviews=reviews,
-                    on_save=lambda rating, text: controller.save_article_review(
-                        article_id=aid,
-                        rating=int(rating),
-                        text=str(text or ""),
-                    ),
-                    on_delete=lambda review_id: controller.delete_article_review(article_id=aid, review_id=int(review_id)),
-                    hooks=ReviewPanelHooks(format_date=format_short_date),
-                )
+                with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-reviews-panel"):
+                    if not reviews:
+                        ui.label("Be the first to review this article.").classes("lp-explore-detail-muted")
+                    render_reviews_panel(
+                        username=username,
+                        is_admin=is_admin,
+                        reviews=reviews,
+                        on_save=lambda rating, text: controller.save_article_review(
+                            article_id=aid,
+                            rating=int(rating),
+                            text=str(text or ""),
+                        ),
+                        on_delete=lambda review_id: controller.delete_article_review(article_id=aid, review_id=int(review_id)),
+                        hooks=ReviewPanelHooks(format_date=format_short_date),
+                    )
 
-            with ui.column().classes("lp-explore-detail-side"):
-                ui.label("Actions").classes("text-sm font-semibold")
+            with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):
+                ui.label("Article Info").classes("text-base font-semibold")
+                with ui.row().classes("items-center gap-2"):
+                    owner = str(article.get("created_by") or "").strip() or "Unknown"
+                    initials = "".join(part[:1] for part in owner.split() if part)[:2].upper() or owner[:2].upper()
+                    ui.label(initials).classes("lp-home-avatar-chip")
+                    ui.label(owner).classes("text-base")
+                ui.label(f"Tags: {len(tags)}").classes("lp-explore-detail-muted")
+                if url:
+                    ui.button("Read article", on_click=lambda: ui.navigate.to(url, new_tab=True)).props("unelevated")
                 if url:
                     ui.button("Open source", on_click=lambda: ui.navigate.to(url, new_tab=True)).props("outline")
+                ui.button(
+                    "Share",
+                    icon="share",
+                    on_click=lambda: copy_text_to_clipboard(
+                        text=url or f"/explore/articles/{aid}",
+                        success_message=f"Article link copied: /explore/articles/{aid}",
+                    ),
+                ).props("outline")

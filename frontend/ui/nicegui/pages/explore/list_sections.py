@@ -74,52 +74,59 @@ def render_explore_sections(
     """Render the mixed Explore sections for courses/paths/articles."""
 
     if shown_courses:
-        with ui.column().classes("w-full gap-2 lp-courses-section"):
-            ui.label("Course picks").classes("lp-courses-section-title")
-        render_explore_course_spotlight(
-            shown_courses=shown_courses,
-            tracking_by_course_id=deps.state.tracking_by_course_id,
-            course_actions_builder=deps.course_actions_builder,
-            on_track=deps.on_set_tracking,
-        )
-        render_courses_catalog(
-            shown_page=shown_courses,
-            render_course_item=lambda course, item_classes: render_course_item(
-                course=course,
-                item_classes=item_classes,
-                state=deps.state,
-                username=deps.username,
-                is_admin=deps.is_admin,
+        with ui.element("section").classes("w-full lp-explore-section-block"):
+            with ui.column().classes("w-full gap-2 lp-courses-section"):
+                ui.label("Courses to start now").classes("lp-courses-section-title")
+                ui.label("Recommended options based on your current scope and signals.").classes(
+                    "lp-courses-section-subtitle"
+                )
+            render_explore_course_spotlight(
+                shown_courses=shown_courses,
+                tracking_by_course_id=deps.state.tracking_by_course_id,
                 course_actions_builder=deps.course_actions_builder,
-                on_set_tracking=deps.on_set_tracking,
-                on_clear_tracking=deps.on_clear_tracking,
-            ),
-            featured_title="Spotlight course",
-            featured_subtitle="Top match for your current query",
-            collection_title="More courses",
-            show_featured=False,
-            max_groups=None if deps.show_all_categories else 6,
-            min_group_size=2,
-            overflow_group_title="More for you",
-            prioritize_larger_groups=True,
-        )
-
-    if shown_paths:
-        with ui.column().classes("w-full gap-2 lp-courses-section"):
-            ui.label("Path picks").classes("lp-courses-section-title")
-            ui.label("Top match for your current query").classes("lp-courses-section-subtitle")
-        with ui.element("div").classes("lp-courses-grid"):
-            for idx, row in enumerate(shown_paths):
-                item_classes = "lp-courses-grid-item lp-courses-grid-item--featured" if idx == 0 else "lp-courses-grid-item"
-                render_path_item(
-                    path=row,
+                on_track=deps.on_set_tracking,
+            )
+            render_courses_catalog(
+                shown_page=shown_courses,
+                render_course_item=lambda course, item_classes: render_course_item(
+                    course=course,
                     item_classes=item_classes,
                     state=deps.state,
                     username=deps.username,
                     is_admin=deps.is_admin,
-                    on_toggle_path_selection=deps.on_toggle_path_selection,
-                    open_path_details_dialog=deps.open_path_details_dialog,
+                    course_actions_builder=deps.course_actions_builder,
+                    on_set_tracking=deps.on_set_tracking,
+                    on_clear_tracking=deps.on_clear_tracking,
+                ),
+                featured_title="Spotlight course",
+                featured_subtitle="Top match for your current query",
+                collection_title="More courses",
+                show_featured=False,
+                max_groups=None if deps.show_all_categories else 6,
+                min_group_size=2,
+                overflow_group_title="More for you",
+                prioritize_larger_groups=True,
+            )
+
+    if shown_paths:
+        with ui.element("section").classes("w-full lp-explore-section-block"):
+            with ui.column().classes("w-full gap-2 lp-courses-section"):
+                ui.label("Paths to structure your next steps").classes("lp-courses-section-title")
+                ui.label("Sequenced tracks that turn intent into an execution plan.").classes(
+                    "lp-courses-section-subtitle"
                 )
+            with ui.element("div").classes("lp-courses-grid"):
+                for idx, row in enumerate(shown_paths):
+                    item_classes = "lp-courses-grid-item lp-courses-grid-item--featured" if idx == 0 else "lp-courses-grid-item"
+                    render_path_item(
+                        path=row,
+                        item_classes=item_classes,
+                        state=deps.state,
+                        username=deps.username,
+                        is_admin=deps.is_admin,
+                        on_toggle_path_selection=deps.on_toggle_path_selection,
+                        open_path_details_dialog=deps.open_path_details_dialog,
+                    )
 
     if shown_articles:
         grouped_articles: list[dict[str, Any]] = []
@@ -130,16 +137,19 @@ def render_explore_sections(
 
         featured_article = grouped_articles[0]
         remaining_articles = grouped_articles[1:]
-        with ui.column().classes("w-full gap-2 lp-courses-section"):
-            ui.label("Article picks").classes("lp-courses-section-title")
-            ui.label("Top match for your current query").classes("lp-courses-section-subtitle")
-            with ui.element("div").classes("lp-courses-grid"):
-                render_article_item(
-                    article=featured_article,
-                    item_classes="lp-courses-grid-item lp-courses-grid-item--featured",
-                    state=deps.state,
-                    open_article_details=deps.open_article_details,
+        with ui.element("section").classes("w-full lp-explore-section-block"):
+            with ui.column().classes("w-full gap-2 lp-courses-section"):
+                ui.label("Articles for quick context").classes("lp-courses-section-title")
+                ui.label("Short reads to sharpen decisions before you commit to a course or path.").classes(
+                    "lp-courses-section-subtitle"
                 )
+                with ui.element("div").classes("lp-courses-grid"):
+                    render_article_item(
+                        article=featured_article,
+                        item_classes="lp-courses-grid-item lp-courses-grid-item--featured",
+                        state=deps.state,
+                        open_article_details=deps.open_article_details,
+                    )
 
         if remaining_articles:
             render_explore_article_rails(

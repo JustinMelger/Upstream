@@ -17,6 +17,7 @@ from frontend.ui.nicegui.components.card_frame import (
 from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.pages.courses.media import render_youtube_embed
 from frontend.ui.nicegui.pages.courses.ui_glue import (
@@ -87,7 +88,12 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any, on_open_filters:
             )
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             filters_btn = ui.button("Filters", on_click=on_open_filters).props("dense outline").classes("lp-topbar-share")
-            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+            topbar_menu = apply_icon_button_a11y(
+                ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+                label="Open course toolbar actions",
+                tooltip="More actions",
+            )
+            with topbar_menu:
                 ui.menu_item("Share course", on_share)
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
@@ -273,7 +279,12 @@ def render_course_card(
                 ui.label("New").classes("lp-chip lp-chip--sky")
             elif card_vm.is_updated:
                 ui.label("Updated").classes("lp-chip lp-chip--teal")
-            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+            card_menu = apply_icon_button_a11y(
+                ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+                label="Open course actions",
+                tooltip="Course actions",
+            )
+            with card_menu:
                 ui.menu_item("Open details", actions.on_view)
                 ui.menu_item("Review", actions.on_review)
                 ui.menu_item("Recommend", actions.on_recommend)

@@ -6,9 +6,11 @@ from typing import Any
 
 from nicegui import app, ui
 
+from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import tracking_label
+from frontend.ui.nicegui.core.action_feedback import tracking_cleared_message, tracking_set_message
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
@@ -162,17 +164,24 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         @guard_ui_action(title="Update tracking failed")
         async def _set_tracking_status(course_id: int, status: str) -> None:
             await controller.set_tracking_status(course_id=int(course_id), status=str(status))
+            safe_notify(tracking_set_message(status=str(status)), type="positive")
             await _load(reset_visibility=False)
 
         @guard_ui_action(title="Update tracking failed")
         async def _clear_tracking_status(course_id: int) -> None:
             await controller.clear_tracking_status(course_id=int(course_id))
+            safe_notify(tracking_cleared_message(), type="positive")
             await _load(reset_visibility=False)
 
         with render_catalog_scope(variant="explore").classes("lp-container lp-home-scope"):
             with ui.column().classes("w-full gap-1"):
                 ui.label(subtitle_for(PrimaryPage.HOME)).classes("text-sm text-gray-600")
                 ui.label("Learning dashboard").classes("lp-home-title")
+            render_catalog_hero(
+                eyebrow="Execution",
+                title="Ship one meaningful learning step today",
+                subtitle="Continue your next course, respond to team reviews, or move a selected path forward.",
+            )
 
             @ui.refreshable
             def intro_panel() -> None:
@@ -225,21 +234,22 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     return
 
                 if not state.data:
-                    ui.label("No data loaded yet.").classes("text-sm").style("color: var(--lp-muted)")
-                    ui.button("Refresh", on_click=_load).props("dense outline")
+                    with ui.element("div").classes("w-full lp-refresh-region"):
+                        ui.label("No data loaded yet.").classes("text-sm").style("color: var(--lp-muted)")
+                        ui.button("Refresh", on_click=_load).props("dense outline")
                     return
 
                 if str(view_filter.value or "learning") == "shared":
                     shared_vm = build_shared_tab_view(data=state.data)
-
-                    render_shared_tab(
-                        shared_vm=shared_vm,
-                        review_summary_label=lambda row: format_review_summary(row, style="star"),
-                        recommendation_summary_label=format_recommendation_summary,
-                        nav_actions=nav_actions,
-                        feature_articles=bool(settings.feature_articles),
-                        on_open_articles=lambda: ui.navigate.to("/explore?tab=articles"),
-                    )
+                    with ui.element("div").classes("w-full lp-refresh-region"):
+                        render_shared_tab(
+                            shared_vm=shared_vm,
+                            review_summary_label=lambda row: format_review_summary(row, style="star"),
+                            recommendation_summary_label=format_recommendation_summary,
+                            nav_actions=nav_actions,
+                            feature_articles=bool(settings.feature_articles),
+                            on_open_articles=lambda: ui.navigate.to("/explore?tab=articles"),
+                        )
 
                     return
 
@@ -280,43 +290,44 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 def _refresh_content() -> None:
                     content.refresh()
 
-                render_learning_tab(
-                    learning_vm=learning_vm,
-                    state=state,
-                    next_course=next_course,
-                    first_course_review_action=first_course_review_action,
-                    first_path_review_action=first_path_review_action,
-                    review_summary_label=lambda row: format_review_summary(row, style="star"),
-                    tracking_label_fn=tracking_label,
-                    progress_for_path_detail=compute_path_progress,
-                    nav_actions=nav_actions,
-                    on_set_tracking_status=_set_tracking_status,
-                    on_clear_tracking_status=_clear_tracking_status,
-                    on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
-                    on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
-                    on_open_selected_paths=lambda: ui.navigate.to("/explore?tab=paths"),
-                    on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
-                    recently_shared_in_teams=recently_shared_in_teams,
-                    on_open_recently_shared_item=lambda row: (
-                        ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}")
-                        if str(row.get("type") or "") == "course"
-                        else (
-                            ui.navigate.to(f"/explore/paths/{int(row.get('id') or 0)}")
-                            if str(row.get("type") or "") == "path"
-                            else ui.navigate.to("/explore?tab=articles")
-                        )
-                    ),
-                    on_load_more_tracked=lambda: load_more_tracked(
+                with ui.element("div").classes("w-full lp-refresh-region"):
+                    render_learning_tab(
+                        learning_vm=learning_vm,
                         state=state,
-                        total_count=len(learning_vm.tracked_courses),
-                        refresh=_refresh_content,
-                    ),
-                    on_load_more_selected=lambda: load_more_selected(
-                        state=state,
-                        total_count=len(learning_vm.selected_paths),
-                        refresh=_refresh_content,
-                    ),
-                )
+                        next_course=next_course,
+                        first_course_review_action=first_course_review_action,
+                        first_path_review_action=first_path_review_action,
+                        review_summary_label=lambda row: format_review_summary(row, style="star"),
+                        tracking_label_fn=tracking_label,
+                        progress_for_path_detail=compute_path_progress,
+                        nav_actions=nav_actions,
+                        on_set_tracking_status=_set_tracking_status,
+                        on_clear_tracking_status=_clear_tracking_status,
+                        on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
+                        on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
+                        on_open_selected_paths=lambda: ui.navigate.to("/explore?tab=paths"),
+                        on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
+                        recently_shared_in_teams=recently_shared_in_teams,
+                        on_open_recently_shared_item=lambda row: (
+                            ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}")
+                            if str(row.get("type") or "") == "course"
+                            else (
+                                ui.navigate.to(f"/explore/paths/{int(row.get('id') or 0)}")
+                                if str(row.get("type") or "") == "path"
+                                else ui.navigate.to("/explore?tab=articles")
+                            )
+                        ),
+                        on_load_more_tracked=lambda: load_more_tracked(
+                            state=state,
+                            total_count=len(learning_vm.tracked_courses),
+                            refresh=_refresh_content,
+                        ),
+                        on_load_more_selected=lambda: load_more_selected(
+                            state=state,
+                            total_count=len(learning_vm.selected_paths),
+                            refresh=_refresh_content,
+                        ),
+                    )
 
             await _load()
             content()
