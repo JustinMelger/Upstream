@@ -17,6 +17,24 @@ class PathsListSlice:
     shown: list[dict[str, Any]]
 
 
+def normalize_path_view_mode(view_mode: str | None) -> str:
+    """Normalize dialog mode to `full` or `reviews`."""
+    return "reviews" if str(view_mode or "").strip().lower() == "reviews" else "full"
+
+
+def path_matches_state(path_id: int, selected_by_id: dict[int, dict[str, Any]], state_filter: str) -> bool:
+    """Return whether a path id matches a tracked-state filter."""
+    key = str(state_filter or "").strip()
+    is_tracked = int(path_id) in selected_by_id
+    if not key:
+        return True
+    if key == "tracked":
+        return is_tracked
+    if key == "not_tracked":
+        return not is_tracked
+    return True
+
+
 def filter_paths_by_needle(paths: list[dict[str, Any]] | None, needle: str) -> list[dict[str, Any]]:
     """Filter paths by a lower-cased substring match on name/description."""
     if not needle:

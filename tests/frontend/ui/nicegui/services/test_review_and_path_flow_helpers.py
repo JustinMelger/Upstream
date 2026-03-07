@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from frontend.ui.nicegui.pages.courses.ui_glue import normalize_course_view_mode
-from frontend.ui.nicegui.pages.paths.page import _normalize_path_view_mode, _path_matches_state
+from frontend.ui.nicegui.pages.paths.reducers import normalize_path_view_mode, path_matches_state
 from frontend.ui.nicegui.services import paths_service
 
 
@@ -13,15 +13,15 @@ from frontend.ui.nicegui.services import paths_service
 def test_path_tracked_untracked_filter_behavior() -> None:
     selected = {2: {"id": 2}, 5: {"id": 5}}
 
-    assert _path_matches_state(2, selected, "tracked") is True
-    assert _path_matches_state(3, selected, "tracked") is False
+    assert path_matches_state(2, selected, "tracked") is True
+    assert path_matches_state(3, selected, "tracked") is False
 
-    assert _path_matches_state(2, selected, "not_tracked") is False
-    assert _path_matches_state(3, selected, "not_tracked") is True
+    assert path_matches_state(2, selected, "not_tracked") is False
+    assert path_matches_state(3, selected, "not_tracked") is True
 
     # Empty/unknown filters should not exclude rows.
-    assert _path_matches_state(2, selected, "") is True
-    assert _path_matches_state(2, selected, "unknown") is True
+    assert path_matches_state(2, selected, "") is True
+    assert path_matches_state(2, selected, "unknown") is True
 
 
 @pytest.mark.unit
@@ -29,10 +29,10 @@ def test_review_only_modal_mode_flags_are_stable() -> None:
     assert normalize_course_view_mode(True) == "reviews"
     assert normalize_course_view_mode(False) == "full"
 
-    assert _normalize_path_view_mode("reviews") == "reviews"
-    assert _normalize_path_view_mode("full") == "full"
-    assert _normalize_path_view_mode("unexpected") == "full"
-    assert _normalize_path_view_mode(None) == "full"
+    assert normalize_path_view_mode("reviews") == "reviews"
+    assert normalize_path_view_mode("full") == "full"
+    assert normalize_path_view_mode("unexpected") == "full"
+    assert normalize_path_view_mode(None) == "full"
 
 
 @pytest.mark.unit

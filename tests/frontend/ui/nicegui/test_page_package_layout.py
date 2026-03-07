@@ -13,6 +13,10 @@ def test_each_page_package_has_init_and_page_module() -> None:
     pages_root = Path("frontend/ui/nicegui/pages")
     package_dirs = sorted(p for p in pages_root.iterdir() if p.is_dir() and not p.name.startswith("__"))
     assert package_dirs, "Expected at least one page package directory"
+    no_page_module_packages = {"articles", "courses", "paths"}
     for pkg in package_dirs:
         assert (pkg / "__init__.py").exists(), f"Missing __init__.py in {pkg}"
-        assert (pkg / "page.py").exists(), f"Missing page.py in {pkg}"
+        if pkg.name in no_page_module_packages:
+            assert not (pkg / "page.py").exists(), f"Unexpected page.py in {pkg}"
+        else:
+            assert (pkg / "page.py").exists(), f"Missing page.py in {pkg}"

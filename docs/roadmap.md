@@ -349,7 +349,7 @@ Definition of done:
 - [ ] `Explore` clearly answers "What can I discover?"
 
 Implementation map (routes + files, ordered):
-- [x] Route transition contract finalized: canonical routes are `/home`, `/explore`, `/teams`, `/profile`, `/profile/stats`, `/manage/courses`, `/manage/paths`, `/manage/articles`, and Explore detail routes (`/explore/courses/{id}`, `/explore/paths/{id}`, `/explore/articles/{id}`); legacy aliases and compatibility discovery routes removed.
+- [x] Route transition contract finalized: canonical routes are `/home`, `/explore`, `/teams`, `/profile`, `/profile/stats`, and Explore detail routes (`/explore/courses/{id}`, `/explore/paths/{id}`, `/explore/articles/{id}`); legacy aliases and compatibility discovery routes removed.
 - [x] Phase 11E.0 instrumentation baseline:
   - Primary files: `frontend/ui/nicegui/core/api_client.py`, `frontend/ui/nicegui/core/navigation.py`, `frontend/ui/nicegui/pages/login/page.py`, `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/explore/page.py`.
   - New modules (if needed): `frontend/ui/nicegui/services/telemetry_service.py`, backend endpoint under `backend/api/` + service in `backend/services/`.

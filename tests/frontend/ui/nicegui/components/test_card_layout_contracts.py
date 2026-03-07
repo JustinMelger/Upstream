@@ -42,8 +42,8 @@ def test_articles_card_uses_shared_card_frame_helpers() -> None:
 
 @pytest.mark.unit
 def test_courses_and_articles_topbar_are_componentized_in_sections() -> None:
-    courses_src = Path("frontend/ui/nicegui/pages/courses/page.py").read_text(encoding="utf-8")
-    articles_src = Path("frontend/ui/nicegui/pages/articles/page.py").read_text(encoding="utf-8")
+    courses_src = Path("frontend/ui/nicegui/pages/courses/sections.py").read_text(encoding="utf-8")
+    articles_src = Path("frontend/ui/nicegui/pages/articles/sections.py").read_text(encoding="utf-8")
     assert "render_courses_topbar(" in courses_src
     assert "render_articles_topbar(" in articles_src
 

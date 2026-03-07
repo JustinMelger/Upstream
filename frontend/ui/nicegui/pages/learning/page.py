@@ -6,9 +6,9 @@ from typing import Any
 
 from nicegui import app, ui
 
-from frontend.ui.nicegui.components.layout import render_container, render_shell
+from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
-from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label
+from frontend.ui.nicegui.components.status_chips import tracking_label
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
@@ -17,13 +17,7 @@ from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_p
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
-from frontend.ui.nicegui.pages.learning.actions import (
-    dismiss_recommended_course,
-    dismiss_recommended_path,
-    LearningNavigationActions,
-    load_more_selected,
-    load_more_tracked,
-)
+from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions, load_more_selected, load_more_tracked
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
 from frontend.ui.nicegui.pages.learning.onboarding import (
     dismiss_home_intro,
@@ -40,7 +34,6 @@ from frontend.ui.nicegui.pages.learning.ui_glue import (
     compute_meta_text,
     compute_next_visibility,
     compute_path_progress,
-    resolve_tracking_status_value,
 )
 from frontend.ui.nicegui.pages.learning.view_model import (
     build_learning_tab_view,
@@ -150,11 +143,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     username=username,
                     include_articles=bool(settings.feature_articles),
                 )
-                meta.text = compute_meta_text(
-                    data=state.data,
-                    view=str(view_filter.value or ""),
-                    feature_articles=bool(settings.feature_articles),
-                )
+                if str(view_filter.value or "") == "learning":
+                    meta.text = "Focus and progress"
+                else:
+                    meta.text = compute_meta_text(
+                        data=state.data,
+                        view=str(view_filter.value or ""),
+                        feature_articles=bool(settings.feature_articles),
+                    )
             except ApiError as exc:
                 safe_notify(str(exc), type="negative")
                 state.data = {}
@@ -173,19 +169,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await controller.clear_tracking_status(course_id=int(course_id))
             await _load(reset_visibility=False)
 
-        @guard_ui_action(title="Track course failed")
-        async def _save_recommended_course(course_id: int) -> None:
-            await controller.save_recommended_course(course_id=int(course_id))
-            await _load(reset_visibility=False)
-
-        @guard_ui_action(title="Select path failed")
-        async def _save_recommended_path(path_id: int) -> None:
-            await controller.save_recommended_path(path_id=int(path_id))
-            await _load(reset_visibility=False)
-
-        with render_container():
-            ui.label(subtitle_for(PrimaryPage.HOME)).classes("text-sm text-gray-600")
-            ui.label("").classes("h-1")
+        with render_catalog_scope(variant="explore").classes("lp-container lp-home-scope"):
+            with ui.column().classes("w-full gap-1"):
+                ui.label(subtitle_for(PrimaryPage.HOME)).classes("text-sm text-gray-600")
+                ui.label("Learning dashboard").classes("lp-home-title")
 
             @ui.refreshable
             def intro_panel() -> None:
@@ -210,13 +197,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             intro_panel()
 
-            with ui.row().classes("lp-topbar"):
-                with ui.row().classes("items-center gap-2").style("margin-left: auto"):
+            with ui.column().classes("lp-topbar lp-sticky-controls lp-home-topbar w-full gap-2"):
+                with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
+                    ui.label("What should I do next?").classes("lp-home-topbar-prompt")
                     view_filter = (
                         ui.radio({"learning": "Learning", "shared": "Shared"}, value=initial_view)
                         .props("inline dense")
                         .classes("text-sm")
                     )
+                with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
                     meta = ui.label("").classes("lp-topbar-meta")
                     ui.button("Refresh", on_click=_load).props("dense outline")
 
@@ -299,27 +288,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     first_path_review_action=first_path_review_action,
                     review_summary_label=lambda row: format_review_summary(row, style="star"),
                     tracking_label_fn=tracking_label,
-                    tracking_chip_class_fn=tracking_chip_class,
-                    resolve_status_value=resolve_tracking_status_value,
                     progress_for_path_detail=compute_path_progress,
                     nav_actions=nav_actions,
-                    on_save_recommended_course=_save_recommended_course,
-                    on_save_recommended_path=_save_recommended_path,
-                    on_dismiss_recommended_course=lambda _cid: dismiss_recommended_course(
-                        state=state,
-                        course_id=int(_cid),
-                        refresh=_refresh_content,
-                    ),
-                    on_dismiss_recommended_path=lambda _pid: dismiss_recommended_path(
-                        state=state,
-                        path_id=int(_pid),
-                        refresh=_refresh_content,
-                    ),
                     on_set_tracking_status=_set_tracking_status,
                     on_clear_tracking_status=_clear_tracking_status,
                     on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
                     on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
-                    on_open_selected_paths=lambda: ui.navigate.to("/manage/paths?tab=selected"),
+                    on_open_selected_paths=lambda: ui.navigate.to("/explore?tab=paths"),
                     on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
                     recently_shared_in_teams=recently_shared_in_teams,
                     on_open_recently_shared_item=lambda row: (

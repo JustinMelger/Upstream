@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
@@ -7,10 +9,11 @@ from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
 
 @pytest.mark.unit
 def test_map_article_card_view_builds_tags_subtitle_and_summary() -> None:
+    now = datetime.now(timezone.utc)
     row = {
         "id": 7,
         "created_by": "alice",
-        "created_at": "2026-02-20T10:00:00+00:00",
+        "created_at": (now - timedelta(days=1)).isoformat(),
         "tags": "fastapi, backend",
         "preview_image_url": "https://cdn.example.com/og.png",
     }

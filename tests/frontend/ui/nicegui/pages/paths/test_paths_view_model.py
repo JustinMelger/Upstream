@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from frontend.ui.nicegui.pages.paths import view_model
@@ -52,11 +54,12 @@ def test_summarize_path_reviews_computes_average_and_count() -> None:
 
 @pytest.mark.unit
 def test_map_path_card_view_for_tracked_path_includes_progress_and_badges() -> None:
+    now = datetime.now(timezone.utc)
     row = {
         "id": 3,
         "created_by": "admin",
-        "created_at": "2026-02-18T00:00:00Z",
-        "updated_at": "2026-02-20T00:00:00Z",
+        "created_at": (now - timedelta(days=3)).isoformat(),
+        "updated_at": (now - timedelta(days=1)).isoformat(),
     }
     detail = {"courses": [{"id": 10, "title": "HTTP"}, {"id": 11, "title": "FastAPI"}]}
     tracking = {10: {"status": "completed"}, 11: {"status": "in_progress"}}

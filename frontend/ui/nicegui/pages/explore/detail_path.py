@@ -8,7 +8,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel, ReviewPanelHooks
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
-from frontend.ui.nicegui.core.errors import guard_ui_action
+from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -82,7 +82,6 @@ async def render_explore_path_detail_page(*, store: SessionStore, api: ApiClient
 
             with ui.column().classes("lp-explore-detail-side"):
                 ui.label("Actions").classes("text-sm font-semibold")
-                ui.button("Manage in Paths", on_click=lambda: ui.navigate.to(f"/manage/paths?path_id={pid}")).props("outline")
                 if can_edit:
 
                     @guard_ui_action(title="Open edit failed")
@@ -112,6 +111,14 @@ async def render_explore_path_detail_page(*, store: SessionStore, api: ApiClient
                         )
 
                     ui.button("Edit", icon="edit", on_click=_open_edit_path).props("outline")
+
+                    @guard_ui_action(title="Delete path failed")
+                    async def _delete_path() -> None:
+                        await controller.delete_path(path_id=pid)
+                        safe_notify("Path deleted", type="positive")
+                        ui.navigate.to("/explore?tab=paths")
+
+                    ui.button("Delete", icon="delete", on_click=_delete_path).props("outline color=negative")
 
                 ui.separator()
                 ui.label("Resources").classes("text-sm font-semibold")

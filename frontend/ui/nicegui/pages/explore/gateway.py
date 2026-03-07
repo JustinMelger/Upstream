@@ -30,6 +30,30 @@ class ExploreCoursesAccess:
         """
         return await self._controller.load_list_bundle(params=params)
 
+    async def create_course(self, *, payload: dict[str, Any]) -> dict[str, Any]:
+        """Create a new course from Explore share flow.
+
+        Args:
+            payload: Course create payload.
+
+        Returns:
+            Created course payload.
+
+        """
+        return await self._controller.create_course(payload=dict(payload or {}))
+
+    async def suggest_course_from_url(self, *, url: str) -> dict[str, Any]:
+        """Suggest course metadata from a URL.
+
+        Args:
+            url: Source URL.
+
+        Returns:
+            Suggestion payload.
+
+        """
+        return await self._controller.suggest_course_from_url(url=str(url or ""))
+
     async def set_tracking_status(self, *, course_id: int, status: str) -> None:
         """Set course tracking status.
 
@@ -141,6 +165,18 @@ class ExplorePathsAccess:
         """
         return await self._controller.unselect_path(path_id=int(path_id))
 
+    async def create_path(self, *, payload: dict[str, Any]) -> dict[str, Any]:
+        """Create a new path from Explore share flow.
+
+        Args:
+            payload: Path create payload.
+
+        Returns:
+            Created path payload.
+
+        """
+        return await self._controller.create_path(payload=dict(payload or {}))
+
 
 @dataclass(slots=True)
 class ExploreArticlesAccess:
@@ -156,6 +192,30 @@ class ExploreArticlesAccess:
 
         """
         return await self._controller.load_list_bundle()
+
+    async def create_article(self, *, payload: dict[str, Any]) -> dict[str, Any]:
+        """Create a new article from Explore share flow.
+
+        Args:
+            payload: Article create payload.
+
+        Returns:
+            Created article payload.
+
+        """
+        return await self._controller.create_article(payload=dict(payload or {}))
+
+    async def suggest_article_from_url(self, *, url: str) -> dict[str, Any]:
+        """Suggest article metadata from a URL.
+
+        Args:
+            url: Source URL.
+
+        Returns:
+            Suggestion payload.
+
+        """
+        return await self._controller.suggest_article_from_url(url=str(url or ""))
 
 
 @dataclass(slots=True)

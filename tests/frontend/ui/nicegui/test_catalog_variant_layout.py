@@ -57,9 +57,6 @@ def _calls_render_catalog_scope_with_variant(path: Path, *, variant: str) -> boo
 
 def test_catalog_pages_use_variant_scope_layout() -> None:
     pages = [
-        Path("frontend/ui/nicegui/pages/courses/page.py"),
-        Path("frontend/ui/nicegui/pages/articles/page.py"),
-        Path("frontend/ui/nicegui/pages/paths/page.py"),
         Path("frontend/ui/nicegui/pages/explore/page.py"),
     ]
     for page in pages:
@@ -70,9 +67,6 @@ def test_catalog_pages_use_variant_scope_layout() -> None:
 
 def test_catalog_pages_use_expected_scope_variants() -> None:
     expected = {
-        Path("frontend/ui/nicegui/pages/courses/page.py"): "courses",
-        Path("frontend/ui/nicegui/pages/articles/page.py"): "articles",
-        Path("frontend/ui/nicegui/pages/paths/page.py"): "paths",
         Path("frontend/ui/nicegui/pages/explore/page.py"): "explore",
     }
     for page, variant in expected.items():
@@ -82,14 +76,9 @@ def test_catalog_pages_use_expected_scope_variants() -> None:
 
 
 def test_catalog_identity_hero_used_on_primary_catalog_pages() -> None:
-    for page in [
-        Path("frontend/ui/nicegui/pages/courses/page.py"),
-        Path("frontend/ui/nicegui/pages/articles/page.py"),
-        Path("frontend/ui/nicegui/pages/paths/page.py"),
-    ]:
-        imports = _imports_for(page)
-        assert "frontend.ui.nicegui.components.catalog_hero" in imports
-        assert _calls_function_named(page, "render_catalog_hero"), f"Expected render_catalog_hero call in {page}"
+    page = Path("frontend/ui/nicegui/pages/explore/page.py")
+    imports = _imports_for(page)
+    assert "frontend.ui.nicegui.components.catalog_hero" not in imports
 
 
 def test_catalog_variant_css_selectors_are_defined_in_theme() -> None:
