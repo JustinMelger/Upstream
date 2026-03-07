@@ -22,7 +22,7 @@ from frontend.ui.nicegui.pages.explore.detail_page import (
     render_explore_path_detail_page,
 )
 from frontend.ui.nicegui.pages.explore.event_bindings import bind_refresh_events
-from frontend.ui.nicegui.pages.explore.list_flow import build_sections_deps
+from frontend.ui.nicegui.pages.explore.list_flow import build_sections_deps, ExploreSectionsUiControls
 from frontend.ui.nicegui.pages.explore.list_sections import (
     render_explore_empty_state,
     render_explore_sections,
@@ -42,7 +42,6 @@ from frontend.ui.nicegui.pages.explore.ui_glue import (
     normalize_sort,
     normalize_tab,
     should_emit_first_search,
-    toggle_show_all_categories,
 )
 from frontend.ui.nicegui.pages.explore.view_model import build_explore_visible_results, ExploreListFilters
 
@@ -69,7 +68,7 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
         with ui.row().classes("w-full items-center"):
             ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
         render_catalog_hero(
-            eyebrow="Discovery",
+            eyebrow="",
             title="Find the next course, path, or article worth sharing",
             subtitle="Search broadly, then narrow by scope and filters to move from browse to action quickly.",
         )
@@ -126,27 +125,24 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
 
         topbar = render_explore_topbar(
             initial_tab=initial_tab,
-            on_open_filters=lambda: filter_controls.dialog.open() if filter_controls is not None else None,
             on_open_share=share_dialog.open,
         )
-        with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-explore-rhythm-strip"):
-            ui.label("Start with spotlight, then scan the rails by content type.").classes("text-xs lp-home-track-meta")
-            categories_btn = ui.button("More categories").props("outline dense")
         filter_controls = render_explore_filters_dialog(on_reset=_reset_filters)
-
-        def _toggle_categories() -> None:
-            ui_flags.show_all_categories = toggle_show_all_categories(current_value=ui_flags.show_all_categories)
-            categories_btn.text = "Fewer categories" if ui_flags.show_all_categories else "More categories"
-            categories_btn.update()
-            list_view.refresh()
-
-        categories_btn.on("click", lambda *_: _toggle_categories())
 
         mutation_handlers = build_mutation_handlers(
             controller=controller,
             state=state,
             refresh_ui=lambda: list_view.refresh(),
         )
+
+        def _set_course_category(category: str) -> None:
+            ui_flags.course_category = str(category or "all")
+            ui_flags.courses_visible_limit = 8
+            list_view.refresh()
+
+        def _show_more_courses() -> None:
+            ui_flags.courses_visible_limit = int(ui_flags.courses_visible_limit or 8) + 8
+            list_view.refresh()
 
         @ui.refreshable
         def list_view() -> None:
@@ -197,6 +193,12 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                         on_toggle_path_selection=mutation_handlers.toggle_path_selection,
                         on_open_path_details=lambda path_row, card_vm: ui.navigate.to(
                             f"/explore/paths/{int(path_row.get('id') or 0)}"
+                        ),
+                        ui_controls=ExploreSectionsUiControls(
+                            course_category=str(ui_flags.course_category or "all"),
+                            on_set_course_category=_set_course_category,
+                            courses_visible_limit=int(ui_flags.courses_visible_limit or 8),
+                            on_show_more_courses=_show_more_courses,
                         ),
                     ),
                 )

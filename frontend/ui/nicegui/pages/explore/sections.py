@@ -19,7 +19,7 @@ class ExploreTopbarControls:
     tab_filter: Any
     sort_filter: Any
     share_btn: Any
-    filters_btn: Any
+    filters_btn: Any | None
     meta: Any
 
 
@@ -72,7 +72,7 @@ def render_explore_share_dialog(*, on_share_course: Any, on_share_path: Any, on_
     return share_dialog
 
 
-def render_explore_topbar(*, initial_tab: str, on_open_filters: Any, on_open_share: Any) -> ExploreTopbarControls:
+def render_explore_topbar(*, initial_tab: str, on_open_share: Any) -> ExploreTopbarControls:
     """Render Explore topbar and return control handles."""
     with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar w-full gap-2"):
         with ui.row().classes("w-full items-center gap-2"):
@@ -100,14 +100,13 @@ def render_explore_topbar(*, initial_tab: str, on_open_filters: Any, on_open_sha
                     .classes("lp-topbar-secondary-control lp-transition-field")
                 )
                 share_btn = ui.button("Share", on_click=on_open_share).props("dense")
-                filters_btn = ui.button("Filters", on_click=on_open_filters).props("dense outline").classes("lp-topbar-share")
 
     return ExploreTopbarControls(
         search_input=search_input,
         tab_filter=tab_filter,
         sort_filter=sort_filter,
         share_btn=share_btn,
-        filters_btn=filters_btn,
+        filters_btn=None,
         meta=meta,
     )
 
@@ -166,7 +165,6 @@ def render_explore_spotlight_strip(
     """Render a compact spotlight strip for Explore without hero-card height."""
     with ui.element("div").classes("lp-explore-spotlight-strip"):
         with ui.column().classes("gap-1"):
-            ui.label("Spotlight").classes("lp-explore-spotlight-eyebrow")
             ui.label(str(title or "Top pick")).classes("lp-explore-spotlight-title")
             if str(description or "").strip():
                 ui.label(str(description)).classes("lp-explore-spotlight-body")
@@ -184,6 +182,7 @@ def bind_rail_arrow_visibility(*, rail_id: str, left_btn_id: str, right_btn_id: 
             f"const left = document.getElementById('{left_btn_id}');"
             f"const right = document.getElementById('{right_btn_id}');"
             "if (!rail || !left || !right) return;"
+            "rail.scrollLeft = 0;"
             "const update = () => {"
             "  const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);"
             "  const x = Math.max(0, rail.scrollLeft);"

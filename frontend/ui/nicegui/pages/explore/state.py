@@ -33,4 +33,6 @@ class ExploreUiFlags:
     """Mutable UI-only flags for Explore page event behavior."""
 
     search_telemetry_emitted: bool = False
-    show_all_categories: bool = False
+    show_all_categories: bool = True
+    course_category: str = "all"
+    courses_visible_limit: int = 8

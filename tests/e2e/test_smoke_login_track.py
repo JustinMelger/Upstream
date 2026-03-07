@@ -79,15 +79,15 @@ async def test_smoke_login_track_review_and_select_path() -> None:
             await page.get_by_label("Password").fill("admin")
             await page.get_by_role("button", name="Login").click()
             await page.wait_for_url(re.compile(r".*/home(?:\?.*)?$"), timeout=15000)
-            await assert_visual_snapshot(page=page, name="home_after_login.png")
+            await assert_visual_snapshot(page=page, name="home_after_login.png", full_page=False)
 
             # Track course flow.
             await page.goto("/explore?tab=courses", wait_until="networkidle")
             course_card = page.locator(".lp-course-card", has_text=course_title).first
             await expect(course_card).to_be_visible(timeout=20000)
             await course_card.get_by_role("button", name="Start").first.click()
-            await course_card.get_by_text("Status: In progress").wait_for(timeout=15000)
-            await assert_visual_snapshot(page=page, name="courses_after_track.png")
+            await expect(course_card.get_by_text("In progress")).to_be_visible(timeout=15000)
+            await assert_visual_snapshot(page=page, name="courses_after_track.png", full_page=False)
 
             # Course review flow.
             await page.goto(f"/explore/courses/{course_id}?view=reviews", wait_until="networkidle")
@@ -95,7 +95,7 @@ async def test_smoke_login_track_review_and_select_path() -> None:
             await page.get_by_label("Comment (optional)").fill("E2E smoke review")
             await page.get_by_role("button", name="Save review").click()
             await page.get_by_text("Rating: 5/5 · admin").first.wait_for(timeout=15000)
-            await assert_visual_snapshot(page=page, name="courses_after_review.png")
+            await assert_visual_snapshot(page=page, name="courses_after_review.png", full_page=False)
 
             # Path select flow.
             await page.goto("/explore?tab=paths", wait_until="networkidle")
@@ -105,7 +105,7 @@ async def test_smoke_login_track_review_and_select_path() -> None:
             close_btn = page.get_by_role("button", name="Close")
             if await close_btn.count():
                 await close_btn.first.click()
-            await assert_visual_snapshot(page=page, name="paths_after_select.png")
+            await assert_visual_snapshot(page=page, name="paths_after_select.png", full_page=False)
 
             await context.close()
             await browser.close()

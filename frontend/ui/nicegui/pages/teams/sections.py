@@ -21,7 +21,7 @@ def render_teams_list(
     if not teams:
         render_empty_block(
             title="No teams yet.",
-            description="Create a team to start sharing with teammates.",
+            description="Create your first team to start sharing and reviewing together.",
             compact=True,
         )
         return
@@ -64,7 +64,7 @@ def render_team_members(
     if not members:
         render_empty_block(
             title="No members yet.",
-            description="Add teammates to collaborate in this team.",
+            description="Invite teammates to start collaboration in this workspace.",
             compact=True,
         )
         return
@@ -91,7 +91,7 @@ def render_team_activity(
     if not activity_rows:
         render_empty_block(
             title="No team activity yet.",
-            description="Reviews and recommendations from team members will appear here.",
+            description="Share a course or path to start activity in this feed.",
             compact=True,
         )
         return
@@ -132,7 +132,7 @@ def render_inbox_activity(
     if not inbox_rows:
         render_empty_block(
             title="No conversations pending.",
-            description="When teammates ask for reviews or interact with your shared content, it will appear here.",
+            description="Review requests and replies from teammates will appear here.",
             compact=True,
         )
         return

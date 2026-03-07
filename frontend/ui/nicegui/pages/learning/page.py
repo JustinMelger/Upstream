@@ -33,7 +33,6 @@ from frontend.ui.nicegui.pages.learning.sections import (
 )
 from frontend.ui.nicegui.pages.learning.state import LearningPageState
 from frontend.ui.nicegui.pages.learning.ui_glue import (
-    compute_meta_text,
     compute_next_visibility,
     compute_path_progress,
 )
@@ -138,25 +137,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 tracked_visible=int(state.tracked_visible),
                 selected_visible=int(state.selected_visible),
             )
-            meta.text = "Loading..."
             content.refresh()
             try:
                 state.data = await controller.load_page_data(
                     username=username,
                     include_articles=bool(settings.feature_articles),
                 )
-                if str(view_filter.value or "") == "learning":
-                    meta.text = "Focus and progress"
-                else:
-                    meta.text = compute_meta_text(
-                        data=state.data,
-                        view=str(view_filter.value or ""),
-                        feature_articles=bool(settings.feature_articles),
-                    )
             except ApiError as exc:
                 safe_notify(str(exc), type="negative")
                 state.data = {}
-                meta.text = "Failed to load"
             finally:
                 state.loading = False
                 content.refresh()
@@ -178,9 +167,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 ui.label(subtitle_for(PrimaryPage.HOME)).classes("text-sm text-gray-600")
                 ui.label("Learning dashboard").classes("lp-home-title")
             render_catalog_hero(
-                eyebrow="Execution",
+                eyebrow="",
                 title="Ship one meaningful learning step today",
-                subtitle="Continue your next course, respond to team reviews, or move a selected path forward.",
+                subtitle="Continue your next course or respond to team feedback.",
             )
 
             @ui.refreshable
@@ -207,16 +196,14 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             intro_panel()
 
             with ui.column().classes("lp-topbar lp-sticky-controls lp-home-topbar w-full gap-2"):
-                with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
-                    ui.label("What should I do next?").classes("lp-home-topbar-prompt")
-                    view_filter = (
-                        ui.radio({"learning": "Learning", "shared": "Shared"}, value=initial_view)
-                        .props("inline dense")
-                        .classes("text-sm")
-                    )
-                with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
-                    meta = ui.label("").classes("lp-topbar-meta")
-                    ui.button("Refresh", on_click=_load).props("dense outline")
+                with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-home-topbar-row"):
+                    with ui.row().classes("items-center gap-3 w-full justify-end"):
+                        view_filter = (
+                            ui.radio({"learning": "Learning", "shared": "Shared"}, value=initial_view)
+                            .props("inline dense")
+                            .classes("text-sm")
+                        )
+                        ui.button("Refresh", on_click=_load).props("dense outline no-caps")
 
             def _navigate_tab() -> None:
                 nav_actions.navigate_tab(str(view_filter.value or "learning"))
@@ -235,8 +222,11 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 if not state.data:
                     with ui.element("div").classes("w-full lp-refresh-region"):
-                        ui.label("No data loaded yet.").classes("text-sm").style("color: var(--lp-muted)")
-                        ui.button("Refresh", on_click=_load).props("dense outline")
+                        ui.label("Home data is unavailable right now.").classes("text-sm").style("color: var(--lp-muted)")
+                        ui.label("Refresh to reload your next actions and learning progress.").classes("text-sm").style(
+                            "color: var(--lp-muted)"
+                        )
+                        ui.button("Refresh home", on_click=_load).props("dense outline")
                     return
 
                 if str(view_filter.value or "learning") == "shared":

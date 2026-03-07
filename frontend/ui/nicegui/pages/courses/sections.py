@@ -257,6 +257,10 @@ def render_course_card(
     is_preview_open: bool,
     preview_embed_url: str,
     on_toggle_preview: Any,
+    force_media_slot: bool = False,
+    show_status_chip: bool = True,
+    show_compact_progress: bool = False,
+    show_context_meta: bool = True,
 ) -> None:
     """Render one course card including action menu and status control."""
 
@@ -308,26 +312,34 @@ def render_course_card(
                         ui.label(card_vm.rating_badge).classes("lp-meta-chip lp-meta-chip--rating")
                     if card_vm.recommendation_badge:
                         ui.label(card_vm.recommendation_badge).classes("lp-meta-chip")
-                context_bits: list[str] = []
-                rating_text = str(card_vm.rating_badge or "").strip()
-                if rating_text:
-                    context_bits.append(rating_text)
-                category_text = str(course_row.get("category") or "").strip()
-                if category_text:
-                    context_bits.append(category_text)
-                duration_raw = course_row.get("duration_hours")
-                try:
-                    duration_value = float(duration_raw) if duration_raw is not None else 0.0
-                except (TypeError, ValueError):
-                    duration_value = 0.0
-                if duration_value > 0:
-                    duration_label = f"{int(duration_value)}h" if duration_value.is_integer() else f"{duration_value:.1f}h"
-                    context_bits.append(duration_label)
-                level_text = str(course_row.get("level") or "").strip()
-                if level_text:
-                    context_bits.append(level_text)
-                if context_bits:
-                    ui.label(" • ".join(context_bits)).classes("text-xs lp-card-subtitle lp-course-context-line")
+                if show_context_meta:
+                    context_bits: list[str] = []
+                    rating_text = str(card_vm.rating_badge or "").strip()
+                    if rating_text:
+                        context_bits.append(rating_text)
+                    category_text = str(course_row.get("category") or "").strip()
+                    if category_text:
+                        context_bits.append(category_text)
+                    duration_raw = course_row.get("duration_hours")
+                    try:
+                        duration_value = float(duration_raw) if duration_raw is not None else 0.0
+                    except (TypeError, ValueError):
+                        duration_value = 0.0
+                    if duration_value > 0:
+                        duration_label = (
+                            f"{int(duration_value)}h" if duration_value.is_integer() else f"{duration_value:.1f}h"
+                        )
+                        context_bits.append(duration_label)
+                    level_text = str(course_row.get("level") or "").strip()
+                    if level_text:
+                        context_bits.append(level_text)
+                    if context_bits:
+                        ui.label(" • ".join(context_bits)).classes("text-xs lp-card-subtitle lp-course-context-line")
+                    else:
+                        # Keep card action rows aligned in dense grids when optional meta is missing.
+                        ui.label(" ").classes(
+                            "text-xs lp-card-subtitle lp-course-context-line lp-course-context-line--placeholder"
+                        )
                 if str(course_row.get("description") or "").strip():
                     ui.label(str(course_row.get("description") or "")).classes(
                         "text-sm text-gray-600 lp-card-body lp-course-summary"
@@ -349,13 +361,20 @@ def render_course_card(
                     if len(chips) > max_chips:
                         ui.label(f"+{len(chips) - max_chips}").classes("lp-meta-chip lp-meta-chip--quiet")
 
-                    if current_status != "interested":
+                    if show_status_chip and current_status != "interested":
                         ui.label(card_vm.tracking_label_text).classes(f"{card_vm.tracking_chip_cls} lp-course-status-chip")
+
+                if show_compact_progress:
+                    with ui.column().classes("w-full gap-0 lp-course-progress-slot"):
+                        if current_status == "in_progress":
+                            ui.label("45% complete").classes("text-xs lp-course-progress-hint")
+                            ui.linear_progress(0.45, show_value=False).classes("w-full lp-course-progress-line")
 
                 def _render_actions() -> None:
                     current_status = normalize_course_tracking_status((tracked_row or {}).get("status"))
                     primary_label = primary_course_cta_label_for_status(current_status)
-                    ui.button(primary_label, on_click=_on_primary_action).props("dense")
+                    cta_class = "lp-course-cta-primary" if current_status == "in_progress" else "lp-course-cta-secondary"
+                    ui.button(primary_label, on_click=_on_primary_action).props("dense no-caps").classes(cta_class)
 
                     options_map = {
                         "": "Not tracked",
@@ -373,33 +392,37 @@ def render_course_card(
 
                 render_card_actions_row(render_actions=_render_actions)
 
-            if thumbnail_url:
+            if thumbnail_url or bool(force_media_slot):
                 with ui.element("div").classes("lp-course-media-slot"):
                     thumbnail_fallback_url = str(getattr(card_vm, "thumbnail_fallback_url", "") or "").strip()
-                    safe_src = html.escape(thumbnail_url, quote=True)
-                    thumb_class = "lp-course-thumb lp-course-thumb--side"
-                    if not bool(has_video_preview):
-                        thumb_class += " lp-course-thumb--contain"
-                    if thumbnail_fallback_url:
-                        safe_fallback = html.escape(thumbnail_fallback_url, quote=True)
-                        ui.html(
-                            (
-                                f'<img class="{thumb_class}" '
-                                f'src="{safe_src}" '
-                                f"onerror=\"this.onerror=null;this.src='{safe_fallback}';\" "
-                                'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
-                            ),
-                            sanitize=False,
-                        )
+                    if thumbnail_url:
+                        safe_src = html.escape(thumbnail_url, quote=True)
+                        thumb_class = "lp-course-thumb lp-course-thumb--side"
+                        if not bool(has_video_preview):
+                            thumb_class += " lp-course-thumb--contain"
+                        if thumbnail_fallback_url:
+                            safe_fallback = html.escape(thumbnail_fallback_url, quote=True)
+                            ui.html(
+                                (
+                                    f'<img class="{thumb_class}" '
+                                    f'src="{safe_src}" '
+                                    f"onerror=\"this.onerror=null;this.src='{safe_fallback}';\" "
+                                    'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
+                                ),
+                                sanitize=False,
+                            )
+                        else:
+                            ui.html(
+                                (
+                                    f'<img class="{thumb_class}" '
+                                    f'src="{safe_src}" '
+                                    'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
+                                ),
+                                sanitize=False,
+                            )
                     else:
-                        ui.html(
-                            (
-                                f'<img class="{thumb_class}" '
-                                f'src="{safe_src}" '
-                                'alt="Course thumbnail" loading="lazy" referrerpolicy="no-referrer">'
-                            ),
-                            sanitize=False,
-                        )
+                        with ui.element("div").classes("lp-course-thumb lp-course-thumb--side lp-course-thumb--placeholder-block"):
+                            ui.icon("school").classes("lp-course-thumb-placeholder-block-icon")
 
         if bool(is_preview_open) and str(preview_embed_url or "").strip():
             with ui.element("div").classes("lp-video-wrap"):
@@ -421,6 +444,7 @@ def render_courses_catalog(
     min_group_size: int = 1,
     overflow_group_title: str = "More for you",
     prioritize_larger_groups: bool = False,
+    rail_id_prefix: str = "lp-courses-rail",
 ) -> None:
     """Render featured + streaming-rail catalog sections for the current page slice."""
     featured_course = shown_page[0] if (shown_page and bool(show_featured)) else None
@@ -474,7 +498,7 @@ def render_courses_catalog(
     with ui.column().classes("w-full gap-3 lp-courses-section"):
         ui.label(str(collection_title)).classes("lp-courses-collection-title")
         for row_idx, (category_name, rows) in enumerate(groups):
-            rail_id = f"lp-courses-rail-{row_idx}"
+            rail_id = f"{str(rail_id_prefix or 'lp-courses-rail')}-{row_idx}-{len(rows)}"
             left_btn_id = f"{rail_id}-left"
             right_btn_id = f"{rail_id}-right"
             with ui.column().classes("w-full gap-2"):
@@ -525,6 +549,7 @@ def _bind_rail_arrow_visibility(*, rail_id: str, left_btn_id: str, right_btn_id:
             f"const left = document.getElementById('{left_btn_id}');"
             f"const right = document.getElementById('{right_btn_id}');"
             "if (!rail || !left || !right) return;"
+            "rail.scrollLeft = 0;"
             "const update = () => {"
             "  const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);"
             "  const x = Math.max(0, rail.scrollLeft);"

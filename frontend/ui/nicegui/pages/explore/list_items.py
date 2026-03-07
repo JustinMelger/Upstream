@@ -56,6 +56,10 @@ def render_course_item(
             is_preview_open=False,
             preview_embed_url="",
             on_toggle_preview=lambda: None,
+            force_media_slot=True,
+            show_status_chip=False,
+            show_compact_progress=True,
+            show_context_meta=False,
         )
 
 
@@ -82,7 +86,28 @@ def render_path_item(
             review_summary_row=state.path_review_summary_by_id.get(path_id),
             recommendation_summary_row=state.path_recommendation_summary_by_id.get(path_id),
         )
-        track_toggle_label = "Unselect" if is_tracked else "Select"
+        detail = state.selected_detail_by_path_id.get(path_id) or {}
+        raw_course_ids = path.get("course_ids")
+        inferred_total = 0
+        if isinstance(raw_course_ids, list):
+            inferred_total = len(raw_course_ids)
+        else:
+            try:
+                inferred_total = int(path.get("course_count") or 0)
+            except (TypeError, ValueError):
+                inferred_total = 0
+        total_courses = int(card_vm.total_courses or 0) if is_tracked else max(0, inferred_total)
+        if total_courses <= 0 and isinstance(detail, dict):
+            total_courses = len([c for c in list(detail.get("courses") or []) if isinstance(c, dict)])
+
+        if not is_tracked:
+            primary_label = "Track path"
+        elif int(card_vm.completed or 0) <= 0:
+            primary_label = "Start path"
+        elif float(card_vm.progress or 0.0) >= 1.0:
+            primary_label = "Open path"
+        else:
+            primary_label = "Continue path"
 
         async def _on_track_toggle() -> None:
             await on_toggle_path_selection(path_id)
@@ -105,25 +130,33 @@ def render_path_item(
         def _open_path_delete() -> None:
             ui.navigate.to(f"/explore/paths/{path_id}")
 
+        async def _on_primary_action() -> None:
+            if not is_tracked:
+                await _on_track_toggle()
+                return
+            await _open_path_details_inline()
+
         render_path_card(
             display=PathCardDisplay(
                 path_row=path,
-                card_class_suffix=f"{card_vm.card_class_suffix} lp-path-card--compact",
-                is_new=card_vm.is_new,
-                is_updated=card_vm.is_updated,
-                rating_badge=card_vm.rating_badge,
-                recommendation_badge=card_vm.recommendation_badge,
+                card_class_suffix=f"{card_vm.card_class_suffix} lp-path-card--compact lp-path-card--calm",
+                is_new=False,
+                is_updated=False,
+                rating_badge="",
+                recommendation_badge="",
                 can_edit=can_edit,
-                shared_by=card_vm.shared_by,
+                is_tracked=is_tracked,
+                shared_by="",
                 tracking_label_text=card_vm.tracking_label_text,
                 tracking_chip_cls=card_vm.tracking_chip_cls,
                 completed=card_vm.completed,
-                total_courses=card_vm.total_courses,
+                total_courses=total_courses,
                 progress=card_vm.progress,
                 milestone=card_vm.milestone,
                 milestone_class=card_vm.milestone_class,
                 impact=card_vm.impact,
                 next_title=card_vm.next_title,
+                compact_calm=True,
             ),
             actions=PathCardCallbacks(
                 on_review=_open_path_reviews,
@@ -133,7 +166,9 @@ def render_path_item(
                 on_delete=_open_path_delete,
                 on_view=_open_path_details_inline,
                 on_track_toggle=_on_track_toggle,
-                track_toggle_label=track_toggle_label,
+                track_toggle_label="",
+                on_primary=_on_primary_action,
+                primary_label=primary_label,
             ),
         )
 

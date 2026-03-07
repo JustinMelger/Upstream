@@ -45,9 +45,9 @@ Execution slices:
   - [x] Redesign `Explore` top section and card-density rhythm for faster scan + action.
   - [x] Redesign one detail page template (`course` preferred) as the new reference pattern.
   - [x] Reuse redesigned template patterns in path/article details where low-risk.
-- [ ] Slice 10.4: first-time clarity + accessibility polish
-  - [ ] Complete any remaining onboarding intro and empty-state next-action inconsistencies.
-  - [ ] Ensure visible focus states and keyboard flow for menus/dropdowns/dialog triggers.
+- [x] Slice 10.4: first-time clarity + accessibility polish
+  - [x] Complete any remaining onboarding intro and empty-state next-action inconsistencies.
+  - [x] Ensure visible focus states and keyboard flow for menus/dropdowns/dialog triggers.
   - [x] Ensure icon-only actions expose clear ARIA labels and visible tooltips/text hints where needed.
 - [ ] Slice 10.5: visual quality gate hardening
   - [ ] Commit stable visual baselines and enable strict visual-regression enforcement in CI (`11D` remaining item).
@@ -56,9 +56,9 @@ Validation and acceptance criteria:
 - [ ] Core pages (`Home`, `Explore`, detail pages) use one consistent typography/spacing/component language.
 - [ ] Interaction transitions are present, subtle, and consistent (no abrupt state jumps on major list/filter/card updates).
 - [ ] First-time clarity goals are measurably improved:
-  - [ ] no ambiguous empty-state next steps on primary pages.
-  - [ ] intro/onboarding flow is dismissible and non-blocking.
-- [ ] Accessibility UX polish passes focused checks for keyboard navigation + visible focus + icon-action labeling on touched surfaces.
+  - [x] no ambiguous empty-state next steps on primary pages.
+  - [x] intro/onboarding flow is dismissible and non-blocking.
+- [x] Accessibility UX polish passes focused checks for keyboard navigation + visible focus + icon-action labeling on touched surfaces.
 - [ ] CI enforces visual snapshots strictly with committed stable baselines.
 - [ ] Design review output is documented and actionable (before/after evidence + accepted redesign decisions).
 
@@ -66,6 +66,36 @@ Tracking:
 - [ ] Update roadmap checkboxes for completed `11A/11C/11D/11E` UX-style items at sprint close.
 - [ ] Record before/after screenshots for `Home`, `Explore`, and one detail page variant in CI artifacts.
 - [ ] Add a short design-review log section in this file (decision, rationale, affected pages/components).
+
+### Sprint 10 Design-Review Log (2026-03-07)
+Reference checklist: `docs/ui_system.md`
+
+- Decision: adopt a single SaaS-polish governance checklist for primary pages.
+  - Rationale: prevent local visual fixes from diverging into per-page styles.
+  - Affected: `Home`, `Explore`, `Profile`, `Teams`, shared `theme.py`.
+
+- Audit snapshot (current):
+  - `Home`: mostly pass.
+    - Pass: dominant next action, clear hierarchy, strong card language.
+    - Partial: occasional title/hero size drift (recently reduced), keep monitoring.
+  - `Explore`: mostly pass.
+    - Pass: compact card rhythm, single primary per card, improved empty states.
+    - Partial: ensure all rails keep identical hover intensity and metadata density.
+  - `Profile`: partial -> mostly pass after redesign.
+    - Pass: overview + controls + metrics + chart + table structure.
+    - Partial: continue segmented-control and table rhythm tuning from visual QA.
+  - `Teams`: partial.
+    - Pass: card language and empty/error blocks exist.
+    - Missing: full section-header/microcopy consistency and stronger first-viewport next-action clarity.
+
+- Must-change-now (remaining in Sprint 10):
+  - [x] Teams page hierarchy pass (title/microcopy/action rhythm in first viewport).
+  - [x] Cross-page hover/elevation normalization audit (cards + action rows).
+  - [x] Empty-state copy consistency pass using one instructional style.
+
+- Defer (post Sprint 10 unless time remains):
+  - [ ] Full strict visual-baseline CI enforcement (`11D` final open checkbox).
+  - [ ] Extended chart/table interaction features (sorting/filter controls on analytics blocks).
 
 ## Sprint 1 — IA foundation (11E-first)
 - [x] Complete `11E.0` instrumentation baseline for first-action and nav/search events.

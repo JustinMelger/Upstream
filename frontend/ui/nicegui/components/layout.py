@@ -8,7 +8,6 @@ from typing import Literal
 
 from nicegui import ui
 
-from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
 from frontend.ui.nicegui.core.errors import guard_ui_action
@@ -46,9 +45,19 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
         # visually line up with the page title.
         with ui.row().classes("lp-header-inner"):
             ui.label(title).classes("text-lg font-semibold")
-            with ui.row().classes("items-center gap-2"):
+
+            @guard_ui_action(title="Logout failed")
+            async def _logout() -> None:
+                await store.logout(api)
+                ui.navigate.to("/login")
+
+            with ui.row().classes("items-center gap-2 lp-header-actions"):
                 # A compact menu keeps navigation usable on small screens.
-                with ui.dropdown_button("Menu", icon="menu", auto_close=True).props("outline dense"):
+                with (
+                    ui.dropdown_button("Menu", icon="menu", auto_close=True)
+                    .props("outline dense no-caps")
+                    .classes("lp-header-menu-btn")
+                ):
                     home_item = ui.menu_item("Home", on_click=lambda: _nav_click(label="home", target="/home"))
                     if _is_active("/home"):
                         home_item.classes("lp-nav-active")
@@ -75,24 +84,9 @@ def render_shell(*, title: str, store: SessionStore, api: ApiClient) -> None:
                         admin_item = ui.menu_item("Admin", on_click=lambda: _nav_click(label="admin", target="/admin/users"))
                         if _is_active("/admin/users"):
                             admin_item.classes("lp-nav-active")
-
-                @guard_ui_action(title="Logout failed")
-                async def _logout() -> None:
-                    await store.logout(api)
-                    ui.navigate.to("/login")
-
-                activity_btn = apply_icon_button_a11y(
-                    ui.button(
-                        icon="markunread_mailbox",
-                        on_click=lambda: _nav_click(label="teams", target="/teams"),
-                    ).props("outline dense"),
-                    label="Open teams inbox",
-                    tooltip="Teams",
-                )
-                if _is_active("/teams"):
-                    activity_btn.classes("lp-nav-active")
-
-                ui.button("Logout", on_click=_logout).props("outline dense")
+                    ui.separator()
+                    logout_item = ui.menu_item("Logout", on_click=_logout)
+                    logout_item.classes("lp-menu-logout-item")
 
 
 def render_container() -> ui.column:

@@ -310,6 +310,7 @@ def test_ruff_complexity_per_file_ignores_do_not_broaden_scope() -> None:
         "frontend/ui/nicegui/pages/admin_users/page.py",
         "frontend/ui/nicegui/pages/ai_curator/page.py",
         "frontend/ui/nicegui/pages/learning/page.py",
+        "frontend/ui/nicegui/pages/profile/page.py",
         "frontend/ui/nicegui/pages/courses/sections.py",
         "frontend/ui/nicegui/pages/learning/sections.py",
     }

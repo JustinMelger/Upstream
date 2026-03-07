@@ -55,8 +55,11 @@ class _TeamsPageView:
         self._bind_actions()
 
     def _render_topbar(self) -> None:
-        with ui.row().classes("items-center justify-end w-full lp-teams-topbar"):
-            with ui.row().classes("items-center gap-2"):
+        with ui.card().classes("lp-card w-full lp-teams-shell lp-teams-overview-strip"):
+            with ui.column().classes("w-full gap-1"):
+                ui.label("What should I do next?").classes("lp-teams-overview-title")
+                ui.label("Create a team, invite members, and keep reviews moving.").classes("lp-teams-overview-body")
+            with ui.row().classes("items-center gap-2 w-full lp-teams-overview-actions"):
                 self.create_team_btn = ui.button("Create team").props("dense")
                 self.refresh_btn = ui.button("Refresh").props("dense outline").classes("lp-teams-refresh")
 
@@ -86,9 +89,6 @@ class _TeamsPageView:
                     )
                     .props("dense")
                     .classes("text-sm lp-teams-tabs lp-teams-side-nav")
-                )
-                ui.button("Explore teams", on_click=lambda: ui.navigate.to("/explore")).props("flat dense").classes(
-                    "lp-teams-side-link"
                 )
             with ui.column().classes("w-full gap-3"):
                 self.teams_list_view()
@@ -337,6 +337,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             request = getattr(ui.context.client, "request", None)
             initial_tab = resolve_activity_tab(request=request)
             ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600 lp-teams-subtitle")
+            ui.label("Team workspace").classes("lp-home-title")
             view = _TeamsPageView(
                 controller=controller,
                 state=state,

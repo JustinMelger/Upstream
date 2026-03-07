@@ -8,10 +8,14 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
-from frontend.ui.nicegui.pages.courses.sections import render_courses_catalog
 from frontend.ui.nicegui.pages.explore.list_items import render_article_item, render_course_item, render_path_item
-from frontend.ui.nicegui.pages.explore.sections import render_explore_article_rails
+
+
+_DEFAULT_COURSE_CAP = 8
+_DEFAULT_PATH_CAP = 6
+_DEFAULT_ARTICLE_CAP = 8
+_CURATED_PATH_COUNT = 3
+_CURATED_ARTICLE_COUNT = 4
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +32,10 @@ class ExploreSectionsDeps:
     on_toggle_path_selection: Callable[[int], Awaitable[None]]
     open_path_details_dialog: Callable[[dict[str, Any], Any], None]
     open_article_details: Callable[[dict[str, Any], bool], Awaitable[None]]
+    course_category: str
+    on_set_course_category: Callable[[str], None]
+    courses_visible_limit: int
+    on_show_more_courses: Callable[[], None]
 
 
 def render_explore_course_spotlight(
@@ -72,55 +80,47 @@ def render_explore_sections(
     deps: ExploreSectionsDeps,
 ) -> None:
     """Render the mixed Explore sections for courses/paths/articles."""
+    course_cap = 16 if deps.show_all_categories else _DEFAULT_COURSE_CAP
+    path_cap = 12 if deps.show_all_categories else _DEFAULT_PATH_CAP
+    article_cap = 16 if deps.show_all_categories else _DEFAULT_ARTICLE_CAP
 
-    if shown_courses:
+    visible_courses = shown_courses[:course_cap]
+    visible_paths = shown_paths[:path_cap]
+    visible_articles = shown_articles[:article_cap]
+
+    if visible_courses:
         with ui.element("section").classes("w-full lp-explore-section-block"):
             with ui.column().classes("w-full gap-2 lp-courses-section"):
-                ui.label("Courses to start now").classes("lp-courses-section-title")
-                ui.label("Recommended options based on your current scope and signals.").classes(
+                ui.label("Recommended for you").classes("lp-courses-section-title")
+                ui.label("Start here based on your activity and selected scope.").classes(
                     "lp-courses-section-subtitle"
                 )
             render_explore_course_spotlight(
-                shown_courses=shown_courses,
+                shown_courses=visible_courses,
                 tracking_by_course_id=deps.state.tracking_by_course_id,
                 course_actions_builder=deps.course_actions_builder,
                 on_track=deps.on_set_tracking,
             )
-            render_courses_catalog(
-                shown_page=shown_courses,
-                render_course_item=lambda course, item_classes: render_course_item(
-                    course=course,
-                    item_classes=item_classes,
-                    state=deps.state,
-                    username=deps.username,
-                    is_admin=deps.is_admin,
-                    course_actions_builder=deps.course_actions_builder,
-                    on_set_tracking=deps.on_set_tracking,
-                    on_clear_tracking=deps.on_clear_tracking,
-                ),
-                featured_title="Spotlight course",
-                featured_subtitle="Top match for your current query",
-                collection_title="More courses",
-                show_featured=False,
-                max_groups=None if deps.show_all_categories else 6,
-                min_group_size=2,
-                overflow_group_title="More for you",
-                prioritize_larger_groups=True,
-            )
 
-    if shown_paths:
+    if visible_paths:
+        shown_paths_rows = (
+            visible_paths[: _CURATED_PATH_COUNT]
+            if not deps.show_all_categories
+            else visible_paths[:_DEFAULT_PATH_CAP]
+        )
         with ui.element("section").classes("w-full lp-explore-section-block"):
-            with ui.column().classes("w-full gap-2 lp-courses-section"):
-                ui.label("Paths to structure your next steps").classes("lp-courses-section-title")
-                ui.label("Sequenced tracks that turn intent into an execution plan.").classes(
-                    "lp-courses-section-subtitle"
-                )
-            with ui.element("div").classes("lp-courses-grid"):
-                for idx, row in enumerate(shown_paths):
-                    item_classes = "lp-courses-grid-item lp-courses-grid-item--featured" if idx == 0 else "lp-courses-grid-item"
+            with ui.row().classes("items-center justify-between w-full"):
+                with ui.column().classes("gap-1"):
+                    ui.label("Learning paths").classes("lp-courses-section-title")
+                    ui.label("Structured tracks to guide your next steps.").classes(
+                        "lp-courses-section-subtitle"
+                    )
+                ui.link("View all paths", "/explore?tab=paths").classes("text-sm")
+            with ui.element("div").classes("lp-courses-grid lp-explore-path-grid"):
+                for row in shown_paths_rows:
                     render_path_item(
                         path=row,
-                        item_classes=item_classes,
+                        item_classes="lp-courses-grid-item",
                         state=deps.state,
                         username=deps.username,
                         is_admin=deps.is_admin,
@@ -128,43 +128,94 @@ def render_explore_sections(
                         open_path_details_dialog=deps.open_path_details_dialog,
                     )
 
-    if shown_articles:
-        grouped_articles: list[dict[str, Any]] = []
-        for row in shown_articles:
-            tags = parse_tags(str(row.get("tags") or ""))
-            group_name = str(tags[0] if tags else "General")
-            grouped_articles.append({**row, "_explore_group": group_name})
+    if visible_courses:
+        categories = _course_categories(courses=visible_courses)
+        selected_category = str(deps.course_category or "all")
+        filtered_courses = _filter_courses_by_category(
+            courses=visible_courses,
+            category_value=selected_category,
+        )
+        limit = max(1, int(deps.courses_visible_limit or _DEFAULT_COURSE_CAP))
+        shown_course_rows = filtered_courses[:limit]
 
-        featured_article = grouped_articles[0]
-        remaining_articles = grouped_articles[1:]
+        with ui.element("section").classes("w-full lp-explore-section-block"):
+            with ui.row().classes("items-center justify-between w-full"):
+                with ui.column().classes("gap-1"):
+                    ui.label("Courses").classes("lp-courses-section-title")
+                    ui.label("Browse all courses.").classes("lp-courses-section-subtitle")
+                ui.link("View all courses", "/explore?tab=courses").classes("text-sm")
+            with ui.row().classes("items-center gap-2 w-full flex-wrap"):
+                all_props = "dense" if selected_category.lower() == "all" else "outline dense"
+                all_btn = ui.button("All", on_click=lambda: deps.on_set_course_category("all")).props(all_props)
+                all_btn.classes("lp-explore-category-btn")
+                if selected_category.lower() == "all":
+                    all_btn.classes("lp-explore-category-btn--active")
+                for category in categories:
+                    btn_props = "dense" if selected_category.lower() == category.lower() else "outline dense"
+                    btn = ui.button(
+                        category,
+                        on_click=lambda _category=category: deps.on_set_course_category(_category),
+                    ).props(btn_props)
+                    btn.classes("lp-explore-category-btn")
+                    if selected_category.lower() == category.lower():
+                        btn.classes("lp-explore-category-btn--active")
+            with ui.element("div").classes("lp-courses-grid lp-explore-course-grid"):
+                for row in shown_course_rows:
+                    render_course_item(
+                        course=row,
+                        item_classes="lp-courses-grid-item",
+                        state=deps.state,
+                        username=deps.username,
+                        is_admin=deps.is_admin,
+                        course_actions_builder=deps.course_actions_builder,
+                        on_set_tracking=deps.on_set_tracking,
+                        on_clear_tracking=deps.on_clear_tracking,
+                    )
+            if len(filtered_courses) > len(shown_course_rows):
+                with ui.row().classes("items-center justify-center w-full"):
+                    ui.button("Show more courses", on_click=deps.on_show_more_courses).props("outline dense")
+
+    if visible_articles:
+        shown_articles_rows = (
+            visible_articles[:_CURATED_ARTICLE_COUNT]
+            if not deps.show_all_categories
+            else visible_articles[:_DEFAULT_ARTICLE_CAP]
+        )
         with ui.element("section").classes("w-full lp-explore-section-block"):
             with ui.column().classes("w-full gap-2 lp-courses-section"):
                 ui.label("Articles for quick context").classes("lp-courses-section-title")
                 ui.label("Short reads to sharpen decisions before you commit to a course or path.").classes(
                     "lp-courses-section-subtitle"
                 )
-                with ui.element("div").classes("lp-courses-grid"):
-                    render_article_item(
-                        article=featured_article,
-                        item_classes="lp-courses-grid-item lp-courses-grid-item--featured",
-                        state=deps.state,
-                        open_article_details=deps.open_article_details,
-                    )
+                with ui.element("div").classes("lp-courses-grid lp-explore-article-grid"):
+                    for row in shown_articles_rows:
+                        render_article_item(
+                            article=row,
+                            item_classes="lp-courses-grid-item",
+                            state=deps.state,
+                            open_article_details=deps.open_article_details,
+                        )
+            if not deps.show_all_categories and len(visible_articles) > len(shown_articles_rows):
+                with ui.row().classes("items-center justify-end w-full"):
+                    ui.link("View all articles", "/explore?tab=articles").classes("text-sm")
 
-        if remaining_articles:
-            render_explore_article_rails(
-                shown_articles=remaining_articles,
-                render_article_item=lambda article, item_classes: render_article_item(
-                    article=article,
-                    item_classes=item_classes,
-                    state=deps.state,
-                    open_article_details=deps.open_article_details,
-                ),
-                max_groups=None if deps.show_all_categories else 6,
-                min_group_size=2,
-                overflow_group_title="More for you",
-                prioritize_larger_groups=True,
-            )
+
+def _course_categories(*, courses: list[dict[str, Any]]) -> list[str]:
+    """Return top categories ranked by frequency."""
+    counts: dict[str, int] = {}
+    for row in courses:
+        name = str(row.get("category") or "").strip() or "General"
+        counts[name] = int(counts.get(name) or 0) + 1
+    ranked = sorted(counts.items(), key=lambda item: item[1], reverse=True)
+    return [name for name, _count in ranked[:6]]
+
+
+def _filter_courses_by_category(*, courses: list[dict[str, Any]], category_value: str) -> list[dict[str, Any]]:
+    """Filter course rows by selected category value."""
+    selected = str(category_value or "all").strip().lower()
+    if selected in {"", "all"}:
+        return list(courses or [])
+    return [row for row in courses if (str(row.get("category") or "").strip() or "General").lower() == selected]
 
 
 def render_explore_empty_state(
@@ -178,8 +229,8 @@ def render_explore_empty_state(
         if not loaded_once:
             ui.label("Discovery feed unavailable").classes("lp-courses-section-title")
             ui.label("Explore could not load right now. Refresh to retry.").classes("lp-courses-section-subtitle")
-            ui.button("Refresh", on_click=on_refresh).props("outline")
+            ui.button("Refresh explore", on_click=on_refresh).props("outline")
             return
         ui.label("No matches in Explore").classes("lp-courses-section-title")
-        ui.label("Adjust search scope or filters to discover more content.").classes("lp-courses-section-subtitle")
+        ui.label("Reset filters to widen your discovery results.").classes("lp-courses-section-subtitle")
         ui.button("Reset filters", on_click=on_reset_filters).props("outline")
