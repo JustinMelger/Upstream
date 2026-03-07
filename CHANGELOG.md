@@ -1,3 +1,10 @@
+## [0.9.1](https://github.com/JustinMelger/learning-platform/compare/v0.9.0...v0.9.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* fix quality check on removed pages ([d934a3f](https://github.com/JustinMelger/learning-platform/commit/d934a3f76a30377bb020e5a57ecf2f18a5fc3a8b))
+
 # [0.9.0](https://github.com/JustinMelger/learning-platform/compare/v0.8.1...v0.9.0) (2026-02-26)
 
 
