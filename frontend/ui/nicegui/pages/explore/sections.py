@@ -123,24 +123,14 @@ def render_explore_filters_dialog(*, on_reset: Any) -> ExploreFilterControls:
                     tooltip="Close",
                 )
             provider_filter = (
-                ui.select({"": "Any provider"}, label="Course provider", value="")
-                .props("dense")
-                .classes("lp-transition-field")
+                ui.select({"": "Any provider"}, label="Course provider", value="").props("dense").classes("lp-transition-field")
             )
             category_filter = (
-                ui.select({"": "Any category"}, label="Course category", value="")
-                .props("dense")
-                .classes("lp-transition-field")
+                ui.select({"": "Any category"}, label="Course category", value="").props("dense").classes("lp-transition-field")
             )
-            tag_filter = (
-                ui.select({"": "Any tag"}, label="Article tag", value="")
-                .props("dense")
-                .classes("lp-transition-field")
-            )
+            tag_filter = ui.select({"": "Any tag"}, label="Article tag", value="").props("dense").classes("lp-transition-field")
             author_filter = (
-                ui.select({"": "Anyone"}, label="Article author", value="")
-                .props("dense")
-                .classes("lp-transition-field")
+                ui.select({"": "Anyone"}, label="Article author", value="").props("dense").classes("lp-transition-field")
             )
             with ui.row().classes("items-center gap-2 w-full"):
                 ui.button("Reset", on_click=on_reset).props("outline dense")
@@ -252,29 +242,37 @@ def render_explore_article_rails(
                 with ui.row().classes("items-center justify-between w-full lp-courses-row-head"):
                     ui.label(group_name).classes("lp-courses-row-title")
                     with ui.row().classes("items-center gap-2 lp-courses-rail-controls"):
-                        left_btn = ui.button(
-                            icon="chevron_left",
-                            on_click=lambda _rid=rail_id: ui.run_javascript(
-                                (
-                                    "(() => {"
-                                    f"const el = document.getElementById('{_rid}');"
-                                    "if (el) { el.scrollBy({ left: -460, behavior: 'smooth' }); }"
-                                    "})();"
-                                )
-                            ),
-                        ).props(f'dense flat round id="{left_btn_id}"').classes("lp-rail-nav-btn")
+                        left_btn = (
+                            ui.button(
+                                icon="chevron_left",
+                                on_click=lambda _rid=rail_id: ui.run_javascript(
+                                    (
+                                        "(() => {"
+                                        f"const el = document.getElementById('{_rid}');"
+                                        "if (el) { el.scrollBy({ left: -460, behavior: 'smooth' }); }"
+                                        "})();"
+                                    )
+                                ),
+                            )
+                            .props(f'dense flat round id="{left_btn_id}"')
+                            .classes("lp-rail-nav-btn")
+                        )
                         apply_icon_button_a11y(left_btn, label=f"Scroll {group_name} left", tooltip="Scroll left")
-                        right_btn = ui.button(
-                            icon="chevron_right",
-                            on_click=lambda _rid=rail_id: ui.run_javascript(
-                                (
-                                    "(() => {"
-                                    f"const el = document.getElementById('{_rid}');"
-                                    "if (el) { el.scrollBy({ left: 460, behavior: 'smooth' }); }"
-                                    "})();"
-                                )
-                            ),
-                        ).props(f'dense flat round id="{right_btn_id}"').classes("lp-rail-nav-btn")
+                        right_btn = (
+                            ui.button(
+                                icon="chevron_right",
+                                on_click=lambda _rid=rail_id: ui.run_javascript(
+                                    (
+                                        "(() => {"
+                                        f"const el = document.getElementById('{_rid}');"
+                                        "if (el) { el.scrollBy({ left: 460, behavior: 'smooth' }); }"
+                                        "})();"
+                                    )
+                                ),
+                            )
+                            .props(f'dense flat round id="{right_btn_id}"')
+                            .classes("lp-rail-nav-btn")
+                        )
                         apply_icon_button_a11y(right_btn, label=f"Scroll {group_name} right", tooltip="Scroll right")
                 with ui.element("div").classes("lp-courses-rail").props(f'id="{rail_id}"'):
                     for article in rows:

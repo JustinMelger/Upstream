@@ -326,9 +326,7 @@ def render_course_card(
                     except (TypeError, ValueError):
                         duration_value = 0.0
                     if duration_value > 0:
-                        duration_label = (
-                            f"{int(duration_value)}h" if duration_value.is_integer() else f"{duration_value:.1f}h"
-                        )
+                        duration_label = f"{int(duration_value)}h" if duration_value.is_integer() else f"{duration_value:.1f}h"
                         context_bits.append(duration_label)
                     level_text = str(course_row.get("level") or "").strip()
                     if level_text:
@@ -421,7 +419,9 @@ def render_course_card(
                                 sanitize=False,
                             )
                     else:
-                        with ui.element("div").classes("lp-course-thumb lp-course-thumb--side lp-course-thumb--placeholder-block"):
+                        with ui.element("div").classes(
+                            "lp-course-thumb lp-course-thumb--side lp-course-thumb--placeholder-block"
+                        ):
                             ui.icon("school").classes("lp-course-thumb-placeholder-block-icon")
 
         if bool(is_preview_open) and str(preview_embed_url or "").strip():

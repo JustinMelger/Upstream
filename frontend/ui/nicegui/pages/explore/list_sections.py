@@ -92,9 +92,7 @@ def render_explore_sections(
         with ui.element("section").classes("w-full lp-explore-section-block"):
             with ui.column().classes("w-full gap-2 lp-courses-section"):
                 ui.label("Recommended for you").classes("lp-courses-section-title")
-                ui.label("Start here based on your activity and selected scope.").classes(
-                    "lp-courses-section-subtitle"
-                )
+                ui.label("Start here based on your activity and selected scope.").classes("lp-courses-section-subtitle")
             render_explore_course_spotlight(
                 shown_courses=visible_courses,
                 tracking_by_course_id=deps.state.tracking_by_course_id,
@@ -104,17 +102,13 @@ def render_explore_sections(
 
     if visible_paths:
         shown_paths_rows = (
-            visible_paths[: _CURATED_PATH_COUNT]
-            if not deps.show_all_categories
-            else visible_paths[:_DEFAULT_PATH_CAP]
+            visible_paths[:_CURATED_PATH_COUNT] if not deps.show_all_categories else visible_paths[:_DEFAULT_PATH_CAP]
         )
         with ui.element("section").classes("w-full lp-explore-section-block"):
             with ui.row().classes("items-center justify-between w-full"):
                 with ui.column().classes("gap-1"):
                     ui.label("Learning paths").classes("lp-courses-section-title")
-                    ui.label("Structured tracks to guide your next steps.").classes(
-                        "lp-courses-section-subtitle"
-                    )
+                    ui.label("Structured tracks to guide your next steps.").classes("lp-courses-section-subtitle")
                 ui.link("View all paths", "/explore?tab=paths").classes("text-sm")
             with ui.element("div").classes("lp-courses-grid lp-explore-path-grid"):
                 for row in shown_paths_rows:

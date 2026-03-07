@@ -181,9 +181,7 @@ def render_paths_empty_state(
 
     if empty_state == "catalog_empty":
         ui.label("No path library yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Share a path to create your team learning roadmap.").classes("text-sm").style(
-            "color: var(--lp-muted)"
-        )
+        ui.label("Share a path to create your team learning roadmap.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Share a path", on_click=on_share).props("outline")
         return True

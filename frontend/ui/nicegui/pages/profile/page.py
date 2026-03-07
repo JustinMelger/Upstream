@@ -230,9 +230,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         with ui.card().classes("lp-card w-full lp-profile-chart-card"):
                             ui.label("Top contributors this week").classes("lp-profile-card-title")
                             if not contributors:
-                                ui.label("No team contributor data yet. Switch to My stats or invite teammates to get started.").classes(
-                                    "lp-profile-muted"
-                                )
+                                ui.label(
+                                    "No team contributor data yet. Switch to My stats or invite teammates to get started."
+                                ).classes("lp-profile-muted")
                             else:
                                 ui.echart(_contributors_chart_option(contributors=contributors)).classes("w-full h-64")
 
@@ -263,11 +263,17 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                                     columns=[
                                         {"name": "user", "label": "User", "field": "user", "align": "left"},
                                         {"name": "interested", "label": "Interested", "field": "interested", "align": "right"},
-                                        {"name": "in_progress", "label": "In progress", "field": "in_progress", "align": "right"},
+                                        {
+                                            "name": "in_progress",
+                                            "label": "In progress",
+                                            "field": "in_progress",
+                                            "align": "right",
+                                        },
                                         {"name": "completed", "label": "Completed", "field": "completed", "align": "right"},
                                     ],
                                     rows=rows,
                                     row_key="user",
                                 ).classes("w-full lp-profile-team-table")
+
             await _load_overview()
             dashboard()

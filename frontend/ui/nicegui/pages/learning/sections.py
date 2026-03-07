@@ -176,9 +176,9 @@ def render_tracked_courses_section(
 
                         with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group"):
                             if source_url:
-                                ui.button("Continue course", on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True)).props(
-                                    "dense outline"
-                                ).classes("lp-track-continue-btn")
+                                ui.button(
+                                    "Continue course", on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True)
+                                ).props("dense outline").classes("lp-track-continue-btn")
                             else:
                                 ui.button("Continue course", on_click=on_view_course(cid)).props("dense outline").classes(
                                     "lp-track-continue-btn"
@@ -431,9 +431,9 @@ def render_home_hero_panel(
             )
             url = str(nxt.get("url") or "").strip()
             if url:
-                ui.button("Continue course", on_click=lambda u=url: ui.navigate.to(u, new_tab=True)).props("unelevated").classes(
-                    "lp-home-hero-primary"
-                )
+                ui.button("Continue course", on_click=lambda u=url: ui.navigate.to(u, new_tab=True)).props(
+                    "unelevated"
+                ).classes("lp-home-hero-primary")
             elif int(next_course.get("path_id") or 0) > 0:
                 ui.button("Continue path", on_click=on_open_selected_paths).props("unelevated").classes("lp-home-hero-primary")
 
@@ -511,10 +511,10 @@ def render_team_snapshot_section(
         with ui.column().classes("w-full gap-1"):
             with ui.element("div").classes("lp-home-stat-grid"):
                 for label, value in (
-                ("Active learners", active_learners),
-                ("Shares this week", shares_count),
-                ("Reviews posted", reviews_count),
-            ):
+                    ("Active learners", active_learners),
+                    ("Shares this week", shares_count),
+                    ("Reviews posted", reviews_count),
+                ):
                     with ui.element("div").classes("lp-home-stat-card"):
                         ui.label(str(value)).classes("lp-home-stat-value")
                         ui.label(label).classes("lp-home-stat-label")
@@ -570,9 +570,7 @@ def render_conversations_section(
         with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-home-convo-summary"):
             with ui.row().classes("items-center gap-2 flex-wrap"):
                 pending_label = (
-                    f"{total_pending_reviews} reviews waiting"
-                    if total_pending_reviews > 0
-                    else "No pending reviews"
+                    f"{total_pending_reviews} reviews waiting" if total_pending_reviews > 0 else "No pending reviews"
                 )
                 ui.label(pending_label).classes("text-xs lp-home-track-meta").style("color: var(--lp-muted)")
             if total_pending_reviews > 0:
@@ -608,9 +606,9 @@ def render_conversations_section(
                             ui.label(title).classes("lp-home-convo-title")
                     with ui.row().classes("items-center gap-2 no-wrap"):
                         ui.label(when_label).classes("lp-home-convo-time")
-                        ui.button("Open", on_click=lambda _row=dict(row): on_open_item(_row)).props("dense flat no-caps").classes(
-                            "lp-home-convo-open"
-                        )
+                        ui.button("Open", on_click=lambda _row=dict(row): on_open_item(_row)).props(
+                            "dense flat no-caps"
+                        ).classes("lp-home-convo-open")
 
 
 def render_shared_tab(

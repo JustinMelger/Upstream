@@ -65,6 +65,6 @@ def render_activity_items(*, events: list[dict[str, Any]], on_open: Callable[[st
                     if target_label:
                         meta = f"{meta} · {target_label}" if meta else target_label
                     ui.label(meta).classes("text-xs lp-teams-item-meta").style("color: var(--lp-muted)")
-                    ui.button("Open", on_click=lambda t=target_type, tid=target_id: on_open(t, tid)).props("dense outline").classes(
-                        "lp-teams-open-btn"
-                    )
+                    ui.button("Open", on_click=lambda t=target_type, tid=target_id: on_open(t, tid)).props(
+                        "dense outline"
+                    ).classes("lp-teams-open-btn")

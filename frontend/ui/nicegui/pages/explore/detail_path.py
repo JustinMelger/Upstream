@@ -135,13 +135,13 @@ def _render_path_sequence_card(
                         if status == "completed":
                             ui.label("✓ Completed").classes("lp-chip lp-chip--lime")
                         elif status == "in_progress":
-                            ui.button("Continue course", on_click=lambda _cid=cid: ui.navigate.to(f"/explore/courses/{_cid}")).props(
-                                "dense"
-                            )
+                            ui.button(
+                                "Continue course", on_click=lambda _cid=cid: ui.navigate.to(f"/explore/courses/{_cid}")
+                            ).props("dense")
                         else:
-                            ui.button("Start course", on_click=lambda _cid=cid: ui.navigate.to(f"/explore/courses/{_cid}")).props(
-                                "outline dense"
-                            )
+                            ui.button(
+                                "Start course", on_click=lambda _cid=cid: ui.navigate.to(f"/explore/courses/{_cid}")
+                            ).props("outline dense")
                     if status == "in_progress":
                         ui.linear_progress(0.55, show_value=False).classes("w-full")
                     elif status == "completed":

@@ -41,9 +41,9 @@ def render_teams_list(
                         ui.icon("groups").classes("text-[14px] mt-[2px]").style("color: var(--lp-muted)")
                         with ui.column().classes("gap-0"):
                             ui.label(name).classes("text-sm font-semibold lp-teams-list-row-title")
-                            ui.label(f"{member_count} members · {my_role or 'member'}").classes("text-xs lp-teams-list-row-meta").style(
-                                "color: var(--lp-muted)"
-                            )
+                            ui.label(f"{member_count} members · {my_role or 'member'}").classes(
+                                "text-xs lp-teams-list-row-meta"
+                            ).style("color: var(--lp-muted)")
                             ui.label("Recent updates in this team").classes("text-xs lp-teams-list-row-preview").style(
                                 "color: var(--lp-muted)"
                             )

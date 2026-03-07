@@ -105,7 +105,9 @@ class _TeamsPageView:
             with ui.row().classes("items-center justify-between w-full"):
                 ui.label("My teams").classes("text-lg font-semibold lp-teams-list-title")
                 if self.state.teams:
-                    ui.label(f"{len(self.state.teams)} total").classes("text-xs lp-teams-list-count").style("color: var(--lp-muted)")
+                    ui.label(f"{len(self.state.teams)} total").classes("text-xs lp-teams-list-count").style(
+                        "color: var(--lp-muted)"
+                    )
             ui.separator()
             if self.state.error_message and not self.state.teams:
                 render_error_block(

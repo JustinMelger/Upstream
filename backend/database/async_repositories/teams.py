@@ -273,14 +273,10 @@ class TeamsRepository(RepositoryDateTimeCodec):
     async def set_team_updated_at(self, *, team_id: int, updated_at: str | datetime) -> None:
         """Touch team updated_at."""
         await self.session.execute(
-            update(TeamModel)
-            .where(TeamModel.id == int(team_id))
-            .values(updated_at=self._as_datetime(updated_at))
+            update(TeamModel).where(TeamModel.id == int(team_id)).values(updated_at=self._as_datetime(updated_at))
         )
 
     async def list_team_user_ids(self, *, team_id: int) -> list[str]:
         """Return usernames for one team."""
-        result = await self.session.execute(
-            select(TeamMemberModel.user_id).where(TeamMemberModel.team_id == int(team_id))
-        )
+        result = await self.session.execute(select(TeamMemberModel.user_id).where(TeamMemberModel.team_id == int(team_id)))
         return [str(row[0] or "") for row in result.all()]
