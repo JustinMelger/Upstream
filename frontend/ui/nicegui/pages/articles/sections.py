@@ -79,7 +79,7 @@ def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
                         tooltip="More actions",
                     )
                     with topbar_menu:
-                        ui.menu_item("Share article", on_share)
+                        ui.menu_item("Share learning item", on_share)
     return ArticlesTopbarControls(search_input=search_input, sort_filter=sort_filter, meta=meta)
 
 
@@ -194,6 +194,7 @@ def render_article_card(
 
                 subtitle_parts = [part.strip() for part in str(subtitle_text or "").split("·") if str(part).strip()]
                 with ui.row().classes("items-center gap-2 flex-wrap lp-article-meta-row"):
+                    ui.label("Article").classes("lp-meta-chip lp-meta-chip--quiet")
                     if subtitle_parts:
                         ui.label(subtitle_parts[0]).classes("text-xs lp-card-subtitle lp-article-byline")
                     if len(subtitle_parts) > 1:

@@ -3,11 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+import html
 from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.card_frame import (
+    render_card_actions_row,
+    render_card_content_column,
+    render_card_main_row,
+    render_card_topright,
+)
 from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
+from frontend.ui.nicegui.core.learning_items import learning_item_type_label
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.sections import render_article_card
 from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
@@ -26,6 +35,7 @@ def render_course_item(
     username: str,
     is_admin: bool,
     course_actions_builder: Callable[[dict[str, Any], int, str], Any],
+    item_type: str,
     on_set_tracking: Callable[[int, str], Awaitable[None]],
     on_clear_tracking: Callable[[int], Awaitable[None]],
 ) -> None:
@@ -60,6 +70,7 @@ def render_course_item(
             show_status_chip=False,
             show_compact_progress=True,
             show_context_meta=False,
+            item_type_label=learning_item_type_label(item_type),
         )
 
 
@@ -202,3 +213,74 @@ def render_article_item(
             review_action=actions.on_review,
             compact_mode=True,
         )
+
+
+def render_video_item(
+    *,
+    video: dict[str, Any],
+    item_classes: str,
+) -> None:
+    """Render one video card item for Explore."""
+    with ui.element("div").classes(item_classes):
+        video_id = int(video.get("id") or 0)
+        title = str(video.get("title") or "").strip()
+        description = str(video.get("description") or "").strip()
+        provider = str(video.get("provider") or "").strip()
+        category = str(video.get("category") or "").strip()
+        created_by = str(video.get("created_by") or "").strip()
+        thumbnail_url = str(video.get("preview_image_url") or "").strip()
+        source_url = str(video.get("url") or "").strip()
+
+        with ui.card().classes("w-full lp-card lp-card--hover lp-article-card"):
+            with render_card_topright():
+                card_menu = apply_icon_button_a11y(
+                    ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+                    label="Open video actions",
+                    tooltip="Video actions",
+                )
+                with card_menu:
+                    ui.menu_item("Open details", lambda: ui.navigate.to(f"/explore/videos/{video_id}"))
+                    if source_url:
+                        ui.menu_item("Open source", lambda: ui.navigate.to(source_url, new_tab=True))
+
+            with render_card_main_row(classes="lp-article-card-main"):
+                with render_card_content_column(classes="lp-article-card-content"):
+                    ui.label(title).classes("text-lg font-semibold lp-card-title")
+
+                    with ui.row().classes("items-center gap-2 flex-wrap lp-article-meta-row"):
+                        ui.label("Video").classes("lp-meta-chip lp-meta-chip--quiet")
+                        if provider:
+                            ui.label(provider).classes("text-xs lp-card-subtitle lp-article-byline")
+                        if created_by:
+                            ui.label(f"Shared by {created_by}").classes("text-xs lp-card-subtitle lp-article-date")
+
+                    with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
+                        chips = [value for value in [provider, category] if value]
+                        if chips:
+                            for chip in chips[:4]:
+                                ui.label(chip).classes("lp-meta-chip")
+                        else:
+                            ui.label("").classes("lp-article-tag-placeholder")
+
+                    if description:
+                        ui.label(description).classes("text-sm text-gray-600 lp-card-body lp-course-summary")
+
+                    def _render_actions() -> None:
+                        ui.button(
+                            "Open details",
+                            on_click=lambda: ui.navigate.to(f"/explore/videos/{video_id}"),
+                        ).props("dense")
+
+                    render_card_actions_row(render_actions=_render_actions)
+
+                if thumbnail_url:
+                    safe_src = html.escape(thumbnail_url, quote=True)
+                    with ui.element("div").classes("lp-article-media-slot"):
+                        ui.html(
+                            (
+                                '<img class="lp-course-thumb lp-course-thumb--side lp-article-thumb" '
+                                f'src="{safe_src}" '
+                                'alt="Video thumbnail" loading="lazy" referrerpolicy="no-referrer">'
+                            ),
+                            sanitize=False,
+                        )

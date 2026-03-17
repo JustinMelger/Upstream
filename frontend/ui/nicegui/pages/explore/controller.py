@@ -14,6 +14,7 @@ from frontend.ui.nicegui.pages.explore.orchestration import (
     load_explore_articles_background,
     load_explore_courses,
     load_explore_paths_background,
+    load_explore_videos_background,
     set_explore_tracking_status,
 )
 from frontend.ui.nicegui.pages.explore.share_models import ExploreSharePayload, ExploreUrlValue
@@ -40,6 +41,7 @@ class ExplorePageController:
         refresh_ui: Callable[..., Any],
         refresh_filter_options: Callable[..., Any],
         notify_articles_warning: Callable[[str], None],
+        notify_videos_warning: Callable[[str], None],
         notify_paths_warning: Callable[[str], None],
     ) -> None:
         """Load explore data with background path/article fetches."""
@@ -62,9 +64,18 @@ class ExplorePageController:
                 notify_warning=notify_paths_warning,
             )
 
+        async def _load_videos_background() -> None:
+            await load_explore_videos_background(
+                state=state,
+                videos_controller=self._gateway.videos,
+                refresh_ui=refresh_ui,
+                notify_warning=notify_videos_warning,
+            )
+
         def _spawn_background_loads() -> None:
             if settings.feature_articles:
                 asyncio.create_task(_load_articles_background())
+            asyncio.create_task(_load_videos_background())
             asyncio.create_task(_load_paths_background())
 
         await load_explore_courses(
@@ -214,6 +225,21 @@ class ExplorePageController:
         refresh_ui()
         return created
 
+    async def create_video_share(
+        self,
+        *,
+        state: ExplorePageState,
+        payload: ExploreSharePayload,
+        reload_data: Callable[[], Awaitable[None]],
+        refresh_ui: Callable[..., Any],
+    ) -> dict[str, Any]:
+        """Create a video from Explore share flow and refresh the list view."""
+        _ = state
+        created = await self._gateway.videos.create_video(payload=dict(payload.payload or {}))
+        await reload_data()
+        refresh_ui()
+        return created
+
     async def suggest_course_from_url(self, *, url_value: ExploreUrlValue) -> dict[str, Any]:
         """Suggest course metadata from URL for Explore share dialog."""
         return await self._gateway.courses.suggest_course_from_url(url=str(url_value.url or ""))
@@ -221,6 +247,10 @@ class ExplorePageController:
     async def suggest_article_from_url(self, *, url_value: ExploreUrlValue) -> dict[str, Any]:
         """Suggest article metadata from URL for Explore share dialog."""
         return await self._gateway.articles.suggest_article_from_url(url=str(url_value.url or ""))
+
+    async def suggest_video_from_url(self, *, url_value: ExploreUrlValue) -> dict[str, Any]:
+        """Suggest video metadata from URL for Explore share flows."""
+        return await self._gateway.videos.suggest_video_from_url(url=str(url_value.url or ""))
 
     def is_duplicate_course_url(self, *, state: ExplorePageState, url_value: ExploreUrlValue) -> bool:
         """Check whether a course URL already exists in loaded Explore results."""
@@ -238,6 +268,16 @@ class ExplorePageController:
         if not normalized:
             return False
         for row in list(state.articles or []):
+            if str(row.get("url") or "").strip().lower() == normalized:
+                return True
+        return False
+
+    def is_duplicate_video_url(self, *, state: ExplorePageState, url_value: ExploreUrlValue) -> bool:
+        """Check whether a video URL already exists in loaded Explore results."""
+        normalized = str(url_value.url or "").strip().lower()
+        if not normalized:
+            return False
+        for row in list(state.videos or []):
             if str(row.get("url") or "").strip().lower() == normalized:
                 return True
         return False

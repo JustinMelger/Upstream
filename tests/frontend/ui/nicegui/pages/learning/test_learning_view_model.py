@@ -9,9 +9,10 @@ from frontend.ui.nicegui.pages.learning.view_model import (
 
 def test_build_shared_tab_view_projects_expected_fields() -> None:
     data = {
-        "shared_courses": [{"id": 1}],
+        "shared_courses": [{"id": 1, "title": "Udemy course", "url": "https://www.udemy.com/course/test/", "provider": "Udemy"}],
+        "shared_videos": [{"id": 4, "title": "Video title", "url": "https://youtu.be/demo"}],
         "shared_paths": [{"id": 2}],
-        "shared_articles": [{"id": 3}],
+        "shared_articles": [{"id": 3, "title": "Article title"}],
         "shared_course_review_summary_by_id": {1: {"review_count": 2}},
         "shared_course_recommendation_summary_by_id": {1: {"recommendation_count": 1}},
         "shared_path_review_summary_by_id": {2: {"review_count": 3}},
@@ -21,6 +22,8 @@ def test_build_shared_tab_view_projects_expected_fields() -> None:
     assert [int(c["id"]) for c in vm.shared_courses] == [1]
     assert [int(p["id"]) for p in vm.shared_paths] == [2]
     assert [int(a["id"]) for a in vm.shared_articles] == [3]
+    assert [(item.item_type, item.item_id) for item in vm.shared_learning_items] == [("article", 3), ("course", 1), ("video", 4)]
+    assert int((vm.shared_learning_items[1].review_summary_row or {})["review_count"]) == 2
     assert int(vm.shared_path_recommendation_summary_by_id[2]["recommendation_count"]) == 4
 
 

@@ -13,6 +13,7 @@ from backend.database.orm_models import (
     Path as PathModel,
     PathRecommendation as PathRecommendationModel,
     PathReview as PathReviewModel,
+    Video as VideoModel,
 )
 
 
@@ -46,6 +47,32 @@ class NotificationsRepository(RepositoryDateTimeCodec):
         return [
             {
                 "course_id": int(r.id),
+                "title": str(r.title or ""),
+                "created_by": str(r.created_by or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
+            }
+            for r in rows
+            if str(r.created_by or "").strip() and str(r.created_at or "").strip()
+        ]
+
+    async def list_recent_video_share_events(self, *, limit: int) -> list[dict]:
+        """Return recent video share rows."""
+        result = await self.session.execute(
+            select(
+                VideoModel.id,
+                VideoModel.title,
+                VideoModel.created_by,
+                VideoModel.created_at,
+            )
+            .where(VideoModel.created_by.is_not(None))
+            .where(VideoModel.created_at.is_not(None))
+            .order_by(VideoModel.created_at.desc(), VideoModel.id.desc())
+            .limit(int(limit))
+        )
+        rows = result.all()
+        return [
+            {
+                "video_id": int(r.id),
                 "title": str(r.title or ""),
                 "created_by": str(r.created_by or ""),
                 "created_at": self._as_iso_or_empty(r.created_at),

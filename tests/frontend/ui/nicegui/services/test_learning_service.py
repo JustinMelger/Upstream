@@ -46,6 +46,7 @@ async def test_load_my_learning_data_slices_tracked_selected_and_shared() -> Non
             ],
             "/paths/selected/list": [{"id": 11, "name": "P2", "status": "interested"}],
             "/paths/11": {"id": 11, "name": "P2", "courses": [{"id": 2}]},
+            "/videos": [{"id": 50, "title": "V1", "created_by": "alice"}],
             "/articles": [{"id": 100, "title": "A1", "created_by": "alice"}],
         }
     )
@@ -55,6 +56,7 @@ async def test_load_my_learning_data_slices_tracked_selected_and_shared() -> Non
     assert [int(p["id"]) for p in data["selected_paths"]] == [11]
     assert int(data["path_details_by_id"][11]["id"]) == 11
     assert [int(c["id"]) for c in data["shared_courses"]] == [1]
+    assert [int(v["id"]) for v in data["shared_videos"]] == [50]
     assert [int(p["id"]) for p in data["shared_paths"]] == [10]
     assert [int(a["id"]) for a in data["shared_articles"]] == [100]
 
@@ -104,6 +106,7 @@ async def test_load_my_learning_data_keeps_working_when_summary_endpoints_fail_w
             "/paths": [{"id": 11, "name": "P2", "created_by": "bob"}],
             "/paths/selected/list": [{"id": 11, "name": "P2", "status": "interested"}],
             "/paths/11": {"id": 11, "name": "P2", "courses": [{"id": 2}]},
+            "/videos": [],
             "/articles": [],
             "/courses/2/reviews": [],
             "/paths/11/reviews": [],
@@ -132,6 +135,7 @@ async def test_load_my_learning_data_does_not_swallow_unexpected_summary_errors(
             "/tracking": [{"course_id": 2, "status": "in_progress"}],
             "/paths": [],
             "/paths/selected/list": [],
+            "/videos": [],
             "/articles": [],
             "/courses/2/reviews": [],
         }

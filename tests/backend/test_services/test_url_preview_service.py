@@ -153,7 +153,17 @@ async def test_url_preview_service_resolves_metadata_suggestions(monkeypatch: py
     service = UrlPreviewService()
     payload = await service.resolve_metadata(source_url="https://fastapi.tiangolo.com/tutorial/testing/")
     assert payload["title"] == "Testing FastAPI apps"
+    assert payload["suggested_learning_item_type"] == "article"
     assert payload["suggested_provider"] == "FastAPI Docs"
     assert payload["suggested_category"] in {"Backend", "Programming"}
     assert payload["preview_image_url"] == "https://fastapi.tiangolo.com/img/social.png"
     assert any(str(tag).lower() == "fastapi" for tag in list(payload["suggested_tags"] or []))
+
+
+@pytest.mark.unit
+async def test_url_preview_service_suggests_video_and_course_types_without_extra_rules() -> None:
+    service = UrlPreviewService()
+    youtube = await service.resolve_metadata(source_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+    udemy = await service.resolve_metadata(source_url="https://www.udemy.com/course/fastapi-zero-to-prod/")
+    assert youtube["suggested_learning_item_type"] == "video"
+    assert udemy["suggested_learning_item_type"] == "course"

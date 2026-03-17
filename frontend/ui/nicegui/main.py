@@ -21,6 +21,7 @@ from frontend.ui.nicegui.pages import (
     learning,
     login,
     profile,
+    share,
     teams,
 )
 
@@ -38,6 +39,7 @@ def create_app() -> None:
     learning.register(store=store, api=api)
     teams.register(store=store, api=api)
     profile.register(store=store, api=api)
+    share.register(store=store, api=api)
     if settings.feature_ai_curator:
         ai_curator.register(store=store, api=api)
     admin_users.register(store=store, api=api)

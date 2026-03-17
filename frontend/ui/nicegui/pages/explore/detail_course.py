@@ -13,6 +13,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.learning_items import infer_learning_item_type, learning_item_type_label
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
@@ -137,10 +138,17 @@ def _render_course_main_panel(
     avg_rating: float,
     review_count: int,
 ) -> None:
+    item_type = infer_learning_item_type(
+        url=str(course.get("url") or ""),
+        provider=str(course.get("provider") or ""),
+        fallback="course",
+    )
     with ui.column().classes("lp-explore-detail-main"):
         with ui.element("header").classes("lp-explore-detail-hero"):
             owner = str(course.get("created_by") or "").strip()
-            ui.label("Course").classes("lp-explore-detail-eyebrow")
+            with ui.row().classes("items-center gap-2 flex-wrap"):
+                ui.label("Learning item").classes("lp-explore-detail-eyebrow")
+                ui.label(learning_item_type_label(item_type)).classes("lp-meta-chip lp-meta-chip--quiet")
             ui.label(str(course.get("title") or "Course")).classes("lp-explore-detail-title")
             if review_count > 0:
                 with ui.row().classes("items-center gap-2 flex-wrap"):

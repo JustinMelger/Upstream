@@ -33,7 +33,7 @@ class NotificationActivityQuery:
     scope: StrictStr | None = "inbox"
 
 
-TargetType = Literal["course", "path", "article"]
+TargetType = Literal["course", "path", "article", "video"]
 
 
 @dataclass
@@ -110,6 +110,7 @@ class NotificationsService:
 
         async with session_scope(self._repo.session):
             course_shares = await self._repo.list_recent_course_share_events(limit=source_limit) if is_team else []
+            video_shares = await self._repo.list_recent_video_share_events(limit=source_limit) if is_team else []
             course_recommendations = await self._repo.list_recent_course_recommendation_events(limit=source_limit)
             path_recommendations = await self._repo.list_recent_path_recommendation_events(limit=source_limit)
             course_reviews = await self._repo.list_recent_course_review_events(limit=source_limit)
@@ -128,6 +129,7 @@ class NotificationsService:
 
         events: list[ActivityEvent] = []
         events.extend(self._build_course_share_events(rows=course_shares, username=username))
+        events.extend(self._build_video_share_events(rows=video_shares, username=username))
         events.extend(
             self._build_recommendation_events(
                 rows=list(course_recommendations) + list(own_course_recommendations),
@@ -202,6 +204,34 @@ class NotificationsService:
                     message=message,
                     target_type="course",
                     target_id=int(row.get("course_id") or 0),
+                    target_label=title,
+                )
+            )
+        return out
+
+    @staticmethod
+    def _build_video_share_events(*, rows: list[dict], username: str) -> list[ActivityEvent]:
+        """Build video share events."""
+        out: list[ActivityEvent] = []
+        for row in rows:
+            actor = str(row.get("created_by") or "").strip()
+            if not actor:
+                continue
+            title = str(row.get("title") or "").strip() or "Untitled video"
+            event_type = "video_shared"
+            message = f'{actor} shared "{title}"'
+            if actor == username:
+                event_type = "you_shared_video"
+                message = f'You shared "{title}"'
+            out.append(
+                ActivityEvent(
+                    event_id=f"video_shared:{int(row.get('video_id') or 0)}",
+                    event_type=event_type,
+                    created_at=str(row.get("created_at") or ""),
+                    actor=actor,
+                    message=message,
+                    target_type="video",
+                    target_id=int(row.get("video_id") or 0),
                     target_label=title,
                 )
             )

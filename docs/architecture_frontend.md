@@ -180,6 +180,8 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 - `/explore/courses/{course_id}`: Course detail route.
 - `/explore/paths/{path_id}`: Path detail route.
 - `/explore/articles/{article_id}`: Article detail route.
+- `/share/item`: Canonical learning-item share route (`?type=video|course|article`).
+- `/share/course` and `/share/article`: compatibility redirects to `/share/item`.
 - `/teams`: Inbox + team activity feed.
 - `/profile`: Profile landing route (redirects to `/profile/stats`).
 - `/profile/stats`: Full statistics dashboard.
@@ -190,6 +192,7 @@ Notes:
 - Guard all routes except `/login` behind `require_user(store, api)` (session validation via backend).
 - Admin routes additionally check `role == "admin"`.
 - Some routes may be feature-flagged via environment variables (see Feature Flags below).
+- Canonical product model: a learning item is the primary shareable unit (`video`, `course`, `article` in the current phase), while a path is a separate object composed of learning items.
 
 ## Feature Flags
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from frontend.ui.nicegui.core.feed_copy import format_learning_inventory_text
+
 
 def compute_next_visibility(
     *,
@@ -21,10 +23,14 @@ def compute_next_visibility(
 def compute_meta_text(*, data: dict[str, Any], view: str, feature_articles: bool) -> str:
     """Build top-bar meta text for either learning or shared view."""
     if str(view or "") == "shared":
-        text = f"{len(list(data.get('shared_courses') or []))} courses · {len(list(data.get('shared_paths') or []))} paths"
+        learning_item_count = len(list(data.get("shared_courses") or []))
+        learning_item_count += len(list(data.get("shared_videos") or []))
         if feature_articles:
-            text += f" · {len(list(data.get('shared_articles') or []))} articles"
-        return text
+            learning_item_count += len(list(data.get("shared_articles") or []))
+        return format_learning_inventory_text(
+            learning_item_count=learning_item_count,
+            path_count=len(list(data.get("shared_paths") or [])),
+        )
     return (
         f"{len(list(data.get('tracked_courses') or []))} tracked courses · "
         f"{len(list(data.get('selected_paths') or []))} selected paths"

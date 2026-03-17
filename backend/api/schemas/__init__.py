@@ -79,6 +79,7 @@ from backend.api.schemas.tracking import (
     TrackingUpsertRequest,
 )
 from backend.api.schemas.url_preview import UrlPreviewMetadataRequest, UrlPreviewMetadataResponse
+from backend.api.schemas.videos import VideoCreateRequest, VideoPayload
 
 
 __all__ = [
@@ -104,6 +105,8 @@ __all__ = [
     "DisableUserResponse",
     "ArticlePayload",
     "ArticleCreateRequest",
+    "VideoPayload",
+    "VideoCreateRequest",
     "ArticleReviewPayload",
     "ArticleReviewCreateRequest",
     "ArticleReviewSummaryItem",

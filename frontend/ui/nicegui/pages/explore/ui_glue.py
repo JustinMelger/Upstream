@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from frontend.ui.nicegui.core.feed_copy import format_explore_scope_text
 from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
 
 
-TAB_OPTIONS = {"all": "All", "courses": "Courses", "paths": "Paths", "articles": "Articles"}
+TAB_OPTIONS = {"all": "All", "courses": "Courses", "videos": "Videos", "paths": "Paths", "articles": "Articles"}
 SORT_OPTIONS = {
     "": "Recommended",
     "newest": "Newest",
@@ -27,43 +28,54 @@ def normalize_sort(raw: Any) -> str:
     return value if value in SORT_OPTIONS else ""
 
 
-def compute_explore_meta_text(*, tab_value: str, course_count: int, path_count: int, article_count: int) -> str:
+def compute_explore_meta_text(*, tab_value: str, course_count: int, video_count: int, path_count: int, article_count: int) -> str:
     """Build topbar meta text for current Explore scope."""
-    if tab_value == "courses":
-        return f"{int(course_count)} courses"
-    if tab_value == "paths":
-        return f"{int(path_count)} paths"
-    if tab_value == "articles":
-        return f"{int(article_count)} articles"
-    return f"{int(course_count)} courses | {int(path_count)} paths | {int(article_count)} articles"
+    return format_explore_scope_text(
+        tab_value=tab_value,
+        course_count=course_count,
+        video_count=video_count,
+        article_count=article_count,
+        path_count=path_count,
+    )
 
 
 def apply_tab_scope(
     *,
     tab_value: str,
     shown_courses: list[dict[str, Any]],
+    shown_videos: list[dict[str, Any]],
     shown_paths: list[dict[str, Any]],
     shown_articles: list[dict[str, Any]],
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     """Apply tab filter to the three Explore result buckets."""
     if tab_value == "courses":
-        return shown_courses, [], []
+        return shown_courses, [], [], []
+    if tab_value == "videos":
+        return [], shown_videos, [], []
     if tab_value == "paths":
-        return [], shown_paths, []
+        return [], [], shown_paths, []
     if tab_value == "articles":
-        return [], [], shown_articles
-    return shown_courses, shown_paths, shown_articles
+        return [], [], [], shown_articles
+    return shown_courses, shown_videos, shown_paths, shown_articles
 
 
 def build_explore_filter_options(
     *,
     courses: list[dict[str, Any]],
+    videos: list[dict[str, Any]],
     articles: list[dict[str, Any]],
 ) -> tuple[dict[str, str], dict[str, str], dict[str, str], dict[str, str]]:
     """Build provider/category/tag/author options from loaded Explore datasets."""
     provider_options = {"": "Any provider"}
     category_options = {"": "Any category"}
     for row in list(courses or []):
+        provider = str(row.get("provider") or "").strip()
+        category = str(row.get("category") or "").strip()
+        if provider and provider not in provider_options:
+            provider_options[provider] = provider
+        if category and category not in category_options:
+            category_options[category] = category
+    for row in list(videos or []):
         provider = str(row.get("provider") or "").strip()
         category = str(row.get("category") or "").strip()
         if provider and provider not in provider_options:
@@ -100,11 +112,13 @@ def apply_explore_filter_options(
     *,
     controls: Any,
     courses: list[dict[str, Any]],
+    videos: list[dict[str, Any]],
     articles: list[dict[str, Any]],
 ) -> None:
     """Apply computed facet options to Explore drawer controls."""
     provider_options, category_options, tag_options, author_options = build_explore_filter_options(
         courses=courses,
+        videos=videos,
         articles=articles,
     )
     controls.provider_filter.options = provider_options

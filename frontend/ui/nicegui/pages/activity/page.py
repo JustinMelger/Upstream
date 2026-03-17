@@ -18,7 +18,7 @@ from frontend.ui.nicegui.pages.activity.route_init import resolve_activity_tab
 from frontend.ui.nicegui.pages.activity.sections import render_activity_error, render_activity_items, render_empty_activity
 from frontend.ui.nicegui.pages.activity.state import ActivityPageState
 from frontend.ui.nicegui.pages.activity.transitions import begin_activity_load, finalize_activity_load
-from frontend.ui.nicegui.pages.activity.ui_glue import target_url
+from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -54,12 +54,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if state.error_message:
                     render_activity_error(message=state.error_message, on_retry=_load)
                     return
-                if not state.events:
+                event_views = build_activity_event_views(events=state.events)
+                if not event_views:
                     render_empty_activity(current_tab=current_tab, on_primary=lambda: ui.navigate.to("/explore"))
                     return
                 render_activity_items(
-                    events=state.events,
-                    on_open=lambda t, tid: ui.navigate.to(target_url(target_type=t, target_id=int(tid))),
+                    events=event_views,
+                    on_open=lambda target: ui.navigate.to(str(target.open_url)),
                 )
 
             @guard_ui_action(title="Load activity failed")

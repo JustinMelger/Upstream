@@ -27,5 +27,6 @@ async def test_url_preview_metadata_returns_suggestions_for_youtube_url(app_clie
     assert response.status_code == 200
     payload = response.json()
     assert payload["source_url"].startswith("https://www.youtube.com/watch")
+    assert payload["suggested_learning_item_type"] == "video"
     assert payload["preview_image_url"].endswith("/dQw4w9WgXcQ/hqdefault.jpg")
     assert isinstance(payload.get("suggested_tags"), list)

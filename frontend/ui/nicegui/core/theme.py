@@ -3028,6 +3028,66 @@ def apply_theme() -> None:
           margin-top: 2px;
         }
 
+        .lp-share-scope {
+          --lp-page-glow-1: rgba(88, 166, 232, 0.12);
+          --lp-page-glow-2: rgba(45, 175, 150, 0.1);
+        }
+
+        .lp-share-header {
+          margin-bottom: 2px;
+        }
+
+        .lp-share-surface {
+          border-color: rgba(186, 204, 227, 0.11) !important;
+          background:
+            radial-gradient(120% 140% at 8% 0%, rgba(88, 166, 232, 0.08), transparent 58%),
+            linear-gradient(150deg, rgba(16, 28, 44, 0.76), rgba(12, 22, 36, 0.7)) !important;
+        }
+
+        .lp-share-columns {
+          gap: 24px !important;
+        }
+
+        .lp-share-form .q-separator {
+          margin: 6px 0 8px;
+          opacity: 0.28;
+        }
+
+        .lp-share-input .q-field__control {
+          border-radius: 10px !important;
+          background: rgba(255, 255, 255, 0.03);
+          border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .lp-share-input .q-field__native,
+        .lp-share-input input,
+        .lp-share-input textarea {
+          color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .lp-share-input.q-field--focused .q-field__control {
+          border-color: rgba(106, 168, 255, 0.9) !important;
+          box-shadow: 0 0 0 2px rgba(106, 168, 255, 0.2);
+        }
+
+        .lp-share-import-btn,
+        .lp-share-publish-btn {
+          min-width: 152px;
+        }
+
+        .lp-share-save-btn {
+          min-width: 128px;
+          opacity: 0.9;
+        }
+
+        .lp-share-preview-card {
+          min-height: 220px;
+          border-color: rgba(186, 204, 227, 0.1) !important;
+          background:
+            radial-gradient(120% 140% at 86% 8%, rgba(88, 166, 232, 0.08), transparent 56%),
+            linear-gradient(150deg, rgba(13, 24, 39, 0.8), rgba(10, 19, 31, 0.72)) !important;
+        }
+
         .lp-home-overview-shell,
         .lp-home-focus-shell,
         .lp-home-review-shell {

@@ -23,7 +23,7 @@ def _imports_for(path: Path) -> set[str]:
 
 @pytest.mark.unit
 def test_activity_pure_modules_do_not_import_nicegui() -> None:
-    for filename in ["controller.py", "state.py", "route_init.py", "transitions.py", "ui_glue.py"]:
+    for filename in ["controller.py", "state.py", "route_init.py", "transitions.py", "ui_glue.py", "view_model.py"]:
         imports = _imports_for(_ACTIVITY_DIR / filename)
         assert "nicegui" not in imports
         assert not any(name.startswith("nicegui.") for name in imports)
@@ -37,7 +37,7 @@ def test_activity_page_imports_activity_domain_modules() -> None:
     assert "frontend.ui.nicegui.pages.activity.sections" in imports
     assert "frontend.ui.nicegui.pages.activity.state" in imports
     assert "frontend.ui.nicegui.pages.activity.transitions" in imports
-    assert "frontend.ui.nicegui.pages.activity.ui_glue" in imports
+    assert "frontend.ui.nicegui.pages.activity.view_model" in imports
 
 
 @pytest.mark.unit

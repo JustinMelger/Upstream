@@ -20,6 +20,7 @@ from frontend.ui.nicegui.pages.explore.detail_page import (
     render_explore_article_detail_page,
     render_explore_course_detail_page,
     render_explore_path_detail_page,
+    render_explore_video_detail_page,
 )
 from frontend.ui.nicegui.pages.explore.event_bindings import bind_refresh_events
 from frontend.ui.nicegui.pages.explore.list_flow import build_sections_deps, ExploreSectionsUiControls
@@ -69,7 +70,7 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
         render_catalog_hero(
             eyebrow="",
-            title="Find the next course, path, or article worth sharing",
+            title="Find the next course, video, path, or article worth sharing",
             subtitle="Search broadly, then narrow by scope and filters to move from browse to action quickly.",
         )
         # Sticky topbar uses a negative top margin; reserve vertical space so it
@@ -88,6 +89,7 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             apply_explore_filter_options(
                 controls=filter_controls,
                 courses=list(state.courses or []),
+                videos=list(state.videos or []),
                 articles=list(state.articles or []),
             )
 
@@ -99,6 +101,10 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                 refresh_filter_options=_refresh_filter_options,
                 notify_articles_warning=lambda message: safe_notify(
                     f"Articles unavailable in Explore ({message})",
+                    type="warning",
+                ),
+                notify_videos_warning=lambda message: safe_notify(
+                    f"Videos unavailable in Explore ({message})",
                     type="warning",
                 ),
                 notify_paths_warning=lambda message: safe_notify(
@@ -113,11 +119,15 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             username=username,
             reload_data=_load,
             refresh_ui=lambda: list_view.refresh(),
+            on_open_course_share_page=lambda: ui.navigate.to("/share/item?type=course"),
+            on_open_video_share_page=lambda: ui.navigate.to("/share/item?type=video"),
+            on_open_article_share_page=lambda: ui.navigate.to("/share/item?type=article"),
             on_unknown_target=lambda tab: ui.navigate.to(
-                "/explore?tab=" + {"course": "courses", "path": "paths", "article": "articles"}.get(tab, "courses")
+                "/explore?tab=" + {"course": "courses", "video": "videos", "path": "paths", "article": "articles"}.get(tab, "courses")
             ),
         )
         share_dialog = render_explore_share_dialog(
+            on_share_video=lambda: share_bindings.open_share_target("video"),
             on_share_course=lambda: share_bindings.open_share_target("course"),
             on_share_path=lambda: share_bindings.open_share_target("path"),
             on_share_article=lambda: share_bindings.open_share_target("article"),
@@ -135,13 +145,8 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             refresh_ui=lambda: list_view.refresh(),
         )
 
-        def _set_course_category(category: str) -> None:
-            ui_flags.course_category = str(category or "all")
-            ui_flags.courses_visible_limit = 8
-            list_view.refresh()
-
-        def _show_more_courses() -> None:
-            ui_flags.courses_visible_limit = int(ui_flags.courses_visible_limit or 8) + 8
+        def _show_more_learning_items() -> None:
+            ui_flags.learning_items_visible_limit = int(ui_flags.learning_items_visible_limit or 8) + 8
             list_view.refresh()
 
         @ui.refreshable
@@ -170,7 +175,7 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             topbar.meta.text = results.meta_text
 
             with ui.element("div").classes("w-full lp-refresh-region"):
-                if not results.shown_courses and not results.shown_paths and not results.shown_articles:
+                if not results.shown_courses and not results.shown_videos and not results.shown_paths and not results.shown_articles:
                     render_explore_empty_state(
                         loaded_once=state.loaded_once,
                         on_refresh=_load,
@@ -181,7 +186,7 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                 render_explore_sections(
                     shown_courses=results.shown_courses,
                     shown_paths=results.shown_paths,
-                    shown_articles=results.shown_articles,
+                    shown_learning_items=results.shown_learning_items,
                     deps=build_sections_deps(
                         state=state,
                         username=username,
@@ -195,10 +200,8 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                             f"/explore/paths/{int(path_row.get('id') or 0)}"
                         ),
                         ui_controls=ExploreSectionsUiControls(
-                            course_category=str(ui_flags.course_category or "all"),
-                            on_set_course_category=_set_course_category,
-                            courses_visible_limit=int(ui_flags.courses_visible_limit or 8),
-                            on_show_more_courses=_show_more_courses,
+                            learning_items_visible_limit=int(ui_flags.learning_items_visible_limit or 8),
+                            on_show_more_learning_items=_show_more_learning_items,
                         ),
                     ),
                 )
@@ -242,3 +245,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
     @ui.page("/explore/articles/{article_id}")
     async def explore_article_detail_page(article_id: str) -> None:
         await render_explore_article_detail_page(store=store, api=api, article_id=article_id)
+
+    @ui.page("/explore/videos/{video_id}")
+    async def explore_video_detail_page(video_id: str) -> None:
+        await render_explore_video_detail_page(store=store, api=api, video_id=video_id)

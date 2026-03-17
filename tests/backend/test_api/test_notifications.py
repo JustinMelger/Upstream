@@ -76,6 +76,42 @@ async def test_notifications_activity_includes_shares_and_recommendations(app_cl
 
 
 @pytest.mark.integration
+async def test_notifications_activity_includes_video_shares(app_client):
+    admin_token = await _login_admin(app_client)
+    await _create_user(app_client, admin_token, "alice", role="user")
+    await _create_user(app_client, admin_token, "bob", role="user")
+
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_token = alice_login.json()["token"]
+    bob_token = bob_login.json()["token"]
+
+    create_video = await app_client.post(
+        "/videos",
+        json={
+            "title": "Shared video",
+            "description": "desc",
+            "provider": "YouTube",
+            "category": "Programming",
+            "url": "https://www.youtube.com/watch?v=shared123",
+        },
+        headers={"X-Session-Token": alice_token},
+    )
+    assert create_video.status_code == 200
+
+    bob_team_feed = await app_client.get(
+        "/notifications/activity",
+        params={"scope": "team"},
+        headers={"X-Session-Token": bob_token},
+    )
+    assert bob_team_feed.status_code == 200
+    bob_team_rows = list(bob_team_feed.json() or [])
+    assert bob_team_rows
+    bob_team_types = {str(r.get("event_type") or "") for r in bob_team_rows}
+    assert "video_shared" in bob_team_types
+
+
+@pytest.mark.integration
 async def test_notifications_activity_includes_self_recommend_on_own_shared_course(app_client):
     admin_token = await _login_admin(app_client)
 

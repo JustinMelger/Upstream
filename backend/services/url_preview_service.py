@@ -35,6 +35,21 @@ _OEMBED_PROVIDERS: dict[str, str] = {
     "www.vimeo.com": "https://vimeo.com/api/oembed.json",
     "player.vimeo.com": "https://vimeo.com/api/oembed.json",
 }
+_VIDEO_HOSTS = {
+    "youtube.com",
+    "www.youtube.com",
+    "m.youtube.com",
+    "music.youtube.com",
+    "youtu.be",
+    "www.youtu.be",
+    "vimeo.com",
+    "www.vimeo.com",
+    "player.vimeo.com",
+}
+_COURSE_HOSTS = {
+    "udemy.com",
+    "www.udemy.com",
+}
 
 
 def _extract_youtube_video_id(url: str) -> str | None:
@@ -183,11 +198,13 @@ class UrlPreviewService:
         image_url = await self.resolve_image_url(source_url=url)
         normalized_url = str(response.url) if response is not None else url
         provider = self._suggest_provider(site_name=site_name, source_url=normalized_url)
+        learning_item_type = self._suggest_learning_item_type(source_url=normalized_url, provider=provider)
         tags = self._suggest_tags(meta=meta, title=title, description=description)
         category = self._suggest_category(title=title, description=description, tags=tags)
         payload: dict[str, object] = {
             "source_url": url,
             "normalized_url": normalized_url,
+            "suggested_learning_item_type": learning_item_type,
             "title": title,
             "description": description,
             "site_name": site_name,
@@ -277,6 +294,16 @@ class UrlPreviewService:
         return core.replace("-", " ").replace("_", " ").title()
 
     @staticmethod
+    def _suggest_learning_item_type(*, source_url: str, provider: str) -> str:
+        host = str(urlparse(source_url).hostname or "").strip().lower()
+        provider_value = str(provider or "").strip().lower()
+        if host in _VIDEO_HOSTS or "youtube" in provider_value or "vimeo" in provider_value:
+            return "video"
+        if host in _COURSE_HOSTS or "udemy" in provider_value:
+            return "course"
+        return "article"
+
+    @staticmethod
     def _append_keyword_tags(*, tags: list[str], seen: set[str], keywords: str) -> bool:
         for part in str(keywords or "").split(","):
             if not UrlPreviewService._append_tag_if_new(tags=tags, seen=seen, value=str(part or "")):
@@ -339,6 +366,7 @@ class UrlPreviewService:
         return {
             "source_url": str(url or ""),
             "normalized_url": str(url or ""),
+            "suggested_learning_item_type": "",
             "title": "",
             "description": "",
             "site_name": "",

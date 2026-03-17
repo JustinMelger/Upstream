@@ -10,6 +10,7 @@ from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.errors import FrontendError, safe_notify
+from frontend.ui.nicegui.core.learning_items import learning_item_type_label
 
 
 _ALLOWED_TRACKING_STATUSES = {"interested", "in_progress", "completed"}
@@ -297,50 +298,45 @@ def render_selected_paths_section(
 
 def render_shared_content(
     *,
-    shared_courses: list[dict[str, Any]],
+    shared_learning_items: list[Any],
     shared_paths: list[dict[str, Any]],
-    shared_articles: list[dict[str, Any]],
-    shared_course_review_summary_by_id: dict[int, dict[str, Any]],
-    shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]],
     shared_path_review_summary_by_id: dict[int, dict[str, Any]],
     shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]],
     review_summary_label: Any,
     recommendation_summary_label: Any,
-    on_view_course: Any,
-    on_review_course: Any,
+    on_open_learning_item: Any,
+    on_review_learning_item: Any,
     on_view_path: Any,
     on_review_path: Any,
-    feature_articles: bool,
-    on_open_articles: Any,
 ) -> None:
     """Render shared tab content."""
     ui.label("You shared").classes("text-lg font-semibold mt-2")
     ui.label("Content you shared with teammates.").classes("text-sm").style("color: var(--lp-muted)")
 
     with ui.card().classes("lp-card w-full lp-shared-shell"):
-        ui.label("Courses").classes("lp-home-section-title")
+        ui.label("Learning items").classes("lp-home-section-title")
         ui.separator().classes("lp-shared-separator")
-        if not shared_courses:
-            ui.label("You haven't shared any courses yet.").classes("text-sm lp-home-empty-copy").style(
+        if not shared_learning_items:
+            ui.label("You haven't shared any learning items yet.").classes("text-sm lp-home-empty-copy").style(
                 "color: var(--lp-muted)"
             )
-        for c in shared_courses[:12]:
-            cid = int(c.get("id") or 0)
+        for item in shared_learning_items[:12]:
             with ui.element("div").classes("lp-track-card lp-shared-card"):
                 with ui.row().classes("w-full items-start justify-between gap-3"):
                     with ui.row().classes("items-start gap-2 lp-track-identity"):
-                        ui.icon("school").classes("lp-track-avatar")
+                        ui.icon("article" if str(item.item_type) == "article" else "school").classes("lp-track-avatar")
                         with ui.column().classes("gap-0 lp-track-title-block"):
-                            ui.label(str(c.get("title") or "")).classes("text-sm font-semibold lp-track-title")
-                            ui.label("Course").classes("text-xs lp-home-track-meta")
+                            ui.label(str(item.title or "")).classes("text-sm font-semibold lp-track-title")
+                            ui.label(learning_item_type_label(str(item.item_type or ""))).classes("text-xs lp-home-track-meta")
                     with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group"):
-                        ui.button("View", on_click=on_view_course(cid)).props("dense outline").classes("lp-track-continue-btn")
-                        ui.button("Review", on_click=on_review_course(cid)).props("dense outline").classes(
-                            "lp-track-continue-btn"
-                        )
+                        ui.button("Open", on_click=on_open_learning_item(item)).props("dense outline").classes("lp-track-continue-btn")
+                        if str(item.item_type or "") != "article":
+                            ui.button("Review", on_click=on_review_learning_item(item)).props("dense outline").classes(
+                                "lp-track-continue-btn"
+                            )
                 parts = [
-                    review_summary_label(shared_course_review_summary_by_id.get(cid)),
-                    recommendation_summary_label(shared_course_recommendation_summary_by_id.get(cid)),
+                    review_summary_label(item.review_summary_row),
+                    recommendation_summary_label(item.recommendation_summary_row),
                 ]
                 parts = [part for part in parts if part]
                 if parts:
@@ -376,23 +372,6 @@ def render_shared_content(
                     ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
                         "color: var(--lp-muted)"
                     )
-
-    if feature_articles:
-        with ui.card().classes("lp-card w-full lp-shared-shell"):
-            ui.label("Articles").classes("lp-home-section-title")
-            ui.separator().classes("lp-shared-separator")
-            if not shared_articles:
-                ui.label("You haven't shared any articles yet.").classes("text-sm lp-home-empty-copy").style(
-                    "color: var(--lp-muted)"
-                )
-            for a in shared_articles[:12]:
-                with ui.element("div").classes("lp-track-card lp-shared-card"):
-                    with ui.row().classes("w-full items-center justify-between gap-3"):
-                        with ui.row().classes("items-center gap-2 lp-track-identity"):
-                            ui.icon("article").classes("lp-track-avatar")
-                            ui.label(str(a.get("title") or "")).classes("text-sm font-semibold lp-track-title")
-                        ui.button("Open", on_click=on_open_articles).props("dense outline").classes("lp-track-continue-btn")
-
 
 def render_home_hero_panel(
     *,
@@ -617,26 +596,27 @@ def render_shared_tab(
     review_summary_label: Any,
     recommendation_summary_label: Any,
     nav_actions: Any,
-    feature_articles: bool,
-    on_open_articles: Any,
 ) -> None:
     """Compose shared-tab UI from the shared view-model."""
     render_shared_content(
-        shared_courses=shared_vm.shared_courses,
+        shared_learning_items=shared_vm.shared_learning_items,
         shared_paths=shared_vm.shared_paths,
-        shared_articles=shared_vm.shared_articles,
-        shared_course_review_summary_by_id=shared_vm.shared_course_review_summary_by_id,
-        shared_course_recommendation_summary_by_id=shared_vm.shared_course_recommendation_summary_by_id,
         shared_path_review_summary_by_id=shared_vm.shared_path_review_summary_by_id,
         shared_path_recommendation_summary_by_id=shared_vm.shared_path_recommendation_summary_by_id,
         review_summary_label=review_summary_label,
         recommendation_summary_label=recommendation_summary_label,
-        on_view_course=nav_actions.make_course_view_action,
-        on_review_course=nav_actions.make_course_review_action,
+        on_open_learning_item=lambda item: (
+            nav_actions.make_article_view_action(int(item.item_id))
+            if str(item.item_type or "") == "article"
+            else (
+                nav_actions.make_video_view_action(int(item.item_id))
+                if str(item.item_type or "") == "video"
+                else nav_actions.make_course_view_action(int(item.item_id))
+            )
+        ),
+        on_review_learning_item=lambda item: nav_actions.make_course_review_action(int(item.item_id)),
         on_view_path=nav_actions.make_path_view_action,
         on_review_path=nav_actions.make_path_review_action,
-        feature_articles=bool(feature_articles),
-        on_open_articles=on_open_articles,
     )
 
 

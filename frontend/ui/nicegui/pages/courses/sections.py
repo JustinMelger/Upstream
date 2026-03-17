@@ -94,7 +94,7 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any, on_open_filters:
                 tooltip="More actions",
             )
             with topbar_menu:
-                ui.menu_item("Share course", on_share)
+                ui.menu_item("Share learning item", on_share)
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
     return CoursesTopbarControls(
@@ -261,6 +261,7 @@ def render_course_card(
     show_status_chip: bool = True,
     show_compact_progress: bool = False,
     show_context_meta: bool = True,
+    item_type_label: str | None = None,
 ) -> None:
     """Render one course card including action menu and status control."""
 
@@ -306,6 +307,8 @@ def render_course_card(
                 ui.label(title).classes("text-lg font-semibold lp-card-title")
                 shared_by = card_vm.shared_by
                 with ui.row().classes("items-center gap-2 flex-wrap lp-social-strip"):
+                    if str(item_type_label or "").strip():
+                        ui.label(str(item_type_label)).classes("lp-meta-chip lp-meta-chip--quiet")
                     if shared_by:
                         ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
                     if card_vm.rating_badge:

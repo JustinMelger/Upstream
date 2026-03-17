@@ -56,7 +56,9 @@ def _render_article_main_panel(
     with ui.column().classes("lp-explore-detail-main"):
         with ui.element("header").classes("lp-explore-detail-hero"):
             owner = str(article.get("created_by") or "").strip()
-            ui.label("Article").classes("lp-explore-detail-eyebrow")
+            with ui.row().classes("items-center gap-2 flex-wrap"):
+                ui.label("Learning item").classes("lp-explore-detail-eyebrow")
+                ui.label("Article").classes("lp-meta-chip lp-meta-chip--quiet")
             ui.label(str(article.get("title") or "Article")).classes("lp-explore-detail-title")
             if owner:
                 ui.label(f"by {owner}").classes("lp-explore-detail-muted")
@@ -110,7 +112,7 @@ def _render_article_info_panel(*, aid: int, article: dict[str, Any], tags: list[
             ui.button("Open source", on_click=lambda: ui.navigate.to(source_url, new_tab=True)).props("outline")
 
         ui.button(
-            "Share Article",
+            "Share learning item",
             icon="share",
             on_click=lambda: copy_text_to_clipboard(
                 text=source_url or f"/explore/articles/{aid}",

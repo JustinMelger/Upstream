@@ -51,9 +51,32 @@ Execution slices:
   - [x] Ensure icon-only actions expose clear ARIA labels and visible tooltips/text hints where needed.
 - [ ] Slice 10.5: visual quality gate hardening
   - [ ] Commit stable visual baselines and enable strict visual-regression enforcement in CI (`11D` remaining item).
+  - [ ] Deferred: explicit user decision on 2026-03-09 to skip strict visual-baseline enforcement for now; keep this item queued.
+- [ ] Slice 10.6: learning-item unification (`video` + `course` + `article`)
+  - [x] Naming foundation: use `Learning item` as canonical shared UI term for course/article surfaces.
+  - [x] Unified UI mapping: add shared view-model contract with `learning_item_type` (`video`, `article`, `course`, `doc`).
+  - [x] Share flow consolidation: merge `/share/course` + `/share/article` into `/share/item` and keep route redirects.
+  - [x] Type-tag system: show compact content-type tags (`Video`, `Article`) on cards + detail surfaces.
+  - [x] Explore simplification: keep one scalable Learning Items catalog section (no duplicated course/article rails).
+  - [x] Copy/IA cleanup: remove mixed wording drift (`Share course` vs `Share article`) across routes and labels.
+  - [x] Compatibility + telemetry: preserve old links and add tracking for old-route usage during migration.
+- [ ] Slice 10.7: learning-item subtype completion
+  - [ ] Lock the initial subtype taxonomy to `video|course|article` and document `Learning item` as the primary shareable object.
+  - [ ] Add URL/provider-based subtype detection so YouTube links map to `video`, Udemy links map to `course`, and generic written links map to `article` unless a stronger rule exists.
+  - [ ] Extend `/share/item` to support explicit subtype selection and auto-detection while preserving compatibility redirects from `/share/course` and `/share/article`.
+  - [ ] Restore course share validation and field parity on the new share page, especially the required-description behavior.
+  - [ ] Rework Explore learning-item rendering so available videos, courses, and articles remain visible in the default state rather than being hidden by naive concatenation.
+  - [ ] Add focused tests for subtype detection, `/share/item` publish behavior, Explore mixed rendering, and compatibility route contracts.
 
 Validation and acceptance criteria:
 - [ ] Core pages (`Home`, `Explore`, detail pages) use one consistent typography/spacing/component language.
+- [ ] Shared content surfaces use one consistent `Learning item` terminology model without course/article naming drift.
+- [ ] Learning-item subtype taxonomy is stable and explicit:
+  - [ ] YouTube links classify as `video`.
+  - [ ] Udemy links classify as `course`.
+  - [ ] Generic written links classify as `article` unless a stronger rule exists.
+  - [ ] `/share/item` supports explicit subtype selection and successful publish flows for `video`, `course`, and `article`.
+  - [ ] Explore uses one learning-item model without hiding one available subtype behind another in the default view.
 - [ ] Interaction transitions are present, subtle, and consistent (no abrupt state jumps on major list/filter/card updates).
 - [ ] First-time clarity goals are measurably improved:
   - [x] no ambiguous empty-state next steps on primary pages.
@@ -66,6 +89,7 @@ Tracking:
 - [ ] Update roadmap checkboxes for completed `11A/11C/11D/11E` UX-style items at sprint close.
 - [ ] Record before/after screenshots for `Home`, `Explore`, and one detail page variant in CI artifacts.
 - [ ] Add a short design-review log section in this file (decision, rationale, affected pages/components).
+- [ ] Add/maintain focused regression coverage for `/share/item`, subtype detection, and Explore mixed learning-item visibility rather than broad new snapshot churn.
 
 ### Sprint 10 Design-Review Log (2026-03-07)
 Reference checklist: `docs/ui_system.md`
@@ -96,6 +120,10 @@ Reference checklist: `docs/ui_system.md`
 - Defer (post Sprint 10 unless time remains):
   - [ ] Full strict visual-baseline CI enforcement (`11D` final open checkbox).
   - [ ] Extended chart/table interaction features (sorting/filter controls on analytics blocks).
+
+- Decision (2026-03-09): canonicalize share to `/share/item` while keeping explicit type choices at entry points.
+  - Rationale: reduce implementation complexity and route sprawl without sacrificing user clarity in “what am I sharing?”
+  - Affected: `frontend/ui/nicegui/pages/share/*`, `frontend/ui/nicegui/pages/explore/*`, route/test contracts, terminology copy.
 
 ## Sprint 1 — IA foundation (11E-first)
 - [x] Complete `11E.0` instrumentation baseline for first-action and nav/search events.

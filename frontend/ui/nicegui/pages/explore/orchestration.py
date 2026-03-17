@@ -105,6 +105,29 @@ async def load_explore_articles_background(
         refresh_ui()
 
 
+async def load_explore_videos_background(
+    *,
+    state: ExplorePageState,
+    videos_controller: Any,
+    refresh_ui: Callable[..., Any],
+    notify_warning: Callable[[str], None],
+) -> None:
+    """Best-effort video load that should not block course rendering."""
+    if state.videos_loading:
+        return
+
+    state.videos_loading = True
+    refresh_ui()
+    try:
+        state.videos = list(await asyncio.wait_for(videos_controller.load_list(), timeout=6.0) or [])
+    except (ApiError, TimeoutError) as exc:
+        state.videos = []
+        notify_warning(str(exc))
+    finally:
+        state.videos_loading = False
+        refresh_ui()
+
+
 async def set_explore_tracking_status(
     *,
     state: ExplorePageState,

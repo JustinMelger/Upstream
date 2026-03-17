@@ -16,10 +16,8 @@ from frontend.ui.nicegui.pages.explore.state import ExplorePageState
 class ExploreSectionsUiControls:
     """UI-only controls/state consumed by Explore section rendering."""
 
-    course_category: str
-    on_set_course_category: Callable[[str], None]
-    courses_visible_limit: int
-    on_show_more_courses: Callable[[], None]
+    learning_items_visible_limit: int
+    on_show_more_learning_items: Callable[[], None]
 
 
 def build_sections_deps(
@@ -57,8 +55,6 @@ def build_sections_deps(
         on_toggle_path_selection=on_toggle_path_selection,
         open_path_details_dialog=on_open_path_details,
         open_article_details=open_explore_article_details,
-        course_category=str(ui_controls.course_category or "all"),
-        on_set_course_category=ui_controls.on_set_course_category,
-        courses_visible_limit=int(ui_controls.courses_visible_limit or 8),
-        on_show_more_courses=ui_controls.on_show_more_courses,
+        learning_items_visible_limit=int(ui_controls.learning_items_visible_limit or 8),
+        on_show_more_learning_items=ui_controls.on_show_more_learning_items,
     )

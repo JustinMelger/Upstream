@@ -16,7 +16,7 @@ from frontend.ui.nicegui.core.navigation import build_activity_tab_link
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.activity.route_init import resolve_activity_tab
-from frontend.ui.nicegui.pages.activity.ui_glue import target_url
+from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views
 from frontend.ui.nicegui.pages.teams.controller import TeamsPageController
 from frontend.ui.nicegui.pages.teams.sections import (
     render_inbox_activity,
@@ -172,11 +172,17 @@ class _TeamsPageView:
             current_tab = self._current_tab()
             if current_tab == "inbox":
                 ui.label("Inbox").classes("text-sm font-semibold")
-                render_inbox_activity(inbox_rows=self.state.inbox_rows, on_open_target=self.open_activity_target)
+                render_inbox_activity(
+                    inbox_rows=build_activity_event_views(events=self.state.inbox_rows),
+                    on_open_target=self.open_activity_target,
+                )
                 return
             if current_tab == "team":
                 ui.label("Team activity").classes("text-sm font-semibold")
-                render_team_activity(activity_rows=self.state.activity_rows, on_open_target=self.open_activity_target)
+                render_team_activity(
+                    activity_rows=build_activity_event_views(events=self.state.activity_rows),
+                    on_open_target=self.open_activity_target,
+                )
                 return
 
             ui.label("Members").classes("text-sm font-semibold")
@@ -303,8 +309,8 @@ class _TeamsPageView:
             safe_notify("Member removed.", type="positive")
         await self.refresh_selected_team()
 
-    def open_activity_target(self, target_type: str, target_id: int) -> None:
-        ui.navigate.to(target_url(target_type=str(target_type), target_id=int(target_id)))
+    def open_activity_target(self, target: Any) -> None:
+        ui.navigate.to(str(target.open_url))
 
     @guard_ui_action(title="Switch tab failed")
     async def on_tab_change(self, *_args: Any) -> None:

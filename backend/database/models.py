@@ -97,6 +97,20 @@ class ArticleRecord:
 
 
 @dataclass(frozen=True)
+class VideoRecord:
+    """Shared video row representation."""
+
+    id: int
+    title: str
+    description: str
+    provider: str | None
+    category: str | None
+    url: str
+    created_by: str
+    created_at: str
+
+
+@dataclass(frozen=True)
 class CourseReviewRecord:
     """Course review row representation."""
 

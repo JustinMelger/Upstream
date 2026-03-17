@@ -337,6 +337,25 @@ Execution sequencing (prioritized):
 - [x] Terminology audit: align `Insights` vs `Stats` and reserve `Stats` for analytics surfaces.
 - [x] Context subtitles: add a short purpose subtitle under each primary page title.
 - [x] Cross-page consistency: use the same language model across course/path/article cards and detail dialogs.
+- [x] Learning-item unification: adopt `Learning item` as the canonical shared UX term for shareable content while keeping subtype clarity.
+- [x] Share-flow simplification: merge course/article share surfaces into one `/share/item` experience with type-aware fields and preview.
+- [x] Type signaling: add compact type badges (`Video`, `Article`) on cards and detail headers to preserve content clarity after naming unification.
+- [x] Explore IA simplification: treat courses/articles as one scalable Learning Items catalog with shared filters/sort and no duplicate rails.
+- [x] Compatibility migration: keep `/share/course` and `/share/article` as compatibility routes that redirect to `/share/item`.
+- [x] Telemetry + guardrails: instrument migration usage and add tests to prevent terminology regressions.
+
+Canonical product model for the next implementation phase:
+- `Learning item` is the primary shareable unit in the product.
+- Initial supported learning-item subtypes are `video` (YouTube links), `course` (Udemy / structured course platforms), and `article` (written content).
+- `Path` remains a separate object that organizes multiple learning items.
+- `resource` is not the primary user-facing noun; reserve it only for internal/helper contexts if needed.
+
+Implementation plan for the remaining learning-item unification work:
+- Taxonomy alignment: stop treating all course-backed rows as `video`; subtype should come from source/provider detection and explicit type selection.
+- Share-flow completion: extend `/share/item` to support `?type=video|course|article`, preserve validation parity from the old course/article flows, and keep compatibility redirects.
+- Explore completion: replace naive course-first/article-second concatenation with intentional mixed discovery behavior that preserves visible subtype diversity and keeps subtype chips explicit.
+- Shared frontend contract: introduce one reusable learning-item card/view-model abstraction for Explore and later team/profile/social surfaces.
+- Backend-adjacent support: extend URL metadata suggestions to emit a suggested learning-item subtype that distinguishes YouTube, Udemy, and article-like links without requiring table consolidation.
 
 #### Phase 11E.7 — First-Time User Clarity Pass
 - [x] Onboarding intro: add lightweight, dismissible 3-step first-login walkthrough.
@@ -375,6 +394,10 @@ Implementation map (routes + files, ordered):
   - Primary files: `frontend/ui/nicegui/components/layout.py`, `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/explore/page.py`, `frontend/ui/nicegui/pages/courses/`, `frontend/ui/nicegui/pages/paths/`, `frontend/ui/nicegui/pages/articles/`, `frontend/ui/nicegui/pages/activity/`.
   - Copy + route helper updates: `frontend/ui/nicegui/core/navigation.py`, `frontend/ui/nicegui/pages/learning/route_init.py` (or replacement home route init).
   - Test updates for label/route expectations: `tests/frontend/ui/nicegui/pages/login/test_login_page_integration.py`, `tests/frontend/ui/nicegui/pages/home/test_home_page_integration.py`, `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`.
+  - Learning-item unification targets: `frontend/ui/nicegui/pages/share/page.py`, `frontend/ui/nicegui/pages/share/controller.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/explore/view_model.py`, `frontend/ui/nicegui/core/theme.py`, `frontend/ui/nicegui/main.py`.
+  - Redirect + route contract tests: `tests/frontend/ui/nicegui/test_routes.py`, `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`, plus focused page integration checks for `/share/item`.
+  - First implementation-phase defaults: `video|course|article` is the canonical subtype enum, `/share/item?type=video|course|article` is the canonical route contract, and paths remain collections of learning items rather than subtype variants.
+  - Follow-up implementation slices: add URL/provider-based subtype detection, restore `/share/item` course validation parity, preserve available subtype diversity in the default Explore view, and add focused tests for YouTube/Udemy/article classification and share-page behavior.
 - [ ] Phase 11E.7 first-time-user clarity pass:
   - Primary files: add onboarding component (recommended `frontend/ui/nicegui/components/onboarding_intro.py`) and wire in `frontend/ui/nicegui/pages/home/page.py`.
   - Empty-state harmonization targets: `frontend/ui/nicegui/pages/home/sections.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/courses/sections.py`, `frontend/ui/nicegui/pages/paths/sections.py`, `frontend/ui/nicegui/pages/articles/sections.py`.

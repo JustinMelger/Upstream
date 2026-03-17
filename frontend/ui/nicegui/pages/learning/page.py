@@ -237,8 +237,6 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             review_summary_label=lambda row: format_review_summary(row, style="star"),
                             recommendation_summary_label=format_recommendation_summary,
                             nav_actions=nav_actions,
-                            feature_articles=bool(settings.feature_articles),
-                            on_open_articles=lambda: ui.navigate.to("/explore?tab=articles"),
                         )
 
                     return

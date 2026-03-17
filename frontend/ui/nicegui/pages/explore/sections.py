@@ -34,8 +34,12 @@ class ExploreFilterControls:
     author_filter: Any
 
 
-def render_explore_share_dialog(*, on_share_course: Any, on_share_path: Any, on_share_article: Any) -> Any:
+def render_explore_share_dialog(*, on_share_video: Any, on_share_course: Any, on_share_path: Any, on_share_article: Any) -> Any:
     """Render share dialog and return dialog handle."""
+
+    def _close_then_share_video(dialog: Any) -> None:
+        dialog.close()
+        on_share_video()
 
     def _close_then_share_course(dialog: Any) -> None:
         dialog.close()
@@ -56,9 +60,13 @@ def render_explore_share_dialog(*, on_share_course: Any, on_share_path: Any, on_
 
             with ui.column().classes("w-full gap-2 mt-2"):
                 ui.button(
+                    "Share video",
+                    on_click=lambda: _close_then_share_video(share_dialog),
+                ).props("unelevated")
+                ui.button(
                     "Share course",
                     on_click=lambda: _close_then_share_course(share_dialog),
-                ).props("unelevated")
+                ).props("outline")
                 ui.button(
                     "Share path",
                     on_click=lambda: _close_then_share_path(share_dialog),
@@ -77,7 +85,7 @@ def render_explore_topbar(*, initial_tab: str, on_open_share: Any) -> ExploreTop
     with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar w-full gap-2"):
         with ui.row().classes("w-full items-center gap-2"):
             search_input = (
-                ui.input("Search courses, paths, and articles")
+                ui.input("Search courses, videos, paths, and articles")
                 .props("clearable debounce=300 dense")
                 .classes("lp-topbar-search lp-courses-search lp-transition-field")
                 .style("flex: 1")
