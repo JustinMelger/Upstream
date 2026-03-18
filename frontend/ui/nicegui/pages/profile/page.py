@@ -239,9 +239,9 @@ def _render_profile_team_sections(*, ctx: ProfileStatsPageContext) -> None:
             with ui.card().classes("lp-card w-full lp-profile-chart-card"):
                 ui.label("Top contributors this week").classes("lp-profile-card-title")
                 if not contributors:
-                    ui.label("No team contributor data yet. Switch to My stats or invite teammates to get started.").classes(
-                        "lp-profile-muted"
-                    )
+                    ui.label(
+                        "No team contributor data yet. Open Teams to invite teammates or switch to My stats to review your own progress."
+                    ).classes("lp-profile-muted")
                 else:
                     ui.echart(_contributors_chart_option(contributors=contributors)).classes("w-full h-64")
 
@@ -252,9 +252,9 @@ def _render_profile_team_sections(*, ctx: ProfileStatsPageContext) -> None:
             with ui.card().classes("lp-card w-full lp-profile-table-card"):
                 rows = _build_team_stat_rows(team_stats_by_user=ctx.state.team_stats_by_user)
                 if not rows:
-                    ui.label("No team stats available yet. Start tracking courses to populate this table.").classes(
-                        "lp-profile-muted"
-                    )
+                    ui.label(
+                        "No team stats available yet. Open Teams to build your workspace or switch to My stats to review your own activity."
+                    ).classes("lp-profile-muted")
                     return
                 ui.table(
                     columns=[

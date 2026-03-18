@@ -20,15 +20,15 @@ class IntroStep:
 INTRO_STEPS: tuple[IntroStep, IntroStep, IntroStep] = (
     IntroStep(
         title="Track one course",
-        body="Use Track on any course card to start your personal queue.",
+        body="Open Explore and use Track on any course card to start your personal queue.",
     ),
     IntroStep(
         title="Select one path",
-        body="Select a path to unlock milestone progress and your next step.",
+        body="Choose one path in Explore to unlock milestone progress and your next step.",
     ),
     IntroStep(
         title="Review team recommendations",
-        body="Open recommended items and take one action to keep momentum.",
+        body="Open Teams and respond to one shared recommendation to keep momentum.",
     ),
 )
 

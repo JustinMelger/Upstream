@@ -1,4 +1,4 @@
-"""UI sections for the Insights page."""
+"""UI sections for the Home stats surfaces."""
 
 from __future__ import annotations
 
@@ -47,7 +47,9 @@ def render_admin_team_section(*, team_stats_by_user: list[dict[str, Any]], contr
     ui.separator()
     ui.label("Team stats by user").classes("text-lg font-semibold")
     if not team_stats_by_user:
-        ui.label("No user stats yet.").classes("text-sm text-gray-600")
+        ui.label(
+            "No team stats yet. Invite teammates and start sharing learning items to see progress here."
+        ).classes("text-sm text-gray-600")
     else:
         ui.table(
             columns=[
@@ -65,6 +67,8 @@ def render_admin_team_section(*, team_stats_by_user: list[dict[str, Any]], contr
         with ui.card().classes("lp-card grow min-w-[260px]"):
             ui.label("Top contributors").classes("text-md font-semibold")
             if not contributors:
-                ui.label("No contributor data yet.").classes("text-sm text-gray-600")
+                ui.label(
+                    "No contributor activity yet. Shares, reviews, and recommendations will appear here once your team is active."
+                ).classes("text-sm text-gray-600")
             else:
                 ui.echart(contributors_chart_option(contributors)).classes("w-full h-56")

@@ -116,6 +116,7 @@ class _TeamsPageView:
                 teams=self.state.teams,
                 selected_team_id=self.state.selected_team_id,
                 on_open=self.open_team,
+                on_create_team=self.create_team_dialog.open,
             )
 
     def _render_team_detail_view(self) -> None:

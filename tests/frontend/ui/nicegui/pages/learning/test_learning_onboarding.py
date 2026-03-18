@@ -12,6 +12,9 @@ def test_home_intro_has_three_steps() -> None:
     assert len(INTRO_STEPS) == 3
     assert all(str(step.title).strip() for step in INTRO_STEPS)
     assert all(str(step.body).strip() for step in INTRO_STEPS)
+    assert "Explore" in INTRO_STEPS[0].body
+    assert "Explore" in INTRO_STEPS[1].body
+    assert "Teams" in INTRO_STEPS[2].body
 
 
 def test_home_intro_visibility_and_dismiss_persistence() -> None:

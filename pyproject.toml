@@ -80,9 +80,9 @@ max-complexity = 19
 [tool.ruff.lint.pylint]
 # Baseline repo ratchet (v7): tightened after service/control-flow extraction.
 max-args = 10
-max-branches = 14
-max-returns = 8
-max-statements = 70
+max-branches = 12
+max-returns = 7
+max-statements = 67
 
 [tool.mypy]
 python_version = "3.13"

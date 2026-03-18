@@ -141,6 +141,112 @@ def _tracked_status_tone(*, status: str) -> str:
     return "lp-home-status--idle"
 
 
+def _format_duration_hours(duration_raw: Any) -> str:
+    """Return compact duration text for tracked-course metadata."""
+    if duration_raw is None:
+        return ""
+    try:
+        duration_value = float(duration_raw)
+    except (TypeError, ValueError):
+        return ""
+    if duration_value <= 0:
+        return ""
+    if duration_value.is_integer():
+        return f"{int(duration_value)}h"
+    return f"{duration_value:.1f}h"
+
+
+def _render_tracked_course_card(
+    *,
+    index: int,
+    course: dict[str, Any],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+    course_review_summary_by_id: dict[int, dict[str, Any]],
+    tracking_label_fn: Any,
+    on_view_course: Any,
+    on_review_course: Any,
+    on_set_status: Any,
+    on_clear_status: Any,
+) -> None:
+    """Render one tracked-course card in the Home dashboard."""
+    course_id = int(course.get("id") or 0)
+    tracking_row = tracking_by_course_id.get(course_id) or {}
+    status = str(tracking_row.get("status") or "")
+    progress_pct = _tracked_progress_percent(status=status)
+    tone_class = _tracked_status_tone(status=status)
+    teammates_active = int((course_review_summary_by_id.get(course_id) or {}).get("review_count") or 0)
+    source_url = str(course.get("url") or "").strip()
+    card_tier_class = "lp-track-card--primary" if index == 0 else "lp-track-card--secondary"
+    card_size_class = "lp-track-card--major" if index == 0 else "lp-track-card--minor"
+
+    with ui.element("div").classes(f"lp-track-card {card_tier_class} {card_size_class} w-full"):
+        with ui.row().classes("w-full items-start justify-between gap-3 lp-track-head-row"):
+            with ui.row().classes("items-start gap-2 lp-track-identity"):
+                ui.icon("school").classes("lp-track-avatar")
+                with ui.column().classes("gap-0 lp-track-title-block"):
+                    ui.label(str(course.get("title") or "")).classes("text-sm font-semibold lp-track-title")
+                    bits = [
+                        bit
+                        for bit in [
+                            str(course.get("provider") or "").strip(),
+                            _format_duration_hours(course.get("duration_hours")),
+                            str(course.get("level") or "").strip(),
+                        ]
+                        if bit
+                    ]
+                    if bits:
+                        ui.label(" · ".join(bits)).classes("text-xs lp-home-track-meta").style("color: var(--lp-muted)")
+
+            with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group"):
+                if source_url:
+                    ui.button("Continue course", on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True)).props(
+                        "dense outline"
+                    ).classes("lp-track-continue-btn")
+                else:
+                    ui.button("Continue course", on_click=on_view_course(course_id)).props("dense outline").classes(
+                        "lp-track-continue-btn"
+                    )
+
+                overflow_menu = apply_icon_button_a11y(
+                    ui.dropdown_button("", icon="more_horiz", auto_close=True).props("dense outline").classes(
+                        "lp-home-row-overflow"
+                    ),
+                    label="Open tracking actions",
+                    tooltip="Tracking actions",
+                )
+                with overflow_menu:
+
+                    async def _clear_status_click(_cid: int = course_id) -> None:
+                        await on_clear_status(_cid)
+
+                    def _set_status_handler(*, key: str, cid: int) -> Any:
+                        async def _run() -> None:
+                            await on_set_status(cid, key)
+
+                        return _run
+
+                    ui.menu_item("View", on_click=on_view_course(course_id))
+                    ui.menu_item("Review", on_click=on_review_course(course_id))
+                    ui.separator()
+                    ui.menu_item("Not tracked", on_click=_clear_status_click)
+                    for key, label in TRACKING_STATUS_OPTIONS:
+                        ui.menu_item(label, on_click=_set_status_handler(key=key, cid=course_id))
+
+        with ui.row().classes("w-full items-center gap-2 lp-track-social-line"):
+            with ui.row().classes("items-center gap-1"):
+                ui.icon("person").classes("text-[12px] lp-home-track-meta")
+                ui.icon("person").classes("text-[12px] lp-home-track-meta")
+                ui.icon("person").classes("text-[12px] lp-home-track-meta")
+            ui.label(f"{max(0, teammates_active)} teammates active").classes("text-xs lp-home-track-meta")
+
+        with ui.row().classes(f"w-full items-center gap-2 lp-track-progress-meta {tone_class}"):
+            ui.label(tracking_label_fn(status)).classes("text-xs lp-track-status-text")
+            ui.linear_progress(float(progress_pct) / 100.0, show_value=False).classes(
+                "grow lp-home-track-progress lp-track-progress-inline"
+            )
+            ui.label(f"{progress_pct}%").classes("text-xs font-semibold lp-home-track-progress-value")
+
+
 def render_tracked_courses_section(
     *,
     tracked_courses: list[dict[str, Any]],
@@ -167,92 +273,18 @@ def render_tracked_courses_section(
 
         ui.separator().classes("lp-home-track-separator")
         with ui.element("div").classes("lp-tracked-grid"):
-            for idx, c in enumerate(tracked_courses[:tracked_visible]):
-                cid = int(c.get("id") or 0)
-                tr = tracking_by_course_id.get(cid) or {}
-                status = str(tr.get("status") or "")
-                progress_pct = _tracked_progress_percent(status=status)
-                tone_class = _tracked_status_tone(status=status)
-                teammates_active = int((course_review_summary_by_id.get(cid) or {}).get("review_count") or 0)
-                source_url = str(c.get("url") or "").strip()
-                card_tier_class = "lp-track-card--primary" if idx == 0 else "lp-track-card--secondary"
-                card_size_class = "lp-track-card--major" if idx == 0 else "lp-track-card--minor"
-
-                with ui.element("div").classes(f"lp-track-card {card_tier_class} {card_size_class} w-full"):
-                    with ui.row().classes("w-full items-start justify-between gap-3 lp-track-head-row"):
-                        with ui.row().classes("items-start gap-2 lp-track-identity"):
-                            ui.icon("school").classes("lp-track-avatar")
-                            with ui.column().classes("gap-0 lp-track-title-block"):
-                                ui.label(str(c.get("title") or "")).classes("text-sm font-semibold lp-track-title")
-                                provider = str(c.get("provider") or "").strip()
-                                duration_raw = c.get("duration_hours")
-                                duration = ""
-                                if duration_raw is not None:
-                                    try:
-                                        duration_value = float(duration_raw)
-                                        if duration_value > 0:
-                                            duration = (
-                                                f"{int(duration_value)}h"
-                                                if duration_value.is_integer()
-                                                else f"{duration_value:.1f}h"
-                                            )
-                                    except (TypeError, ValueError):
-                                        duration = ""
-                                level = str(c.get("level") or "").strip()
-                                bits = [b for b in [provider, duration, level] if b]
-                                if bits:
-                                    ui.label(" · ".join(bits)).classes("text-xs lp-home-track-meta").style(
-                                        "color: var(--lp-muted)"
-                                    )
-
-                        with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group"):
-                            if source_url:
-                                ui.button(
-                                    "Continue course", on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True)
-                                ).props("dense outline").classes("lp-track-continue-btn")
-                            else:
-                                ui.button("Continue course", on_click=on_view_course(cid)).props("dense outline").classes(
-                                    "lp-track-continue-btn"
-                                )
-
-                            overflow_menu = apply_icon_button_a11y(
-                                ui.dropdown_button("", icon="more_horiz", auto_close=True)
-                                .props("dense outline")
-                                .classes("lp-home-row-overflow"),
-                                label="Open tracking actions",
-                                tooltip="Tracking actions",
-                            )
-                            with overflow_menu:
-
-                                async def _clear_status_click(_cid: int = cid) -> None:
-                                    await on_clear_status(_cid)
-
-                                def _set_status_handler(*, key: str, course_id: int) -> Any:
-                                    async def _run() -> None:
-                                        await on_set_status(course_id, key)
-
-                                    return _run
-
-                                ui.menu_item("View", on_click=on_view_course(cid))
-                                ui.menu_item("Review", on_click=on_review_course(cid))
-                                ui.separator()
-                                ui.menu_item("Not tracked", on_click=_clear_status_click)
-                                for key, label in TRACKING_STATUS_OPTIONS:
-                                    ui.menu_item(label, on_click=_set_status_handler(key=key, course_id=cid))
-
-                    with ui.row().classes("w-full items-center gap-2 lp-track-social-line"):
-                        with ui.row().classes("items-center gap-1"):
-                            ui.icon("person").classes("text-[12px] lp-home-track-meta")
-                            ui.icon("person").classes("text-[12px] lp-home-track-meta")
-                            ui.icon("person").classes("text-[12px] lp-home-track-meta")
-                        ui.label(f"{max(0, teammates_active)} teammates active").classes("text-xs lp-home-track-meta")
-
-                    with ui.row().classes(f"w-full items-center gap-2 lp-track-progress-meta {tone_class}"):
-                        ui.label(tracking_label_fn(status)).classes("text-xs lp-track-status-text")
-                        ui.linear_progress(float(progress_pct) / 100.0, show_value=False).classes(
-                            "grow lp-home-track-progress lp-track-progress-inline"
-                        )
-                        ui.label(f"{progress_pct}%").classes("text-xs font-semibold lp-home-track-progress-value")
+            for idx, course in enumerate(tracked_courses[:tracked_visible]):
+                _render_tracked_course_card(
+                    index=idx,
+                    course=course,
+                    tracking_by_course_id=tracking_by_course_id,
+                    course_review_summary_by_id=course_review_summary_by_id,
+                    tracking_label_fn=tracking_label_fn,
+                    on_view_course=on_view_course,
+                    on_review_course=on_review_course,
+                    on_set_status=on_set_status,
+                    on_clear_status=on_clear_status,
+                )
 
 
 def render_selected_paths_section(
@@ -599,7 +631,7 @@ def render_conversations_section(
             empty_copy = (
                 "No conversations are waiting right now. Start with your pending reviews."
                 if total_pending_reviews > 0
-                else "No conversations are waiting right now. Share a course or path to start team activity."
+                else "No conversations are waiting right now. Share a learning item or path to start team activity."
             )
             ui.label(empty_copy).classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
             return

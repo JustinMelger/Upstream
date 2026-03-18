@@ -178,10 +178,10 @@ Reference checklist: `docs/ui_system.md`
   - [x] Ensure each key empty state has exactly one primary action.
   - [x] Ensure no primary page loads without an unambiguous next step.
   - [ ] Concrete `11E.7` acceptance slices:
-    - [ ] Audit `Home`, `Explore`, `Teams`, and `Profile` empty states against the current IA and keep one obvious next step per page.
-    - [ ] Recheck onboarding copy and hints against canonical routes (`/home`, `/explore`, `/teams`, `/share/item`, `/share/path`) and remove stale wording.
-    - [ ] Verify no-team and no-content states clearly route users to `Teams` and `Explore` without mixed team/share terminology.
-    - [ ] Add focused integration coverage for “one clear next action” on key first-use empty states.
+    - [x] Audit `Home`, `Explore`, `Teams`, and `Profile` empty states against the current IA and keep one obvious next step per page.
+    - [x] Recheck onboarding copy and hints against canonical routes (`/home`, `/explore`, `/teams`, `/share/item`, `/share/path`) and remove stale wording.
+    - [x] Verify no-team and no-content states clearly route users to `Teams` and `Explore` without mixed team/share terminology.
+    - [x] Add focused integration coverage for “one clear next action” on key first-use empty states.
 - [ ] Complete open Share-flow UX actions from `11A.3`:
   - [x] Trigger URL metadata suggestion on paste/blur with debounce (keep manual suggest button).
   - [x] Add inline “suggested vs edited” indicators for autofilled fields.
