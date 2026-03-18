@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from nicegui import app, ui
@@ -42,6 +43,16 @@ from frontend.ui.nicegui.pages.learning.view_model import (
     build_recently_shared_in_teams,
     build_shared_tab_view,
 )
+
+
+@dataclass(slots=True)
+class LearningPageContext:
+    """Bound page dependencies for the Home route."""
+
+    username: str
+    controller: LearningPageController
+    nav_actions: LearningNavigationActions
+    state: LearningPageState
 
 
 def _next_uncompleted_course_from_selected_paths(
@@ -99,6 +110,162 @@ def _next_from_tracked_courses(
     return None
 
 
+def _make_recently_shared_item_opener() -> Any:
+    """Build navigation callback for recently shared mixed-item rows."""
+    def _open_recently_shared_item(row: dict[str, Any]) -> None:
+        item_id = int(row.get("id") or 0)
+        item_type = str(row.get("type") or "")
+        if item_type == "course":
+            ui.navigate.to(f"/explore/courses/{item_id}")
+            return
+        if item_type == "video":
+            ui.navigate.to(f"/explore/videos/{item_id}")
+            return
+        if item_type == "path":
+            ui.navigate.to(f"/explore/paths/{item_id}")
+            return
+        ui.navigate.to(f"/explore/articles/{item_id}")
+
+    return _open_recently_shared_item
+
+
+def _render_intro_panel() -> None:
+    """Render dismissible onboarding intro when applicable."""
+    @ui.refreshable
+    def intro_panel() -> None:
+        if not should_show_home_intro(storage_user=app.storage.user):
+            return
+        with ui.card().classes("lp-card w-full"):
+            ui.label("Welcome to Home").classes("text-md font-semibold")
+            ui.label("Start here in three quick steps.").classes("text-sm").style("color: var(--lp-muted)")
+            for idx, step in enumerate(INTRO_STEPS, start=1):
+                with ui.row().classes("items-start gap-2 w-full"):
+                    ui.label(str(idx)).classes("lp-chip lp-chip--sky")
+                    with ui.column().classes("gap-0"):
+                        ui.label(step.title).classes("text-sm font-semibold")
+                        ui.label(step.body).classes("text-xs").style("color: var(--lp-muted)")
+
+            def _dismiss_intro() -> None:
+                dismiss_home_intro(storage_user=app.storage.user)
+                intro_panel.refresh()
+
+            with ui.row().classes("justify-end w-full"):
+                ui.button("Dismiss", on_click=_dismiss_intro).props("dense outline")
+
+    intro_panel()
+
+
+def _render_empty_home_state(*, on_refresh: Any) -> None:
+    """Render fallback UI when home data is unavailable."""
+    with ui.element("div").classes("w-full lp-refresh-region"):
+        ui.label("Home data is unavailable right now.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("Refresh to reload your next actions and learning progress.").classes("text-sm").style(
+            "color: var(--lp-muted)"
+        )
+        ui.button("Refresh home", on_click=on_refresh).props("dense outline")
+
+
+def _render_shared_view(*, state: LearningPageState, nav_actions: LearningNavigationActions) -> None:
+    """Render the shared tab content."""
+    shared_vm = build_shared_tab_view(data=state.data)
+    with ui.element("div").classes("w-full lp-refresh-region"):
+        render_shared_tab(
+            shared_vm=shared_vm,
+            review_summary_label=lambda row: format_review_summary(row, style="star"),
+            recommendation_summary_label=format_recommendation_summary,
+            nav_actions=nav_actions,
+        )
+
+
+def _resolve_learning_tab_context(
+    *,
+    page_ctx: LearningPageContext,
+    refresh_content: Any,
+    on_set_tracking_status: Any,
+    on_clear_tracking_status: Any,
+) -> LearningTabContext:
+    """Build the bundled learning-tab context from page state."""
+    learning_vm = build_learning_tab_view(
+        data=page_ctx.state.data,
+        dismissed_recommended_course_ids=page_ctx.state.dismissed_recommended_course_ids,
+        dismissed_recommended_path_ids=page_ctx.state.dismissed_recommended_path_ids,
+    )
+    recently_shared_in_teams = build_recently_shared_in_teams(
+        data=page_ctx.state.data,
+        username=page_ctx.username,
+        limit=6,
+    )
+
+    next_course = _next_uncompleted_course_from_selected_paths(
+        selected_paths=learning_vm.selected_paths,
+        path_details_by_id=learning_vm.path_details_by_id,
+        tracking_by_course_id=learning_vm.tracking_by_course_id,
+    )
+    if next_course is None:
+        fallback = _next_from_tracked_courses(
+            tracked_courses=learning_vm.tracked_courses,
+            tracking_by_course_id=learning_vm.tracking_by_course_id,
+        )
+        if fallback is not None:
+            next_course = {"path_id": 0, "path_name": "", "course": fallback}
+
+    first_course_review_action: Any = lambda: None
+    if learning_vm.pending_course_review_ids:
+        first_course_review_action = page_ctx.nav_actions.make_course_review_action(int(learning_vm.pending_course_review_ids[0]))
+    first_path_review_action: Any = lambda: None
+    if learning_vm.pending_path_review_ids:
+        first_path_review_action = page_ctx.nav_actions.make_path_review_action(int(learning_vm.pending_path_review_ids[0]))
+
+    return LearningTabContext(
+        learning_vm=learning_vm,
+        state=page_ctx.state,
+        next_course=next_course,
+        first_course_review_action=first_course_review_action,
+        first_path_review_action=first_path_review_action,
+        review_summary_label=lambda row: format_review_summary(row, style="star"),
+        tracking_label_fn=tracking_label,
+        progress_for_path_detail=compute_path_progress,
+        nav_actions=page_ctx.nav_actions,
+        on_set_tracking_status=on_set_tracking_status,
+        on_clear_tracking_status=on_clear_tracking_status,
+        on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
+        on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
+        on_open_selected_paths=lambda: ui.navigate.to("/explore?tab=paths"),
+        on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
+        recently_shared_in_teams=recently_shared_in_teams,
+        on_open_recently_shared_item=_make_recently_shared_item_opener(),
+        on_load_more_tracked=lambda: load_more_tracked(
+            state=page_ctx.state,
+            total_count=len(learning_vm.tracked_courses),
+            refresh=refresh_content,
+        ),
+        on_load_more_selected=lambda: load_more_selected(
+            state=page_ctx.state,
+            total_count=len(learning_vm.selected_paths),
+            refresh=refresh_content,
+        ),
+    )
+
+
+def _render_learning_view(
+    *,
+    page_ctx: LearningPageContext,
+    refresh_content: Any,
+    on_set_tracking_status: Any,
+    on_clear_tracking_status: Any,
+) -> None:
+    """Render the learning tab content."""
+    with ui.element("div").classes("w-full lp-refresh-region"):
+        render_learning_tab(
+            ctx=_resolve_learning_tab_context(
+                page_ctx=page_ctx,
+                refresh_content=refresh_content,
+                on_set_tracking_status=on_set_tracking_status,
+                on_clear_tracking_status=on_clear_tracking_status,
+            )
+        )
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register the `/home` route."""
 
@@ -110,56 +277,58 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
         render_shell(title="Home", store=store, api=api)
         username = str(user.get("username") or "")
-        controller = LearningPageController(api=api)
-        nav_actions = LearningNavigationActions(
+        page_ctx = LearningPageContext(
             username=username,
-            build_course_navigation_url=lambda course_id, view: build_courses_deep_link(
-                course_id=int(course_id),
-                view=str(view),
+            controller=LearningPageController(api=api),
+            nav_actions=LearningNavigationActions(
+                username=username,
+                build_course_navigation_url=lambda course_id, view: build_courses_deep_link(
+                    course_id=int(course_id),
+                    view=str(view),
+                ),
+                build_path_navigation_url=lambda path_id, view: build_paths_deep_link(
+                    path_id=int(path_id),
+                    view=str(view),
+                ),
             ),
-            build_path_navigation_url=lambda path_id, view: build_paths_deep_link(
-                path_id=int(path_id),
-                view=str(view),
-            ),
+            state=LearningPageState(),
         )
-
-        state = LearningPageState()
         request = getattr(ui.context.client, "request", None)
         initial_view = resolve_learning_initial_view(request=request)
 
         @guard_ui_action(title="Load failed")
         async def _load(*, reset_visibility: bool = True) -> None:
-            if state.loading:
+            if page_ctx.state.loading:
                 return
-            state.loading = True
-            state.tracked_visible, state.selected_visible = compute_next_visibility(
+            page_ctx.state.loading = True
+            page_ctx.state.tracked_visible, page_ctx.state.selected_visible = compute_next_visibility(
                 reset_visibility=bool(reset_visibility),
-                page_size=int(state.page_size),
-                tracked_visible=int(state.tracked_visible),
-                selected_visible=int(state.selected_visible),
+                page_size=int(page_ctx.state.page_size),
+                tracked_visible=int(page_ctx.state.tracked_visible),
+                selected_visible=int(page_ctx.state.selected_visible),
             )
             content.refresh()
             try:
-                state.data = await controller.load_page_data(
+                page_ctx.state.data = await page_ctx.controller.load_page_data(
                     username=username,
                     include_articles=bool(settings.feature_articles),
                 )
             except ApiError as exc:
                 safe_notify(str(exc), type="negative")
-                state.data = {}
+                page_ctx.state.data = {}
             finally:
-                state.loading = False
+                page_ctx.state.loading = False
                 content.refresh()
 
         @guard_ui_action(title="Update tracking failed")
         async def _set_tracking_status(course_id: int, status: str) -> None:
-            await controller.set_tracking_status(course_id=int(course_id), status=str(status))
+            await page_ctx.controller.set_tracking_status(course_id=int(course_id), status=str(status))
             safe_notify(tracking_set_message(status=str(status)), type="positive")
             await _load(reset_visibility=False)
 
         @guard_ui_action(title="Update tracking failed")
         async def _clear_tracking_status(course_id: int) -> None:
-            await controller.clear_tracking_status(course_id=int(course_id))
+            await page_ctx.controller.clear_tracking_status(course_id=int(course_id))
             safe_notify(tracking_cleared_message(), type="positive")
             await _load(reset_visibility=False)
 
@@ -173,28 +342,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 subtitle="Continue your next course or respond to team feedback.",
             )
 
-            @ui.refreshable
-            def intro_panel() -> None:
-                if not should_show_home_intro(storage_user=app.storage.user):
-                    return
-                with ui.card().classes("lp-card w-full"):
-                    ui.label("Welcome to Home").classes("text-md font-semibold")
-                    ui.label("Start here in three quick steps.").classes("text-sm").style("color: var(--lp-muted)")
-                    for idx, step in enumerate(INTRO_STEPS, start=1):
-                        with ui.row().classes("items-start gap-2 w-full"):
-                            ui.label(str(idx)).classes("lp-chip lp-chip--sky")
-                            with ui.column().classes("gap-0"):
-                                ui.label(step.title).classes("text-sm font-semibold")
-                                ui.label(step.body).classes("text-xs").style("color: var(--lp-muted)")
-
-                    def _dismiss_intro() -> None:
-                        dismiss_home_intro(storage_user=app.storage.user)
-                        intro_panel.refresh()
-
-                    with ui.row().classes("justify-end w-full"):
-                        ui.button("Dismiss", on_click=_dismiss_intro).props("dense outline")
-
-            intro_panel()
+            _render_intro_panel()
 
             with ui.column().classes("lp-topbar lp-sticky-controls lp-home-topbar w-full gap-2"):
                 with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-home-topbar-row"):
@@ -207,7 +355,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                         ui.button("Refresh", on_click=_load).props("dense outline no-caps")
 
             def _navigate_tab() -> None:
-                nav_actions.navigate_tab(str(view_filter.value or "learning"))
+                page_ctx.nav_actions.navigate_tab(str(view_filter.value or "learning"))
 
             def _on_view_tab_change(*_: Any) -> None:
                 _navigate_tab()
@@ -217,112 +365,27 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
             @ui.refreshable
             def content() -> None:
-                if state.loading:
+                if page_ctx.state.loading:
                     render_card_skeletons(count=4)
                     return
 
-                if not state.data:
-                    with ui.element("div").classes("w-full lp-refresh-region"):
-                        ui.label("Home data is unavailable right now.").classes("text-sm").style("color: var(--lp-muted)")
-                        ui.label("Refresh to reload your next actions and learning progress.").classes("text-sm").style(
-                            "color: var(--lp-muted)"
-                        )
-                        ui.button("Refresh home", on_click=_load).props("dense outline")
+                if not page_ctx.state.data:
+                    _render_empty_home_state(on_refresh=_load)
                     return
 
                 if str(view_filter.value or "learning") == "shared":
-                    shared_vm = build_shared_tab_view(data=state.data)
-                    with ui.element("div").classes("w-full lp-refresh-region"):
-                        render_shared_tab(
-                            shared_vm=shared_vm,
-                            review_summary_label=lambda row: format_review_summary(row, style="star"),
-                            recommendation_summary_label=format_recommendation_summary,
-                            nav_actions=nav_actions,
-                        )
-
+                    _render_shared_view(state=page_ctx.state, nav_actions=page_ctx.nav_actions)
                     return
-
-                # Learning view.
-                learning_vm = build_learning_tab_view(
-                    data=state.data,
-                    dismissed_recommended_course_ids=state.dismissed_recommended_course_ids,
-                    dismissed_recommended_path_ids=state.dismissed_recommended_path_ids,
-                )
-                recently_shared_in_teams = build_recently_shared_in_teams(
-                    data=state.data,
-                    username=username,
-                    limit=6,
-                )
-
-                next_course = _next_uncompleted_course_from_selected_paths(
-                    selected_paths=learning_vm.selected_paths,
-                    path_details_by_id=learning_vm.path_details_by_id,
-                    tracking_by_course_id=learning_vm.tracking_by_course_id,
-                )
-                if next_course is None:
-                    fallback = _next_from_tracked_courses(
-                        tracked_courses=learning_vm.tracked_courses,
-                        tracking_by_course_id=learning_vm.tracking_by_course_id,
-                    )
-                    if fallback is not None:
-                        next_course = {"path_id": 0, "path_name": "", "course": fallback}
-
-                first_course_review_action: Any = lambda: None
-                if learning_vm.pending_course_review_ids:
-                    first_course_review_action = nav_actions.make_course_review_action(
-                        int(learning_vm.pending_course_review_ids[0])
-                    )
-                first_path_review_action: Any = lambda: None
-                if learning_vm.pending_path_review_ids:
-                    first_path_review_action = nav_actions.make_path_review_action(int(learning_vm.pending_path_review_ids[0]))
 
                 def _refresh_content() -> None:
                     content.refresh()
 
-                with ui.element("div").classes("w-full lp-refresh-region"):
-                    render_learning_tab(
-                        ctx=LearningTabContext(
-                            learning_vm=learning_vm,
-                            state=state,
-                            next_course=next_course,
-                            first_course_review_action=first_course_review_action,
-                            first_path_review_action=first_path_review_action,
-                            review_summary_label=lambda row: format_review_summary(row, style="star"),
-                            tracking_label_fn=tracking_label,
-                            progress_for_path_detail=compute_path_progress,
-                            nav_actions=nav_actions,
-                            on_set_tracking_status=_set_tracking_status,
-                            on_clear_tracking_status=_clear_tracking_status,
-                            on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
-                            on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
-                            on_open_selected_paths=lambda: ui.navigate.to("/explore?tab=paths"),
-                            on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
-                            recently_shared_in_teams=recently_shared_in_teams,
-                            on_open_recently_shared_item=lambda row: (
-                                ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}")
-                                if str(row.get("type") or "") == "course"
-                                else (
-                                    ui.navigate.to(f"/explore/videos/{int(row.get('id') or 0)}")
-                                    if str(row.get("type") or "") == "video"
-                                    else (
-                                        ui.navigate.to(f"/explore/paths/{int(row.get('id') or 0)}")
-                                        if str(row.get("type") or "") == "path"
-                                        else ui.navigate.to(f"/explore/articles/{int(row.get('id') or 0)}")
-                                    )
-                                )
-                            ),
-                            on_load_more_tracked=lambda: load_more_tracked(
-                                state=state,
-                                total_count=len(learning_vm.tracked_courses),
-                                refresh=_refresh_content,
-                            ),
-                            on_load_more_selected=lambda: load_more_selected(
-                                state=state,
-                                total_count=len(learning_vm.selected_paths),
-                                refresh=_refresh_content,
-                            ),
-                        ),
-                    )
+                _render_learning_view(
+                    page_ctx=page_ctx,
+                    refresh_content=_refresh_content,
+                    on_set_tracking_status=_set_tracking_status,
+                    on_clear_tracking_status=_clear_tracking_status,
+                )
 
             await _load()
             content()

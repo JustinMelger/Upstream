@@ -58,7 +58,6 @@ select = ["I", "F821", "BLE", "TID", "T20", "C901", "PLR0911", "PLR0912", "PLR09
 # we continue extracting orchestration into controller/orchestration/actions.
 "frontend/ui/nicegui/pages/admin_users/page.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 "frontend/ui/nicegui/pages/ai_curator/page.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
-"frontend/ui/nicegui/pages/learning/page.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 "frontend/ui/nicegui/pages/courses/sections.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 
 [tool.ruff.lint.isort]
