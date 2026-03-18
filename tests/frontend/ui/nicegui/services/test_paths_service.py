@@ -24,7 +24,13 @@ class _FakeApi:
                 {"path_id": "bad", "recommendation_count": 9},
             ]
         if path == "/paths/7":
-            return {"id": 7, "courses": [{"id": 101}, {"id": 102}]}
+            return {
+                "id": 7,
+                "items": [
+                    {"type": "course", "id": 101},
+                    {"type": "course", "id": 102},
+                ],
+            }
         if path == "/paths/selected/list":
             return [{"id": 7}, {"id": "bad"}]
         if path == "/tracking":

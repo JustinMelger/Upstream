@@ -23,13 +23,13 @@ async def test_courses_create_rejects_non_string_title(app_client):
 
 
 @pytest.mark.integration
-async def test_paths_create_rejects_non_int_course_ids(app_client):
-    """Path create validation rejects invalid course_ids element types."""
+async def test_paths_create_rejects_non_int_item_ids(app_client):
+    """Path create validation rejects invalid typed item id element types."""
     login = await app_client.post("/auth/login", json={"username": "admin", "password": "admin"})
     token = login.json()["token"]
     response = await app_client.post(
         "/paths",
-        json={"name": "Bad Path", "course_ids": ["abc"]},
+        json={"name": "Bad Path", "items": [{"type": "course", "id": "abc", "position": 0}]},
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 422

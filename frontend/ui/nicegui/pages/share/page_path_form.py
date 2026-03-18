@@ -12,7 +12,7 @@ class PathShareControls:
 
     name_input: Any
     description_input: Any
-    course_ids_input: Any
+    item_refs_input: Any
     save_btn: Any
     publish_btn: Any
     preview: Any
@@ -25,7 +25,7 @@ def render_share_scaffold(*, ui_module: Any, title: str, subtitle: str) -> None:
         ui_module.label(subtitle).classes("text-sm").style("color: var(--lp-muted)")
 
 
-def build_path_controls(*, ui_module: Any, course_options: dict[int, str]) -> PathShareControls:
+def build_path_controls(*, ui_module: Any, learning_item_options: dict[str, str]) -> PathShareControls:
     """Build controls for path share routes."""
     with ui_module.card().classes("lp-card w-full lp-share-surface"):
         with ui_module.row().classes("w-full items-stretch gap-4 lp-share-columns"):
@@ -35,8 +35,8 @@ def build_path_controls(*, ui_module: Any, course_options: dict[int, str]) -> Pa
                 description_input = (
                     ui_module.textarea("Description").props("autogrow dense maxlength=400").classes("w-full lp-share-input")
                 )
-                course_ids_input = (
-                    ui_module.select(course_options, label="Courses in order", multiple=True)
+                item_refs_input = (
+                    ui_module.select(learning_item_options, label="Learning items in order", multiple=True)
                     .props("dense")
                     .classes("w-full lp-share-input")
                 )
@@ -48,10 +48,8 @@ def build_path_controls(*, ui_module: Any, course_options: dict[int, str]) -> Pa
                 def preview() -> None:
                     with ui_module.card().classes("lp-card w-full lp-share-preview-card"):
                         ui_module.label(str(name_input.value or "Path name")).classes("text-md font-semibold")
-                        selected_ids = [
-                            int(course_id) for course_id in list(course_ids_input.value or []) if int(course_id) > 0
-                        ]
-                        ui_module.label(f"{len(selected_ids)} courses selected").classes("text-xs").style(
+                        selected_refs = list(item_refs_input.value or [])
+                        ui_module.label(f"{len(selected_refs)} learning items selected").classes("text-xs").style(
                             "color: var(--lp-muted)"
                         )
                         ui_module.separator()
@@ -68,7 +66,7 @@ def build_path_controls(*, ui_module: Any, course_options: dict[int, str]) -> Pa
     return PathShareControls(
         name_input=name_input,
         description_input=description_input,
-        course_ids_input=course_ids_input,
+        item_refs_input=item_refs_input,
         save_btn=save_btn,
         publish_btn=publish_btn,
         preview=preview,

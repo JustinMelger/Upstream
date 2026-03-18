@@ -15,7 +15,7 @@ async def test_add_list_remove_user_paths(db_session):
     """Users can add, list, and remove selected paths."""
     paths = PathsService(PathsRepository(db_session))
     user_paths = UserPathsService(UserPathsRepository(db_session))
-    path_id = (await paths.create_path({"name": "Starter", "course_ids": []}))["id"]
+    path_id = (await paths.create_path({"name": "Starter", "items": []}))["id"]
     await user_paths.add_user_path("user1", path_id)
 
     selected = await user_paths.list_user_paths("user1")
@@ -32,7 +32,7 @@ async def test_update_user_path_status(db_session):
     """User path status updates validate allowed values."""
     paths = PathsService(PathsRepository(db_session))
     user_paths = UserPathsService(UserPathsRepository(db_session))
-    path_id = (await paths.create_path({"name": "Advanced", "course_ids": []}))["id"]
+    path_id = (await paths.create_path({"name": "Advanced", "items": []}))["id"]
     await user_paths.add_user_path("user1", path_id)
 
     updated = await user_paths.update_user_path_status("user1", path_id, "completed")
@@ -70,7 +70,7 @@ async def test_add_user_path_is_idempotent_and_keeps_existing_status(db_session)
     """Selecting an already selected path should not overwrite explicit status."""
     paths = PathsService(PathsRepository(db_session))
     user_paths = UserPathsService(UserPathsRepository(db_session))
-    path_id = (await paths.create_path({"name": "Idempotent Keep Status", "course_ids": []}))["id"]
+    path_id = (await paths.create_path({"name": "Idempotent Keep Status", "items": []}))["id"]
 
     await user_paths.add_user_path("user1", path_id)
     await user_paths.update_user_path_status("user1", path_id, "completed")

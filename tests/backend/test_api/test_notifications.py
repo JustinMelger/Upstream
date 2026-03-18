@@ -157,7 +157,7 @@ async def test_notifications_activity_includes_course_path_and_article_ratings(a
 
     create_path = await app_client.post(
         "/paths",
-        json={"name": "Rated Path", "description": "desc", "course_ids": [course_id]},
+        json={"name": "Rated Path", "description": "desc", "items": [{"type": "course", "id": course_id, "position": 0}]},
         headers={"X-Session-Token": alice_token},
     )
     assert create_path.status_code == 200
@@ -200,3 +200,43 @@ async def test_notifications_activity_includes_course_path_and_article_ratings(a
     assert "your_course_rated" in alice_types
     assert "your_path_rated" in alice_types
     assert "your_article_rated" in alice_types
+
+
+@pytest.mark.integration
+async def test_notifications_activity_includes_video_ratings(app_client):
+    admin_token = await _login_admin(app_client)
+    await _create_user(app_client, admin_token, "alice", role="user")
+    await _create_user(app_client, admin_token, "bob", role="user")
+
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_token = alice_login.json()["token"]
+    bob_token = bob_login.json()["token"]
+
+    create_video = await app_client.post(
+        "/videos",
+        json={
+            "title": "Rated Video",
+            "description": "desc",
+            "provider": "YouTube",
+            "category": "Programming",
+            "url": "https://www.youtube.com/watch?v=rated-video",
+        },
+        headers={"X-Session-Token": alice_token},
+    )
+    assert create_video.status_code == 200
+    video_id = int(create_video.json()["id"])
+
+    video_review = await app_client.post(
+        f"/videos/{video_id}/reviews",
+        json={"rating": 5, "text": "Helpful"},
+        headers={"X-Session-Token": bob_token},
+    )
+    assert video_review.status_code == 200
+
+    alice_feed = await app_client.get("/notifications/activity", headers={"X-Session-Token": alice_token})
+    assert alice_feed.status_code == 200
+    alice_rows = list(alice_feed.json() or [])
+    assert alice_rows
+    alice_types = {str(r.get("event_type") or "") for r in alice_rows}
+    assert "your_video_rated" in alice_types

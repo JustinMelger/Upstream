@@ -47,6 +47,7 @@ async def test_load_my_learning_data_slices_tracked_selected_and_shared() -> Non
             "/paths/selected/list": [{"id": 11, "name": "P2", "status": "interested"}],
             "/paths/11": {"id": 11, "name": "P2", "courses": [{"id": 2}]},
             "/videos": [{"id": 50, "title": "V1", "created_by": "alice"}],
+            "/videos/reviews/summary": [{"video_id": 50, "avg_rating": 4.5, "review_count": 2}],
             "/articles": [{"id": 100, "title": "A1", "created_by": "alice"}],
         }
     )
@@ -59,6 +60,7 @@ async def test_load_my_learning_data_slices_tracked_selected_and_shared() -> Non
     assert [int(v["id"]) for v in data["shared_videos"]] == [50]
     assert [int(p["id"]) for p in data["shared_paths"]] == [10]
     assert [int(a["id"]) for a in data["shared_articles"]] == [100]
+    assert int(data["shared_video_review_summary_by_id"][50]["review_count"]) == 2
 
 
 @pytest.mark.unit
@@ -92,6 +94,7 @@ async def test_load_my_learning_data_keeps_working_when_summary_endpoints_fail_w
         async def get(self, path: str, params: dict[str, Any] | None = None) -> Any:  # noqa: ARG002
             if path in {
                 "/courses/reviews/summary",
+                "/videos/reviews/summary",
                 "/paths/reviews/summary",
                 "/courses/recommendations/summary",
                 "/paths/recommendations/summary",
@@ -116,6 +119,7 @@ async def test_load_my_learning_data_keeps_working_when_summary_endpoints_fail_w
     data = await load_my_learning_data(api=api, username="alice", include_articles=True)
     assert data["course_review_summary_by_id"] == {}
     assert data["path_review_summary_by_id"] == {}
+    assert data["shared_video_review_summary_by_id"] == {}
     assert data["course_recommendation_summary_by_id"] == {}
     assert data["path_recommendation_summary_by_id"] == {}
 

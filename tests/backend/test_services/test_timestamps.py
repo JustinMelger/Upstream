@@ -64,7 +64,7 @@ async def test_user_paths_repo_accepts_datetime_timestamps(db_session):
     """UserPathsRepository accepts datetime timestamps for add/update flows."""
     paths = PathsService(PathsRepository(db_session))
     repo = UserPathsRepository(db_session)
-    path_id = (await paths.create_path({"name": "Timestamp Path", "course_ids": []}))["id"]
+    path_id = (await paths.create_path({"name": "Timestamp Path", "items": []}))["id"]
     now = datetime.now(timezone.utc)
     async with db_session.begin():
         inserted = await repo.add_user_path("alice", int(path_id), now)
@@ -114,7 +114,9 @@ async def test_content_review_recommendation_repos_accept_datetime_and_return_is
             created_at=now,
         )
 
-    path_id = (await paths.create_path({"name": "Temporal path", "course_ids": [int(course_id)]}))["id"]
+    path_id = (
+        await paths.create_path({"name": "Temporal path", "items": [{"type": "course", "id": int(course_id), "position": 0}]})
+    )["id"]
 
     async with db_session.begin():
         await course_reviews.create_review(

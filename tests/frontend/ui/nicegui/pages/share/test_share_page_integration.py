@@ -407,28 +407,3 @@ async def test_share_item_video_publish_success_navigates_and_persists_provider_
     assert "share_video_page_draft::alice" not in storage
     assert notifications[-1] == ("Learning item published", "positive")
     assert fake_ui.navigations[-1] == ("/explore/videos/12", False)
-
-
-@pytest.mark.anyio
-async def test_share_compat_routes_redirect_to_canonical_targets(monkeypatch: pytest.MonkeyPatch) -> None:
-    fake_ui = _FakeUi()
-    tracked: list[tuple[str, dict[str, str]]] = []
-    monkeypatch.setattr(share_page, "ui", fake_ui)
-    monkeypatch.setattr(
-        share_page,
-        "track_ui_event_nowait",
-        lambda *, api, event_name, context: tracked.append((str(event_name), dict(context))),  # noqa: ARG005
-    )
-
-    share_page.register(store=object(), api=object())  # type: ignore[arg-type]
-    await fake_ui.routes["/share/course"]()
-    await fake_ui.routes["/share/article"]()
-
-    assert fake_ui.navigations == [
-        ("/share/item?type=course", False),
-        ("/share/item?type=article", False),
-    ]
-    assert tracked == [
-        ("share_compat_redirect_used", {"from": "/share/course", "to": "/share/item", "item_type": "course"}),
-        ("share_compat_redirect_used", {"from": "/share/article", "to": "/share/item", "item_type": "article"}),
-    ]

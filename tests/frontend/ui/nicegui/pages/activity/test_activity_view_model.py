@@ -17,7 +17,7 @@ def test_build_activity_target_view_maps_learning_items_and_paths() -> None:
     assert video_target is not None
     assert video_target.target_family == "learning_item"
     assert video_target.target_type_label == "Video"
-    assert video_target.interaction_label == "details only"
+    assert video_target.interaction_label == "reviews"
     assert video_target.open_url == "/explore/videos/9"
 
     assert path_target is not None

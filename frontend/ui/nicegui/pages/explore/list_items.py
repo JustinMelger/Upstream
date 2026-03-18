@@ -17,6 +17,7 @@ from frontend.ui.nicegui.components.card_frame import (
 from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.learning_items import learning_item_primary_action_label, learning_item_type_label
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.sections import render_article_card
 from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
@@ -111,7 +112,13 @@ def render_path_item(
                 inferred_total = 0
         total_courses = int(card_vm.total_courses or 0) if is_tracked else max(0, inferred_total)
         if total_courses <= 0 and isinstance(detail, dict):
-            total_courses = len([c for c in list(detail.get("courses") or []) if isinstance(c, dict)])
+            total_courses = len(
+                [
+                    row
+                    for row in list(detail.get("items") or [])
+                    if isinstance(row, dict) and str(row.get("type") or "") == "course"
+                ]
+            )
 
         if not is_tracked:
             primary_label = "Track path"
@@ -221,6 +228,7 @@ def render_video_item(
     *,
     video: dict[str, Any],
     item_classes: str,
+    state: Any,
 ) -> None:
     """Render one video card item for Explore."""
     with ui.element("div").classes(item_classes):
@@ -232,6 +240,7 @@ def render_video_item(
         created_by = str(video.get("created_by") or "").strip()
         thumbnail_url = str(video.get("preview_image_url") or "").strip()
         source_url = str(video.get("url") or "").strip()
+        review_summary = format_review_summary(state.video_review_summary_by_video_id.get(video_id), style="star")
 
         with ui.card().classes("w-full lp-card lp-card--hover lp-article-card"):
             with render_card_topright():
@@ -263,6 +272,9 @@ def render_video_item(
                                 ui.label(chip).classes("lp-meta-chip")
                         else:
                             ui.label("").classes("lp-article-tag-placeholder")
+
+                    if review_summary:
+                        ui.label(review_summary).classes("text-xs lp-card-subtitle lp-article-date")
 
                     if description:
                         ui.label(description).classes("text-sm text-gray-600 lp-card-body lp-course-summary")

@@ -20,6 +20,32 @@ async def _create_course(app_client, token, title):
     return response.json()["id"]
 
 
+async def _create_video(app_client, token, title):
+    response = await app_client.post(
+        "/videos",
+        json={
+            "title": title,
+            "description": f"desc: {title}",
+            "provider": "YouTube",
+            "category": "Data",
+            "url": f"https://www.youtube.com/watch?v={title.lower().replace(' ', '-')}",
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert response.status_code == 200
+    return response.json()["id"]
+
+
+async def _create_article(app_client, token, title):
+    response = await app_client.post(
+        "/articles",
+        json={"title": title, "url": f"https://example.com/{title.lower().replace(' ', '-')}"},
+        headers={"X-Session-Token": token},
+    )
+    assert response.status_code == 200
+    return response.json()["id"]
+
+
 async def _create_user(app_client, token, username, role="user"):
     return await app_client.post(
         "/auth/users",
@@ -66,7 +92,7 @@ async def test_path_lifecycle_and_selection(app_client):
     course_id = await _create_course(app_client, token, "Path Course 1")
     create = await app_client.post(
         "/paths",
-        json={"name": "Data Path", "description": "Learn data", "course_ids": [course_id]},
+        json={"name": "Data Path", "description": "Learn data", "items": [{"type": "course", "id": course_id, "position": 0}]},
         headers={"X-Session-Token": alice_token},
     )
     assert create.status_code == 200
@@ -104,13 +130,48 @@ async def test_path_lifecycle_and_selection(app_client):
 
 
 @pytest.mark.integration
+async def test_create_path_with_mixed_learning_items_returns_items_only(app_client):
+    """Mixed path payloads return typed items only."""
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Mixed Path Course")
+    video_id = await _create_video(app_client, token, "Mixed Path Video")
+    article_id = await _create_article(app_client, token, "Mixed Path Article")
+
+    create = await app_client.post(
+        "/paths",
+        json={
+            "name": "Mixed Learning Path",
+            "description": "Learn in mixed media",
+            "items": [
+                {"type": "video", "id": video_id, "position": 0},
+                {"type": "course", "id": course_id, "position": 1},
+                {"type": "article", "id": article_id, "position": 2},
+            ],
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert create.status_code == 200
+    payload = create.json()
+    assert [item["type"] for item in payload["items"]] == ["video", "course", "article"]
+    assert [int(item["id"]) for item in payload["items"]] == [video_id, course_id, article_id]
+
+    detail = await app_client.get(f"/paths/{int(payload['id'])}", headers={"X-Session-Token": token})
+    assert detail.status_code == 200
+    assert [item["type"] for item in detail.json()["items"]] == ["video", "course", "article"]
+
+
+@pytest.mark.integration
 async def test_select_path_is_idempotent_and_keeps_interested_status(app_client):
     """Selecting the same path multiple times keeps one selected row with interested status."""
     token = await _login_admin(app_client)
     course_id = await _create_course(app_client, token, "Idempotent Selection Course")
     create = await app_client.post(
         "/paths",
-        json={"name": "Idempotent Selection Path", "description": "desc", "course_ids": [course_id]},
+        json={
+            "name": "Idempotent Selection Path",
+            "description": "desc",
+            "items": [{"type": "course", "id": course_id, "position": 0}],
+        },
         headers={"X-Session-Token": token},
     )
     assert create.status_code == 200
@@ -146,7 +207,11 @@ async def test_reselect_path_preserves_existing_selected_status(app_client):
     course_id = await _create_course(app_client, token, "Reselect Preserve Status Course")
     create = await app_client.post(
         "/paths",
-        json={"name": "Reselect Preserve Status Path", "description": "desc", "course_ids": [course_id]},
+        json={
+            "name": "Reselect Preserve Status Path",
+            "description": "desc",
+            "items": [{"type": "course", "id": course_id, "position": 0}],
+        },
         headers={"X-Session-Token": token},
     )
     assert create.status_code == 200
@@ -187,7 +252,7 @@ async def test_path_update_requires_owner_or_admin(app_client):
     course_id = await _create_course(app_client, admin_token, "P1")
     created = await app_client.post(
         "/paths",
-        json={"name": "Owned Path", "description": "", "course_ids": [course_id]},
+        json={"name": "Owned Path", "description": "", "items": [{"type": "course", "id": course_id, "position": 0}]},
         headers={"X-Session-Token": alice_token},
     )
     assert created.status_code == 200
@@ -195,14 +260,14 @@ async def test_path_update_requires_owner_or_admin(app_client):
 
     forbidden = await app_client.put(
         f"/paths/{path_id}",
-        json={"name": "Owned Path", "description": "changed", "course_ids": [course_id]},
+        json={"name": "Owned Path", "description": "changed", "items": [{"type": "course", "id": course_id, "position": 0}]},
         headers={"X-Session-Token": bob_token},
     )
     assert forbidden.status_code == 403
 
     ok = await app_client.put(
         f"/paths/{path_id}",
-        json={"name": "Owned Path", "description": "changed", "course_ids": [course_id]},
+        json={"name": "Owned Path", "description": "changed", "items": [{"type": "course", "id": course_id, "position": 0}]},
         headers={"X-Session-Token": alice_token},
     )
     assert ok.status_code == 200
@@ -235,7 +300,7 @@ async def test_path_review_lifecycle_and_moderation(app_client):
     course_id = await _create_course(app_client, admin_token, "Path Review Course")
     create_path = await app_client.post(
         "/paths",
-        json={"name": "Reviewed Path", "description": "desc", "course_ids": [course_id]},
+        json={"name": "Reviewed Path", "description": "desc", "items": [{"type": "course", "id": course_id, "position": 0}]},
         headers={"X-Session-Token": alice_token},
     )
     assert create_path.status_code == 200
@@ -304,7 +369,7 @@ async def test_path_recommendation_lifecycle_and_moderation(app_client):
     course_id = await _create_course(app_client, admin_token, "Path Recommendation Course")
     create_path = await app_client.post(
         "/paths",
-        json={"name": "Recommended Path", "description": "desc", "course_ids": [course_id]},
+        json={"name": "Recommended Path", "description": "desc", "items": [{"type": "course", "id": course_id, "position": 0}]},
         headers={"X-Session-Token": alice_token},
     )
     assert create_path.status_code == 200

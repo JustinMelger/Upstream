@@ -40,8 +40,9 @@ def draft_course_to_create_payload(course: dict[str, Any]) -> dict[str, Any]:
 
 def build_path_payload(*, name: str, description: str, course_ids: list[int]) -> dict[str, Any]:
     """Build `/paths` create payload from edited draft fields."""
+    ordered_ids = [int(cid) for cid in list(course_ids or []) if int(cid) > 0]
     return {
         "name": str(name or "").strip(),
         "description": str(description or "").strip(),
-        "course_ids": [int(cid) for cid in list(course_ids or []) if int(cid) > 0],
+        "items": [{"type": "course", "id": int(course_id), "position": idx} for idx, course_id in enumerate(ordered_ids)],
     }

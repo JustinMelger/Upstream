@@ -35,6 +35,7 @@ class SharedTabView:
     shared_articles: list[dict[str, Any]]
     shared_course_review_summary_by_id: dict[int, dict[str, Any]]
     shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]]
+    shared_video_review_summary_by_id: dict[int, dict[str, Any]]
     shared_path_review_summary_by_id: dict[int, dict[str, Any]]
     shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]]
 
@@ -50,6 +51,7 @@ def build_shared_learning_item_views(
     shared_articles: list[dict[str, Any]],
     course_review_summary_by_id: dict[int, dict[str, Any]],
     course_recommendation_summary_by_id: dict[int, dict[str, Any]],
+    video_review_summary_by_id: dict[int, dict[str, Any]],
 ) -> list[SharedLearningItemView]:
     """Build typed shared learning-item rows from shared courses/articles."""
     items: list[SharedLearningItemView] = []
@@ -105,7 +107,7 @@ def build_shared_learning_item_views(
                 item_id=item_id,
                 title=title,
                 capabilities=learning_item_capabilities("video"),
-                review_summary_row=None,
+                review_summary_row=dict(video_review_summary_by_id.get(item_id) or {}) or None,
                 recommendation_summary_row=None,
             )
         )
@@ -177,6 +179,7 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
     shared_articles = list(data.get("shared_articles") or [])
     shared_course_review_summary_by_id = dict(data.get("shared_course_review_summary_by_id") or {})
     shared_course_recommendation_summary_by_id = dict(data.get("shared_course_recommendation_summary_by_id") or {})
+    shared_video_review_summary_by_id = dict(data.get("shared_video_review_summary_by_id") or {})
     return SharedTabView(
         shared_learning_items=build_shared_learning_item_views(
             shared_courses=shared_courses,
@@ -184,6 +187,7 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
             shared_articles=shared_articles,
             course_review_summary_by_id=shared_course_review_summary_by_id,
             course_recommendation_summary_by_id=shared_course_recommendation_summary_by_id,
+            video_review_summary_by_id=shared_video_review_summary_by_id,
         ),
         shared_courses=shared_courses,
         shared_videos=shared_videos,
@@ -191,6 +195,7 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
         shared_articles=shared_articles,
         shared_course_review_summary_by_id=shared_course_review_summary_by_id,
         shared_course_recommendation_summary_by_id=shared_course_recommendation_summary_by_id,
+        shared_video_review_summary_by_id=shared_video_review_summary_by_id,
         shared_path_review_summary_by_id=dict(data.get("shared_path_review_summary_by_id") or {}),
         shared_path_recommendation_summary_by_id=dict(data.get("shared_path_recommendation_summary_by_id") or {}),
     )

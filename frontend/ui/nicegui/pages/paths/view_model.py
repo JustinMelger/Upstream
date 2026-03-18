@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
+from frontend.ui.nicegui.core.learning_items import normalize_learning_item_type
 from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary as _format_review
 
 
@@ -62,7 +63,8 @@ def compute_outcomes(
 ) -> dict[str, Any]:
     """Compute path milestone + next-step metadata for UX rendering."""
     completed, total, ratio = _compute_path_progress(detail=detail, tracking_by_course_id=tracking_by_course_id)
-    courses = [c for c in list(detail.get("courses") or []) if isinstance(c, dict)]
+    courses = _path_course_rows(detail=detail)
+    has_learning_items = _has_learning_items(detail=detail)
     next_course: dict[str, Any] | None = None
     in_progress = 0
     for c in courses:
@@ -78,9 +80,11 @@ def compute_outcomes(
 
     remaining = max(0, int(total) - int(completed))
     if total <= 0:
-        milestone = "No courses"
+        milestone = "Reference path" if has_learning_items else "No learning items"
         milestone_class = "lp-chip lp-chip--muted"
-        impact = "Add courses to define this path."
+        impact = (
+            "Add a course to enable progress tracking." if has_learning_items else "Add learning items to define this path."
+        )
     elif remaining == 0:
         milestone = "Completed"
         milestone_class = "lp-chip lp-chip--lime"
@@ -117,12 +121,10 @@ def _compute_path_progress(
     detail: dict[str, Any],
     tracking_by_course_id: dict[int, dict[str, Any]],
 ) -> tuple[int, int, float]:
-    courses = list(detail.get("courses") or []) if isinstance(detail, dict) else []
+    courses = _path_course_rows(detail=detail)
     total = len(courses)
     completed = 0
     for c in courses:
-        if not isinstance(c, dict):
-            continue
         raw = c.get("id")
         if raw is None:
             continue
@@ -134,6 +136,18 @@ def _compute_path_progress(
             completed += 1
     ratio = (completed / total) if total else 0.0
     return completed, total, ratio
+
+
+def _path_course_rows(*, detail: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return ordered course rows from typed items."""
+    items = [row for row in list(detail.get("items") or []) if isinstance(row, dict)]
+    return [row for row in items if normalize_learning_item_type(str(row.get("type") or ""), default="course") == "course"]
+
+
+def _has_learning_items(*, detail: dict[str, Any]) -> bool:
+    """Return whether the path contains any learning items at all."""
+    items = [row for row in list(detail.get("items") or []) if isinstance(row, dict)]
+    return bool(items)
 
 
 def recommendation_authors(rows: list[dict[str, Any]] | None) -> list[str]:

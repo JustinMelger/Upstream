@@ -63,6 +63,7 @@ def clear_paths_state_on_load_error(*, state: PathsPageState) -> None:
     state.tracking_by_course_id = {}
     state.courses = []
     state.course_by_id = {}
+    state.learning_item_options = {}
     state.path_review_summary_by_id = {}
     state.path_recommendation_summary_by_id = {}
 

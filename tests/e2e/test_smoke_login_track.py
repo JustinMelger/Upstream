@@ -49,7 +49,11 @@ async def _bootstrap_admin_and_seed_content(
 
             create_path = await client.post(
                 "/paths",
-                json={"name": path_name, "description": "E2E smoke path", "course_ids": [course_id]},
+                json={
+                    "name": path_name,
+                    "description": "E2E smoke path",
+                    "items": [{"type": "course", "id": course_id, "position": 0}],
+                },
                 headers={"X-Session-Token": token},
             )
             if create_path.status_code != 200:

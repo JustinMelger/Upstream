@@ -7,6 +7,7 @@ import logging
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+from frontend.ui.nicegui.core.path_items import path_course_ids
 from frontend.ui.nicegui.pages.paths.state import PathDetailBundle, PathsPageState
 from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
 from frontend.ui.nicegui.services.paths_service import (
@@ -192,16 +193,7 @@ class PathsPageController:
             path_reviews = []
             path_recommendations = []
 
-        course_ids_in_path: list[int] = []
-        for c in list(detail.get("courses") or []):
-            if not isinstance(c, dict):
-                continue
-            try:
-                cid = int(c.get("id") or 0)
-            except (TypeError, ValueError):
-                continue
-            if cid > 0:
-                course_ids_in_path.append(cid)
+        course_ids_in_path = path_course_ids(detail=detail)
 
         course_review_summary_by_course_id: dict[int, dict[str, Any]] = {}
         try:
@@ -258,11 +250,12 @@ class PathsPageController:
             state: Mutable page state to update.
 
         """
-        paths, selected_by_id, courses, course_by_id = await load_paths_page_data(api=self._api)
+        paths, selected_by_id, courses, course_by_id, learning_item_options = await load_paths_page_data(api=self._api)
         state.paths = paths
         state.selected_by_id = selected_by_id
         state.courses = courses
         state.course_by_id = course_by_id
+        state.learning_item_options = learning_item_options
 
         await asyncio.gather(
             self.reload_tracking(state=state),

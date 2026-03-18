@@ -10,6 +10,7 @@ from nicegui import app, ui
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import tracking_label
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
+from frontend.ui.nicegui.core.path_items import path_course_ids
 from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
 from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions, load_more_selected, load_more_tracked
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
@@ -75,18 +76,12 @@ def _next_uncompleted_course_from_selected_paths(
         except (TypeError, ValueError):
             continue
         detail = path_details_by_id.get(pid) or {}
-        for course in list(detail.get("courses") or []):
-            if not isinstance(course, dict):
-                continue
-            try:
-                cid = int(course.get("id") or 0)
-            except (TypeError, ValueError):
-                continue
+        for cid in path_course_ids(detail=detail):
             if cid <= 0:
                 continue
             status = str((tracking_by_course_id.get(cid) or {}).get("status") or "")
             if status != "completed":
-                return {"path_id": pid, "path_name": str(row.get("name") or ""), "course": course}
+                return {"path_id": pid, "path_name": str(row.get("name") or ""), "course": {"id": cid}}
     return None
 
 

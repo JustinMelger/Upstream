@@ -19,10 +19,17 @@ class _FakeApi:
             return [{"id": 42, "status": "interested"}]
         if path == "/courses":
             return [{"id": 101, "title": "FastAPI Tutorial"}]
+        if path == "/videos":
+            return [{"id": 7, "title": "REST Walkthrough"}]
+        if path == "/articles":
+            return [{"id": 8, "title": "Async Patterns"}]
         if path == "/tracking":
             return [{"course_id": 101, "status": "in_progress"}]
         if path == "/paths/42":
-            return {"id": 42, "courses": [{"id": 101}, {"id": 102}]}
+            return {
+                "id": 42,
+                "items": [{"type": "course", "id": 101}, {"type": "video", "id": 7}, {"type": "course", "id": 102}],
+            }
         if path == "/paths/reviews/summary":
             return [{"path_id": 42, "avg_rating": 4.0, "review_count": 3}]
         if path == "/paths/recommendations/summary":
@@ -54,6 +61,11 @@ async def test_controller_load_all_populates_state() -> None:
     assert [int(p["id"]) for p in state.paths] == [42]
     assert state.selected_by_id == {42: {"id": 42, "status": "interested"}}
     assert state.course_by_id == {101: {"id": 101, "title": "FastAPI Tutorial"}}
+    assert state.learning_item_options == {
+        "course:101": "FastAPI Tutorial (Course)",
+        "video:7": "REST Walkthrough (Video)",
+        "article:8": "Async Patterns (Article)",
+    }
     assert state.tracking_by_course_id == {101: {"course_id": 101, "status": "in_progress"}}
     assert state.path_review_summary_by_id[42]["review_count"] == 3
     assert state.path_recommendation_summary_by_id[42]["recommendation_count"] == 2
@@ -146,15 +158,15 @@ async def test_controller_path_mutations_call_expected_endpoints() -> None:
     api = _FakeApi()
     controller = PathsPageController(api=api)
 
-    await controller.create_path(payload={"name": "P1", "course_ids": [1]})
-    await controller.update_path(path_id=42, payload={"name": "P2", "course_ids": [2]})
+    await controller.create_path(payload={"name": "P1", "items": [{"type": "course", "id": 1, "position": 0}]})
+    await controller.update_path(path_id=42, payload={"name": "P2", "items": [{"type": "course", "id": 2, "position": 0}]})
     await controller.save_recommendation(path_id=42, note="Great path")
     await controller.save_path_review(path_id=42, rating=5, text="Excellent")
     await controller.delete_path_review(path_id=42, review_id=7)
     await controller.delete_path(path_id=42)
 
-    assert ("POST", "/paths", {"name": "P1", "course_ids": [1]}) in api.calls
-    assert ("PUT", "/paths/42", {"name": "P2", "course_ids": [2]}) in api.calls
+    assert ("POST", "/paths", {"name": "P1", "items": [{"type": "course", "id": 1, "position": 0}]}) in api.calls
+    assert ("PUT", "/paths/42", {"name": "P2", "items": [{"type": "course", "id": 2, "position": 0}]}) in api.calls
     assert ("POST", "/paths/42/recommendations", {"note": "Great path"}) in api.calls
     assert ("POST", "/paths/42/reviews", {"rating": 5, "text": "Excellent"}) in api.calls
     assert ("DELETE", "/paths/42/reviews/7", None) in api.calls

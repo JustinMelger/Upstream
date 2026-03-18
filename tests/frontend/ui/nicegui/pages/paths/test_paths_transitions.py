@@ -42,10 +42,11 @@ def test_clear_paths_state_on_load_error_resets_all_collections() -> None:
     state = PathsPageState(
         paths=[{"id": 1}],
         selected_by_id={1: {"id": 1}},
-        selected_detail_by_path_id={1: {"id": 1, "courses": []}},
+        selected_detail_by_path_id={1: {"id": 1, "items": []}},
         tracking_by_course_id={10: {"course_id": 10, "status": "interested"}},
         courses=[{"id": 10}],
         course_by_id={10: {"id": 10}},
+        learning_item_options={"course:10": "Course · X"},
         path_review_summary_by_id={1: {"path_id": 1, "review_count": 1}},
         path_recommendation_summary_by_id={1: {"path_id": 1, "recommendation_count": 1}},
     )
@@ -56,6 +57,7 @@ def test_clear_paths_state_on_load_error_resets_all_collections() -> None:
     assert state.tracking_by_course_id == {}
     assert state.courses == []
     assert state.course_by_id == {}
+    assert state.learning_item_options == {}
     assert state.path_review_summary_by_id == {}
     assert state.path_recommendation_summary_by_id == {}
 
@@ -64,7 +66,7 @@ def test_clear_paths_state_on_load_error_resets_all_collections() -> None:
 def test_optimistic_select_and_rollback_restore_previous_state() -> None:
     state = PathsPageState(
         selected_by_id={3: {"id": 3, "status": "interested"}},
-        selected_detail_by_path_id={3: {"id": 3, "courses": []}},
+        selected_detail_by_path_id={3: {"id": 3, "items": []}},
     )
     snap = apply_optimistic_select(state=state, path_id=7)
     assert 7 in state.selected_by_id
@@ -77,7 +79,7 @@ def test_optimistic_select_and_rollback_restore_previous_state() -> None:
 def test_optimistic_unselect_and_rollback_restore_removed_rows() -> None:
     state = PathsPageState(
         selected_by_id={8: {"id": 8, "status": "in_progress"}},
-        selected_detail_by_path_id={8: {"id": 8, "courses": [{"id": 1}]}},
+        selected_detail_by_path_id={8: {"id": 8, "items": [{"type": "course", "id": 1}]}},
     )
     snap = apply_optimistic_unselect(state=state, path_id=8)
     assert 8 not in state.selected_by_id
@@ -91,11 +93,11 @@ def test_optimistic_unselect_and_rollback_restore_removed_rows() -> None:
 def test_optimistic_snapshot_rollback_uses_deep_copy_for_nested_payloads() -> None:
     state = PathsPageState(
         selected_by_id={8: {"id": 8, "status": "in_progress"}},
-        selected_detail_by_path_id={8: {"id": 8, "courses": [{"id": 1}, {"id": 2}]}},
+        selected_detail_by_path_id={8: {"id": 8, "items": [{"type": "course", "id": 1}, {"type": "course", "id": 2}]}},
     )
     snap = apply_optimistic_select(state=state, path_id=8)
     # Mutate nested state payload after snapshot capture.
-    state.selected_detail_by_path_id[8]["courses"][0]["id"] = 999
+    state.selected_detail_by_path_id[8]["items"][0]["id"] = 999
     rollback_optimistic_selection(state=state, snapshot=snap)
-    courses = list(state.selected_detail_by_path_id[8].get("courses") or [])
-    assert int(courses[0]["id"]) == 1
+    items = list(state.selected_detail_by_path_id[8].get("items") or [])
+    assert int(items[0]["id"]) == 1

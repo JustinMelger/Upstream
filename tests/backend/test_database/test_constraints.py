@@ -24,7 +24,7 @@ async def test_migrations_create_expected_foreign_keys(db_session):
     fks = {(str(r.table_name), str(r.column_name), str(r.foreign_table), str(r.foreign_column)) for r in rows.mappings().all()}
 
     assert ("tracking", "course_id", "courses", "id") in fks
-    assert ("path_courses", "course_id", "courses", "id") in fks
+    assert ("path_items", "path_id", "paths", "id") in fks
     assert ("sessions", "colleague_id", "users", "username") in fks
     assert ("courses", "created_by", "users", "username") in fks
     assert ("paths", "created_by", "users", "username") in fks
@@ -32,6 +32,8 @@ async def test_migrations_create_expected_foreign_keys(db_session):
     assert ("course_reviews", "created_by", "users", "username") in fks
     assert ("path_reviews", "path_id", "paths", "id") in fks
     assert ("path_reviews", "created_by", "users", "username") in fks
+    assert ("video_reviews", "video_id", "videos", "id") in fks
+    assert ("video_reviews", "created_by", "users", "username") in fks
     assert ("teams", "owner_user_id", "users", "username") in fks
     assert ("team_members", "team_id", "teams", "id") in fks
     assert ("team_members", "user_id", "users", "username") in fks

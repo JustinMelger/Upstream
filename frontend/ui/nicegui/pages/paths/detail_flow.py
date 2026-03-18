@@ -17,7 +17,6 @@ from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
 from frontend.ui.nicegui.pages.paths.view_model import (
     compute_outcomes,
-    enrich_path_courses,
     format_recommendation_badge,
     format_review_summary,
     latest_activity_day,
@@ -48,7 +47,7 @@ async def open_path_details_dialog(
     path_reviews: list[dict[str, Any]] = list(bundle.path_reviews or [])
     path_recommendations: list[dict[str, Any]] = list(bundle.path_recommendations or [])
 
-    courses_rows = list((detail.get("courses") or []) if isinstance(detail, dict) else [])
+    item_rows = list((detail.get("items") or []) if isinstance(detail, dict) else [])
     outcomes = compute_outcomes(
         detail=detail if isinstance(detail, dict) else {},
         tracking_by_course_id=state.tracking_by_course_id,
@@ -58,8 +57,8 @@ async def open_path_details_dialog(
     progress = float(outcomes.get("ratio") or 0.0)
 
     review_summary_by_course_id: dict[int, dict[str, Any]] = dict(bundle.course_review_summary_by_course_id or {})
-    courses_rows = enrich_path_courses(
-        courses=courses_rows,
+    item_rows = _enrich_path_items(
+        items=item_rows,
         review_summary_by_course_id=review_summary_by_course_id,
         tracking_by_course_id=state.tracking_by_course_id,
     )
@@ -103,7 +102,7 @@ async def open_path_details_dialog(
                     is_tracked=is_tracked,
                     tracking_label_text=path_tracking_label(is_tracked),
                     next_title=str(next_course.get("title") or "").strip() if isinstance(next_course, dict) else "",
-                    courses_rows=courses_rows,
+                    item_rows=item_rows,
                 ),
                 on_open_next=_open_next if isinstance(next_course, dict) else None,
             )
@@ -140,3 +139,34 @@ async def open_path_details_dialog(
             ui.button("Close", on_click=dialog.close).props("outline")
 
     dialog.open()
+
+
+def _enrich_path_items(
+    *,
+    items: list[dict[str, Any]],
+    review_summary_by_course_id: dict[int, dict[str, Any]],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Add tracking/review display data to mixed path learning items."""
+    rows: list[dict[str, Any]] = []
+    for row in items:
+        enriched = dict(row)
+        item_type = str(enriched.get("type") or "course").strip().lower()
+        if item_type != "course":
+            rows.append(enriched)
+            continue
+        try:
+            course_id = int(enriched.get("id") or 0)
+        except (TypeError, ValueError):
+            rows.append(enriched)
+            continue
+        if course_id > 0:
+            review_summary = review_summary_by_course_id.get(course_id) or {}
+            review_count = int(review_summary.get("review_count") or 0)
+            avg_rating = float(review_summary.get("avg_rating") or 0.0)
+            if review_count > 0 and avg_rating > 0:
+                enriched["reviews"] = f"{avg_rating:.1f}★ · {review_count} review{'s' if review_count != 1 else ''}"
+            tracking = tracking_by_course_id.get(course_id) or {}
+            enriched["tracking_status"] = str(tracking.get("status") or "")
+        rows.append(enriched)
+    return rows

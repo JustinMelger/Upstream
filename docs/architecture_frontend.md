@@ -182,7 +182,6 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 - `/explore/articles/{article_id}`: Article detail route.
 - `/share/item`: Canonical learning-item share route (`?type=video|course|article`).
 - `/share/path`: Canonical path share route.
-- `/share/course` and `/share/article`: compatibility redirects to `/share/item`.
 - `/teams`: Inbox + team activity feed.
 - `/profile`: Profile landing route (redirects to `/profile/stats`).
 - `/profile/stats`: Full statistics dashboard.
@@ -194,7 +193,7 @@ Notes:
 - Admin routes additionally check `role == "admin"`.
 - Some routes may be feature-flagged via environment variables (see Feature Flags below).
 - Canonical product model: a learning item is the primary shareable unit (`video`, `course`, `article` in the current phase), while a path is a separate object composed of learning items.
-- Subtype capability model: keep one shared learning-item contract, but do not force feature symmetry. In the current phase, `course` supports tracking + reviews + recommendations, `article` supports reviews, and `video` is a lightweight first-class item without tracking/recommendation flows.
+- Subtype capability model: keep one shared learning-item contract, but do not force feature symmetry. In the current phase, `course` supports tracking + reviews + recommendations, `article` supports reviews, and `video` supports reviews without tracking/recommendation flows.
 
 ## Feature Flags
 

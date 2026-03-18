@@ -52,7 +52,18 @@ async def test_ai_curator_service_apply_plan_creates_courses_path_and_selects() 
     assert out == 7
     assert calls[0][1] == "/courses"
     assert calls[1][1] == "/courses"
-    assert calls[2] == ("POST", "/paths", {"name": "P1", "description": "D1", "course_ids": [11, 12]})
+    assert calls[2] == (
+        "POST",
+        "/paths",
+        {
+            "name": "P1",
+            "description": "D1",
+            "items": [
+                {"type": "course", "id": 11, "position": 0},
+                {"type": "course", "id": 12, "position": 1},
+            ],
+        },
+    )
     assert calls[3] == ("POST", "/paths/7/select", {})
 
 

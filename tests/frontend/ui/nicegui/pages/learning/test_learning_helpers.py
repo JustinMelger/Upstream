@@ -29,7 +29,7 @@ def test_format_date_and_time_are_stable() -> None:
 
 @pytest.mark.unit
 def test_compute_path_progress_handles_empty_courses() -> None:
-    completed, total, ratio = compute_path_progress(detail={"courses": []}, tracking_by_course_id={})
+    completed, total, ratio = compute_path_progress(detail={"items": []}, tracking_by_course_id={})
     assert completed == 0
     assert total == 0
     assert ratio == 0.0
@@ -37,12 +37,18 @@ def test_compute_path_progress_handles_empty_courses() -> None:
 
 @pytest.mark.unit
 def test_compute_path_progress_counts_completed() -> None:
-    detail = {"courses": [{"id": 1}, {"id": 2}, {"id": "bad"}]}
+    detail = {
+        "items": [
+            {"type": "course", "id": 1},
+            {"type": "course", "id": 2},
+            {"type": "course", "id": "bad"},
+        ]
+    }
     tracking = {1: {"status": "completed"}, 2: {"status": "in_progress"}}
     completed, total, ratio = compute_path_progress(detail=detail, tracking_by_course_id=tracking)
     assert completed == 1
-    assert total == 3
-    assert ratio == pytest.approx(1 / 3)
+    assert total == 2
+    assert ratio == pytest.approx(1 / 2)
 
 
 @pytest.mark.unit

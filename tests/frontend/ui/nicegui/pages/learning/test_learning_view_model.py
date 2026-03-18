@@ -17,6 +17,7 @@ def test_build_shared_tab_view_projects_expected_fields() -> None:
         "shared_articles": [{"id": 3, "title": "Article title"}],
         "shared_course_review_summary_by_id": {1: {"review_count": 2}},
         "shared_course_recommendation_summary_by_id": {1: {"recommendation_count": 1}},
+        "shared_video_review_summary_by_id": {4: {"review_count": 5}},
         "shared_path_review_summary_by_id": {2: {"review_count": 3}},
         "shared_path_recommendation_summary_by_id": {2: {"recommendation_count": 4}},
     }
@@ -30,8 +31,9 @@ def test_build_shared_tab_view_projects_expected_fields() -> None:
         ("video", 4),
     ]
     assert int((vm.shared_learning_items[1].review_summary_row or {})["review_count"]) == 2
+    assert int((vm.shared_learning_items[2].review_summary_row or {})["review_count"]) == 5
     assert vm.shared_learning_items[0].capabilities.supports_reviews is True
-    assert vm.shared_learning_items[2].capabilities.supports_reviews is False
+    assert vm.shared_learning_items[2].capabilities.supports_reviews is True
     assert int(vm.shared_path_recommendation_summary_by_id[2]["recommendation_count"]) == 4
 
 

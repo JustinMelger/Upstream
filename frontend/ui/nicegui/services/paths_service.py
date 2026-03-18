@@ -6,6 +6,7 @@ import asyncio
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.path_items import encode_path_item_ref, learning_item_option_label, path_course_ids
 from frontend.ui.nicegui.services._indexing import index_by_int_id
 from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
 
@@ -34,19 +35,10 @@ def compute_path_progress(
     Returns:
         Tuple of `(completed, total, ratio)`.
     """
-    courses = list(detail.get("courses") or []) if isinstance(detail, dict) else []
-    total = len(courses)
+    course_ids = path_course_ids(detail=detail if isinstance(detail, dict) else None)
+    total = len(course_ids)
     completed = 0
-    for c in courses:
-        if not isinstance(c, dict):
-            continue
-        raw = c.get("id")
-        if raw is None:
-            continue
-        try:
-            cid = int(raw)
-        except (TypeError, ValueError):
-            continue
+    for cid in course_ids:
         if str((tracking_by_course_id.get(cid) or {}).get("status") or "") == "completed":
             completed += 1
     ratio = (completed / total) if total else 0.0
@@ -59,16 +51,8 @@ def untracked_path_course_ids(
     tracking_by_course_id: dict[int, dict[str, Any]],
 ) -> list[int]:
     """Return course ids in a path detail payload that are not tracked yet."""
-    if not isinstance(detail, dict):
-        return []
     out: list[int] = []
-    for c in list(detail.get("courses") or []):
-        if not isinstance(c, dict):
-            continue
-        try:
-            cid = int(c.get("id") or 0)
-        except (TypeError, ValueError):
-            continue
+    for cid in path_course_ids(detail=detail):
         if cid > 0 and cid not in tracking_by_course_id:
             out.append(cid)
     return out
@@ -121,18 +105,40 @@ async def load_paths_page_data(
     dict[int, dict[str, Any]],
     list[dict[str, Any]],
     dict[int, dict[str, Any]],
+    dict[str, str],
 ]:
-    """Load `(paths, selected_by_id, courses, course_by_id)` for the Paths page."""
-    paths_result, selected_result, courses_result = await asyncio.gather(
+    """Load Paths page data including typed learning-item options."""
+    paths_result, selected_result, courses_result, videos_result, articles_result = await asyncio.gather(
         api.get("/paths"),
         api.get("/paths/selected/list"),
         api.get("/courses"),
+        api.get("/videos"),
+        api.get("/articles"),
     )
     paths = list(paths_result or [])
     selected_by_id = index_rows_by_int_id(list(selected_result or []))
     courses = list(courses_result or [])
     course_by_id = index_courses_by_int_id(courses)
-    return paths, selected_by_id, courses, course_by_id
+    learning_item_options: dict[str, str] = {}
+    for item_type, rows in (
+        ("course", list(courses_result or [])),
+        ("video", list(videos_result or [])),
+        ("article", list(articles_result or [])),
+    ):
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            try:
+                item_id = int(row.get("id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if item_id <= 0:
+                continue
+            learning_item_options[encode_path_item_ref(item_type=item_type, item_id=item_id)] = learning_item_option_label(
+                item_type=item_type,
+                row=row,
+            )
+    return paths, selected_by_id, courses, course_by_id, learning_item_options
 
 
 async def load_selected_paths(*, api: ApiClient) -> list[dict[str, Any]]:
