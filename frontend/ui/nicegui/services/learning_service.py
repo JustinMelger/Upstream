@@ -272,6 +272,7 @@ def _build_learning_collections(
     list[int],
     list[int],
     list[int],
+    list[int],
 ]:
     shared_courses = [c for c in courses if str(c.get("created_by") or "") == username]
     shared_videos = [v for v in videos if str(v.get("created_by") or "") == username]
