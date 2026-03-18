@@ -233,7 +233,7 @@ def _render_path_info_panel(
                 await api.delete(f"/paths/{pid}/select")
                 safe_notify("Path untracked", type="positive")
             else:
-                await api.post(f"/paths/{pid}/select")
+                await api.post(f"/paths/{pid}/select", {})
                 safe_notify("Path tracked", type="positive")
             ui.navigate.to(f"/explore/paths/{pid}")
 

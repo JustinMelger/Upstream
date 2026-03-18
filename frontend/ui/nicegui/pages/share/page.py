@@ -492,7 +492,8 @@ def _wire_course_actions(
             payload["provider"] = "YouTube"
         if normalize_requested_share_type(item_type) == "video":
             created = await controller.create_video(payload=payload)
-            created_id = int(created.get("id") or 0)
+            created_raw_id = created.get("id")
+            created_id = created_raw_id if isinstance(created_raw_id, int) else 0
             app.storage.user.pop(draft_key, None)
             safe_notify("Learning item published", type="positive")
             ui.navigate.to(f"/explore/videos/{created_id}" if created_id > 0 else "/explore")
@@ -529,7 +530,9 @@ def _wire_article_actions(
         suggestion = await controller.suggest_article_from_url(url=normalized)
         suggested_type = normalize_requested_share_type(str(suggestion.get("suggested_learning_item_type") or "article"))
         title = str(suggestion.get("title") or "").strip()
-        tags = [str(tag).strip() for tag in list(suggestion.get("suggested_tags") or []) if str(tag).strip()]
+        raw_tags = suggestion.get("suggested_tags")
+        iterable_tags = raw_tags if isinstance(raw_tags, list) else []
+        tags = [str(tag).strip() for tag in iterable_tags if str(tag).strip()]
         state.latest_suggestions = {"title": title, "tags": ", ".join(tags[:8])}
         if title and not str(controls.title_input.value or "").strip():
             controls.title_input.value = title
@@ -670,7 +673,8 @@ async def _render_share_path_page(*, store: SessionStore, api: ApiClient, contro
             )
             app.storage.user.pop(draft_key, None)
             safe_notify("Path published", type="positive")
-            created_id = int(created.get("id") or 0)
+            created_raw_id = created.get("id")
+            created_id = created_raw_id if isinstance(created_raw_id, int) else 0
             ui.navigate.to(f"/explore/paths/{created_id}" if created_id > 0 else "/explore?tab=paths")
 
         controls.publish_btn.on("click", lambda *_: _publish())

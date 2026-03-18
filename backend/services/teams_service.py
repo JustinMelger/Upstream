@@ -120,6 +120,51 @@ class TeamsService:
             raise TeamsServiceError(detail="forbidden", status_code=403)
         return membership
 
+    @staticmethod
+    def _normalize_add_member_inputs(data: TeamAddMemberPayload) -> tuple[str, str]:
+        """Normalize and validate add-member input fields."""
+        user_id = str(data.user_id or "").strip()
+        role = str(data.role or "member").strip().lower()
+        if not user_id:
+            raise TeamsServiceError(detail="missing_user_id", status_code=400)
+        if role not in {"owner", "admin", "member"}:
+            raise TeamsServiceError(detail="invalid_role", status_code=400)
+        return user_id, role
+
+    @staticmethod
+    def _validate_owner_assignment(*, team: TeamRecord, user_id: str, role: str) -> None:
+        """Ensure owner role assignments remain consistent with the team owner."""
+        if role == "owner" and str(team.owner_user_id).lower() != user_id.lower():
+            raise TeamsServiceError(detail="invalid_role", status_code=400)
+
+    async def _upsert_member(self, *, team_id: int, user_id: str, role: str, now: str) -> None:
+        """Create or update one team membership row."""
+        existing = await self._repo.get_member(team_id=int(team_id), user_id=user_id)
+        if existing:
+            await self._repo.update_member_role(team_id=int(team_id), user_id=user_id, role=role, updated_at=now)
+            return
+        try:
+            await self._repo.create_member(
+                team_id=int(team_id),
+                user_id=user_id,
+                role=role,
+                created_at=now,
+                updated_at=now,
+            )
+        except IntegrityError as exc:
+            raise TeamsServiceError(detail="membership_conflict", status_code=409) from exc
+
+    @staticmethod
+    def _serialize_membership_record(membership: TeamMemberRecord) -> dict:
+        """Serialize one membership record for API responses."""
+        return {
+            "team_id": int(membership.team_id),
+            "user_id": membership.user_id,
+            "role": membership.role,
+            "created_at": membership.created_at,
+            "updated_at": membership.updated_at,
+        }
+
     @teams_error_handler()
     async def create_team(self, *, current_user: str, payload: dict) -> dict:
         """Create a team for an authenticated user and add owner membership."""
@@ -207,52 +252,26 @@ class TeamsService:
     async def add_member(self, *, team_id: int, payload: dict, current_user: str) -> dict:
         """Add a member to a team (owner/admin only)."""
         data = self._parse_add_member_payload(payload)
-        user_id = str(data.user_id or "").strip()
-        role = str(data.role or "member").strip().lower()
-        if not user_id:
-            raise TeamsServiceError(detail="missing_user_id", status_code=400)
-        if role not in {"owner", "admin", "member"}:
-            raise TeamsServiceError(detail="invalid_role", status_code=400)
+        user_id, role = self._normalize_add_member_inputs(data)
+        team_id_value = int(team_id)
+        current_username = str(current_user)
 
         async with session_scope(self._repo.session):
-            team = await self._load_team_or_raise(team_id=int(team_id))
-            can_manage = await self._can_manage_members(team_id=int(team_id), current_user=str(current_user))
-            if not can_manage:
+            team = await self._load_team_or_raise(team_id=team_id_value)
+            if not await self._can_manage_members(team_id=team_id_value, current_user=current_username):
                 raise TeamsServiceError(detail="forbidden", status_code=403)
-            if role == "owner" and str(team.owner_user_id).lower() != user_id.lower():
-                raise TeamsServiceError(detail="invalid_role", status_code=400)
-
+            self._validate_owner_assignment(team=team, user_id=user_id, role=role)
             user = await self._auth.get_user(user_id)
             if not user:
                 raise TeamsServiceError(detail="user_not_found", status_code=404)
-
-            existing = await self._repo.get_member(team_id=int(team_id), user_id=user_id)
             now = datetime.now(timezone.utc).isoformat()
-            if existing:
-                await self._repo.update_member_role(team_id=int(team_id), user_id=user_id, role=role, updated_at=now)
-            else:
-                try:
-                    await self._repo.create_member(
-                        team_id=int(team_id),
-                        user_id=user_id,
-                        role=role,
-                        created_at=now,
-                        updated_at=now,
-                    )
-                except IntegrityError as exc:
-                    raise TeamsServiceError(detail="membership_conflict", status_code=409) from exc
-            await self._repo.set_team_updated_at(team_id=int(team_id), updated_at=now)
+            await self._upsert_member(team_id=team_id_value, user_id=user_id, role=role, now=now)
+            await self._repo.set_team_updated_at(team_id=team_id_value, updated_at=now)
 
-        membership = await self._load_membership(team_id=int(team_id), user_id=user_id)
+        membership = await self._load_membership(team_id=team_id_value, user_id=user_id)
         if not membership:
             raise TeamsServiceError(detail="create_failed", status_code=500)
-        return {
-            "team_id": int(membership.team_id),
-            "user_id": membership.user_id,
-            "role": membership.role,
-            "created_at": membership.created_at,
-            "updated_at": membership.updated_at,
-        }
+        return self._serialize_membership_record(membership)
 
     @teams_error_handler()
     async def remove_member(self, *, team_id: int, user_id: str, current_user: str) -> int:
