@@ -51,13 +51,13 @@ line-length = 128
 select = ["I", "F821", "BLE", "TID", "T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "D102", "D103", "D107"]
 
 [tool.ruff.lint.per-file-ignores]
+# Non-product code keeps a lighter baseline:
+# - tests may use print/debug output and verbose setup patterns
+# - scripts may stay operational and direct
+# - Alembic migrations are one-off delivery artifacts
 "tests/**/*.py" = ["T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "D102", "D103", "D107"]
 "scripts/**/*.py" = ["T20", "D102", "D103", "D107"]
 "alembic/**/*.py" = ["D102", "D103", "D107"]
-# Tier 2 (UI composition modules): allow slightly looser complexity while
-# we continue extracting orchestration into controller/orchestration/actions.
-"frontend/ui/nicegui/pages/admin_users/page.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
-"frontend/ui/nicegui/pages/courses/sections.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["backend", "frontend"]

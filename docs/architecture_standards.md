@@ -67,6 +67,7 @@ Use it as the default guide before adding or refactoring code.
   - Scope:
     - enforced for application code in `frontend/` and `backend/`.
     - intentionally ignored for `tests/**/*.py` and `scripts/**/*.py` to keep CI noise low while preserving strong standards in shipped code.
+    - intentionally ignored for `alembic/**/*.py` because migrations are one-off delivery artifacts rather than maintained app modules.
 
 ## 5) Test & Quality Gates
 
