@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -45,7 +45,7 @@ async def list_courses(
     level: Optional[str] = None,
     current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
-):
+) -> list[dict[str, Any]]:
     """List courses with optional filters.
 
     Args:
@@ -66,7 +66,7 @@ async def course_review_summaries(
     course_ids: List[int] = Query(default=[], description="Course IDs to summarize"),
     current_user: str = Depends(require_session),
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
-):
+) -> list[dict[str, Any]]:
     """Return average rating + count for each course id."""
     return await reviews.summaries(course_ids=list(course_ids or []))
 
@@ -76,7 +76,7 @@ async def course_recommendation_summaries(
     course_ids: List[int] = Query(default=[], description="Course IDs to summarize"),
     current_user: str = Depends(require_session),
     recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
-):
+) -> list[dict[str, Any]]:
     """Return recommendation counts for each course id."""
     return await recommendations.summaries(course_ids=list(course_ids or []))
 
@@ -86,7 +86,7 @@ async def get_course(
     course_id: int,
     current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
-):
+) -> dict[str, Any]:
     """Get a single course by ID.
 
     Args:
@@ -107,7 +107,7 @@ async def add_course(
     payload: CourseCreateRequest,
     current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
-):
+) -> dict[str, Any]:
     """Create a course (any authenticated user).
 
     Args:
@@ -129,7 +129,7 @@ async def edit_course(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     courses: CoursesService = Depends(get_courses_service),
-):
+) -> dict[str, Any]:
     """Update a course (owner/admin only).
 
     Args:
@@ -157,7 +157,7 @@ async def remove_course(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     courses: CoursesService = Depends(get_courses_service),
-):
+) -> dict[str, bool]:
     """Delete a course (owner/admin only).
 
     Args:
@@ -184,7 +184,7 @@ async def list_course_reviews(
     current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
-):
+) -> list[dict[str, Any]]:
     """List reviews for a course."""
     require_row_exists(await courses.get_course_by_id(course_id))
     return await reviews.list_reviews(course_id=course_id)
@@ -197,7 +197,7 @@ async def create_course_review(
     current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
-):
+) -> dict[str, Any]:
     """Create a review for a course (any authenticated user)."""
     require_row_exists(await courses.get_course_by_id(course_id))
     return await reviews.create_review(course_id=course_id, payload=payload.model_dump(), created_by=current_user)
@@ -210,7 +210,7 @@ async def delete_course_review(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
-):
+) -> dict[str, bool]:
     """Delete a course review (owner/admin only)."""
     review = require_row_exists(await reviews.get_review_by_id(review_id=int(review_id)))
     require_row_parent_match(row=review, parent_field="course_id", parent_id=int(course_id))
@@ -225,7 +225,7 @@ async def list_course_recommendations(
     current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
     recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
-):
+) -> list[dict[str, Any]]:
     """List recommendations for a course."""
     require_row_exists(await courses.get_course_by_id(course_id))
     return await recommendations.list_recommendations(course_id=course_id)
@@ -238,7 +238,7 @@ async def create_course_recommendation(
     current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
     recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
-):
+) -> dict[str, Any]:
     """Create/update current user's recommendation for a course."""
     require_row_exists(await courses.get_course_by_id(course_id))
     return await recommendations.create_recommendation(
@@ -253,7 +253,7 @@ async def delete_course_recommendation(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     recommendations: CourseRecommendationsService = Depends(get_course_recommendations_service),
-):
+) -> dict[str, bool]:
     """Delete a course recommendation (owner/admin only)."""
     recommendation = require_row_exists(
         await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))

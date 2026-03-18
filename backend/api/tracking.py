@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -23,7 +23,7 @@ async def get_tracking(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
-):
+) -> list[dict[str, Any]]:
     """List tracking entries for a colleague.
 
     Args:
@@ -44,7 +44,7 @@ async def set_tracking(
     payload: TrackingUpsertRequest,
     current_user: str = Depends(require_session),
     tracking: TrackingService = Depends(get_tracking_service),
-):
+) -> dict[str, Any]:
     """Create or update tracking status for a course.
 
     Args:
@@ -62,7 +62,7 @@ async def delete_tracking(
     payload: TrackingDeleteRequest,
     current_user: str = Depends(require_session),
     tracking: TrackingService = Depends(get_tracking_service),
-):
+) -> dict[str, int]:
     """Remove tracking status for a course.
 
     Args:
@@ -84,7 +84,7 @@ async def get_stats(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
-):
+) -> dict[str, int]:
     """Return tracking stats for a colleague or team totals.
 
     Args:
@@ -108,7 +108,7 @@ async def get_stats_by_user(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
-):
+) -> list[dict[str, Any]]:
     """Return tracking stats grouped by user (admin only).
 
     Args:
@@ -128,7 +128,7 @@ async def get_recent_activity(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
-):
+) -> list[dict[str, Any]]:
     """Return recent activity for the team (admin only).
 
     Args:

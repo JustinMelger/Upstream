@@ -48,34 +48,34 @@ async def render_share_item_page(
         )
         if normalized_type == "article":
             draft_key = f"share_article_page_draft::{username}"
-            state = ShareArticleUiState()
-            controls = build_article_controls(ui_module=ui_module)
-            wire_article_draft(controls=controls, draft_key=draft_key, app_module=app_module, notify=notify)
+            article_state = ShareArticleUiState()
+            article_controls = build_article_controls(ui_module=ui_module)
+            wire_article_draft(controls=article_controls, draft_key=draft_key, app_module=app_module, notify=notify)
             wire_article_actions(
-                controls=controls,
-                state=state,
+                controls=article_controls,
+                state=article_state,
                 controller=controller,
                 draft_key=draft_key,
                 app_module=app_module,
                 ui_module=ui_module,
                 notify=notify,
             )
-            controls.preview.refresh()
+            article_controls.preview.refresh()
             return
 
         draft_key = f"share_{normalized_type}_page_draft::{username}"
-        state = ShareCourseUiState()
-        controls = build_course_controls(ui_module=ui_module, item_type=normalized_type)
+        course_state = ShareCourseUiState()
+        course_controls = build_course_controls(ui_module=ui_module, item_type=normalized_type)
         wire_course_draft(
-            controls=controls,
+            controls=course_controls,
             draft_key=draft_key,
             item_type=normalized_type,
             app_module=app_module,
             notify=notify,
         )
         wire_course_actions(
-            controls=controls,
-            state=state,
+            controls=course_controls,
+            state=course_state,
             controller=controller,
             draft_key=draft_key,
             item_type=normalized_type,
@@ -83,5 +83,5 @@ async def render_share_item_page(
             ui_module=ui_module,
             notify=notify,
         )
-        refresh_title_suggestion(controls=controls, state=state)
-        controls.preview.refresh()
+        refresh_title_suggestion(controls=course_controls, state=course_state)
+        course_controls.preview.refresh()

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import require_session
@@ -16,7 +18,7 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 async def create_plan(
     payload: AiPlanRequest,
     _current_user: str = Depends(require_session),
-):
+) -> dict[str, Any]:
     """Return a draft learning plan for a user's goal.
 
     This endpoint does not write to the database.

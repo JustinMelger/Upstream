@@ -78,23 +78,23 @@ Execution slices:
   - [x] Explore simplification: keep one scalable Learning Items catalog section (no duplicated course/article rails).
   - [x] Copy/IA cleanup: remove mixed wording drift (`Share course` vs `Share article`) across routes and labels.
   - [x] Compatibility + telemetry: preserve old links and add tracking for old-route usage during migration.
-- [ ] Slice 10.7: learning-item subtype completion
-  - [ ] Lock the initial subtype taxonomy to `video|course|article` and document `Learning item` as the primary shareable object.
-  - [ ] Add URL/provider-based subtype detection so YouTube links map to `video`, Udemy links map to `course`, and generic written links map to `article` unless a stronger rule exists.
-  - [ ] Extend `/share/item` to support explicit subtype selection and auto-detection while preserving compatibility redirects from `/share/course` and `/share/article`.
-  - [ ] Restore course share validation and field parity on the new share page, especially the required-description behavior.
-  - [ ] Rework Explore learning-item rendering so available videos, courses, and articles remain visible in the default state rather than being hidden by naive concatenation.
-  - [ ] Add focused tests for subtype detection, `/share/item` publish behavior, Explore mixed rendering, and compatibility route contracts.
+- [x] Slice 10.7: learning-item subtype completion
+  - [x] Lock the initial subtype taxonomy to `video|course|article` and document `Learning item` as the primary shareable object.
+  - [x] Add URL/provider-based subtype detection so YouTube links map to `video`, Udemy links map to `course`, and generic written links map to `article` unless a stronger rule exists.
+  - [x] Extend `/share/item` to support explicit subtype selection and auto-detection while preserving compatibility redirects from `/share/course` and `/share/article`.
+  - [x] Restore course share validation and field parity on the new share page, especially the required-description behavior.
+  - [x] Rework Explore learning-item rendering so available videos, courses, and articles remain visible in the default state rather than being hidden by naive concatenation.
+  - [x] Add focused tests for subtype detection, `/share/item` publish behavior, Explore mixed rendering, and compatibility route contracts.
 
 Validation and acceptance criteria:
 - [ ] Core pages (`Home`, `Explore`, detail pages) use one consistent typography/spacing/component language.
 - [ ] Shared content surfaces use one consistent `Learning item` terminology model without course/article naming drift.
 - [ ] Learning-item subtype taxonomy is stable and explicit:
-  - [ ] YouTube links classify as `video`.
-  - [ ] Udemy links classify as `course`.
-  - [ ] Generic written links classify as `article` unless a stronger rule exists.
-  - [ ] `/share/item` supports explicit subtype selection and successful publish flows for `video`, `course`, and `article`.
-  - [ ] Explore uses one learning-item model without hiding one available subtype behind another in the default view.
+  - [x] YouTube links classify as `video`.
+  - [x] Udemy links classify as `course`.
+  - [x] Generic written links classify as `article` unless a stronger rule exists.
+  - [x] `/share/item` supports explicit subtype selection and successful publish flows for `video`, `course`, and `article`.
+  - [x] Explore uses one learning-item model without hiding one available subtype behind another in the default view.
 - [ ] Interaction transitions are present, subtle, and consistent (no abrupt state jumps on major list/filter/card updates).
 - [ ] First-time clarity goals are measurably improved:
   - [x] no ambiguous empty-state next steps on primary pages.
@@ -111,7 +111,7 @@ Tracking:
 - [ ] Update roadmap checkboxes for completed `11A/11C/11D/11E` UX-style items at sprint close.
 - [ ] Record before/after screenshots for `Home`, `Explore`, and one detail page variant in CI artifacts.
 - [ ] Add a short design-review log section in this file (decision, rationale, affected pages/components).
-- [ ] Add/maintain focused regression coverage for `/share/item`, subtype detection, and Explore mixed learning-item visibility rather than broad new snapshot churn.
+- [x] Add/maintain focused regression coverage for `/share/item`, subtype detection, and Explore mixed learning-item visibility rather than broad new snapshot churn.
 
 ### Sprint 10 Design-Review Log (2026-03-07)
 Reference checklist: `docs/ui_system.md`

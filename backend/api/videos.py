@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -17,7 +17,7 @@ async def list_videos(
     category: Optional[str] = Query(default=None, description="Category filter"),
     current_user: str = Depends(require_session),
     videos: VideosService = Depends(get_videos_service),
-):
+) -> list[dict[str, Any]]:
     """List videos."""
     _ = current_user
     return await videos.list_videos(query=q, provider=provider, category=category)
@@ -28,7 +28,7 @@ async def get_video(
     video_id: int,
     current_user: str = Depends(require_session),
     videos: VideosService = Depends(get_videos_service),
-):
+) -> dict[str, Any]:
     """Get one video by id."""
     _ = current_user
     video = await videos.get_video_by_id(video_id=int(video_id))
@@ -42,6 +42,6 @@ async def create_video(
     payload: VideoCreateRequest,
     current_user: str = Depends(require_session),
     videos: VideosService = Depends(get_videos_service),
-):
+) -> dict[str, Any]:
     """Create a video."""
     return await videos.create_video(payload=payload.model_dump(), created_by=current_user)

@@ -151,7 +151,7 @@ def error_handler(
         if inspect.iscoroutinefunction(func):
 
             @wraps(func)
-            async def wrapper(*args, **kwargs):
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
                 """Async wrapper that preserves HTTPException and wraps other exceptions."""
                 try:
                     return await func(*args, **kwargs)
@@ -164,7 +164,7 @@ def error_handler(
         else:
 
             @wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
                 """Sync wrapper that preserves HTTPException and wraps other exceptions."""
                 try:
                     return func(*args, **kwargs)

@@ -95,18 +95,15 @@ warn_unreachable = true
 strict_equality = true
 no_implicit_optional = true
 check_untyped_defs = true
+disallow_untyped_defs = true
 ignore_missing_imports = true
 exclude = ["^tests/"]
 
 [[tool.mypy.overrides]]
+# Temporary opt-out for the legacy FastAPI transport layer until endpoint
+# annotations are normalized to the same baseline as the rest of the app.
 module = [
-    "backend.services.*",
-    "frontend.ui.nicegui.services.*",
-    "frontend.ui.nicegui.pages.*.controller",
-    "frontend.ui.nicegui.pages.*.orchestration",
-    "frontend.ui.nicegui.pages.*.actions",
-    "frontend.ui.nicegui.pages.*.reducers",
-    "frontend.ui.nicegui.pages.*.state",
-    "frontend.ui.nicegui.pages.*.view_model",
+    "backend.api.*",
+    "backend.main",
 ]
-disallow_untyped_defs = true
+disallow_untyped_defs = false

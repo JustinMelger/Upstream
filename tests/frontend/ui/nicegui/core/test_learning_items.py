@@ -22,6 +22,13 @@ def test_infer_learning_item_type_distinguishes_video_course_and_article() -> No
 
 
 @pytest.mark.unit
+def test_infer_learning_item_type_uses_provider_hints_when_url_is_generic() -> None:
+    assert infer_learning_item_type(url="https://example.com/watch", provider="YouTube") == "video"
+    assert infer_learning_item_type(url="https://example.com/learn", provider="Udemy") == "course"
+    assert infer_learning_item_type(url="https://example.com/post", provider="Independent Blog") == "article"
+
+
+@pytest.mark.unit
 def test_interleave_learning_item_entries_preserves_subtype_diversity() -> None:
     ordered = interleave_learning_item_entries(
         entries=[

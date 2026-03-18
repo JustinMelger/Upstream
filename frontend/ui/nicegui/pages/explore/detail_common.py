@@ -37,7 +37,7 @@ def render_breadcrumb(*, label: str) -> None:
         ui.button("Close", icon="close", on_click=lambda: ui.navigate.to("/explore")).props("outline dense")
 
 
-def render_detail_scope(*, store: SessionStore, api: ApiClient):
+def render_detail_scope(*, store: SessionStore, api: ApiClient) -> Any:
     """Render shell + container for Explore detail pages."""
     render_shell(title="Explore", store=store, api=api)
     return render_catalog_scope(variant="explore").classes("lp-container lp-explore-detail")

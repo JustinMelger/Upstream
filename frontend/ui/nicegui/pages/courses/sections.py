@@ -254,7 +254,7 @@ def render_tracking_status_select(
     status_select.tooltip("Status")
     saved_hint = ui.label("").classes("lp-status-saved")
 
-    async def _on_status_change(e: Any, _cid: int = int(course_id), _select=status_select) -> None:
+    async def _on_status_change(e: Any, _cid: int = int(course_id), _select: Any = status_select) -> None:
         _select.disable()
         saved_hint.text = ""
         try:
