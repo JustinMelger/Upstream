@@ -20,7 +20,9 @@ def format_learning_inventory_text(*, learning_item_count: int, path_count: int,
     )
 
 
-def format_explore_scope_text(*, tab_value: str, course_count: int, video_count: int, article_count: int, path_count: int) -> str:
+def format_explore_scope_text(
+    *, tab_value: str, course_count: int, video_count: int, article_count: int, path_count: int
+) -> str:
     """Return the Explore top-bar meta text for the active tab."""
     if tab_value == "courses":
         return format_count_label(count=course_count, singular="course")

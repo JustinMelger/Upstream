@@ -35,7 +35,7 @@ class ExploreSectionsDeps:
     on_set_tracking: Callable[[int, str], Awaitable[None]]
     on_clear_tracking: Callable[[int], Awaitable[None]]
     on_toggle_path_selection: Callable[[int], Awaitable[None]]
-    open_path_details_dialog: Callable[[dict[str, Any], Any], None]
+    open_path: Callable[[int], None]
     open_article_details: Callable[[dict[str, Any], bool], Awaitable[None]]
     learning_items_visible_limit: int
     on_show_more_learning_items: Callable[[], None]
@@ -122,7 +122,7 @@ def render_explore_sections(
                         username=deps.username,
                         is_admin=deps.is_admin,
                         on_toggle_path_selection=deps.on_toggle_path_selection,
-                        open_path_details_dialog=deps.open_path_details_dialog,
+                        open_path=deps.open_path,
                     )
 
     if visible_learning_items:

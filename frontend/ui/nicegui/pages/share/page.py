@@ -71,6 +71,16 @@ class ArticleShareControls:
     preview: Any
 
 
+@dataclass(slots=True)
+class PathShareControls:
+    name_input: Any
+    description_input: Any
+    course_ids_input: Any
+    save_btn: Any
+    publish_btn: Any
+    preview: Any
+
+
 def _render_share_scaffold(*, title: str, subtitle: str) -> None:
     with ui.column().classes("w-full gap-1 lp-share-header"):
         ui.label(title).classes("lp-home-title")
@@ -102,12 +112,14 @@ def _build_course_controls(*, item_type: str) -> CourseShareControls:
                 import_btn = ui.button("Import metadata").props("unelevated no-caps").classes("lp-share-import-btn")
                 ui.separator()
                 ui.label("Learning item details").classes("lp-home-section-title")
-                title_input = ui.input(share_title_input_label(item_type)).props("clearable dense").classes("w-full lp-share-input")
+                title_input = (
+                    ui.input(share_title_input_label(item_type)).props("clearable dense").classes("w-full lp-share-input")
+                )
                 with ui.row().classes("w-full items-center justify-between lp-share-suggestion-row"):
                     title_suggestion = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
                     apply_title_btn = ui.button("Apply suggestion").props("dense outline no-caps")
-                description_input = ui.textarea("Description").props("autogrow dense maxlength=300").classes(
-                    "w-full lp-share-input"
+                description_input = (
+                    ui.textarea("Description").props("autogrow dense maxlength=300").classes("w-full lp-share-input")
                 )
                 with ui.row().classes("w-full gap-2 lp-share-grid-two"):
                     provider_input = ui.input("Provider").props("clearable dense").classes("w-full lp-share-input")
@@ -129,9 +141,9 @@ def _build_course_controls(*, item_type: str) -> CourseShareControls:
                         )
                         source_url = _normalize_http_url(str(url_input.value or ""))
                         if source_url:
-                            ui.button("Open learning item", on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True)).props(
-                                "dense outline no-caps"
-                            )
+                            ui.button(
+                                "Open learning item", on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True)
+                            ).props("dense outline no-caps")
 
                 preview()
 
@@ -167,7 +179,9 @@ def _build_article_controls() -> ArticleShareControls:
                 import_btn = ui.button("Import metadata").props("unelevated no-caps").classes("lp-share-import-btn")
                 ui.separator()
                 ui.label("Learning item details").classes("lp-home-section-title")
-                title_input = ui.input(share_title_input_label("article")).props("clearable dense").classes("w-full lp-share-input")
+                title_input = (
+                    ui.input(share_title_input_label("article")).props("clearable dense").classes("w-full lp-share-input")
+                )
                 tags_input = ui.input("Tags (comma-separated)").props("clearable dense").classes("w-full lp-share-input")
                 suggestion_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")
 
@@ -181,9 +195,9 @@ def _build_article_controls() -> ArticleShareControls:
                         ui.label(str(tags_input.value or "No tags")).classes("text-xs").style("color: var(--lp-muted)")
                         source_url = _normalize_http_url(str(url_input.value or ""))
                         if source_url:
-                            ui.button("Open learning item", on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True)).props(
-                                "dense outline no-caps"
-                            )
+                            ui.button(
+                                "Open learning item", on_click=lambda u=source_url: ui.navigate.to(u, new_tab=True)
+                            ).props("dense outline no-caps")
 
                 preview()
 
@@ -199,6 +213,53 @@ def _build_article_controls() -> ArticleShareControls:
         title_input=title_input,
         tags_input=tags_input,
         suggestion_hint=suggestion_hint,
+        save_btn=save_btn,
+        publish_btn=publish_btn,
+        preview=preview,
+    )
+
+
+def _build_path_controls(*, course_options: dict[int, str]) -> PathShareControls:
+    with ui.card().classes("lp-card w-full lp-share-surface"):
+        with ui.row().classes("w-full items-stretch gap-4 lp-share-columns"):
+            with ui.column().classes("grow basis-0 min-w-[320px] gap-3 lp-share-form"):
+                ui.label("Path details").classes("lp-home-section-title")
+                name_input = ui.input("Path name").props("clearable dense").classes("w-full lp-share-input")
+                description_input = (
+                    ui.textarea("Description").props("autogrow dense maxlength=400").classes("w-full lp-share-input")
+                )
+                course_ids_input = (
+                    ui.select(course_options, label="Courses in order", multiple=True)
+                    .props("dense")
+                    .classes("w-full lp-share-input")
+                )
+
+            with ui.column().classes("grow basis-0 min-w-[320px] gap-3 lp-share-preview-col"):
+                ui.label("Path preview").classes("lp-home-section-title")
+
+                @ui.refreshable
+                def preview() -> None:
+                    with ui.card().classes("lp-card w-full lp-share-preview-card"):
+                        ui.label(str(name_input.value or "Path name")).classes("text-md font-semibold")
+                        selected_ids = [
+                            int(course_id) for course_id in list(course_ids_input.value or []) if int(course_id) > 0
+                        ]
+                        ui.label(f"{len(selected_ids)} courses selected").classes("text-xs").style("color: var(--lp-muted)")
+                        ui.separator()
+                        ui.label(str(description_input.value or "Path description preview")).classes("text-sm").style(
+                            "color: var(--lp-muted)"
+                        )
+
+                preview()
+
+        with ui.row().classes("w-full justify-end gap-2 mt-2 lp-share-actions"):
+            save_btn = ui.button("Save Draft").props("dense outline no-caps").classes("lp-share-save-btn")
+            publish_btn = ui.button("Publish Path").props("unelevated no-caps").classes("lp-share-publish-btn")
+
+    return PathShareControls(
+        name_input=name_input,
+        description_input=description_input,
+        course_ids_input=course_ids_input,
         save_btn=save_btn,
         publish_btn=publish_btn,
         preview=preview,
@@ -293,6 +354,37 @@ def _wire_article_draft(*, controls: ArticleShareControls, draft_key: str) -> No
         current_type="article",
         source_url=str(controls.url_input.value or ""),
     )
+
+
+def _wire_path_draft(*, controls: PathShareControls, draft_key: str) -> None:
+    def _save(*, notify: bool) -> None:
+        app.storage.user[draft_key] = {
+            "name": str(controls.name_input.value or ""),
+            "description": str(controls.description_input.value or ""),
+            "course_ids": list(controls.course_ids_input.value or []),
+        }
+        if notify:
+            safe_notify("Draft saved", type="positive")
+
+    def _load() -> None:
+        raw = app.storage.user.get(draft_key)
+        if not isinstance(raw, dict):
+            return
+        controls.name_input.value = str(raw.get("name") or "")
+        controls.description_input.value = str(raw.get("description") or "")
+        controls.course_ids_input.value = list(raw.get("course_ids") or [])
+        controls.course_ids_input.update()
+
+    controls.save_btn.on("click", lambda *_: _save(notify=True))
+
+    def _on_field_change(*_args: Any) -> None:
+        _save(notify=False)
+        controls.preview.refresh()
+
+    for control in [controls.name_input, controls.description_input, controls.course_ids_input]:
+        control.on("update:model-value", _on_field_change)
+
+    _load()
 
 
 def _refresh_title_suggestion(*, controls: CourseShareControls, state: ShareCourseUiState) -> None:
@@ -534,6 +626,57 @@ async def _render_share_article_page(*, store: SessionStore, api: ApiClient, con
         controls.preview.refresh()
 
 
+async def _render_share_path_page(*, store: SessionStore, api: ApiClient, controller: SharePageController) -> None:
+    user = await require_user(store, api)
+    if user is None:
+        return
+    username = str(user.get("username") or "")
+    draft_key = f"share_path_page_draft::{username}"
+    course_options = await controller.load_path_course_options()
+
+    render_shell(title="Share Path", store=store, api=api)
+    with render_catalog_scope(variant="explore").classes("lp-container lp-share-scope"):
+        _render_share_scaffold(
+            title="Share Path",
+            subtitle="Share a structured path your team can follow together.",
+        )
+        controls = _build_path_controls(course_options=course_options)
+        _wire_path_draft(controls=controls, draft_key=draft_key)
+
+        @guard_ui_action(title="Publish failed")
+        async def _publish() -> None:
+            name = str(controls.name_input.value or "").strip()
+            description = str(controls.description_input.value or "").strip()
+            course_ids: list[int] = []
+            for raw in list(controls.course_ids_input.value or []):
+                try:
+                    course_id = int(raw)
+                except (TypeError, ValueError):
+                    continue
+                if course_id > 0:
+                    course_ids.append(course_id)
+            if not name:
+                safe_notify("Path name is required", type="negative")
+                return
+            if not course_ids:
+                safe_notify("Select at least one course", type="negative")
+                return
+            created = await controller.create_path(
+                payload={
+                    "name": name,
+                    "description": description,
+                    "course_ids": course_ids,
+                }
+            )
+            app.storage.user.pop(draft_key, None)
+            safe_notify("Path published", type="positive")
+            created_id = int(created.get("id") or 0)
+            ui.navigate.to(f"/explore/paths/{created_id}" if created_id > 0 else "/explore?tab=paths")
+
+        controls.publish_btn.on("click", lambda *_: _publish())
+        controls.preview.refresh()
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register dedicated learning-item share routes."""
     controller = SharePageController(api=api)
@@ -547,6 +690,10 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await _render_share_article_page(store=store, api=api, controller=controller)
             return
         await _render_share_course_page(store=store, api=api, controller=controller, item_type=item_type)
+
+    @ui.page("/share/path")
+    async def share_path_page() -> None:
+        await _render_share_path_page(store=store, api=api, controller=controller)
 
     @ui.page("/share/course")
     async def share_course_compat_page() -> None:

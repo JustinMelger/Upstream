@@ -97,10 +97,7 @@ class VideosRepository(RepositoryDateTimeCodec):
         if not normalized:
             return None
         stmt = (
-            select(VideoModel)
-            .where(func.lower(func.trim(VideoModel.url)) == normalized)
-            .order_by(VideoModel.id.asc())
-            .limit(1)
+            select(VideoModel).where(func.lower(func.trim(VideoModel.url)) == normalized).order_by(VideoModel.id.asc()).limit(1)
         )
         result = await self.session.execute(stmt)
         row = result.scalar_one_or_none()

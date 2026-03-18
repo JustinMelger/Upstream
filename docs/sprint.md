@@ -297,6 +297,61 @@ Tracking:
 - [ ] Update `docs/roadmap.md` checkboxes for each closed item during the sprint.
 - [ ] Record sprint-end delta: `Phase 11 open before` vs `Phase 11 open after`.
 
+## Sprint 13 — Paths As Ordered Learning Items (Queued)
+Goal: move paths from ordered courses to ordered learning items so `/share/path`, path details, and path editing support `course|video|article` without regressing the current clean architecture boundaries.
+
+Dependency:
+- [ ] Start after the current path share/detail route-first model remains stable under targeted regression coverage.
+- [ ] Keep phase-1 progress semantics explicit: course tracking continues to drive path progress until generic learning-item completion exists.
+
+Timebox:
+- [ ] 2 weeks
+
+Scope priorities:
+- [ ] P0: backend path model migration from course-only membership to ordered typed items.
+- [ ] P0: frontend `/share/path` and path detail support for mixed learning items.
+- [ ] P1: cross-surface cleanup so path summaries and copy say `learning items`, not `courses`, where the model is mixed.
+- [ ] P1: docs/tests/architecture guard updates for the new contract.
+- [ ] P2: generic learning-item completion for paths is explicitly deferred.
+
+Execution slices:
+- [ ] Slice 13.0: path data model + migration
+  - [ ] Add backend `path_items` persistence with `path_id`, `item_type`, `item_id`, and `position`.
+  - [ ] Migrate existing path-course membership into `item_type="course"` rows.
+  - [ ] Keep service/repository code aligned to complexity thresholds by extracting parse/validation helpers instead of adding inline branching.
+- [ ] Slice 13.1: path API + service contract
+  - [ ] Replace course-only path mutation payloads with ordered typed items.
+  - [ ] Validate `course|video|article` references against the correct backing domain before persistence.
+  - [ ] Return ordered typed items from path detail/list payloads instead of course-only membership shapes.
+- [ ] Slice 13.2: `/share/path` and edit-path UX
+  - [ ] Replace course-only selectors with mixed learning-item selection and ordering.
+  - [ ] Label the composition field as `Learning items in order`.
+  - [ ] Show subtype chips and concise source metadata in the picker so mixed-item selection stays scannable.
+- [ ] Slice 13.3: path detail rendering
+  - [ ] Render mixed path sequences with visible subtype chips and correct deep-link navigation per item type.
+  - [ ] Update path summary copy to reflect `learning items` rather than `courses`.
+  - [ ] Keep the routed path detail page as the canonical experience; do not reintroduce hover/dialog-first behavior.
+- [ ] Slice 13.4: progress semantics and compatibility
+  - [ ] Preserve current course-based progress as the explicit phase-1 rule for mixed paths.
+  - [ ] Make videos/articles visible steps in the path without implying unsupported completion tracking.
+  - [ ] Add compatibility handling for legacy course-only paths during the migration window.
+- [ ] Slice 13.5: tests, docs, and architecture guards
+  - [ ] Add backend tests for mixed-item path create/update/detail and migration behavior.
+  - [ ] Add frontend tests for `/share/path`, mixed path detail rendering, and deep-link routing for course/video/article items.
+  - [ ] Update roadmap/architecture docs and keep route/service-boundary guard tests in sync.
+
+Acceptance criteria:
+- [ ] A path can contain ordered `course`, `video`, and `article` items through the canonical `/share/path` flow.
+- [ ] Existing course-only paths migrate cleanly with no broken detail pages or edit flows.
+- [ ] Path detail pages render mixed sequences and open the correct subtype detail route for each item.
+- [ ] Phase-1 progress semantics are explicit and truthful: course tracking still drives progress; videos/articles do not fake completion state.
+- [ ] Touched modules remain within the existing clean-code/complexity guardrails (`ruff`, scoped `mypy`, architecture tests, focused regression tests).
+
+Tracking:
+- [ ] Update `docs/roadmap.md` to mark the path model as ordered learning items once persistence and UI contracts are implemented.
+- [ ] Record the migration contract in `docs/architecture_frontend.md` and `docs/architecture_backend.md`.
+- [ ] Keep a short implementation log here if phase-1 scope cuts change (especially progress semantics).
+
 ## Sprint TBD — Phase 14 User Testing + Pilot Validation
 - [ ] Run 5 first-time-user usability tests and log confusion points.
 - [ ] Fix top 5 confusion points before pilot launch.

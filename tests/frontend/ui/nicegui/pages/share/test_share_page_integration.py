@@ -273,7 +273,9 @@ async def test_share_item_video_publish_requires_description(monkeypatch: pytest
 
 
 @pytest.mark.anyio
-async def test_share_item_video_publish_success_navigates_and_persists_provider_default(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_share_item_video_publish_success_navigates_and_persists_provider_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     fake_ui = _FakeUi()
     controller = _FakeController()
     notifications: list[tuple[str, str]] = []

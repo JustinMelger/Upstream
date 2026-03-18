@@ -383,6 +383,7 @@ def render_shared_content(
                         "color: var(--lp-muted)"
                     )
 
+
 def render_home_hero_panel(
     *,
     next_course: dict[str, Any] | None,

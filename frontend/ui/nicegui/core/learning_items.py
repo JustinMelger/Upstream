@@ -131,9 +131,7 @@ def learning_item_source_action_label(item_type: str) -> str:
 
 def interleave_learning_item_entries(*, entries: list[Any]) -> list[Any]:
     """Interleave learning items by subtype to preserve visible diversity."""
-    buckets: dict[str, deque[Any]] = {
-        item_type: deque() for item_type in _DISPLAY_ORDER
-    }
+    buckets: dict[str, deque[Any]] = {item_type: deque() for item_type in _DISPLAY_ORDER}
     trailing: list[Any] = []
 
     for entry in list(entries or []):

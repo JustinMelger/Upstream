@@ -97,6 +97,7 @@ def test_documented_routes_exist_in_page_modules() -> None:
         "/explore/paths/{path_id}",
         "/explore/articles/{article_id}",
         "/share/item",
+        "/share/path",
         "/admin/users",
         "/ai",
     }
@@ -111,6 +112,7 @@ def test_share_route_contract_includes_compatibility_routes() -> None:
     share_page = _PAGES_ROOT / "share" / "page.py"
     declared_routes = _decorated_routes(share_page)
     assert "/share/item" in declared_routes
+    assert "/share/path" in declared_routes
     assert "/share/course" in declared_routes
     assert "/share/article" in declared_routes
 

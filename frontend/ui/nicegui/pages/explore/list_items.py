@@ -82,7 +82,7 @@ def render_path_item(
     username: str,
     is_admin: bool,
     on_toggle_path_selection: Callable[[int], Awaitable[None]],
-    open_path_details_dialog: Callable[[dict[str, Any], Any], None],
+    open_path: Callable[[int], None],
 ) -> None:
     """Render one path card item for Explore."""
     with ui.element("div").classes(item_classes):
@@ -123,8 +123,8 @@ def render_path_item(
         async def _on_track_toggle() -> None:
             await on_toggle_path_selection(path_id)
 
-        async def _open_path_details_inline() -> None:
-            open_path_details_dialog(path, card_vm)
+        async def _open_path() -> None:
+            open_path(path_id)
 
         def _open_path_reviews() -> None:
             ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
@@ -145,7 +145,7 @@ def render_path_item(
             if not is_tracked:
                 await _on_track_toggle()
                 return
-            await _open_path_details_inline()
+            await _open_path()
 
         render_path_card(
             display=PathCardDisplay(
@@ -175,7 +175,7 @@ def render_path_item(
                 on_copy_link=_copy_path_link,
                 on_edit=_open_path_edit,
                 on_delete=_open_path_delete,
-                on_view=_open_path_details_inline,
+                on_view=_open_path,
                 on_track_toggle=_on_track_toggle,
                 track_toggle_label="",
                 on_primary=_on_primary_action,

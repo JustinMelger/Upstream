@@ -114,15 +114,9 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             )
 
         share_bindings = create_explore_share_bindings(
-            controller=controller,
-            state=state,
-            username=username,
-            reload_data=_load,
-            refresh_ui=lambda: list_view.refresh(),
             on_open_learning_item_share_page=lambda: ui.navigate.to("/share/item"),
-            on_unknown_target=lambda tab: ui.navigate.to(
-                "/explore?tab=" + {"path": "paths"}.get(tab, "courses")
-            ),
+            on_open_path_share_page=lambda: ui.navigate.to("/share/path"),
+            on_unknown_target=lambda tab: ui.navigate.to("/explore?tab=" + {"path": "paths"}.get(tab, "courses")),
         )
         share_dialog = render_explore_share_dialog(
             on_share_learning_item=lambda: share_bindings.open_share_target("learning_item"),
@@ -171,7 +165,12 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             topbar.meta.text = results.meta_text
 
             with ui.element("div").classes("w-full lp-refresh-region"):
-                if not results.shown_courses and not results.shown_videos and not results.shown_paths and not results.shown_articles:
+                if (
+                    not results.shown_courses
+                    and not results.shown_videos
+                    and not results.shown_paths
+                    and not results.shown_articles
+                ):
                     render_explore_empty_state(
                         loaded_once=state.loaded_once,
                         on_refresh=_load,
@@ -192,9 +191,7 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                         on_set_tracking=mutation_handlers.set_tracking,
                         on_clear_tracking=mutation_handlers.clear_tracking,
                         on_toggle_path_selection=mutation_handlers.toggle_path_selection,
-                        on_open_path_details=lambda path_row, card_vm: ui.navigate.to(
-                            f"/explore/paths/{int(path_row.get('id') or 0)}"
-                        ),
+                        on_open_path=lambda path_id: ui.navigate.to(f"/explore/paths/{int(path_id)}"),
                         ui_controls=ExploreSectionsUiControls(
                             learning_items_visible_limit=int(ui_flags.learning_items_visible_limit or 8),
                             on_show_more_learning_items=_show_more_learning_items,

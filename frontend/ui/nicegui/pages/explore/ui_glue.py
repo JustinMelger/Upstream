@@ -28,7 +28,9 @@ def normalize_sort(raw: Any) -> str:
     return value if value in SORT_OPTIONS else ""
 
 
-def compute_explore_meta_text(*, tab_value: str, course_count: int, video_count: int, path_count: int, article_count: int) -> str:
+def compute_explore_meta_text(
+    *, tab_value: str, course_count: int, video_count: int, path_count: int, article_count: int
+) -> str:
     """Build topbar meta text for current Explore scope."""
     return format_explore_scope_text(
         tab_value=tab_value,

@@ -120,14 +120,12 @@ def render_team_activity(
                             ui.label(message).classes("text-sm lp-teams-feed-row-title")
                             ui.label(actor).classes("text-xs lp-teams-feed-row-meta").style("color: var(--lp-muted)")
                             if target_meta:
-                                ui.label(target_meta).classes("text-xs lp-teams-feed-row-meta").style(
-                                    "color: var(--lp-muted)"
-                                )
+                                ui.label(target_meta).classes("text-xs lp-teams-feed-row-meta").style("color: var(--lp-muted)")
                     with ui.column().classes("items-end gap-1"):
                         ui.label(format_when(created_at)).classes("text-xs").style("color: var(--lp-muted)")
-                        ui.button("Open", on_click=lambda target=event.target: on_open_target(target)).props("dense flat").classes(
-                            "lp-teams-open-link"
-                        )
+                        ui.button("Open", on_click=lambda target=event.target: on_open_target(target)).props(
+                            "dense flat"
+                        ).classes("lp-teams-open-link")
 
 
 def render_inbox_activity(
@@ -167,11 +165,9 @@ def render_inbox_activity(
                             ui.label(message).classes("text-sm lp-teams-feed-row-title")
                             ui.label(actor).classes("text-xs lp-teams-feed-row-meta").style("color: var(--lp-muted)")
                             if target_meta:
-                                ui.label(target_meta).classes("text-xs lp-teams-feed-row-meta").style(
-                                    "color: var(--lp-muted)"
-                                )
+                                ui.label(target_meta).classes("text-xs lp-teams-feed-row-meta").style("color: var(--lp-muted)")
                     with ui.column().classes("items-end gap-1"):
                         ui.label(format_when(created_at)).classes("text-xs").style("color: var(--lp-muted)")
-                        ui.button("Open", on_click=lambda target=event.target: on_open_target(target)).props("dense flat").classes(
-                            "lp-teams-open-link"
-                        )
+                        ui.button("Open", on_click=lambda target=event.target: on_open_target(target)).props(
+                            "dense flat"
+                        ).classes("lp-teams-open-link")

@@ -19,11 +19,25 @@ def test_format_learning_inventory_text_uses_learning_items_and_paths() -> None:
 
 
 def test_format_explore_scope_text_uses_learning_item_umbrella_for_all_tab() -> None:
-    assert format_explore_scope_text(tab_value="courses", course_count=3, video_count=2, article_count=5, path_count=8) == "3 courses"
-    assert format_explore_scope_text(tab_value="videos", course_count=3, video_count=2, article_count=5, path_count=8) == "2 videos"
-    assert format_explore_scope_text(tab_value="articles", course_count=3, video_count=2, article_count=5, path_count=8) == "5 articles"
-    assert format_explore_scope_text(tab_value="paths", course_count=3, video_count=2, article_count=5, path_count=8) == "8 paths"
-    assert format_explore_scope_text(tab_value="all", course_count=3, video_count=2, article_count=5, path_count=8) == "10 learning items | 8 paths"
+    assert (
+        format_explore_scope_text(tab_value="courses", course_count=3, video_count=2, article_count=5, path_count=8)
+        == "3 courses"
+    )
+    assert (
+        format_explore_scope_text(tab_value="videos", course_count=3, video_count=2, article_count=5, path_count=8)
+        == "2 videos"
+    )
+    assert (
+        format_explore_scope_text(tab_value="articles", course_count=3, video_count=2, article_count=5, path_count=8)
+        == "5 articles"
+    )
+    assert (
+        format_explore_scope_text(tab_value="paths", course_count=3, video_count=2, article_count=5, path_count=8) == "8 paths"
+    )
+    assert (
+        format_explore_scope_text(tab_value="all", course_count=3, video_count=2, article_count=5, path_count=8)
+        == "10 learning items | 8 paths"
+    )
 
 
 def test_activity_and_team_empty_copy_use_learning_item_language() -> None:

@@ -30,7 +30,7 @@ def build_sections_deps(
     on_set_tracking: Callable[[int, str], Awaitable[None]],
     on_clear_tracking: Callable[[int], Awaitable[None]],
     on_toggle_path_selection: Callable[[int], Awaitable[None]],
-    on_open_path_details: Callable[[dict[str, Any], Any], None],
+    on_open_path: Callable[[int], None],
     ui_controls: ExploreSectionsUiControls,
 ) -> ExploreSectionsDeps:
     """Build the dependency bundle consumed by `render_explore_sections`."""
@@ -53,7 +53,7 @@ def build_sections_deps(
         on_set_tracking=on_set_tracking,
         on_clear_tracking=on_clear_tracking,
         on_toggle_path_selection=on_toggle_path_selection,
-        open_path_details_dialog=on_open_path_details,
+        open_path=on_open_path,
         open_article_details=open_explore_article_details,
         learning_items_visible_limit=int(ui_controls.learning_items_visible_limit or 8),
         on_show_more_learning_items=ui_controls.on_show_more_learning_items,

@@ -29,9 +29,14 @@ def test_share_detected_type_text_mentions_mismatched_selection() -> None:
 
 @pytest.mark.unit
 def test_validate_course_like_publish_requires_description_and_url() -> None:
-    assert validate_course_like_publish(item_type="video", title="Demo", description="", url="https://youtu.be/demo") == "Description is required"
+    assert (
+        validate_course_like_publish(item_type="video", title="Demo", description="", url="https://youtu.be/demo")
+        == "Description is required"
+    )
     assert (
         validate_course_like_publish(item_type="course", title="Udemy", description="desc", url="")
         == "Valid learning item URL is required"
     )
-    assert validate_course_like_publish(item_type="course", title="Udemy", description="desc", url="https://udemy.com/x") is None
+    assert (
+        validate_course_like_publish(item_type="course", title="Udemy", description="desc", url="https://udemy.com/x") is None
+    )
