@@ -28,6 +28,7 @@ from frontend.ui.nicegui.pages.learning.onboarding import (
 )
 from frontend.ui.nicegui.pages.learning.route_init import resolve_learning_initial_view
 from frontend.ui.nicegui.pages.learning.sections import (
+    LearningTabContext,
     render_learning_tab,
     render_shared_tab,
 )
@@ -280,44 +281,46 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                 with ui.element("div").classes("w-full lp-refresh-region"):
                     render_learning_tab(
-                        learning_vm=learning_vm,
-                        state=state,
-                        next_course=next_course,
-                        first_course_review_action=first_course_review_action,
-                        first_path_review_action=first_path_review_action,
-                        review_summary_label=lambda row: format_review_summary(row, style="star"),
-                        tracking_label_fn=tracking_label,
-                        progress_for_path_detail=compute_path_progress,
-                        nav_actions=nav_actions,
-                        on_set_tracking_status=_set_tracking_status,
-                        on_clear_tracking_status=_clear_tracking_status,
-                        on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
-                        on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
-                        on_open_selected_paths=lambda: ui.navigate.to("/explore?tab=paths"),
-                        on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
-                        recently_shared_in_teams=recently_shared_in_teams,
-                        on_open_recently_shared_item=lambda row: (
-                            ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}")
-                            if str(row.get("type") or "") == "course"
-                            else (
-                                ui.navigate.to(f"/explore/videos/{int(row.get('id') or 0)}")
-                                if str(row.get("type") or "") == "video"
+                        ctx=LearningTabContext(
+                            learning_vm=learning_vm,
+                            state=state,
+                            next_course=next_course,
+                            first_course_review_action=first_course_review_action,
+                            first_path_review_action=first_path_review_action,
+                            review_summary_label=lambda row: format_review_summary(row, style="star"),
+                            tracking_label_fn=tracking_label,
+                            progress_for_path_detail=compute_path_progress,
+                            nav_actions=nav_actions,
+                            on_set_tracking_status=_set_tracking_status,
+                            on_clear_tracking_status=_clear_tracking_status,
+                            on_browse_courses=lambda: ui.navigate.to("/explore?tab=courses"),
+                            on_browse_paths=lambda: ui.navigate.to("/explore?tab=paths"),
+                            on_open_selected_paths=lambda: ui.navigate.to("/explore?tab=paths"),
+                            on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
+                            recently_shared_in_teams=recently_shared_in_teams,
+                            on_open_recently_shared_item=lambda row: (
+                                ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}")
+                                if str(row.get("type") or "") == "course"
                                 else (
-                                    ui.navigate.to(f"/explore/paths/{int(row.get('id') or 0)}")
-                                    if str(row.get("type") or "") == "path"
-                                    else ui.navigate.to(f"/explore/articles/{int(row.get('id') or 0)}")
+                                    ui.navigate.to(f"/explore/videos/{int(row.get('id') or 0)}")
+                                    if str(row.get("type") or "") == "video"
+                                    else (
+                                        ui.navigate.to(f"/explore/paths/{int(row.get('id') or 0)}")
+                                        if str(row.get("type") or "") == "path"
+                                        else ui.navigate.to(f"/explore/articles/{int(row.get('id') or 0)}")
+                                    )
                                 )
-                            )
-                        ),
-                        on_load_more_tracked=lambda: load_more_tracked(
-                            state=state,
-                            total_count=len(learning_vm.tracked_courses),
-                            refresh=_refresh_content,
-                        ),
-                        on_load_more_selected=lambda: load_more_selected(
-                            state=state,
-                            total_count=len(learning_vm.selected_paths),
-                            refresh=_refresh_content,
+                            ),
+                            on_load_more_tracked=lambda: load_more_tracked(
+                                state=state,
+                                total_count=len(learning_vm.tracked_courses),
+                                refresh=_refresh_content,
+                            ),
+                            on_load_more_selected=lambda: load_more_selected(
+                                state=state,
+                                total_count=len(learning_vm.selected_paths),
+                                refresh=_refresh_content,
+                            ),
                         ),
                     )
 

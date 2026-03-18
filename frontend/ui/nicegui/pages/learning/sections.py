@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from nicegui import ui
@@ -18,6 +19,31 @@ from frontend.ui.nicegui.core.learning_items import (
 
 
 _ALLOWED_TRACKING_STATUSES = {"interested", "in_progress", "completed"}
+
+
+@dataclass(slots=True)
+class LearningTabContext:
+    """Bundled dependencies for rendering the learning tab."""
+
+    learning_vm: Any
+    state: Any
+    next_course: dict[str, Any] | None
+    first_course_review_action: Any
+    first_path_review_action: Any
+    review_summary_label: Any
+    tracking_label_fn: Any
+    progress_for_path_detail: Any
+    nav_actions: Any
+    on_set_tracking_status: Any
+    on_clear_tracking_status: Any
+    on_browse_courses: Any
+    on_browse_paths: Any
+    on_open_selected_paths: Any
+    on_open_full_stats: Any
+    recently_shared_in_teams: list[dict[str, Any]]
+    on_open_recently_shared_item: Any
+    on_load_more_tracked: Any
+    on_load_more_selected: Any
 
 
 def _tracking_status_counts(*, tracking_by_course_id: dict[int, dict[str, Any]]) -> tuple[int, int, int]:
@@ -635,29 +661,28 @@ def render_shared_tab(
     )
 
 
-def render_learning_tab(
-    *,
-    learning_vm: Any,
-    state: Any,
-    next_course: dict[str, Any] | None,
-    first_course_review_action: Any,
-    first_path_review_action: Any,
-    review_summary_label: Any,
-    tracking_label_fn: Any,
-    progress_for_path_detail: Any,
-    nav_actions: Any,
-    on_set_tracking_status: Any,
-    on_clear_tracking_status: Any,
-    on_browse_courses: Any,
-    on_browse_paths: Any,
-    on_open_selected_paths: Any,
-    on_open_full_stats: Any,
-    recently_shared_in_teams: list[dict[str, Any]],
-    on_open_recently_shared_item: Any,
-    on_load_more_tracked: Any,
-    on_load_more_selected: Any,
-) -> None:
+def render_learning_tab(*, ctx: LearningTabContext) -> None:
     """Compose learning-tab UI from the learning view-model."""
+    learning_vm = ctx.learning_vm
+    state = ctx.state
+    next_course = ctx.next_course
+    first_course_review_action = ctx.first_course_review_action
+    first_path_review_action = ctx.first_path_review_action
+    review_summary_label = ctx.review_summary_label
+    tracking_label_fn = ctx.tracking_label_fn
+    progress_for_path_detail = ctx.progress_for_path_detail
+    nav_actions = ctx.nav_actions
+    on_set_tracking_status = ctx.on_set_tracking_status
+    on_clear_tracking_status = ctx.on_clear_tracking_status
+    on_browse_courses = ctx.on_browse_courses
+    on_browse_paths = ctx.on_browse_paths
+    on_open_selected_paths = ctx.on_open_selected_paths
+    on_open_full_stats = ctx.on_open_full_stats
+    recently_shared_in_teams = ctx.recently_shared_in_teams
+    on_open_recently_shared_item = ctx.on_open_recently_shared_item
+    on_load_more_tracked = ctx.on_load_more_tracked
+    on_load_more_selected = ctx.on_load_more_selected
+
     teammate_usernames = sorted(
         {
             str(row.get("created_by") or "").strip()

@@ -265,12 +265,15 @@
   - [x] Phase slice: extend smoke coverage to `review` + `select path`.
   - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
   - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+- [ ] Quality-gate determinism: keep the ratchet + strict-core script in lock-step with the CI workflow and ensure the pipeline surfaces real `ruff`/`mypy` failures instead of shell-flow bugs.
+- [x] Strict-core remediation: fix active strict-scope regressions surfaced by the quality gate in `backend/services`, `frontend/ui/nicegui/core`, and `frontend/ui/nicegui/services`.
+- [ ] E2E environment contract: keep smoke tests route-accurate and environment-aware so CI fails on product regressions, not bootstrap/browser instability.
 - [x] Test reliability: isolate backend integration test auth/session state per test (or per module) to remove intermittent `401/404/500` flakiness.
 - [x] Docs sync: update `docs/architecture_frontend.md` to match current IA/routes (`My learning`, `Insights`, mailbox activity) and current service/page boundaries.
 - [x] Docs sync: update `docs/architecture_backend.md` course/recommendation/review model details (`description`, `learning_outcomes`, `prerequisites`, `language`, `search_document`) and current service flows.
 - [x] Lint/mypy ratchet (near-term target): converge to `mccabe<=25`, `max-branches<=20`, `max-statements<=100`, `max-args<=10`, `max-returns<=8` for non-legacy code.
   - [x] Phase slice: define enforcement tiers by module type (strict for `services/controllers/orchestration/reducers`; slightly looser for UI section renderers) and document them in `pyproject.toml` comments.
-  - [x] Phase slice: remove temporary per-file complexity ignores from active (non-legacy) modules by extracting oversized functions into `controller.py`, `orchestration.py`, `actions.py`, and `ui_glue.py`.
+  - [ ] Phase slice: continue removing temporary per-file complexity ignores from active (non-legacy) modules by extracting oversized functions into `controller.py`, `orchestration.py`, `actions.py`, and `ui_glue.py`.
   - [x] Phase slice: reduce argument-heavy APIs (`PLR0913`) by introducing typed payload/view-model dataclasses and callback/context objects instead of long parameter lists.
   - [x] Phase slice: add architecture tests that prevent new direct complexity regressions in active page modules (file-size + complexity smoke guards).
   - [x] Phase slice: keep legacy pages explicitly excluded until migration is complete; do not expand legacy ignore scope.
@@ -372,6 +375,9 @@ Follow-on implementation track: paths as ordered learning items
 - [x] Onboarding intro: add lightweight, dismissible 3-step first-login walkthrough.
 - [x] Empty states: ensure each empty state has exactly one clear primary action.
 - [x] Next-step clarity: no page should load without an unambiguous next step.
+- [ ] Acceptance audit: recheck `Home`, `Explore`, `Teams`, and `Profile` against the current IA so first-use copy still reflects canonical routes and product nouns.
+- [ ] No-team/no-content contract: make the next step explicit for users with zero teams or zero tracked/shared content.
+- [ ] Focused acceptance tests: add or refresh integration coverage for “one clear next action” on the main first-use empty states.
 
 Definition of done:
 - [ ] Navigation feels obvious without explanation.

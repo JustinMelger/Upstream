@@ -59,7 +59,7 @@ def safe_notify(message: str, *, type: NotificationType = "info") -> None:  # no
     """Best-effort UI notification that tolerates missing/deleted UI context."""
     try:
         ui.notify(message, type=type)
-    except Exception:
+    except RuntimeError:
         logger.warning("Unable to show notification; UI context is no longer available")
 
 

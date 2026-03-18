@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
@@ -18,6 +19,21 @@ from frontend.ui.nicegui.pages.home.helpers_compat import _top_contributors
 from frontend.ui.nicegui.pages.home.state import HomePageState
 from frontend.ui.nicegui.pages.home.transitions import begin_home_load, finalize_home_load, should_render_team_section
 from frontend.ui.nicegui.pages.profile.controller import ProfilePageController
+
+
+@dataclass(slots=True)
+class ProfileStatsPageContext:
+    """Mutable view context for the profile stats page."""
+
+    username: str
+    avatar_url: str
+    avatar_initial: str
+    is_admin: bool
+    controller: ProfilePageController
+    state: HomePageState
+    last_loaded_at: datetime | None = None
+    mode_value: str = "mine"
+    meta_text: str = ""
 
 
 def _safe_int(value: Any) -> int:
@@ -85,6 +101,221 @@ def _contributors_chart_option(*, contributors: list[dict[str, Any]]) -> dict[st
     }
 
 
+async def _load_profile_overview(*, ctx: ProfileStatsPageContext, dashboard: Any) -> None:
+    """Load or reload profile overview data and refresh the dashboard."""
+    if ctx.state.loading:
+        ctx.state.pending_reload = True
+        return
+    ctx.state.pending_reload = True
+    while ctx.state.pending_reload:
+        ctx.state.pending_reload = False
+        load_start = begin_home_load()
+        ctx.state.loading = load_start.loading
+        ctx.meta_text = load_start.meta_text
+        dashboard.refresh()
+
+        ok = False
+        try:
+            bundle = await ctx.controller.load_overview(
+                username=ctx.username,
+                is_admin=ctx.is_admin,
+                mode_value=ctx.mode_value,
+            )
+            ctx.state.snapshot_stats = dict(bundle.snapshot_stats or {})
+            ctx.state.team_stats_by_user = list(bundle.team_stats_by_user or [])
+            ctx.last_loaded_at = datetime.now(timezone.utc)
+            ok = True
+        except ApiError as exc:
+            safe_notify(str(exc), type="negative")
+            ctx.state.snapshot_stats = {}
+            ctx.state.team_stats_by_user = []
+        finally:
+            load_done = finalize_home_load(ok=ok)
+            ctx.state.loading = load_done.loading
+            ctx.meta_text = load_done.meta_text
+            dashboard.refresh()
+
+
+def _render_profile_overview_section(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
+    """Render the top profile overview and controls section."""
+    interested = _safe_int(ctx.state.snapshot_stats.get("interested"))
+    in_progress = _safe_int(ctx.state.snapshot_stats.get("in_progress"))
+    completed = _safe_int(ctx.state.snapshot_stats.get("completed"))
+
+    with ui.element("section").classes("lp-home-grid-12"):
+        with ui.element("div").classes("lp-home-span-8"):
+            with ui.card().classes("lp-card w-full lp-profile-overview-card"):
+                ui.label("Profile Overview").classes("lp-profile-card-title")
+                with ui.row().classes("items-center gap-3 w-full lp-profile-head"):
+                    if ctx.avatar_url:
+                        ui.image(ctx.avatar_url).classes("lp-profile-avatar-img")
+                    else:
+                        ui.label(ctx.avatar_initial).classes("lp-profile-avatar-fallback")
+                    with ui.column().classes("gap-0"):
+                        ui.label(ctx.username).classes("lp-profile-user-name")
+                        ui.label("Learning activity overview").classes("lp-profile-muted")
+                with ui.column().classes("gap-0 mt-1"):
+                    ui.label(f"{in_progress} courses in progress").classes("lp-profile-stat-line")
+                    ui.label(f"{completed} completed").classes("lp-profile-stat-line")
+                    ui.label(f"{interested} interested").classes("lp-profile-stat-line")
+                with ui.row().classes("w-full items-center justify-between"):
+                    ui.label(_last_updated_copy(last_loaded_at=ctx.last_loaded_at)).classes("lp-profile-muted mt-1")
+                    ui.button("Refresh stats", on_click=on_refresh).props("outline dense")
+
+        with ui.element("div").classes("lp-home-span-4"):
+            with ui.card().classes("lp-card w-full lp-profile-controls-card"):
+                ui.label("Stats View").classes("lp-profile-card-title")
+                ui.button("Refresh", on_click=on_refresh).props("outline dense")
+                ui.label(ctx.meta_text).classes("text-xs lp-profile-meta")
+
+
+def _render_mode_toggle(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
+    """Render the admin stats mode toggle."""
+    if not ctx.is_admin:
+        return
+    mode_control = (
+        ui.toggle({"mine": "My stats", "team": "Team totals"}, value=ctx.mode_value)
+        .props("unelevated dense no-caps")
+        .classes("lp-profile-mode-toggle")
+    )
+
+    async def _on_mode_change(*_args: object) -> None:
+        ctx.mode_value = str(mode_control.value or "mine")
+        await on_refresh()
+
+    mode_control.on("update:model-value", _on_mode_change)
+
+
+def _render_profile_progress_snapshot(*, ctx: ProfileStatsPageContext) -> None:
+    """Render the profile progress snapshot cards."""
+    interested = _safe_int(ctx.state.snapshot_stats.get("interested"))
+    in_progress = _safe_int(ctx.state.snapshot_stats.get("in_progress"))
+    completed = _safe_int(ctx.state.snapshot_stats.get("completed"))
+    ui.label("Progress Snapshot").classes("lp-profile-section-title")
+    ui.label("Your learning activity across courses").classes("lp-profile-muted mb-1")
+    with ui.element("section").classes("lp-home-grid-12"):
+        for icon, label, value, summary in (
+            ("star", "Interested", interested, "saved items"),
+            ("school", "In progress", in_progress, "active now"),
+            ("check_circle", "Completed", completed, "finished"),
+        ):
+            with ui.element("div").classes("lp-home-span-4"):
+                with ui.card().classes("lp-card w-full lp-profile-metric-card"):
+                    with ui.row().classes("items-center gap-2"):
+                        ui.icon(icon).classes("lp-profile-metric-icon")
+                        ui.label(label).classes("lp-profile-card-title")
+                    ui.label(str(value)).classes("lp-profile-metric-value")
+                    ui.label(summary).classes("lp-profile-muted")
+
+
+def _build_team_stat_rows(*, team_stats_by_user: list[dict[str, Any]]) -> list[dict[str, object]]:
+    """Normalize team stats rows for the profile table."""
+    rows: list[dict[str, object]] = []
+    for row in list(team_stats_by_user or []):
+        who = str(row.get("colleague_id") or "").strip()
+        if not who:
+            continue
+        rows.append(
+            {
+                "user": f"👤 {who}",
+                "interested": _safe_int(row.get("interested")),
+                "in_progress": _safe_int(row.get("in_progress")),
+                "completed": _safe_int(row.get("completed")),
+            }
+        )
+    return rows
+
+
+def _render_profile_team_sections(*, ctx: ProfileStatsPageContext) -> None:
+    """Render team activity chart and stats table when team mode is active."""
+    if not should_render_team_section(is_admin=ctx.is_admin, mode_value=ctx.mode_value):
+        return
+
+    contributors = _top_contributors(ctx.state.team_stats_by_user, limit=6)
+    ui.label("Team Activity").classes("lp-profile-section-title mt-1")
+    ui.label("See how your team is progressing").classes("lp-profile-muted mb-1")
+    with ui.element("section").classes("lp-home-grid-12"):
+        with ui.element("div").classes("lp-home-span-12"):
+            with ui.card().classes("lp-card w-full lp-profile-chart-card"):
+                ui.label("Top contributors this week").classes("lp-profile-card-title")
+                if not contributors:
+                    ui.label("No team contributor data yet. Switch to My stats or invite teammates to get started.").classes(
+                        "lp-profile-muted"
+                    )
+                else:
+                    ui.echart(_contributors_chart_option(contributors=contributors)).classes("w-full h-64")
+
+    ui.label("Team Learning Stats").classes("lp-profile-section-title mt-1")
+    ui.label("Progress distribution across team members").classes("lp-profile-muted mb-1")
+    with ui.element("section").classes("lp-home-grid-12"):
+        with ui.element("div").classes("lp-home-span-12"):
+            with ui.card().classes("lp-card w-full lp-profile-table-card"):
+                rows = _build_team_stat_rows(team_stats_by_user=ctx.state.team_stats_by_user)
+                if not rows:
+                    ui.label("No team stats available yet. Start tracking courses to populate this table.").classes(
+                        "lp-profile-muted"
+                    )
+                    return
+                ui.table(
+                    columns=[
+                        {"name": "user", "label": "User", "field": "user", "align": "left"},
+                        {"name": "interested", "label": "Interested", "field": "interested", "align": "right"},
+                        {
+                            "name": "in_progress",
+                            "label": "In progress",
+                            "field": "in_progress",
+                            "align": "right",
+                        },
+                        {"name": "completed", "label": "Completed", "field": "completed", "align": "right"},
+                    ],
+                    rows=rows,
+                    row_key="user",
+                ).classes("w-full lp-profile-team-table")
+
+
+async def _render_profile_stats_page(*, store: SessionStore, api: ApiClient) -> None:
+    """Render the profile stats route."""
+    user = await require_user(store, api)
+    if user is None:
+        return
+    username = str(user.get("username") or "")
+    ctx = ProfileStatsPageContext(
+        username=username,
+        avatar_url=str(user.get("avatar_url") or user.get("profile_image_url") or user.get("image_url") or "").strip(),
+        avatar_initial=username[:1].upper() if username else "U",
+        is_admin=str(user.get("role") or "user") == "admin",
+        controller=ProfilePageController(api=api),
+        state=HomePageState(),
+    )
+
+    render_shell(title="Profile", store=store, api=api)
+    with render_container().classes("lp-profile-scope"):
+        ui.label(subtitle_for(PrimaryPage.PROFILE)).classes("text-sm text-gray-600")
+        ui.label("Profile analytics").classes("lp-home-title")
+
+        @ui.refreshable
+        def dashboard() -> None:
+            if ctx.state.loading:
+                render_inline_spinner(label="Loading profile stats…")
+                ui.separator()
+                render_card_skeletons(count=3)
+                return
+
+            _render_profile_overview_section(
+                ctx=ctx,
+                on_refresh=lambda: _load_profile_overview(ctx=ctx, dashboard=dashboard),
+            )
+            _render_mode_toggle(
+                ctx=ctx,
+                on_refresh=lambda: _load_profile_overview(ctx=ctx, dashboard=dashboard),
+            )
+            _render_profile_progress_snapshot(ctx=ctx)
+            _render_profile_team_sections(ctx=ctx)
+
+        await _load_profile_overview(ctx=ctx, dashboard=dashboard)
+        dashboard()
+
+
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register `/profile` and `/profile/stats` routes."""
 
@@ -94,186 +325,4 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
     @ui.page("/profile/stats")
     async def profile_stats_page() -> None:
-        user = await require_user(store, api)
-        if user is None:
-            return
-        username = str(user.get("username") or "")
-        avatar_url = str(user.get("avatar_url") or user.get("profile_image_url") or user.get("image_url") or "").strip()
-        avatar_initial = username[:1].upper() if username else "U"
-        role = str(user.get("role") or "user")
-        is_admin = role == "admin"
-        controller = ProfilePageController(api=api)
-        last_loaded_at: datetime | None = None
-        mode_value = "mine"
-        meta_text = ""
-
-        render_shell(title="Profile", store=store, api=api)
-        with render_container().classes("lp-profile-scope"):
-            ui.label(subtitle_for(PrimaryPage.PROFILE)).classes("text-sm text-gray-600")
-            ui.label("Profile analytics").classes("lp-home-title")
-
-            state = HomePageState()
-
-            async def _load_overview() -> None:
-                nonlocal last_loaded_at, meta_text
-                if state.loading:
-                    state.pending_reload = True
-                    return
-                state.pending_reload = True
-                while state.pending_reload:
-                    state.pending_reload = False
-                    load_start = begin_home_load()
-                    state.loading = load_start.loading
-                    meta_text = load_start.meta_text
-                    dashboard.refresh()
-
-                    ok = False
-                    try:
-                        bundle = await controller.load_overview(
-                            username=username,
-                            is_admin=is_admin,
-                            mode_value=mode_value,
-                        )
-                        state.snapshot_stats = dict(bundle.snapshot_stats or {})
-                        state.team_stats_by_user = list(bundle.team_stats_by_user or [])
-                        last_loaded_at = datetime.now(timezone.utc)
-                        ok = True
-                    except ApiError as exc:
-                        safe_notify(str(exc), type="negative")
-                        state.snapshot_stats = {}
-                        state.team_stats_by_user = []
-                    finally:
-                        load_done = finalize_home_load(ok=ok)
-                        state.loading = load_done.loading
-                        meta_text = load_done.meta_text
-                        dashboard.refresh()
-
-            @ui.refreshable
-            def dashboard() -> None:
-                if state.loading:
-                    render_inline_spinner(label="Loading profile stats…")
-                    ui.separator()
-                    render_card_skeletons(count=3)
-                    return
-
-                interested = _safe_int(state.snapshot_stats.get("interested"))
-                in_progress = _safe_int(state.snapshot_stats.get("in_progress"))
-                completed = _safe_int(state.snapshot_stats.get("completed"))
-
-                with ui.element("section").classes("lp-home-grid-12"):
-                    with ui.element("div").classes("lp-home-span-8"):
-                        with ui.card().classes("lp-card w-full lp-profile-overview-card"):
-                            ui.label("Profile Overview").classes("lp-profile-card-title")
-                            with ui.row().classes("items-center gap-3 w-full lp-profile-head"):
-                                if avatar_url:
-                                    ui.image(avatar_url).classes("lp-profile-avatar-img")
-                                else:
-                                    ui.label(avatar_initial).classes("lp-profile-avatar-fallback")
-                                with ui.column().classes("gap-0"):
-                                    ui.label(username).classes("lp-profile-user-name")
-                                    ui.label("Learning activity overview").classes("lp-profile-muted")
-                            with ui.column().classes("gap-0 mt-1"):
-                                ui.label(f"{in_progress} courses in progress").classes("lp-profile-stat-line")
-                                ui.label(f"{completed} completed").classes("lp-profile-stat-line")
-                                ui.label(f"{interested} interested").classes("lp-profile-stat-line")
-                            with ui.row().classes("w-full items-center justify-between"):
-                                ui.label(_last_updated_copy(last_loaded_at=last_loaded_at)).classes("lp-profile-muted mt-1")
-                                ui.button("Refresh stats", on_click=_load_overview).props("outline dense")
-
-                    with ui.element("div").classes("lp-home-span-4"):
-                        with ui.card().classes("lp-card w-full lp-profile-controls-card"):
-                            ui.label("Stats View").classes("lp-profile-card-title")
-                            if is_admin:
-                                mode_control = (
-                                    ui.toggle({"mine": "My stats", "team": "Team totals"}, value=mode_value)
-                                    .props("unelevated dense no-caps")
-                                    .classes("lp-profile-mode-toggle")
-                                )
-
-                                async def _on_mode_change(*_args: object) -> None:
-                                    nonlocal mode_value
-                                    mode_value = str(mode_control.value or "mine")
-                                    await _load_overview()
-
-                                mode_control.on("update:model-value", _on_mode_change)
-                            ui.button("Refresh", on_click=_load_overview).props("outline dense")
-                            ui.label(meta_text).classes("text-xs lp-profile-meta")
-
-                ui.label("Progress Snapshot").classes("lp-profile-section-title")
-                ui.label("Your learning activity across courses").classes("lp-profile-muted mb-1")
-                with ui.element("section").classes("lp-home-grid-12"):
-                    for icon, label, value, context in (
-                        ("star", "Interested", interested, "saved items"),
-                        ("school", "In progress", in_progress, "active now"),
-                        ("check_circle", "Completed", completed, "finished"),
-                    ):
-                        with ui.element("div").classes("lp-home-span-4"):
-                            with ui.card().classes("lp-card w-full lp-profile-metric-card"):
-                                with ui.row().classes("items-center gap-2"):
-                                    ui.icon(icon).classes("lp-profile-metric-icon")
-                                    ui.label(label).classes("lp-profile-card-title")
-                                ui.label(str(value)).classes("lp-profile-metric-value")
-                                ui.label(context).classes("lp-profile-muted")
-
-                show_team = should_render_team_section(
-                    is_admin=is_admin,
-                    mode_value=mode_value,
-                )
-                if not show_team:
-                    return
-
-                contributors = _top_contributors(state.team_stats_by_user, limit=6)
-                ui.label("Team Activity").classes("lp-profile-section-title mt-1")
-                ui.label("See how your team is progressing").classes("lp-profile-muted mb-1")
-                with ui.element("section").classes("lp-home-grid-12"):
-                    with ui.element("div").classes("lp-home-span-12"):
-                        with ui.card().classes("lp-card w-full lp-profile-chart-card"):
-                            ui.label("Top contributors this week").classes("lp-profile-card-title")
-                            if not contributors:
-                                ui.label(
-                                    "No team contributor data yet. Switch to My stats or invite teammates to get started."
-                                ).classes("lp-profile-muted")
-                            else:
-                                ui.echart(_contributors_chart_option(contributors=contributors)).classes("w-full h-64")
-
-                ui.label("Team Learning Stats").classes("lp-profile-section-title mt-1")
-                ui.label("Progress distribution across team members").classes("lp-profile-muted mb-1")
-                with ui.element("section").classes("lp-home-grid-12"):
-                    with ui.element("div").classes("lp-home-span-12"):
-                        with ui.card().classes("lp-card w-full lp-profile-table-card"):
-                            rows = []
-                            for row in list(state.team_stats_by_user or []):
-                                who = str(row.get("colleague_id") or "").strip()
-                                if not who:
-                                    continue
-                                rows.append(
-                                    {
-                                        "user": f"👤 {who}",
-                                        "interested": _safe_int(row.get("interested")),
-                                        "in_progress": _safe_int(row.get("in_progress")),
-                                        "completed": _safe_int(row.get("completed")),
-                                    }
-                                )
-                            if not rows:
-                                ui.label("No team stats available yet. Start tracking courses to populate this table.").classes(
-                                    "lp-profile-muted"
-                                )
-                            else:
-                                ui.table(
-                                    columns=[
-                                        {"name": "user", "label": "User", "field": "user", "align": "left"},
-                                        {"name": "interested", "label": "Interested", "field": "interested", "align": "right"},
-                                        {
-                                            "name": "in_progress",
-                                            "label": "In progress",
-                                            "field": "in_progress",
-                                            "align": "right",
-                                        },
-                                        {"name": "completed", "label": "Completed", "field": "completed", "align": "right"},
-                                    ],
-                                    rows=rows,
-                                    row_key="user",
-                                ).classes("w-full lp-profile-team-table")
-
-            await _load_overview()
-            dashboard()
+        await _render_profile_stats_page(store=store, api=api)

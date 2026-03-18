@@ -52,6 +52,11 @@ Execution slices:
 - [ ] Slice 10.5: visual quality gate hardening
   - [ ] Commit stable visual baselines and enable strict visual-regression enforcement in CI (`11D` remaining item).
   - [ ] Deferred: explicit user decision on 2026-03-09 to skip strict visual-baseline enforcement for now; keep this item queued.
+- [ ] Slice 10.5b: per-file ignore burn-down on active modules
+  - [x] Remove stale per-file ignore from `frontend/ui/nicegui/core/errors.py` by tightening exception handling instead of relying on `BLE001`.
+  - [ ] Audit remaining per-file complexity ignores and remove any that no longer mask real violations.
+  - [ ] Prioritize strict-scope and active-surface files first (`frontend/ui/nicegui/core/*`, then touched page/section modules).
+  - [ ] For ignores that are still necessary, record the next extraction target (`controller.py`, `orchestration.py`, `actions.py`, `ui_glue.py`, or component split) before sprint close.
 - [ ] Slice 10.6: learning-item unification (`video` + `course` + `article`)
   - [x] Naming foundation: use `Learning item` as canonical shared UI term for course/article surfaces.
   - [x] Unified UI mapping: add shared view-model contract with `learning_item_type` (`video`, `article`, `course`, `doc`).
@@ -83,6 +88,7 @@ Validation and acceptance criteria:
   - [x] intro/onboarding flow is dismissible and non-blocking.
 - [x] Accessibility UX polish passes focused checks for keyboard navigation + visible focus + icon-action labeling on touched surfaces.
 - [ ] CI enforces visual snapshots strictly with committed stable baselines.
+- [ ] Active-sprint cleanup reduces per-file ignore debt rather than adding or normalizing it.
 - [ ] Design review output is documented and actionable (before/after evidence + accepted redesign decisions).
 
 Tracking:
@@ -155,6 +161,11 @@ Reference checklist: `docs/ui_system.md`
   - [x] Add dismissible 3-step first-login intro.
   - [x] Ensure each key empty state has exactly one primary action.
   - [x] Ensure no primary page loads without an unambiguous next step.
+  - [ ] Concrete `11E.7` acceptance slices:
+    - [ ] Audit `Home`, `Explore`, `Teams`, and `Profile` empty states against the current IA and keep one obvious next step per page.
+    - [ ] Recheck onboarding copy and hints against canonical routes (`/home`, `/explore`, `/teams`, `/share/item`, `/share/path`) and remove stale wording.
+    - [ ] Verify no-team and no-content states clearly route users to `Teams` and `Explore` without mixed team/share terminology.
+    - [ ] Add focused integration coverage for “one clear next action” on key first-use empty states.
 - [ ] Complete open Share-flow UX actions from `11A.3`:
   - [x] Trigger URL metadata suggestion on paste/blur with debounce (keep manual suggest button).
   - [x] Add inline “suggested vs edited” indicators for autofilled fields.
@@ -192,11 +203,17 @@ Reference checklist: `docs/ui_system.md`
   - [x] Keep legacy-page excludes fixed (no broadened ignore scope).
   - [x] Roll out CI ratchet mode: fail on new violations first, then enforce full thresholds.
   - [ ] Complete open Phase `11D` engineering items:
-  - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
-    - [x] Phase slice: add Playwright smoke coverage for `login` + `track` and upload screenshots/log artifacts in CI.
-    - [x] Phase slice: add `review` + `select path` smoke coverage.
-    - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
-    - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+    - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
+      - [x] Phase slice: add Playwright smoke coverage for `login` + `track` and upload screenshots/log artifacts in CI.
+      - [x] Phase slice: add `review` + `select path` smoke coverage.
+      - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
+      - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+    - [ ] Concrete `11D` close-out slices:
+      - [x] Keep the ratchet + strict-core CI script aligned with the workflow entrypoint (`scripts/lint_quality_gate.sh` + `.github/workflows/ci.yml`) and remove shell-flow bugs that can hide real failures.
+      - [x] Fix active strict-core regressions exposed by the quality gate in `backend/services`, `frontend/ui/nicegui/core`, and `frontend/ui/nicegui/services`.
+      - [ ] Commit stable visual baseline images for the existing smoke/visual flows.
+      - [ ] Enable strict visual snapshot enforcement in CI once baselines are committed and stable.
+      - [ ] Decide and document the E2E environment contract: fail on true regressions, skip only when the external/browser environment is unavailable.
 
 ## Sprint 11 — Social Learning Hub v1 (Teams + Scoped Sharing)
 - [ ] Align execution to roadmap `Phase 11F`.
