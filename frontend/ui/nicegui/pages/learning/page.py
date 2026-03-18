@@ -112,6 +112,7 @@ def _next_from_tracked_courses(
 
 def _make_recently_shared_item_opener() -> Any:
     """Build navigation callback for recently shared mixed-item rows."""
+
     def _open_recently_shared_item(row: dict[str, Any]) -> None:
         item_id = int(row.get("id") or 0)
         item_type = str(row.get("type") or "")
@@ -131,6 +132,7 @@ def _make_recently_shared_item_opener() -> Any:
 
 def _render_intro_panel() -> None:
     """Render dismissible onboarding intro when applicable."""
+
     @ui.refreshable
     def intro_panel() -> None:
         if not should_show_home_intro(storage_user=app.storage.user):
@@ -211,7 +213,9 @@ def _resolve_learning_tab_context(
 
     first_course_review_action: Any = lambda: None
     if learning_vm.pending_course_review_ids:
-        first_course_review_action = page_ctx.nav_actions.make_course_review_action(int(learning_vm.pending_course_review_ids[0]))
+        first_course_review_action = page_ctx.nav_actions.make_course_review_action(
+            int(learning_vm.pending_course_review_ids[0])
+        )
     first_path_review_action: Any = lambda: None
     if learning_vm.pending_path_review_ids:
         first_path_review_action = page_ctx.nav_actions.make_path_review_action(int(learning_vm.pending_path_review_ids[0]))
