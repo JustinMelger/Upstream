@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/JustinMelger/learning-platform/compare/v0.9.1...v0.10.0) (2026-03-18)
+
+
+### Features
+
+* basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
+
 ## [0.9.1](https://github.com/JustinMelger/learning-platform/compare/v0.9.0...v0.9.1) (2026-03-07)
 
 
