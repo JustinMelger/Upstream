@@ -119,18 +119,14 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
             username=username,
             reload_data=_load,
             refresh_ui=lambda: list_view.refresh(),
-            on_open_course_share_page=lambda: ui.navigate.to("/share/item?type=course"),
-            on_open_video_share_page=lambda: ui.navigate.to("/share/item?type=video"),
-            on_open_article_share_page=lambda: ui.navigate.to("/share/item?type=article"),
+            on_open_learning_item_share_page=lambda: ui.navigate.to("/share/item"),
             on_unknown_target=lambda tab: ui.navigate.to(
-                "/explore?tab=" + {"course": "courses", "video": "videos", "path": "paths", "article": "articles"}.get(tab, "courses")
+                "/explore?tab=" + {"path": "paths"}.get(tab, "courses")
             ),
         )
         share_dialog = render_explore_share_dialog(
-            on_share_video=lambda: share_bindings.open_share_target("video"),
-            on_share_course=lambda: share_bindings.open_share_target("course"),
+            on_share_learning_item=lambda: share_bindings.open_share_target("learning_item"),
             on_share_path=lambda: share_bindings.open_share_target("path"),
-            on_share_article=lambda: share_bindings.open_share_target("article"),
         )
 
         topbar = render_explore_topbar(

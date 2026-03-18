@@ -10,6 +10,10 @@ from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel, R
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.learning_items import (
+    learning_item_primary_action_label,
+    learning_item_source_action_label,
+)
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
@@ -106,10 +110,15 @@ def _render_article_info_panel(*, aid: int, article: dict[str, Any], tags: list[
         ui.label("Article Actions").classes("text-base font-semibold")
 
         if source_url:
-            ui.button("Read article", icon="open_in_new", on_click=lambda: ui.navigate.to(source_url, new_tab=True)).props(
-                "unelevated"
-            )
-            ui.button("Open source", on_click=lambda: ui.navigate.to(source_url, new_tab=True)).props("outline")
+            ui.button(
+                learning_item_primary_action_label("article"),
+                icon="open_in_new",
+                on_click=lambda: ui.navigate.to(source_url, new_tab=True),
+            ).props("unelevated")
+            ui.button(
+                learning_item_source_action_label("article"),
+                on_click=lambda: ui.navigate.to(source_url, new_tab=True),
+            ).props("outline")
 
         ui.button(
             "Share learning item",
@@ -123,7 +132,7 @@ def _render_article_info_panel(*, aid: int, article: dict[str, Any], tags: list[
         ui.separator()
         ui.label("Resources").classes("text-sm font-semibold")
         if source_url:
-            ui.link("Open source URL", source_url).classes("lp-explore-detail-muted")
+            ui.link(learning_item_source_action_label("article"), source_url).classes("lp-explore-detail-muted")
         for tag in tags[:6]:
             ui.label(tag).classes("lp-explore-detail-muted")
 

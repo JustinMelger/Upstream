@@ -146,10 +146,11 @@ Reference checklist: `docs/ui_system.md`
   - [x] `11A.2` Topbar clarity pass.
 
 ## Sprint 3 — Terminology + First-Time Clarity + Share-Flow UX
-- [ ] Complete `11E.6` terminology alignment:
+- [x] Complete `11E.6` terminology alignment:
   - [x] Canonicalize language for `Track` vs `Save` vs `Select` across cards, dialogs, and filters.
   - [x] Align `Shared` vs `Recommended` semantics in labels and page copy.
   - [x] Add contextual purpose subtitles under primary page titles (`Home`, `Explore`, `Teams`, `Profile`).
+  - [x] Finish learning-item unification follow-through: `/share/item` subtype routing, Explore mixed-feed subtype signaling, first-class `video`, and capability-aware copy on Home/Explore/Activity/Teams.
 - [ ] Complete `11E.7` first-time user clarity pass:
   - [x] Add dismissible 3-step first-login intro.
   - [x] Ensure each key empty state has exactly one primary action.
@@ -307,6 +308,7 @@ Tracking:
   - [x] `11E.4`: replace dialog-first Explore detail behavior with dedicated detail routes (`course/path/article`).
   - [x] `11E.4`: convert `/courses`, `/paths`, `/articles` into thin compatibility/deep-link routes and finalize redirect/deprecation plan.
   - [x] `11E.6`: finish cross-page terminology consistency across cards + detail dialogs.
+  - [x] `11E.6`: make subtype capability differences explicit so shared surfaces stop treating every learning item like a course (`course`: tracking/recommendations/reviews, `article`: reviews, `video`: lightweight share/detail).
 - [ ] Close highest-impact open `11A` visual-system modernization items:
   - [ ] `11A.1`: Modernization Sprint 1 (typography scale + spacing rhythm + unified component language).
   - [ ] `11A.4`: complete page-identity pass (distinct but consistent section language + hero treatments).

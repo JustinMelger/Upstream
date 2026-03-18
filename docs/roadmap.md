@@ -356,6 +356,7 @@ Implementation plan for the remaining learning-item unification work:
 - Explore completion: replace naive course-first/article-second concatenation with intentional mixed discovery behavior that preserves visible subtype diversity and keeps subtype chips explicit.
 - Shared frontend contract: introduce one reusable learning-item card/view-model abstraction for Explore and later team/profile/social surfaces.
 - Backend-adjacent support: extend URL metadata suggestions to emit a suggested learning-item subtype that distinguishes YouTube, Udemy, and article-like links without requiring table consolidation.
+- Capability alignment: keep `video` first-class without forcing fake feature parity; in the current phase `course` keeps the heavier tracking/recommendation workflow, `article` keeps reviews, and `video` remains a lighter share/detail flow until product demand justifies more.
 
 #### Phase 11E.7 — First-Time User Clarity Pass
 - [x] Onboarding intro: add lightweight, dismissible 3-step first-login walkthrough.
@@ -390,14 +391,14 @@ Implementation map (routes + files, ordered):
 - [x] Phase 11E.5 visual/action density reduction:
   - Primary files: `frontend/ui/nicegui/pages/courses/sections.py`, `frontend/ui/nicegui/pages/articles/sections.py`, `frontend/ui/nicegui/components/path_card.py`, `frontend/ui/nicegui/components/card_actions.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/core/theme.py`.
   - Acceptance checks in code: one primary CTA + one state control per card, overflow for secondary actions, reduced metadata defaults.
-- [ ] Phase 11E.6 terminology alignment:
+- [x] Phase 11E.6 terminology alignment:
   - Primary files: `frontend/ui/nicegui/components/layout.py`, `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/explore/page.py`, `frontend/ui/nicegui/pages/courses/`, `frontend/ui/nicegui/pages/paths/`, `frontend/ui/nicegui/pages/articles/`, `frontend/ui/nicegui/pages/activity/`.
   - Copy + route helper updates: `frontend/ui/nicegui/core/navigation.py`, `frontend/ui/nicegui/pages/learning/route_init.py` (or replacement home route init).
   - Test updates for label/route expectations: `tests/frontend/ui/nicegui/pages/login/test_login_page_integration.py`, `tests/frontend/ui/nicegui/pages/home/test_home_page_integration.py`, `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`.
   - Learning-item unification targets: `frontend/ui/nicegui/pages/share/page.py`, `frontend/ui/nicegui/pages/share/controller.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/explore/view_model.py`, `frontend/ui/nicegui/core/theme.py`, `frontend/ui/nicegui/main.py`.
   - Redirect + route contract tests: `tests/frontend/ui/nicegui/test_routes.py`, `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`, plus focused page integration checks for `/share/item`.
   - First implementation-phase defaults: `video|course|article` is the canonical subtype enum, `/share/item?type=video|course|article` is the canonical route contract, and paths remain collections of learning items rather than subtype variants.
-  - Follow-up implementation slices: add URL/provider-based subtype detection, restore `/share/item` course validation parity, preserve available subtype diversity in the default Explore view, and add focused tests for YouTube/Udemy/article classification and share-page behavior.
+  - Closed implementation slices: add URL/provider-based subtype detection, restore `/share/item` course validation parity, preserve available subtype diversity in the default Explore view, add focused tests for YouTube/Udemy/article classification and share-page behavior, and make subtype capability differences explicit across Home/Explore/Activity/Teams.
 - [ ] Phase 11E.7 first-time-user clarity pass:
   - Primary files: add onboarding component (recommended `frontend/ui/nicegui/components/onboarding_intro.py`) and wire in `frontend/ui/nicegui/pages/home/page.py`.
   - Empty-state harmonization targets: `frontend/ui/nicegui/pages/home/sections.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/courses/sections.py`, `frontend/ui/nicegui/pages/paths/sections.py`, `frontend/ui/nicegui/pages/articles/sections.py`.

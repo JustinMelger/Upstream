@@ -28,6 +28,7 @@ class _FakeContainer(_FakeElement):
 class _FakeUi:
     def __init__(self) -> None:
         self.buttons: list[tuple[str, Any]] = []
+        self.labels: list[str] = []
 
     def column(self) -> _FakeContainer:
         return _FakeContainer()
@@ -39,6 +40,7 @@ class _FakeUi:
         return _FakeContainer()
 
     def label(self, _text: str = "") -> _FakeElement:
+        self.labels.append(str(_text))
         return _FakeElement()
 
     def icon(self, *_args: Any, **_kwargs: Any) -> _FakeElement:
@@ -66,6 +68,7 @@ def test_render_team_activity_uses_typed_target_open_action(monkeypatch) -> None
     assert click is not None
     click()
     assert opened == ["/explore/courses/4"]
+    assert "Course · tracking + reviews" in fake_ui.labels
 
 
 def test_render_team_activity_empty_state_uses_learning_item_language(monkeypatch) -> None:  # noqa: ANN001

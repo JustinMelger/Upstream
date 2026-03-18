@@ -26,9 +26,7 @@ def create_explore_share_bindings(
     username: str,
     reload_data: Callable[[], Awaitable[None]],
     refresh_ui: Callable[..., Any],
-    on_open_video_share_page: Callable[[], None],
-    on_open_course_share_page: Callable[[], None],
-    on_open_article_share_page: Callable[[], None],
+    on_open_learning_item_share_page: Callable[[], None],
     on_unknown_target: Callable[[str], None],
 ) -> ExploreShareBindings:
     """Create share callbacks and dialog openers used by Explore page."""
@@ -54,17 +52,11 @@ def create_explore_share_bindings(
 
     def _open_share_target(target: str) -> None:
         tab = str(target or "").strip().lower()
-        if tab == "video":
-            on_open_video_share_page()
-            return
-        if tab == "course":
-            on_open_course_share_page()
+        if tab == "learning_item":
+            on_open_learning_item_share_page()
             return
         if tab == "path":
             _open_path_share_dialog()
-            return
-        if tab == "article":
-            on_open_article_share_page()
             return
         on_unknown_target(tab)
 

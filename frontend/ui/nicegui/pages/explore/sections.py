@@ -34,24 +34,16 @@ class ExploreFilterControls:
     author_filter: Any
 
 
-def render_explore_share_dialog(*, on_share_video: Any, on_share_course: Any, on_share_path: Any, on_share_article: Any) -> Any:
+def render_explore_share_dialog(*, on_share_learning_item: Any, on_share_path: Any) -> Any:
     """Render share dialog and return dialog handle."""
 
-    def _close_then_share_video(dialog: Any) -> None:
+    def _close_then_share_learning_item(dialog: Any) -> None:
         dialog.close()
-        on_share_video()
-
-    def _close_then_share_course(dialog: Any) -> None:
-        dialog.close()
-        on_share_course()
+        on_share_learning_item()
 
     def _close_then_share_path(dialog: Any) -> None:
         dialog.close()
         on_share_path()
-
-    def _close_then_share_article(dialog: Any) -> None:
-        dialog.close()
-        on_share_article()
 
     with ui.dialog() as share_dialog:
         with ui.card().classes("lp-card lp-dialog w-[min(540px,95vw)]"):
@@ -60,20 +52,12 @@ def render_explore_share_dialog(*, on_share_video: Any, on_share_course: Any, on
 
             with ui.column().classes("w-full gap-2 mt-2"):
                 ui.button(
-                    "Share video",
-                    on_click=lambda: _close_then_share_video(share_dialog),
+                    "Share learning item",
+                    on_click=lambda: _close_then_share_learning_item(share_dialog),
                 ).props("unelevated")
-                ui.button(
-                    "Share course",
-                    on_click=lambda: _close_then_share_course(share_dialog),
-                ).props("outline")
                 ui.button(
                     "Share path",
                     on_click=lambda: _close_then_share_path(share_dialog),
-                ).props("outline")
-                ui.button(
-                    "Share article",
-                    on_click=lambda: _close_then_share_article(share_dialog),
                 ).props("outline")
             with ui.row().classes("justify-end w-full mt-1"):
                 ui.button("Cancel", on_click=share_dialog.close).props("flat")

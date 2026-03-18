@@ -43,7 +43,11 @@ def render_activity_items(*, events: list[Any], on_open: Callable[[Any], Any]) -
                         "color: var(--lp-muted)"
                     )
                 with ui.row().classes("items-center justify-between w-full mt-2 lp-teams-item-foot"):
-                    meta_parts = [str(event.actor or "").strip(), str(event.target.target_type_label or "").strip()]
+                    meta_parts = [
+                        str(event.actor or "").strip(),
+                        str(event.target.target_type_label or "").strip(),
+                        str(event.target.interaction_label or "").strip(),
+                    ]
                     if str(event.target.target_label or "").strip():
                         meta_parts.append(str(event.target.target_label or "").strip())
                     meta = " · ".join(part for part in meta_parts if part)

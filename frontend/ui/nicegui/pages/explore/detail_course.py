@@ -13,7 +13,11 @@ from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
-from frontend.ui.nicegui.core.learning_items import infer_learning_item_type, learning_item_type_label
+from frontend.ui.nicegui.core.learning_items import (
+    infer_learning_item_type,
+    learning_item_source_action_label,
+    learning_item_type_label,
+)
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
@@ -274,7 +278,10 @@ def _render_course_info_panel(
             ui.button("Delete", icon="delete", on_click=_delete_course).props("outline color=negative")
 
         if source_url:
-            ui.button("Open source", on_click=lambda: ui.navigate.to(source_url, new_tab=True)).props("flat")
+            ui.button(
+                learning_item_source_action_label("course"),
+                on_click=lambda: ui.navigate.to(source_url, new_tab=True),
+            ).props("flat")
         if recommendations:
             ui.separator()
             ui.label("Recent recommendations").classes("text-sm font-semibold")

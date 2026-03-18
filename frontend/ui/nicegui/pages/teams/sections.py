@@ -102,6 +102,15 @@ def render_team_activity(
             actor = str(event.actor or "")
             message = str(event.message or "Activity update")
             created_at = str(event.created_at or "")
+            target_meta = " · ".join(
+                part
+                for part in [
+                    str(event.target.target_type_label or "").strip(),
+                    str(event.target.interaction_label or "").strip(),
+                    str(event.target.target_label or "").strip(),
+                ]
+                if part
+            )
             with ui.element("div").classes("lp-teams-feed-row"):
                 with ui.row().classes("w-full items-center justify-between gap-2"):
                     with ui.row().classes("items-start gap-2"):
@@ -110,6 +119,10 @@ def render_team_activity(
                         with ui.column().classes("gap-1"):
                             ui.label(message).classes("text-sm lp-teams-feed-row-title")
                             ui.label(actor).classes("text-xs lp-teams-feed-row-meta").style("color: var(--lp-muted)")
+                            if target_meta:
+                                ui.label(target_meta).classes("text-xs lp-teams-feed-row-meta").style(
+                                    "color: var(--lp-muted)"
+                                )
                     with ui.column().classes("items-end gap-1"):
                         ui.label(format_when(created_at)).classes("text-xs").style("color: var(--lp-muted)")
                         ui.button("Open", on_click=lambda target=event.target: on_open_target(target)).props("dense flat").classes(
@@ -136,6 +149,15 @@ def render_inbox_activity(
             actor = str(event.actor or "")
             message = str(event.message or "Activity update")
             created_at = str(event.created_at or "")
+            target_meta = " · ".join(
+                part
+                for part in [
+                    str(event.target.target_type_label or "").strip(),
+                    str(event.target.interaction_label or "").strip(),
+                    str(event.target.target_label or "").strip(),
+                ]
+                if part
+            )
             with ui.element("div").classes("lp-teams-feed-row"):
                 with ui.row().classes("w-full items-center justify-between gap-2"):
                     with ui.row().classes("items-start gap-2"):
@@ -144,6 +166,10 @@ def render_inbox_activity(
                         with ui.column().classes("gap-1"):
                             ui.label(message).classes("text-sm lp-teams-feed-row-title")
                             ui.label(actor).classes("text-xs lp-teams-feed-row-meta").style("color: var(--lp-muted)")
+                            if target_meta:
+                                ui.label(target_meta).classes("text-xs lp-teams-feed-row-meta").style(
+                                    "color: var(--lp-muted)"
+                                )
                     with ui.column().classes("items-end gap-1"):
                         ui.label(format_when(created_at)).classes("text-xs").style("color: var(--lp-muted)")
                         ui.button("Open", on_click=lambda target=event.target: on_open_target(target)).props("dense flat").classes(

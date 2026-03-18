@@ -16,7 +16,7 @@ from frontend.ui.nicegui.components.card_frame import (
 )
 from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
-from frontend.ui.nicegui.core.learning_items import learning_item_type_label
+from frontend.ui.nicegui.core.learning_items import learning_item_primary_action_label, learning_item_type_label
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.sections import render_article_card
 from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
@@ -267,7 +267,7 @@ def render_video_item(
 
                     def _render_actions() -> None:
                         ui.button(
-                            "Open details",
+                            learning_item_primary_action_label("video"),
                             on_click=lambda: ui.navigate.to(f"/explore/videos/{video_id}"),
                         ).props("dense")
 

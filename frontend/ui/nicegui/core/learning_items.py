@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import deque
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlparse
 
@@ -12,6 +13,20 @@ _TYPE_LABELS = {
     "video": "Video",
     "course": "Course",
     "article": "Article",
+}
+_PRIMARY_ACTION_LABELS = {
+    "video": "Watch video",
+    "course": "Open course",
+    "article": "Read article",
+}
+_SOURCE_ACTION_LABELS = {
+    "video": "Open video source",
+    "course": "Open course source",
+    "article": "Open article source",
+}
+_REVIEW_ACTION_LABELS = {
+    "course": "Review course",
+    "article": "Review article",
 }
 _VIDEO_HOSTS = {
     "youtube.com",
@@ -29,6 +44,38 @@ _COURSE_HOSTS = {
     "www.udemy.com",
 }
 _DISPLAY_ORDER = ("video", "course", "article")
+
+
+@dataclass(frozen=True, slots=True)
+class LearningItemCapabilities:
+    """Capabilities intentionally supported by one learning-item subtype."""
+
+    item_type: str
+    supports_tracking: bool
+    supports_reviews: bool
+    supports_recommendations: bool
+
+
+_TYPE_CAPABILITIES = {
+    "video": LearningItemCapabilities(
+        item_type="video",
+        supports_tracking=False,
+        supports_reviews=False,
+        supports_recommendations=False,
+    ),
+    "course": LearningItemCapabilities(
+        item_type="course",
+        supports_tracking=True,
+        supports_reviews=True,
+        supports_recommendations=True,
+    ),
+    "article": LearningItemCapabilities(
+        item_type="article",
+        supports_tracking=False,
+        supports_reviews=True,
+        supports_recommendations=False,
+    ),
+}
 
 
 def normalize_learning_item_type(value: str, *, default: str = "course") -> str:
@@ -56,6 +103,30 @@ def learning_item_type_label(item_type: str) -> str:
     """Return the compact UI label for a learning-item subtype."""
     normalized = normalize_learning_item_type(item_type, default="course")
     return str(_TYPE_LABELS.get(normalized) or "Learning Item")
+
+
+def learning_item_capabilities(item_type: str) -> LearningItemCapabilities:
+    """Return intentional feature support for one learning-item subtype."""
+    normalized = normalize_learning_item_type(item_type, default="course")
+    return _TYPE_CAPABILITIES.get(normalized, _TYPE_CAPABILITIES["course"])
+
+
+def learning_item_primary_action_label(item_type: str) -> str:
+    """Return the primary CTA label for one learning-item subtype."""
+    normalized = normalize_learning_item_type(item_type, default="course")
+    return str(_PRIMARY_ACTION_LABELS.get(normalized) or "Open details")
+
+
+def learning_item_review_action_label(item_type: str) -> str:
+    """Return the review CTA label for one learning-item subtype."""
+    normalized = normalize_learning_item_type(item_type, default="course")
+    return str(_REVIEW_ACTION_LABELS.get(normalized) or "Review")
+
+
+def learning_item_source_action_label(item_type: str) -> str:
+    """Return the source-link CTA label for one learning-item subtype."""
+    normalized = normalize_learning_item_type(item_type, default="course")
+    return str(_SOURCE_ACTION_LABELS.get(normalized) or "Open source")
 
 
 def interleave_learning_item_entries(*, entries: list[Any]) -> list[Any]:

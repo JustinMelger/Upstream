@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from frontend.ui.nicegui.core.learning_items import infer_learning_item_type
+from frontend.ui.nicegui.core.learning_items import (
+    infer_learning_item_type,
+    learning_item_capabilities,
+    LearningItemCapabilities,
+)
 
 
 @dataclass(slots=True)
@@ -15,6 +19,7 @@ class SharedLearningItemView:
     item_type: str
     item_id: int
     title: str
+    capabilities: LearningItemCapabilities
     review_summary_row: dict[str, Any] | None
     recommendation_summary_row: dict[str, Any] | None
 
@@ -55,15 +60,17 @@ def build_shared_learning_item_views(
         title = str(row.get("title") or "").strip()
         if not title:
             continue
+        item_type = infer_learning_item_type(
+            url=str(row.get("url") or ""),
+            provider=str(row.get("provider") or ""),
+            fallback="course",
+        )
         items.append(
             SharedLearningItemView(
-                item_type=infer_learning_item_type(
-                    url=str(row.get("url") or ""),
-                    provider=str(row.get("provider") or ""),
-                    fallback="course",
-                ),
+                item_type=item_type,
                 item_id=item_id,
                 title=title,
+                capabilities=learning_item_capabilities(item_type),
                 review_summary_row=dict(course_review_summary_by_id.get(item_id) or {}) or None,
                 recommendation_summary_row=dict(course_recommendation_summary_by_id.get(item_id) or {}) or None,
             )
@@ -80,6 +87,7 @@ def build_shared_learning_item_views(
                 item_type="article",
                 item_id=item_id,
                 title=title,
+                capabilities=learning_item_capabilities("article"),
                 review_summary_row=None,
                 recommendation_summary_row=None,
             )
@@ -96,6 +104,7 @@ def build_shared_learning_item_views(
                 item_type="video",
                 item_id=item_id,
                 title=title,
+                capabilities=learning_item_capabilities("video"),
                 review_summary_row=None,
                 recommendation_summary_row=None,
             )
@@ -154,6 +163,7 @@ def build_recently_shared_in_teams(
 
     feed: list[dict[str, Any]] = []
     _append_rows("course", list(data.get("courses") or []), "title")
+    _append_rows("video", list(data.get("videos") or []), "title")
     _append_rows("path", list(data.get("paths") or []), "name")
     _append_rows("article", list(data.get("articles") or []), "title")
     feed.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)

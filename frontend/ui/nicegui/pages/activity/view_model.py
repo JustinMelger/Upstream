@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import logging
 from typing import Any
 
-from frontend.ui.nicegui.core.learning_items import learning_item_type_label
+from frontend.ui.nicegui.core.learning_items import learning_item_capabilities, learning_item_type_label
 from frontend.ui.nicegui.core.navigation import build_activity_target_link
 from frontend.ui.nicegui.pages.activity.ui_glue import coerce_target_id
 
@@ -32,6 +32,20 @@ class ActivityTargetView:
         if self.target_type == "path":
             return "Path"
         return "Item"
+
+    @property
+    def interaction_label(self) -> str:
+        """Return the current interaction model for the target."""
+        if self.target_family == "learning_item":
+            capabilities = learning_item_capabilities(self.target_type)
+            if capabilities.supports_tracking:
+                return "tracking + reviews"
+            if capabilities.supports_reviews:
+                return "reviews"
+            return "details only"
+        if self.target_type == "path":
+            return "path progress"
+        return "details"
 
 
 @dataclass(slots=True)

@@ -243,6 +243,11 @@ erDiagram
 - Browse/search colleague-submitted links.
 - Authenticated users can create articles and review article links.
 
+### Videos service
+- Allow colleagues to share video links as first-class learning items (`title`, `description`, `provider`, `category`, `url`).
+- Browse/search colleague-submitted videos with preview metadata enrichment.
+- Authenticated users can create videos; the current phase keeps videos lightweight and does not add tracking/recommendation/review write models.
+
 ### Notifications service
 - Aggregates share/recommend/review events into activity feed payloads.
 - Supports mailbox-style scopes: `inbox` (personal) and `team` (team-wide timeline).
@@ -292,6 +297,7 @@ This matrix is the enforceable contract for service-boundary input parsing.
 | `backend/services/courses_service.py` | `create_course`, `update_course` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/paths_service.py` | `create_path`, `update_path` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/articles_service.py` | `create_article` | `_parse_create_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
+| `backend/services/videos_service.py` | `create_video` | `_parse_create_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/course_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/path_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/article_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
@@ -803,6 +809,41 @@ erDiagram
   }
 ```
 
+## Videos Architecture
+
+### Videos Endpoints
+
+- `GET /videos`
+- `GET /videos/{video_id}`
+- `POST /videos`
+
+### Videos Flow Notes
+
+- Router enforces authenticated session.
+- Service validates create payloads via typed `_parse_create_payload`.
+- Payloads are enriched with best-effort `preview_image_url` resolution through `UrlPreviewService`.
+- Videos are first-class learning items, but the current phase intentionally keeps them lighter than courses:
+  - no `/tracking` integration
+  - no recommendation write model
+  - no dedicated reviews API
+
+### Videos Data Model
+
+```mermaid
+erDiagram
+  USERS ||--o{ VIDEOS : "shares"
+  VIDEOS {
+    INTEGER id
+    STRING title
+    STRING description
+    STRING provider
+    STRING category
+    STRING url
+    STRING created_by
+    TIMESTAMP created_at
+  }
+```
+
 ## Notifications Architecture
 
 ### Notifications Endpoints
@@ -814,6 +855,7 @@ erDiagram
 - Router enforces authenticated session.
 - Service composes activity from repository reads of:
   - course shares
+  - video shares
   - course recommendations
   - path recommendations
   - course reviews

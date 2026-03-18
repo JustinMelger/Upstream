@@ -28,6 +28,7 @@ class _FakeContainer(_FakeElement):
 class _FakeUi:
     def __init__(self) -> None:
         self.buttons: list[tuple[str, Any]] = []
+        self.labels: list[str] = []
 
     def column(self) -> _FakeContainer:
         return _FakeContainer()
@@ -39,6 +40,7 @@ class _FakeUi:
         return _FakeContainer()
 
     def label(self, _text: str = "") -> _FakeElement:
+        self.labels.append(str(_text))
         return _FakeElement()
 
     def button(self, label: str, on_click=None) -> _FakeElement:  # noqa: ANN001
@@ -63,6 +65,7 @@ def test_render_activity_items_renders_open_action_for_typed_events(monkeypatch)
     assert click is not None
     click()
     assert opened == [("course", 4)]
+    assert "Course · tracking + reviews · Course" in fake_ui.labels
 
 
 def test_render_empty_activity_exposes_primary_explore_action(monkeypatch) -> None:  # noqa: ANN001

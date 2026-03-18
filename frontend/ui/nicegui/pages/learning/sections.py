@@ -10,7 +10,11 @@ from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.errors import FrontendError, safe_notify
-from frontend.ui.nicegui.core.learning_items import learning_item_type_label
+from frontend.ui.nicegui.core.learning_items import (
+    learning_item_primary_action_label,
+    learning_item_review_action_label,
+    learning_item_type_label,
+)
 
 
 _ALLOWED_TRACKING_STATUSES = {"interested", "in_progress", "completed"}
@@ -321,19 +325,25 @@ def render_shared_content(
                 "color: var(--lp-muted)"
             )
         for item in shared_learning_items[:12]:
+            item_type = str(item.item_type or "")
+            item_icon = "play_circle" if item_type == "video" else ("article" if item_type == "article" else "school")
             with ui.element("div").classes("lp-track-card lp-shared-card"):
                 with ui.row().classes("w-full items-start justify-between gap-3"):
                     with ui.row().classes("items-start gap-2 lp-track-identity"):
-                        ui.icon("article" if str(item.item_type) == "article" else "school").classes("lp-track-avatar")
+                        ui.icon(item_icon).classes("lp-track-avatar")
                         with ui.column().classes("gap-0 lp-track-title-block"):
                             ui.label(str(item.title or "")).classes("text-sm font-semibold lp-track-title")
-                            ui.label(learning_item_type_label(str(item.item_type or ""))).classes("text-xs lp-home-track-meta")
+                            ui.label(learning_item_type_label(item_type)).classes("text-xs lp-home-track-meta")
                     with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group"):
-                        ui.button("Open", on_click=on_open_learning_item(item)).props("dense outline").classes("lp-track-continue-btn")
-                        if str(item.item_type or "") != "article":
-                            ui.button("Review", on_click=on_review_learning_item(item)).props("dense outline").classes(
-                                "lp-track-continue-btn"
-                            )
+                        ui.button(
+                            learning_item_primary_action_label(item_type),
+                            on_click=on_open_learning_item(item),
+                        ).props("dense outline").classes("lp-track-continue-btn")
+                        if bool(getattr(item.capabilities, "supports_reviews", False)):
+                            ui.button(
+                                learning_item_review_action_label(item_type),
+                                on_click=on_review_learning_item(item),
+                            ).props("dense outline").classes("lp-track-continue-btn")
                 parts = [
                     review_summary_label(item.review_summary_row),
                     recommendation_summary_label(item.recommendation_summary_row),
@@ -614,7 +624,11 @@ def render_shared_tab(
                 else nav_actions.make_course_view_action(int(item.item_id))
             )
         ),
-        on_review_learning_item=lambda item: nav_actions.make_course_review_action(int(item.item_id)),
+        on_review_learning_item=lambda item: (
+            nav_actions.make_article_view_action(int(item.item_id))
+            if str(item.item_type or "") == "article"
+            else nav_actions.make_course_review_action(int(item.item_id))
+        ),
         on_view_path=nav_actions.make_path_view_action,
         on_review_path=nav_actions.make_path_review_action,
     )

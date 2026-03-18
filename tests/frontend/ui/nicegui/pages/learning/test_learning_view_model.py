@@ -24,6 +24,8 @@ def test_build_shared_tab_view_projects_expected_fields() -> None:
     assert [int(a["id"]) for a in vm.shared_articles] == [3]
     assert [(item.item_type, item.item_id) for item in vm.shared_learning_items] == [("article", 3), ("course", 1), ("video", 4)]
     assert int((vm.shared_learning_items[1].review_summary_row or {})["review_count"]) == 2
+    assert vm.shared_learning_items[0].capabilities.supports_reviews is True
+    assert vm.shared_learning_items[2].capabilities.supports_reviews is False
     assert int(vm.shared_path_recommendation_summary_by_id[2]["recommendation_count"]) == 4
 
 
@@ -72,10 +74,16 @@ def test_build_recently_shared_in_teams_excludes_current_user_and_sorts() -> Non
                 {"id": 1, "title": "A", "created_by": "alice", "updated_at": "2026-02-20T10:00:00Z"},
                 {"id": 2, "title": "Mine", "created_by": "bob", "updated_at": "2026-02-24T10:00:00Z"},
             ],
+            "videos": [{"id": 50, "title": "Video 1", "created_by": "erin", "updated_at": "2026-02-23T10:00:00Z"}],
             "paths": [{"id": 10, "name": "Path 1", "created_by": "charlie", "updated_at": "2026-02-21T10:00:00Z"}],
             "articles": [{"id": 100, "title": "Article 1", "created_by": "dana", "updated_at": "2026-02-22T10:00:00Z"}],
         },
         username="bob",
-        limit=3,
+        limit=4,
     )
-    assert [(str(i["type"]), int(i["id"])) for i in items] == [("article", 100), ("path", 10), ("course", 1)]
+    assert [(str(i["type"]), int(i["id"])) for i in items] == [
+        ("video", 50),
+        ("article", 100),
+        ("path", 10),
+        ("course", 1),
+    ]

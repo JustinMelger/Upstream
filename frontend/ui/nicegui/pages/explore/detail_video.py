@@ -7,6 +7,10 @@ from nicegui import ui
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.guards import require_user
+from frontend.ui.nicegui.core.learning_items import (
+    learning_item_primary_action_label,
+    learning_item_source_action_label,
+)
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.explore.detail_common import parse_detail_id, render_breadcrumb, render_detail_scope
@@ -57,15 +61,20 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
                     ui.label(description or "No description provided yet.").classes("lp-explore-detail-body")
                 with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface"):
                     if source_url:
-                        ui.button("Watch video", icon="open_in_new", on_click=lambda: ui.navigate.to(source_url, new_tab=True)).props(
-                            "unelevated"
-                        )
+                        ui.button(
+                            learning_item_primary_action_label("video"),
+                            icon="open_in_new",
+                            on_click=lambda: ui.navigate.to(source_url, new_tab=True),
+                        ).props("unelevated")
                     ui.label(description or "Open the source to continue learning.").classes("lp-explore-detail-muted")
 
             with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):
                 ui.label("Video Actions").classes("text-base font-semibold")
                 if source_url:
-                    ui.button("Open source", on_click=lambda: ui.navigate.to(source_url, new_tab=True)).props("outline")
+                    ui.button(
+                        learning_item_source_action_label("video"),
+                        on_click=lambda: ui.navigate.to(source_url, new_tab=True),
+                    ).props("outline")
                 ui.button(
                     "Share learning item",
                     icon="share",

@@ -300,9 +300,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                             ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}")
                             if str(row.get("type") or "") == "course"
                             else (
-                                ui.navigate.to(f"/explore/paths/{int(row.get('id') or 0)}")
-                                if str(row.get("type") or "") == "path"
-                                else ui.navigate.to("/explore?tab=articles")
+                                ui.navigate.to(f"/explore/videos/{int(row.get('id') or 0)}")
+                                if str(row.get("type") or "") == "video"
+                                else (
+                                    ui.navigate.to(f"/explore/paths/{int(row.get('id') or 0)}")
+                                    if str(row.get("type") or "") == "path"
+                                    else ui.navigate.to(f"/explore/articles/{int(row.get('id') or 0)}")
+                                )
                             )
                         ),
                         on_load_more_tracked=lambda: load_more_tracked(
