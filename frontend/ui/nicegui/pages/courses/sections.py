@@ -481,14 +481,18 @@ def render_course_card(*, ctx: CourseCardContext) -> None:
                     )
                 _render_course_card_status_and_taxonomy(ctx)
                 _render_course_card_compact_progress(ctx)
-                render_card_actions_row(render_actions=lambda: _render_course_card_actions(ctx, on_primary_action=_on_primary_action))
+                render_card_actions_row(
+                    render_actions=lambda: _render_course_card_actions(ctx, on_primary_action=_on_primary_action)
+                )
             _render_course_card_media(ctx)
         _render_course_card_preview(ctx)
 
 
 def _partition_catalog_rows(ctx: CoursesCatalogContext) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     featured_course = ctx.shown_page[0] if (ctx.shown_page and bool(ctx.show_featured)) else None
-    remaining_courses = ctx.shown_page[1:] if (len(ctx.shown_page) > 1 and bool(ctx.show_featured)) else list(ctx.shown_page or [])
+    remaining_courses = (
+        ctx.shown_page[1:] if (len(ctx.shown_page) > 1 and bool(ctx.show_featured)) else list(ctx.shown_page or [])
+    )
     return featured_course, remaining_courses
 
 
@@ -545,13 +549,19 @@ def _render_catalog_group(ctx: CoursesCatalogContext, *, row_idx: int, category_
                 ui.button(
                     icon="chevron_left",
                     on_click=lambda _rid=rail_id: ui.run_javascript(
-                        "(() => {" f"const el = document.getElementById('{_rid}');" "if (el) { el.scrollBy({ left: -460, behavior: 'smooth' }); }" "})();"
+                        "(() => {"
+                        f"const el = document.getElementById('{_rid}');"
+                        "if (el) { el.scrollBy({ left: -460, behavior: 'smooth' }); }"
+                        "})();"
                     ),
                 ).props(f'dense flat round id="{left_btn_id}"').classes("lp-rail-nav-btn")
                 ui.button(
                     icon="chevron_right",
                     on_click=lambda _rid=rail_id: ui.run_javascript(
-                        "(() => {" f"const el = document.getElementById('{_rid}');" "if (el) { el.scrollBy({ left: 460, behavior: 'smooth' }); }" "})();"
+                        "(() => {"
+                        f"const el = document.getElementById('{_rid}');"
+                        "if (el) { el.scrollBy({ left: 460, behavior: 'smooth' }); }"
+                        "})();"
                     ),
                 ).props(f'dense flat round id="{right_btn_id}"').classes("lp-rail-nav-btn")
         with ui.element("div").classes("lp-courses-rail").props(f'id="{rail_id}"'):

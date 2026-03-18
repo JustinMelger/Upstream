@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from frontend.ui.nicegui.pages.teams.page import _TeamsPageView
+from frontend.ui.nicegui.pages.teams.page_ui import _TeamsPageView
 from frontend.ui.nicegui.pages.teams.state import TeamsPageState
 
 
 def test_open_activity_target_navigates_to_typed_target_url(monkeypatch) -> None:  # noqa: ANN001
     navigated: list[str] = []
     fake_ui = SimpleNamespace(navigate=SimpleNamespace(to=lambda path: navigated.append(str(path))))
-    monkeypatch.setattr("frontend.ui.nicegui.pages.teams.page.ui", fake_ui)
+    monkeypatch.setattr("frontend.ui.nicegui.pages.teams.page_ui.ui", fake_ui)
 
     view = _TeamsPageView(
         controller=object(),  # type: ignore[arg-type]

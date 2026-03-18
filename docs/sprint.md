@@ -54,9 +54,22 @@ Execution slices:
   - [ ] Deferred: explicit user decision on 2026-03-09 to skip strict visual-baseline enforcement for now; keep this item queued.
 - [ ] Slice 10.5b: per-file ignore burn-down on active modules
   - [x] Remove stale per-file ignore from `frontend/ui/nicegui/core/errors.py` by tightening exception handling instead of relying on `BLE001`.
-  - [ ] Audit remaining per-file complexity ignores and remove any that no longer mask real violations.
-  - [ ] Prioritize strict-scope and active-surface files first (`frontend/ui/nicegui/core/*`, then touched page/section modules).
-  - [ ] For ignores that are still necessary, record the next extraction target (`controller.py`, `orchestration.py`, `actions.py`, `ui_glue.py`, or component split) before sprint close.
+  - [x] Audit remaining per-file complexity ignores and remove any that no longer mask real violations.
+  - [x] Prioritize strict-scope and active-surface files first (`frontend/ui/nicegui/core/*`, then touched page/section modules).
+  - [x] Remove active-module per-file ignores from:
+    - [x] `frontend/ui/nicegui/core/errors.py`
+    - [x] `frontend/ui/nicegui/pages/learning/sections.py`
+    - [x] `frontend/ui/nicegui/pages/profile/page.py`
+    - [x] `frontend/ui/nicegui/pages/learning/page.py`
+    - [x] `frontend/ui/nicegui/pages/ai_curator/page.py`
+    - [x] `frontend/ui/nicegui/pages/admin_users/page.py`
+    - [x] `frontend/ui/nicegui/pages/courses/sections.py`
+  - [x] Record and execute the next extraction target when a page stays structurally large even after complexity cleanup:
+    - [x] Extract `frontend/ui/nicegui/pages/teams/page.py` route-specific UI composition into `frontend/ui/nicegui/pages/teams/page_ui.py` and keep `page.py` as auth guard + route binder + initial load orchestration.
+    - [x] Decompose `frontend/ui/nicegui/pages/share/page.py` by flow and responsibility instead of using a single overflow file:
+      - [x] separate item-share UI from path-share UI
+      - [x] separate control builders from draft wiring and action wiring
+      - [x] keep `page.py` focused on route registration, controller setup, and flow selection
 - [ ] Slice 10.6: learning-item unification (`video` + `course` + `article`)
   - [x] Naming foundation: use `Learning item` as canonical shared UI term for course/article surfaces.
   - [x] Unified UI mapping: add shared view-model contract with `learning_item_type` (`video`, `article`, `course`, `doc`).
@@ -89,6 +102,9 @@ Validation and acceptance criteria:
 - [x] Accessibility UX polish passes focused checks for keyboard navigation + visible focus + icon-action labeling on touched surfaces.
 - [ ] CI enforces visual snapshots strictly with committed stable baselines.
 - [ ] Active-sprint cleanup reduces per-file ignore debt rather than adding or normalizing it.
+- [ ] Large route modules continue moving toward thin-binder architecture:
+  - [x] `teams/page.py` uses `page_ui.py` when page-local NiceGUI composition becomes the dominant remaining weight.
+  - [x] `share/page.py` is reduced by package decomposition, not by shifting one oversized route file into another oversized UI file.
 - [ ] Design review output is documented and actionable (before/after evidence + accepted redesign decisions).
 
 Tracking:
