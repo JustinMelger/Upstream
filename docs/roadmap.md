@@ -264,6 +264,7 @@
   - [x] Phase slice: add Playwright smoke coverage for `login` + `track` with CI artifact uploads (screenshots + app logs).
   - [x] Phase slice: extend smoke coverage to `review` + `select path`.
   - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
+  - [x] Phase slice: make non-strict visual smoke runs emit actionable artifacts (fixed capture settings + note files for missing baselines) while strict enforcement stays deferred.
   - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
 - [ ] Quality-gate determinism: keep the ratchet + strict-core script in lock-step with the CI workflow and ensure the pipeline surfaces real `ruff`/`mypy` failures instead of shell-flow bugs.
 - [x] Strict-core remediation: fix active strict-scope regressions surfaced by the quality gate in `backend/services`, `frontend/ui/nicegui/core`, and `frontend/ui/nicegui/services`.

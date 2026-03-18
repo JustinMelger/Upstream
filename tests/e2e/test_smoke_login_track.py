@@ -79,7 +79,12 @@ async def test_smoke_login_track_review_and_select_path() -> None:
     try:
         async with async_playwright() as playwright:
             browser = await playwright.chromium.launch(headless=True)
-            context = await browser.new_context(base_url=ui_url)
+            context = await browser.new_context(
+                base_url=ui_url,
+                viewport={"width": 1440, "height": 1100},
+                reduced_motion="reduce",
+                color_scheme="dark",
+            )
             page = await context.new_page()
 
             await page.goto("/login", wait_until="networkidle")

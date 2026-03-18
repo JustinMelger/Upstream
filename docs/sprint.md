@@ -52,6 +52,8 @@ Execution slices:
 - [ ] Slice 10.5: visual quality gate hardening
   - [ ] Commit stable visual baselines and enable strict visual-regression enforcement in CI (`11D` remaining item).
   - [ ] Deferred: explicit user decision on 2026-03-09 to skip strict visual-baseline enforcement for now; keep this item queued.
+  - [x] Groundwork: make non-strict visual smoke runs deterministic enough to review (fixed browser capture settings, explicit baseline/artifact paths, and note artifacts for missing baselines).
+  - [x] Groundwork: document the current E2E environment contract (`admin/admin` bootstrap, backend/UI health, baseline update workflow) without turning strict baseline failures on yet.
 - [ ] Slice 10.5b: per-file ignore burn-down on active modules
   - [x] Remove stale per-file ignore from `frontend/ui/nicegui/core/errors.py` by tightening exception handling instead of relying on `BLE001`.
   - [x] Audit remaining per-file complexity ignores and remove any that no longer mask real violations.
