@@ -190,12 +190,16 @@ class NotificationsService:
                 kind="path",
             )
         )
-        events.extend(self._build_rating_events(rows=sources["course_reviews"], username=username, is_team=is_team, kind="course"))
+        events.extend(
+            self._build_rating_events(rows=sources["course_reviews"], username=username, is_team=is_team, kind="course")
+        )
         events.extend(self._build_rating_events(rows=sources["path_reviews"], username=username, is_team=is_team, kind="path"))
         events.extend(
             self._build_rating_events(rows=sources["article_reviews"], username=username, is_team=is_team, kind="article")
         )
-        events.extend(self._build_rating_events(rows=sources["video_reviews"], username=username, is_team=is_team, kind="video"))
+        events.extend(
+            self._build_rating_events(rows=sources["video_reviews"], username=username, is_team=is_team, kind="video")
+        )
         return events
 
     @staticmethod
