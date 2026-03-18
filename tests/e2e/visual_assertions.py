@@ -39,6 +39,12 @@ def _artifacts_dir() -> Path:
     return root
 
 
+def _write_visual_note(*, name: str, message: str) -> None:
+    """Persist non-strict visual warnings as CI-reviewable artifacts."""
+    note_path = _artifacts_dir() / f"note_{Path(name).stem}.txt"
+    note_path.write_text(f"{message}\n", encoding="utf-8")
+
+
 async def assert_visual_snapshot(*, page: Page, name: str, full_page: bool = True) -> None:
     """Compare current page screenshot against a baseline image."""
     if not _visual_assert_enabled():
@@ -61,6 +67,7 @@ async def assert_visual_snapshot(*, page: Page, name: str, full_page: bool = Tru
         message = f"Visual baseline missing: {baseline_path}."
         if _strict_mode():
             raise AssertionError(f"{message} Run with E2E_UPDATE_VISUAL_BASELINES=1 to create/refresh baselines.")
+        _write_visual_note(name=name, message=message)
         return
 
     baseline_img = Image.open(baseline_path).convert("RGBA")
@@ -68,6 +75,7 @@ async def assert_visual_snapshot(*, page: Page, name: str, full_page: bool = Tru
         message = f"Visual snapshot size mismatch for {name}: baseline={baseline_img.size}, current={current_img.size}"
         if _strict_mode():
             raise AssertionError(message)
+        _write_visual_note(name=name, message=message)
         return
 
     diff = ImageChops.difference(baseline_img, current_img)

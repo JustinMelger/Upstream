@@ -17,12 +17,15 @@ def render_teams_list(
     teams: list[dict[str, Any]],
     selected_team_id: int | None,
     on_open: Callable[[int], Any],
+    on_create_team: Callable[[], Any] | None = None,
 ) -> None:
     """Render the list of teams the user belongs to."""
     if not teams:
         render_empty_block(
             title="No teams yet.",
             description="Create your first team to start sharing and reviewing together.",
+            primary_label="Create team",
+            on_primary=on_create_team,
             compact=True,
         )
         return

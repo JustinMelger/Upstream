@@ -52,6 +52,26 @@ Execution slices:
 - [ ] Slice 10.5: visual quality gate hardening
   - [ ] Commit stable visual baselines and enable strict visual-regression enforcement in CI (`11D` remaining item).
   - [ ] Deferred: explicit user decision on 2026-03-09 to skip strict visual-baseline enforcement for now; keep this item queued.
+  - [x] Groundwork: make non-strict visual smoke runs deterministic enough to review (fixed browser capture settings, explicit baseline/artifact paths, and note artifacts for missing baselines).
+  - [x] Groundwork: document the current E2E environment contract (`admin/admin` bootstrap, backend/UI health, baseline update workflow) without turning strict baseline failures on yet.
+- [ ] Slice 10.5b: per-file ignore burn-down on active modules
+  - [x] Remove stale per-file ignore from `frontend/ui/nicegui/core/errors.py` by tightening exception handling instead of relying on `BLE001`.
+  - [x] Audit remaining per-file complexity ignores and remove any that no longer mask real violations.
+  - [x] Prioritize strict-scope and active-surface files first (`frontend/ui/nicegui/core/*`, then touched page/section modules).
+  - [x] Remove active-module per-file ignores from:
+    - [x] `frontend/ui/nicegui/core/errors.py`
+    - [x] `frontend/ui/nicegui/pages/learning/sections.py`
+    - [x] `frontend/ui/nicegui/pages/profile/page.py`
+    - [x] `frontend/ui/nicegui/pages/learning/page.py`
+    - [x] `frontend/ui/nicegui/pages/ai_curator/page.py`
+    - [x] `frontend/ui/nicegui/pages/admin_users/page.py`
+    - [x] `frontend/ui/nicegui/pages/courses/sections.py`
+  - [x] Record and execute the next extraction target when a page stays structurally large even after complexity cleanup:
+    - [x] Extract `frontend/ui/nicegui/pages/teams/page.py` route-specific UI composition into `frontend/ui/nicegui/pages/teams/page_ui.py` and keep `page.py` as auth guard + route binder + initial load orchestration.
+    - [x] Decompose `frontend/ui/nicegui/pages/share/page.py` by flow and responsibility instead of using a single overflow file:
+      - [x] separate item-share UI from path-share UI
+      - [x] separate control builders from draft wiring and action wiring
+      - [x] keep `page.py` focused on route registration, controller setup, and flow selection
 - [ ] Slice 10.6: learning-item unification (`video` + `course` + `article`)
   - [x] Naming foundation: use `Learning item` as canonical shared UI term for course/article surfaces.
   - [x] Unified UI mapping: add shared view-model contract with `learning_item_type` (`video`, `article`, `course`, `doc`).
@@ -60,36 +80,40 @@ Execution slices:
   - [x] Explore simplification: keep one scalable Learning Items catalog section (no duplicated course/article rails).
   - [x] Copy/IA cleanup: remove mixed wording drift (`Share course` vs `Share article`) across routes and labels.
   - [x] Compatibility + telemetry: preserve old links and add tracking for old-route usage during migration.
-- [ ] Slice 10.7: learning-item subtype completion
-  - [ ] Lock the initial subtype taxonomy to `video|course|article` and document `Learning item` as the primary shareable object.
-  - [ ] Add URL/provider-based subtype detection so YouTube links map to `video`, Udemy links map to `course`, and generic written links map to `article` unless a stronger rule exists.
-  - [ ] Extend `/share/item` to support explicit subtype selection and auto-detection while preserving compatibility redirects from `/share/course` and `/share/article`.
-  - [ ] Restore course share validation and field parity on the new share page, especially the required-description behavior.
-  - [ ] Rework Explore learning-item rendering so available videos, courses, and articles remain visible in the default state rather than being hidden by naive concatenation.
-  - [ ] Add focused tests for subtype detection, `/share/item` publish behavior, Explore mixed rendering, and compatibility route contracts.
+- [x] Slice 10.7: learning-item subtype completion
+  - [x] Lock the initial subtype taxonomy to `video|course|article` and document `Learning item` as the primary shareable object.
+  - [x] Add URL/provider-based subtype detection so YouTube links map to `video`, Udemy links map to `course`, and generic written links map to `article` unless a stronger rule exists.
+  - [x] Extend `/share/item` to support explicit subtype selection and auto-detection while preserving compatibility redirects from `/share/course` and `/share/article`.
+  - [x] Restore course share validation and field parity on the new share page, especially the required-description behavior.
+  - [x] Rework Explore learning-item rendering so available videos, courses, and articles remain visible in the default state rather than being hidden by naive concatenation.
+  - [x] Add focused tests for subtype detection, `/share/item` publish behavior, Explore mixed rendering, and compatibility route contracts.
 
 Validation and acceptance criteria:
 - [ ] Core pages (`Home`, `Explore`, detail pages) use one consistent typography/spacing/component language.
 - [ ] Shared content surfaces use one consistent `Learning item` terminology model without course/article naming drift.
 - [ ] Learning-item subtype taxonomy is stable and explicit:
-  - [ ] YouTube links classify as `video`.
-  - [ ] Udemy links classify as `course`.
-  - [ ] Generic written links classify as `article` unless a stronger rule exists.
-  - [ ] `/share/item` supports explicit subtype selection and successful publish flows for `video`, `course`, and `article`.
-  - [ ] Explore uses one learning-item model without hiding one available subtype behind another in the default view.
+  - [x] YouTube links classify as `video`.
+  - [x] Udemy links classify as `course`.
+  - [x] Generic written links classify as `article` unless a stronger rule exists.
+  - [x] `/share/item` supports explicit subtype selection and successful publish flows for `video`, `course`, and `article`.
+  - [x] Explore uses one learning-item model without hiding one available subtype behind another in the default view.
 - [ ] Interaction transitions are present, subtle, and consistent (no abrupt state jumps on major list/filter/card updates).
 - [ ] First-time clarity goals are measurably improved:
   - [x] no ambiguous empty-state next steps on primary pages.
   - [x] intro/onboarding flow is dismissible and non-blocking.
 - [x] Accessibility UX polish passes focused checks for keyboard navigation + visible focus + icon-action labeling on touched surfaces.
 - [ ] CI enforces visual snapshots strictly with committed stable baselines.
+- [ ] Active-sprint cleanup reduces per-file ignore debt rather than adding or normalizing it.
+- [ ] Large route modules continue moving toward thin-binder architecture:
+  - [x] `teams/page.py` uses `page_ui.py` when page-local NiceGUI composition becomes the dominant remaining weight.
+  - [x] `share/page.py` is reduced by package decomposition, not by shifting one oversized route file into another oversized UI file.
 - [ ] Design review output is documented and actionable (before/after evidence + accepted redesign decisions).
 
 Tracking:
 - [ ] Update roadmap checkboxes for completed `11A/11C/11D/11E` UX-style items at sprint close.
 - [ ] Record before/after screenshots for `Home`, `Explore`, and one detail page variant in CI artifacts.
 - [ ] Add a short design-review log section in this file (decision, rationale, affected pages/components).
-- [ ] Add/maintain focused regression coverage for `/share/item`, subtype detection, and Explore mixed learning-item visibility rather than broad new snapshot churn.
+- [x] Add/maintain focused regression coverage for `/share/item`, subtype detection, and Explore mixed learning-item visibility rather than broad new snapshot churn.
 
 ### Sprint 10 Design-Review Log (2026-03-07)
 Reference checklist: `docs/ui_system.md`
@@ -155,6 +179,11 @@ Reference checklist: `docs/ui_system.md`
   - [x] Add dismissible 3-step first-login intro.
   - [x] Ensure each key empty state has exactly one primary action.
   - [x] Ensure no primary page loads without an unambiguous next step.
+  - [ ] Concrete `11E.7` acceptance slices:
+    - [x] Audit `Home`, `Explore`, `Teams`, and `Profile` empty states against the current IA and keep one obvious next step per page.
+    - [x] Recheck onboarding copy and hints against canonical routes (`/home`, `/explore`, `/teams`, `/share/item`, `/share/path`) and remove stale wording.
+    - [x] Verify no-team and no-content states clearly route users to `Teams` and `Explore` without mixed team/share terminology.
+    - [x] Add focused integration coverage for “one clear next action” on key first-use empty states.
 - [ ] Complete open Share-flow UX actions from `11A.3`:
   - [x] Trigger URL metadata suggestion on paste/blur with debounce (keep manual suggest button).
   - [x] Add inline “suggested vs edited” indicators for autofilled fields.
@@ -192,11 +221,17 @@ Reference checklist: `docs/ui_system.md`
   - [x] Keep legacy-page excludes fixed (no broadened ignore scope).
   - [x] Roll out CI ratchet mode: fail on new violations first, then enforce full thresholds.
   - [ ] Complete open Phase `11D` engineering items:
-  - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
-    - [x] Phase slice: add Playwright smoke coverage for `login` + `track` and upload screenshots/log artifacts in CI.
-    - [x] Phase slice: add `review` + `select path` smoke coverage.
-    - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
-    - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+    - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
+      - [x] Phase slice: add Playwright smoke coverage for `login` + `track` and upload screenshots/log artifacts in CI.
+      - [x] Phase slice: add `review` + `select path` smoke coverage.
+      - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
+      - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+    - [ ] Concrete `11D` close-out slices:
+      - [x] Keep the ratchet + strict-core CI script aligned with the workflow entrypoint (`scripts/lint_quality_gate.sh` + `.github/workflows/ci.yml`) and remove shell-flow bugs that can hide real failures.
+      - [x] Fix active strict-core regressions exposed by the quality gate in `backend/services`, `frontend/ui/nicegui/core`, and `frontend/ui/nicegui/services`.
+      - [ ] Commit stable visual baseline images for the existing smoke/visual flows.
+      - [ ] Enable strict visual snapshot enforcement in CI once baselines are committed and stable.
+      - [ ] Decide and document the E2E environment contract: fail on true regressions, skip only when the external/browser environment is unavailable.
 
 ## Sprint 11 — Social Learning Hub v1 (Teams + Scoped Sharing)
 - [ ] Align execution to roadmap `Phase 11F`.

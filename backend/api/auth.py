@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from backend.api.deps import get_auth_service
@@ -24,7 +26,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(payload: LoginRequest, auth: AuthService = Depends(get_auth_service)):
+async def login(payload: LoginRequest, auth: AuthService = Depends(get_auth_service)) -> dict[str, Any]:
     """Authenticate a user and create a session.
 
     Args:
@@ -73,7 +75,7 @@ async def login(payload: LoginRequest, auth: AuthService = Depends(get_auth_serv
 async def me(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
-):
+) -> dict[str, Any]:
     """Return the current authenticated user.
 
     Args:
@@ -96,7 +98,7 @@ async def me(
 async def logout(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
-):
+) -> dict[str, int]:
     """Revoke all sessions for the current user.
 
     Args:
@@ -116,7 +118,7 @@ async def logout(
 async def get_role(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
-):
+) -> dict[str, str]:
     """Return the role for the current user.
 
     Args:
@@ -139,7 +141,7 @@ async def create_user_endpoint(
     payload: CreateUserRequest,
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
-):
+) -> dict[str, Any]:
     """Create a new user account (admin only).
 
     Args:
@@ -172,7 +174,7 @@ async def create_user_endpoint(
 async def list_users_endpoint(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
-):
+) -> list[dict[str, Any]]:
     """List all users (admin only).
 
     Args:
@@ -194,7 +196,7 @@ async def reset_password_endpoint(
     payload: ResetPasswordRequest,
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
-):
+) -> dict[str, int]:
     """Reset a user's password (admin only).
 
     Args:
@@ -226,7 +228,7 @@ async def delete_user_endpoint(
     username: str,
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
-):
+) -> dict[str, int]:
     """Delete a user account (admin only).
 
     Args:
@@ -255,7 +257,7 @@ async def disable_user_endpoint(
     payload: DisableUserRequest,
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
-):
+) -> dict[str, int | bool]:
     """Disable or enable a user (admin only).
 
     Args:

@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 
 from backend.api.deps import get_notifications_service, require_session
@@ -14,6 +16,6 @@ async def list_activity_notifications(
     scope: str = Query(default="inbox", pattern="^(inbox|team)$"),
     current_user: str = Depends(require_session),
     notifications: NotificationsService = Depends(get_notifications_service),
-):
+) -> list[dict[str, Any]]:
     """Return a lightweight activity feed for shared/recommended content."""
     return await notifications.list_activity(current_user=current_user, limit=int(limit), scope=str(scope))

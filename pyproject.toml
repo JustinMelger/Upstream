@@ -51,18 +51,13 @@ line-length = 128
 select = ["I", "F821", "BLE", "TID", "T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "D102", "D103", "D107"]
 
 [tool.ruff.lint.per-file-ignores]
+# Non-product code keeps a lighter baseline:
+# - tests may use print/debug output and verbose setup patterns
+# - scripts may stay operational and direct
+# - Alembic migrations are one-off delivery artifacts
 "tests/**/*.py" = ["T20", "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "D102", "D103", "D107"]
 "scripts/**/*.py" = ["T20", "D102", "D103", "D107"]
 "alembic/**/*.py" = ["D102", "D103", "D107"]
-# Tier 2 (UI composition modules): allow slightly looser complexity while
-# we continue extracting orchestration into controller/orchestration/actions.
-"frontend/ui/nicegui/pages/admin_users/page.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
-"frontend/ui/nicegui/pages/ai_curator/page.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
-"frontend/ui/nicegui/pages/learning/page.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
-"frontend/ui/nicegui/pages/profile/page.py" = ["PLR0915"]
-"frontend/ui/nicegui/pages/courses/sections.py" = ["C901", "PLR0912", "PLR0913", "PLR0915"]
-"frontend/ui/nicegui/pages/learning/sections.py" = ["PLR0913"]
-"frontend/ui/nicegui/core/errors.py" = ["BLE001"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["backend", "frontend"]
@@ -85,9 +80,9 @@ max-complexity = 19
 [tool.ruff.lint.pylint]
 # Baseline repo ratchet (v7): tightened after service/control-flow extraction.
 max-args = 10
-max-branches = 14
-max-returns = 8
-max-statements = 70
+max-branches = 12
+max-returns = 7
+max-statements = 67
 
 [tool.mypy]
 python_version = "3.13"
@@ -100,18 +95,15 @@ warn_unreachable = true
 strict_equality = true
 no_implicit_optional = true
 check_untyped_defs = true
+disallow_untyped_defs = true
 ignore_missing_imports = true
 exclude = ["^tests/"]
 
 [[tool.mypy.overrides]]
+# Temporary opt-out for the legacy FastAPI transport layer until endpoint
+# annotations are normalized to the same baseline as the rest of the app.
 module = [
-    "backend.services.*",
-    "frontend.ui.nicegui.services.*",
-    "frontend.ui.nicegui.pages.*.controller",
-    "frontend.ui.nicegui.pages.*.orchestration",
-    "frontend.ui.nicegui.pages.*.actions",
-    "frontend.ui.nicegui.pages.*.reducers",
-    "frontend.ui.nicegui.pages.*.state",
-    "frontend.ui.nicegui.pages.*.view_model",
+    "backend.api.*",
+    "backend.main",
 ]
-disallow_untyped_defs = true
+disallow_untyped_defs = false

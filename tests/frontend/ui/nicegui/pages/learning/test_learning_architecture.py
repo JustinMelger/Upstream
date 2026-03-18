@@ -33,18 +33,25 @@ def test_learning_pure_modules_do_not_import_nicegui() -> None:
 def test_learning_page_imports_controller_and_state() -> None:
     imports = _imports_for(_LEARNING_DIR / "page.py")
     assert "frontend.ui.nicegui.pages.learning.controller" in imports
-    assert "frontend.ui.nicegui.pages.learning.actions" in imports
+    assert "frontend.ui.nicegui.pages.learning.page_ui" in imports
     assert "frontend.ui.nicegui.pages.learning.route_init" in imports
-    assert "frontend.ui.nicegui.pages.learning.state" in imports
-    assert "frontend.ui.nicegui.pages.learning.sections" in imports
     assert "frontend.ui.nicegui.pages.learning.ui_glue" in imports
-    assert "frontend.ui.nicegui.pages.learning.view_model" in imports
     assert "frontend.ui.nicegui.services.learning_service" not in imports
 
 
 @pytest.mark.unit
+def test_learning_page_ui_imports_learning_ui_dependencies() -> None:
+    imports = _imports_for(_LEARNING_DIR / "page_ui.py")
+    assert "frontend.ui.nicegui.pages.learning.actions" in imports
+    assert "frontend.ui.nicegui.pages.learning.controller" in imports
+    assert "frontend.ui.nicegui.pages.learning.sections" in imports
+    assert "frontend.ui.nicegui.pages.learning.state" in imports
+    assert "frontend.ui.nicegui.pages.learning.view_model" in imports
+
+
+@pytest.mark.unit
 def test_learning_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"actions.py", "page.py", "sections.py"}
+    expected_ui_modules = {"actions.py", "page.py", "page_ui.py", "sections.py"}
     for path in sorted(_LEARNING_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)

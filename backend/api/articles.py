@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, Query
 
@@ -26,7 +26,7 @@ async def list_articles(
     tag: Optional[str] = Query(default=None, description="Tag filter"),
     current_user: str = Depends(require_session),
     articles: ArticlesService = Depends(get_articles_service),
-):
+) -> list[dict[str, Any]]:
     """List articles."""
     return await articles.list_articles(query=q, tag=tag)
 
@@ -36,7 +36,7 @@ async def create_article(
     payload: ArticleCreateRequest,
     current_user: str = Depends(require_session),
     articles: ArticlesService = Depends(get_articles_service),
-):
+) -> dict[str, Any]:
     """Create an article (any authenticated user)."""
     return await articles.create_article(payload=payload.model_dump(), created_by=current_user)
 
@@ -46,7 +46,7 @@ async def article_review_summaries(
     article_ids: list[int] = Query(default_factory=list),
     current_user: str = Depends(require_session),
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
-):
+) -> list[dict[str, Any]]:
     """Get review summaries for a list of article ids."""
     return await reviews.summaries(article_ids=list(article_ids or []))
 
@@ -56,7 +56,7 @@ async def list_article_reviews(
     article_id: int,
     current_user: str = Depends(require_session),
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
-):
+) -> list[dict[str, Any]]:
     """List reviews for an article."""
     return await reviews.list_reviews(article_id=article_id)
 
@@ -67,7 +67,7 @@ async def create_article_review(
     payload: ArticleReviewCreateRequest,
     current_user: str = Depends(require_session),
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
-):
+) -> dict[str, Any]:
     """Create/update current user's review for an article."""
     return await reviews.create_review(article_id=article_id, payload=payload.model_dump(), created_by=current_user)
 
@@ -79,7 +79,7 @@ async def delete_article_review(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
-):
+) -> dict[str, bool]:
     """Delete an article review (owner or admin)."""
     review = require_row_exists(await reviews.get_review_by_id(review_id=int(review_id)))
     require_row_parent_match(row=review, parent_field="article_id", parent_id=int(article_id))

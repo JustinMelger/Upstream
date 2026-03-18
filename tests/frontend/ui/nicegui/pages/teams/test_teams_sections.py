@@ -82,3 +82,23 @@ def test_render_team_activity_empty_state_uses_learning_item_language(monkeypatc
     teams_sections.render_team_activity(activity_rows=[], on_open_target=lambda _target: None)
 
     assert captured.get("description") == "Share a learning item or path to start activity in this feed."
+
+
+def test_render_teams_list_empty_state_has_one_clear_primary_action(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _fake_render_empty_block(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(teams_sections, "render_empty_block", _fake_render_empty_block)
+
+    teams_sections.render_teams_list(
+        teams=[],
+        selected_team_id=None,
+        on_open=lambda _team_id: None,
+        on_create_team=lambda: None,
+    )
+
+    assert captured.get("title") == "No teams yet."
+    assert captured.get("primary_label") == "Create team"
+    assert captured.get("on_primary") is not None

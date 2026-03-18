@@ -238,8 +238,10 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
       E2E_API_URL: http://127.0.0.1:8000
       E2E_UI_URL: http://127.0.0.1:8080
+      E2E_VISUAL_BASELINE_DIR: tests/e2e/baselines
       E2E_SCREENSHOT_DIR: test-results/e2e-screenshots
       E2E_VISUAL_ASSERT: "1"
+      # Keep strict baseline failures deferred until the major UI surfaces settle.
       E2E_VISUAL_STRICT: "0"
       NICEGUI_STORAGE_SECRET: ci-e2e-storage-secret
     steps:

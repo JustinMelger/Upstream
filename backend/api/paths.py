@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -53,7 +53,7 @@ router = APIRouter(prefix="/paths", tags=["paths"])
 async def list_paths(
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
-):
+) -> list[dict[str, Any]]:
     """List all learning paths.
 
     Args:
@@ -70,7 +70,7 @@ async def path_review_summaries(
     path_ids: List[int] = Query(default=[], description="Path IDs to summarize"),
     current_user: str = Depends(require_session),
     reviews: PathReviewsService = Depends(get_path_reviews_service),
-):
+) -> list[dict[str, Any]]:
     """Return average rating + count for each path id."""
     return await reviews.summaries(path_ids=list(path_ids or []))
 
@@ -80,7 +80,7 @@ async def path_recommendation_summaries(
     path_ids: List[int] = Query(default=[], description="Path IDs to summarize"),
     current_user: str = Depends(require_session),
     recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
-):
+) -> list[dict[str, Any]]:
     """Return recommendation counts for each path id."""
     return await recommendations.summaries(path_ids=list(path_ids or []))
 
@@ -90,7 +90,7 @@ async def add_path(
     payload: PathCreateRequest,
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
-):
+) -> dict[str, Any]:
     """Create a learning path (any authenticated user).
 
     Args:
@@ -110,7 +110,7 @@ async def select_path(
     path_id: int,
     current_user: str = Depends(require_session),
     user_paths: UserPathsService = Depends(get_user_paths_service),
-):
+) -> dict[str, Any]:
     """Add a path to the current user's selections.
 
     Args:
@@ -128,7 +128,7 @@ async def unselect_path(
     path_id: int,
     current_user: str = Depends(require_session),
     user_paths: UserPathsService = Depends(get_user_paths_service),
-):
+) -> dict[str, int]:
     """Remove a path from the current user's selections.
 
     Args:
@@ -150,7 +150,7 @@ async def set_path_status(
     payload: PathStatusRequest,
     current_user: str = Depends(require_session),
     user_paths: UserPathsService = Depends(get_user_paths_service),
-):
+) -> dict[str, int]:
     """Update the status for a selected path.
 
     Args:
@@ -173,7 +173,7 @@ async def set_path_status(
 async def list_selected_paths(
     current_user: str = Depends(require_session),
     user_paths: UserPathsService = Depends(get_user_paths_service),
-):
+) -> list[dict[str, Any]]:
     """List paths selected by the current user.
 
     Args:
@@ -190,7 +190,7 @@ async def get_path(
     path_id: int,
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
-):
+) -> dict[str, Any]:
     """Get a learning path by ID.
 
     Args:
@@ -209,7 +209,7 @@ async def list_path_reviews(
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
     reviews: PathReviewsService = Depends(get_path_reviews_service),
-):
+) -> list[dict[str, Any]]:
     """List reviews for a path."""
     require_row_exists(await paths.get_path(path_id))
     return await reviews.list_reviews(path_id=path_id)
@@ -222,7 +222,7 @@ async def create_path_review(
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
     reviews: PathReviewsService = Depends(get_path_reviews_service),
-):
+) -> dict[str, Any]:
     """Create a review for a path (any authenticated user)."""
     require_row_exists(await paths.get_path(path_id))
     return await reviews.create_review(path_id=path_id, payload=payload.model_dump(), created_by=current_user)
@@ -235,7 +235,7 @@ async def delete_path_review(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     reviews: PathReviewsService = Depends(get_path_reviews_service),
-):
+) -> dict[str, bool]:
     """Delete a path review (owner/admin only)."""
     review = require_row_exists(await reviews.get_review_by_id(review_id=int(review_id)))
     require_row_parent_match(row=review, parent_field="path_id", parent_id=int(path_id))
@@ -250,7 +250,7 @@ async def list_path_recommendations(
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
     recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
-):
+) -> list[dict[str, Any]]:
     """List recommendations for a path."""
     require_row_exists(await paths.get_path(path_id))
     return await recommendations.list_recommendations(path_id=path_id)
@@ -263,7 +263,7 @@ async def create_path_recommendation(
     current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
     recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
-):
+) -> dict[str, Any]:
     """Create/update current user's recommendation for a path."""
     require_row_exists(await paths.get_path(path_id))
     return await recommendations.create_recommendation(path_id=path_id, payload=payload.model_dump(), created_by=current_user)
@@ -276,7 +276,7 @@ async def delete_path_recommendation(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
-):
+) -> dict[str, bool]:
     """Delete a path recommendation (owner/admin only)."""
     recommendation = require_row_exists(
         await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))
@@ -293,7 +293,7 @@ async def remove_path(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     paths: PathsService = Depends(get_paths_service),
-):
+) -> dict[str, bool]:
     """Delete a learning path (owner/admin only).
 
     Args:
@@ -322,7 +322,7 @@ async def edit_path(
     current_user: str = Depends(require_session),
     auth: AuthService = Depends(get_auth_service),
     paths: PathsService = Depends(get_paths_service),
-):
+) -> dict[str, Any]:
     """Update a learning path (owner/admin only).
 
     Args:

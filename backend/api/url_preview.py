@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
 
 from backend.api.deps import get_url_preview_service, require_session
@@ -13,6 +15,6 @@ async def resolve_url_metadata(
     payload: UrlPreviewMetadataRequest,
     current_user: str = Depends(require_session),
     previews: UrlPreviewService = Depends(get_url_preview_service),
-):
+) -> dict[str, Any]:
     """Resolve URL metadata and autofill suggestions for share dialogs."""
     return await previews.resolve_metadata(source_url=str(payload.url or ""))

@@ -13,8 +13,10 @@ from frontend.ui.nicegui.pages.share.helpers import (
 @pytest.mark.unit
 def test_share_helpers_normalize_video_route_contract() -> None:
     assert normalize_requested_share_type("video") == "video"
+    assert normalize_requested_share_type("article") == "article"
     assert normalize_requested_share_type("bad") == "course"
     assert share_route_for_type("video") == "/share/item?type=video"
+    assert share_route_for_type("article") == "/share/item?type=article"
 
 
 @pytest.mark.unit

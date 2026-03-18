@@ -20,7 +20,7 @@ from frontend.ui.nicegui.core.learning_items import learning_item_primary_action
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.sections import render_article_card
 from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
-from frontend.ui.nicegui.pages.courses.sections import render_course_card
+from frontend.ui.nicegui.pages.courses.sections import CourseCardContext, render_course_card
 from frontend.ui.nicegui.pages.courses.ui_glue import resolve_tracking_status_value
 from frontend.ui.nicegui.pages.courses.view_model import map_course_card_view
 from frontend.ui.nicegui.pages.paths.actions import copy_path_link
@@ -52,25 +52,27 @@ def render_course_item(
             recommendation_summary_row=state.course_recommendation_summary_by_course_id.get(course_id),
         )
         render_course_card(
-            course_row=course,
-            tracked_row=tracked if isinstance(tracked, dict) else None,
-            card_vm=card_vm,
-            can_edit=can_edit,
-            has_url=bool(url),
-            actions=course_actions_builder(course, course_id, url),
-            is_tracked_course=lambda cid: int(cid) in state.tracking_by_course_id,
-            resolve_status_value=resolve_tracking_status_value,
-            on_set_status=on_set_tracking,
-            on_clear_status=on_clear_tracking,
-            has_video_preview=False,
-            is_preview_open=False,
-            preview_embed_url="",
-            on_toggle_preview=lambda: None,
-            force_media_slot=True,
-            show_status_chip=False,
-            show_compact_progress=True,
-            show_context_meta=False,
-            item_type_label=learning_item_type_label(item_type),
+            ctx=CourseCardContext(
+                course_row=course,
+                tracked_row=tracked if isinstance(tracked, dict) else None,
+                card_vm=card_vm,
+                can_edit=can_edit,
+                has_url=bool(url),
+                actions=course_actions_builder(course, course_id, url),
+                is_tracked_course=lambda cid: int(cid) in state.tracking_by_course_id,
+                resolve_status_value=resolve_tracking_status_value,
+                on_set_status=on_set_tracking,
+                on_clear_status=on_clear_tracking,
+                has_video_preview=False,
+                is_preview_open=False,
+                preview_embed_url="",
+                on_toggle_preview=lambda: None,
+                force_media_slot=True,
+                show_status_chip=False,
+                show_compact_progress=True,
+                show_context_meta=False,
+                item_type_label=learning_item_type_label(item_type),
+            )
         )
 
 

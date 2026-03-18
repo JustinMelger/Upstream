@@ -58,7 +58,11 @@ Use it as the default guide before adding or refactoring code.
 - Strict complexity profile for core scope (`backend/services`, `frontend/ui/nicegui/core`, `frontend/ui/nicegui/services`):
   `C901<=9`, `PLR0913<=7`, `PLR0912<=6`, `PLR0915<=30`.
 - Type-checking: keep scoped `mypy` gate on service/core modules, enforce `mypy --strict` on
-  `frontend/ui/nicegui/core`, and require typed defs in page controllers/orchestration/actions/reducers.
+  `frontend/ui/nicegui/core`, and require typed defs across application code by default.
+  Temporary opt-out is limited to legacy transport entrypoints in `backend.api.*` and `backend.main`.
+  Note: scoped strict-core `ruff` thresholds still live in the quality-gate script because Ruff cannot express
+  different complexity thresholds for different module scopes in one project config file, and the strict core
+  `mypy` invocation also remains script-driven for now.
 - Docstring enforcement (Ruff + pydocstyle, Google convention):
   - Enforced rules:
     - `D102`: public methods require docstrings.
@@ -67,6 +71,7 @@ Use it as the default guide before adding or refactoring code.
   - Scope:
     - enforced for application code in `frontend/` and `backend/`.
     - intentionally ignored for `tests/**/*.py` and `scripts/**/*.py` to keep CI noise low while preserving strong standards in shipped code.
+    - intentionally ignored for `alembic/**/*.py` because migrations are one-off delivery artifacts rather than maintained app modules.
 
 ## 5) Test & Quality Gates
 

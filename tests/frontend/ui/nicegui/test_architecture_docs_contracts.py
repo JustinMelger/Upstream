@@ -264,7 +264,7 @@ def test_page_package_modules_do_not_use_broad_exception_handlers() -> None:
 def test_card_pages_use_view_model_mappers() -> None:
     """Guard view-model boundary: page modules should call page-local view-model mappers."""
     expected: dict[Path, tuple[str, tuple[str, ...]]] = {
-        Path("frontend/ui/nicegui/pages/learning/page.py"): (
+        Path("frontend/ui/nicegui/pages/learning/page_ui.py"): (
             "frontend.ui.nicegui.pages.learning.view_model",
             ("build_learning_tab_view", "build_shared_tab_view"),
         ),

@@ -216,6 +216,27 @@ async def test_share_item_article_route_renders_article_specific_fields(monkeypa
 
 
 @pytest.mark.anyio
+async def test_share_item_course_route_renders_course_specific_fields(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_ui = _FakeUi()
+    controller = _FakeController()
+    fake_ui.context.client.request.query_params = {"type": "course"}
+    monkeypatch.setattr(share_page, "ui", fake_ui)
+    monkeypatch.setattr(share_page, "app", SimpleNamespace(storage=SimpleNamespace(user={})))
+    monkeypatch.setattr(share_page, "render_shell", lambda **_kwargs: None)
+    monkeypatch.setattr(share_page, "render_catalog_scope", lambda **_kwargs: _FakeContainer())
+    monkeypatch.setattr(share_page, "require_user", _fake_require_user)
+    monkeypatch.setattr(share_page, "SharePageController", lambda **_kwargs: controller)
+
+    share_page.register(store=object(), api=object())  # type: ignore[arg-type]
+    await fake_ui.routes["/share/item"]()
+
+    assert any(label.text == "Share a course your team should learn from." for label in fake_ui.labels)
+    assert any(inp.label == "Course title" for inp in fake_ui.inputs)
+    assert any(inp.label == "Provider" for inp in fake_ui.inputs)
+    assert any(inp.label == "Category" for inp in fake_ui.inputs)
+
+
+@pytest.mark.anyio
 async def test_share_item_video_import_populates_fields_and_detected_type(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     controller = _FakeController()
@@ -245,6 +266,46 @@ async def test_share_item_video_import_populates_fields_and_detected_type(monkey
 
 
 @pytest.mark.anyio
+async def test_share_item_course_publish_success_navigates_to_courses_tab(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_ui = _FakeUi()
+    controller = _FakeController()
+    notifications: list[tuple[str, str]] = []
+    storage = {"share_course_page_draft::alice": {"title": "stale"}}
+    fake_ui.context.client.request.query_params = {"type": "course"}
+    monkeypatch.setattr(share_page, "ui", fake_ui)
+    monkeypatch.setattr(share_page, "app", SimpleNamespace(storage=SimpleNamespace(user=storage)))
+    monkeypatch.setattr(share_page, "render_shell", lambda **_kwargs: None)
+    monkeypatch.setattr(share_page, "render_catalog_scope", lambda **_kwargs: _FakeContainer())
+    monkeypatch.setattr(share_page, "require_user", _fake_require_user)
+    monkeypatch.setattr(share_page, "SharePageController", lambda **_kwargs: controller)
+    monkeypatch.setattr(share_page, "safe_notify", lambda message, type="info": notifications.append((str(message), str(type))))
+
+    share_page.register(store=object(), api=object())  # type: ignore[arg-type]
+    await fake_ui.routes["/share/item"]()
+
+    input_by_label = {element.label: element for element in fake_ui.inputs}
+    input_by_label["https://..."].value = "https://www.udemy.com/course/fastapi-zero-to-prod/"
+    input_by_label["Course title"].value = "Udemy FastAPI"
+    input_by_label["Description"].value = "Strong structured course"
+    input_by_label["Provider"].value = "Udemy"
+    input_by_label["Category"].value = "Backend"
+    await fake_ui.button_map["Publish Learning Item"].emit("click")
+
+    assert controller.created_courses == [
+        {
+            "title": "Udemy FastAPI",
+            "description": "Strong structured course",
+            "provider": "Udemy",
+            "category": "Backend",
+            "url": "https://www.udemy.com/course/fastapi-zero-to-prod/",
+        }
+    ]
+    assert "share_course_page_draft::alice" not in storage
+    assert notifications[-1] == ("Learning item published", "positive")
+    assert fake_ui.navigations[-1] == ("/explore?tab=courses", False)
+
+
+@pytest.mark.anyio
 async def test_share_item_video_publish_requires_description(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     controller = _FakeController()
@@ -270,6 +331,42 @@ async def test_share_item_video_publish_requires_description(monkeypatch: pytest
     assert controller.created_videos == []
     assert notifications[-1] == ("Description is required", "negative")
     assert fake_ui.navigations == []
+
+
+@pytest.mark.anyio
+async def test_share_item_article_publish_success_navigates_to_articles_tab(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_ui = _FakeUi()
+    controller = _FakeController()
+    notifications: list[tuple[str, str]] = []
+    storage = {"share_article_page_draft::alice": {"title": "stale"}}
+    fake_ui.context.client.request.query_params = {"type": "article"}
+    monkeypatch.setattr(share_page, "ui", fake_ui)
+    monkeypatch.setattr(share_page, "app", SimpleNamespace(storage=SimpleNamespace(user=storage)))
+    monkeypatch.setattr(share_page, "render_shell", lambda **_kwargs: None)
+    monkeypatch.setattr(share_page, "render_catalog_scope", lambda **_kwargs: _FakeContainer())
+    monkeypatch.setattr(share_page, "require_user", _fake_require_user)
+    monkeypatch.setattr(share_page, "SharePageController", lambda **_kwargs: controller)
+    monkeypatch.setattr(share_page, "safe_notify", lambda message, type="info": notifications.append((str(message), str(type))))
+
+    share_page.register(store=object(), api=object())  # type: ignore[arg-type]
+    await fake_ui.routes["/share/item"]()
+
+    input_by_label = {element.label: element for element in fake_ui.inputs}
+    input_by_label["https://..."].value = "https://fastapi.tiangolo.com/tutorial/testing/"
+    input_by_label["Article title"].value = "FastAPI testing guide"
+    input_by_label["Tags (comma-separated)"].value = "fastapi, testing"
+    await fake_ui.button_map["Publish Learning Item"].emit("click")
+
+    assert controller.created_articles == [
+        {
+            "title": "FastAPI testing guide",
+            "url": "https://fastapi.tiangolo.com/tutorial/testing/",
+            "tags": "fastapi, testing",
+        }
+    ]
+    assert "share_article_page_draft::alice" not in storage
+    assert notifications[-1] == ("Learning item published", "positive")
+    assert fake_ui.navigations[-1] == ("/explore?tab=articles", False)
 
 
 @pytest.mark.anyio
