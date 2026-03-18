@@ -13,8 +13,10 @@ class ExplorePageState:
     loading: bool = False
     loaded_once: bool = False
     articles_loading: bool = False
+    videos_loading: bool = False
     paths_loading: bool = False
     courses: list[dict[str, Any]] = field(default_factory=list)
+    videos: list[dict[str, Any]] = field(default_factory=list)
     tracking_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     course_review_summary_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     course_recommendation_summary_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
@@ -33,4 +35,5 @@ class ExploreUiFlags:
     """Mutable UI-only flags for Explore page event behavior."""
 
     search_telemetry_emitted: bool = False
-    show_all_categories: bool = False
+    show_all_categories: bool = True
+    learning_items_visible_limit: int = 8

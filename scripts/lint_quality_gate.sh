@@ -25,7 +25,7 @@ uv run ruff check backend/services frontend/ui/nicegui/core frontend/ui/nicegui/
   --config "lint.pylint.max-args=7" \
   --config "lint.pylint.max-branches=6" \
   --config "lint.pylint.max-statements=30" \
-  --config "lint.pylint.max-returns=7" \
+  --config "lint.pylint.max-returns=7"
 
 echo "Running strict mypy profile on core quality scope..."
 uv run mypy frontend/ui/nicegui/core --strict

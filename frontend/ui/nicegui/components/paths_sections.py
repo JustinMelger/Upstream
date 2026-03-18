@@ -6,6 +6,8 @@ from typing import Any, Callable
 
 from nicegui import ui
 
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
+
 
 def render_paths_topbar(
     *,
@@ -56,7 +58,12 @@ def render_paths_topbar(
                     .classes("lp-topbar-secondary-control")
                 )
             with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
-                with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+                paths_menu = apply_icon_button_a11y(
+                    ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+                    label="Open path toolbar actions",
+                    tooltip="More actions",
+                )
+                with paths_menu:
                     ui.menu_item("Share path", on_open_create_dialog)
     return search_input, scope_filter, sort_filter, meta
 

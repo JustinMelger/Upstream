@@ -32,6 +32,8 @@ def build_activity_target_link(*, target_type: str, target_id: int) -> str:
     kind = str(target_type or "")
     if kind == "course":
         return f"/explore/courses/{int(target_id)}"
+    if kind == "video":
+        return f"/explore/videos/{int(target_id)}"
     if kind == "path":
         return f"/explore/paths/{int(target_id)}"
     if kind == "article":

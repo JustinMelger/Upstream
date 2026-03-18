@@ -240,6 +240,7 @@ async def _load_shared_summaries(
 def _build_learning_collections(
     *,
     courses: list[dict[str, Any]],
+    videos: list[dict[str, Any]],
     paths: list[dict[str, Any]],
     articles: list[dict[str, Any]],
     tracking_by_course_id: dict[int, dict[str, Any]],
@@ -250,12 +251,14 @@ def _build_learning_collections(
     list[dict[str, Any]],
     list[dict[str, Any]],
     list[dict[str, Any]],
+    list[dict[str, Any]],
     list[int],
     list[int],
     list[int],
     list[int],
 ]:
     shared_courses = [c for c in courses if str(c.get("created_by") or "") == username]
+    shared_videos = [v for v in videos if str(v.get("created_by") or "") == username]
     shared_paths = [p for p in paths if str(p.get("created_by") or "") == username]
     shared_articles = [a for a in articles if str(a.get("created_by") or "") == username]
 
@@ -268,6 +271,7 @@ def _build_learning_collections(
     shared_path_ids = sorted(int(p.get("id") or 0) for p in shared_paths if int(p.get("id") or 0) > 0)
     return (
         shared_courses,
+        shared_videos,
         shared_paths,
         shared_articles,
         tracked_courses,
@@ -302,10 +306,11 @@ async def load_my_learning_data(
     tracking_task = api.get("/tracking")
     selected_paths_task = api.get("/paths/selected/list")
     paths_task = api.get("/paths")
+    videos_task = api.get("/videos")
     articles_task = api.get("/articles") if include_articles else asyncio.sleep(0, result=[])
 
-    courses_result, tracking_result, selected_paths_result, paths_result, articles_result = await asyncio.gather(
-        courses_task, tracking_task, selected_paths_task, paths_task, articles_task
+    courses_result, tracking_result, selected_paths_result, paths_result, videos_result, articles_result = await asyncio.gather(
+        courses_task, tracking_task, selected_paths_task, paths_task, videos_task, articles_task
     )
 
     courses = list(courses_result or [])
@@ -317,9 +322,11 @@ async def load_my_learning_data(
     path_details_by_id = await _load_selected_path_details(api=api, selected_ids=selected_ids)
 
     paths = list(paths_result or [])
+    videos = list(videos_result or [])
     articles = list(articles_result or [])
     (
         shared_courses,
+        shared_videos,
         shared_paths,
         shared_articles,
         tracked_courses,
@@ -329,6 +336,7 @@ async def load_my_learning_data(
         shared_path_ids,
     ) = _build_learning_collections(
         courses=courses,
+        videos=videos,
         paths=paths,
         articles=articles,
         tracking_by_course_id=tracking_by_course_id,
@@ -405,6 +413,8 @@ async def load_my_learning_data(
         "path_details_by_id": path_details_by_id,
         "paths": paths,
         "shared_courses": shared_courses,
+        "videos": videos,
+        "shared_videos": shared_videos,
         "shared_paths": shared_paths,
         "articles": articles,
         "shared_articles": shared_articles,

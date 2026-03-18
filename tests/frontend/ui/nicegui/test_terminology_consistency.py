@@ -19,8 +19,8 @@ def test_card_and_detail_action_labels_use_consistent_terms() -> None:
     assert 'ui.button("Open details"' in article_sections_src
     assert 'ui.menu_item("Open details"' in course_sections_src
 
-    assert 'ui.button("Open source"' in explore_course_detail_src
-    assert 'ui.button("Open source"' in explore_article_detail_src
+    assert 'learning_item_source_action_label("course")' in explore_course_detail_src
+    assert 'learning_item_source_action_label("article")' in explore_article_detail_src
     assert 'ui.button("Open source"' in article_dialogs_src
 
     # Prevent drift back to older mixed labels in key surfaces.

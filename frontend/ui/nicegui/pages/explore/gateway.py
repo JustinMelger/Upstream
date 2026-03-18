@@ -10,6 +10,7 @@ from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
 from frontend.ui.nicegui.pages.courses.controller import CourseDetailBundle, CoursesPageController
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
+from frontend.ui.nicegui.pages.videos.controller import VideosPageController
 
 
 @dataclass(slots=True)
@@ -219,12 +220,36 @@ class ExploreArticlesAccess:
 
 
 @dataclass(slots=True)
+class ExploreVideosAccess:
+    """Video-domain operations used by Explore orchestration."""
+
+    _controller: VideosPageController
+
+    async def load_list(self) -> list[dict[str, Any]]:
+        """Load Explore videos list."""
+        return await self._controller.load_list()
+
+    async def create_video(self, *, payload: dict[str, Any]) -> dict[str, Any]:
+        """Create a new video from share flow."""
+        return await self._controller.create_video(payload=dict(payload or {}))
+
+    async def suggest_video_from_url(self, *, url: str) -> dict[str, Any]:
+        """Suggest video metadata from a URL."""
+        return await self._controller.suggest_video_from_url(url=str(url or ""))
+
+    async def load_video(self, *, video_id: int) -> dict[str, Any]:
+        """Load one video detail payload."""
+        return await self._controller.load_video(video_id=int(video_id))
+
+
+@dataclass(slots=True)
 class ExploreDataGateway:
     """Facade owning cross-page controllers used by Explore."""
 
     courses: ExploreCoursesAccess
     paths: ExplorePathsAccess
     articles: ExploreArticlesAccess
+    videos: ExploreVideosAccess
 
     @classmethod
     def from_api(cls, *, api: ApiClient) -> ExploreDataGateway:
@@ -241,4 +266,5 @@ class ExploreDataGateway:
             courses=ExploreCoursesAccess(_controller=CoursesPageController(api=api)),
             paths=ExplorePathsAccess(_controller=PathsPageController(api=api)),
             articles=ExploreArticlesAccess(_controller=ArticlesPageController(api=api)),
+            videos=ExploreVideosAccess(_controller=VideosPageController(api=api)),
         )

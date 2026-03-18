@@ -19,6 +19,7 @@ __all__ = [
     "login",
     "paths",
     "profile",
+    "share",
     "teams",
 ]
 

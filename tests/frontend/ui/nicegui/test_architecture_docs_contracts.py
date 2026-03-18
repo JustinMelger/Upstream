@@ -93,8 +93,11 @@ def test_documented_routes_exist_in_page_modules() -> None:
         "/profile/stats",
         "/explore",
         "/explore/courses/{course_id}",
+        "/explore/videos/{video_id}",
         "/explore/paths/{path_id}",
         "/explore/articles/{article_id}",
+        "/share/item",
+        "/share/path",
         "/admin/users",
         "/ai",
     }
@@ -103,6 +106,15 @@ def test_documented_routes_exist_in_page_modules() -> None:
         declared_routes |= _decorated_routes(page_file)
     for route in documented_routes:
         assert route in declared_routes, f"Missing documented route: {route}"
+
+
+def test_share_route_contract_includes_compatibility_routes() -> None:
+    share_page = _PAGES_ROOT / "share" / "page.py"
+    declared_routes = _decorated_routes(share_page)
+    assert "/share/item" in declared_routes
+    assert "/share/path" in declared_routes
+    assert "/share/course" in declared_routes
+    assert "/share/article" in declared_routes
 
 
 def test_non_login_pages_require_auth_guard() -> None:
@@ -310,6 +322,7 @@ def test_ruff_complexity_per_file_ignores_do_not_broaden_scope() -> None:
         "frontend/ui/nicegui/pages/admin_users/page.py",
         "frontend/ui/nicegui/pages/ai_curator/page.py",
         "frontend/ui/nicegui/pages/learning/page.py",
+        "frontend/ui/nicegui/pages/profile/page.py",
         "frontend/ui/nicegui/pages/courses/sections.py",
         "frontend/ui/nicegui/pages/learning/sections.py",
     }

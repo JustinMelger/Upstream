@@ -4,32 +4,58 @@
 ![ci](https://github.com/JustinMelger/learning-platform/actions/workflows/ci.yml/badge.svg)
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-A simple internal learning hub where colleagues can browse curated courses, track progress, and follow ordered learning paths.
+Learning Hub is an internal learning platform for shared skill development.
+
+At a glance:
+- FastAPI backend APIs for auth, catalog, tracking, activity, and AI draft planning
+- NiceGUI frontend for day-to-day learning workflows and team visibility
+- Postgres persistence with Alembic migrations
+- Optional local observability stack (OpenTelemetry, Prometheus, Tempo, Loki, Grafana)
+
+Core workflows:
+- Curate courses, paths, and articles
+- Track progress per user and across teams
+- Share recommendations and reviews
+- Generate draft learning plans from goals (`POST /ai/plan`)
 
 ## Docs
 - Architecture: [docs/architecture.md](docs/architecture.md)
 - Architecture & coding standards (one-pager): [docs/architecture_standards.md](docs/architecture_standards.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)
+- E2E notes: [tests/e2e/README.md](tests/e2e/README.md)
 
 ## Prerequisites
 - Python 3.13
-- `uv`
-- `just`
-- Docker + Docker Compose (for local Postgres / containerized run)
+- `uv` for dependency/environment management
+- `just` for local development commands
+- Docker + Docker Compose (required for local Postgres and full containerized run)
+
+## Choose a local setup
+- Containerized app run: [Run locally (Docker)](#run-locally-docker)
+- Local Python processes: [Run locally (without Docker)](#run-locally-without-docker)
 
 ## Run locally (Docker)
 ### Quick start
 1. Start observability stack (separate deploy):
    - `docker compose -f docker-compose.observability.yml up -d`
-2. Build and start app services:
+2. Build and start app services (Postgres + API + UI):
    - `docker compose up --build`
 3. Open the UI:
    - `http://localhost:8080`
+4. API docs:
+   - `http://localhost:8000/docs`
+
+Notes:
+- App stack (`docker-compose.yml`) and observability stack (`docker-compose.observability.yml`) are intentionally separate.
+- App containers export OTLP to `host.docker.internal:4318`, so observability can run independently.
 
 ## Database migrations (Postgres)
-When using Postgres (Phase 4), set `DATABASE_URL` and run:
+When using Postgres, set `DATABASE_URL` and run:
 - `just db-up`
 - `just migrate`
+
+Or run the full bootstrap flow:
+- `just db-init` (starts Postgres, waits for readiness, applies latest migration)
 
 ### Live reload (Docker Compose watch)
 1. Ensure Docker Compose supports `watch`:
@@ -41,30 +67,42 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 4. Open the UI:
    - `http://localhost:8080`
 
-### Environment variables
-- `SESSION_DAYS`: session lifetime in days (API).
-- `BOOTSTRAP_ADMIN_USERNAME`: first admin username when no users exist (API).
-- `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist (API).
-- `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage (UI).
-- `DATABASE_URL`: Postgres connection string (API).
-- `OTEL_ENABLED`: enable OpenTelemetry in API (`0` or `1`).
-- `OTEL_SERVICE_NAME`: OpenTelemetry service name for backend traces/metrics.
-- `OTEL_SERVICE_VERSION`: OpenTelemetry service version.
-- `OTEL_DEPLOYMENT_ENVIRONMENT`: environment label (e.g. `dev`, `staging`, `prod`).
-- `OTEL_TRACES_SAMPLE_RATIO`: trace sample ratio (`0.0` - `1.0`).
-- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`: OTLP HTTP traces endpoint (default `http://localhost:4318/v1/traces`).
-- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`: OTLP HTTP metrics endpoint (default `http://localhost:4318/v1/metrics`).
-- `OTEL_EXPORTER_OTLP_HEADERS`: optional comma-separated OTLP headers (`k=v,k2=v2`).
-
 ## Run locally (without Docker)
 1. Install dependencies:
    - `uv sync --group dev`
-2. Start the API:
+2. Start Postgres + migrate schema:
+   - `just db-init`
+3. Start the API:
    - `just backend`
-3. Start the UI (in a new terminal):
+4. Start the UI (in a new terminal):
    - `just ui`
-4. Open the UI:
+5. Open the UI:
    - `http://localhost:8080`
+
+Why this order:
+- Backend expects a reachable Postgres database and current Alembic schema.
+- `just db-init` avoids common first-run failures.
+
+## Environment variables
+API:
+- `DATABASE_URL`: async Postgres connection string.
+- `SESSION_DAYS`: session lifetime in days.
+- `BOOTSTRAP_ADMIN_USERNAME`: first admin username when no users exist.
+- `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist.
+- `OTEL_ENABLED`: enable OpenTelemetry (`0` or `1`).
+- `OTEL_SERVICE_NAME`: OpenTelemetry service name.
+- `OTEL_SERVICE_VERSION`: service version label.
+- `OTEL_DEPLOYMENT_ENVIRONMENT`: environment label (for example `dev`, `staging`, `prod`).
+- `OTEL_TRACES_SAMPLE_RATIO`: trace sample ratio (`0.0` - `1.0`).
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`: OTLP HTTP traces endpoint.
+- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`: OTLP HTTP metrics endpoint.
+- `OTEL_EXPORTER_OTLP_HEADERS`: optional comma-separated OTLP headers (`k=v,k2=v2`).
+
+UI:
+- `BACKEND_URL`: backend base URL used by NiceGUI frontend.
+- `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage.
+- `FEATURE_AI_CURATOR`: enable AI Curator page (`1` enabled, `0` disabled).
+- `FEATURE_ARTICLES`: enable article-specific frontend features (`1` enabled, `0` disabled).
 
 ## Contributor quick start
 1. Install dependencies:
@@ -78,6 +116,17 @@ When using Postgres (Phase 4), set `DATABASE_URL` and run:
 
 Optional:
 - Start backend + UI together after DB init: `just dev`
+
+Typical dev loop:
+- `just fmt`
+- `just lint`
+- Run focused tests (`just unit`, `just integration`, `just architecture`)
+- Run full local quality gate before pushing: `just test`
+
+Pull request checklist:
+- Verify API/UI start locally
+- Run relevant test targets
+- Update docs if routes, commands, or env vars changed
 
 ## Development commands
 - Format: `just fmt`
@@ -95,13 +144,19 @@ Optional local commit hooks:
 - Run on all files: `uv run pre-commit run --all-files`
 
 ## Pages
-- Insights (`/insights`): team-level progress and contribution visibility.
-- My learning (`/learning`): personal execution view (tracked/selected/recommended/shared items).
-- Activity (`/activity`): mailbox-style activity feed (personal + team activity tab).
-- Courses (`/courses`): browse/share/review/recommend courses and manage tracking status.
-- Paths (`/paths`): browse/share/select/review/recommend paths and update path status.
-- Articles (`/articles`): share and review knowledge links.
+- Home/Insights (`/` and `/home`): team-level progress and contribution visibility.
+- Explore (`/explore`): unified catalog for courses, paths, and articles.
+- Explore detail routes:
+  - `/explore/courses/{course_id}`
+  - `/explore/paths/{path_id}`
+  - `/explore/articles/{article_id}`
+- Teams (`/teams`): mailbox-style team activity and updates.
+- Profile (`/profile`, `/profile/stats`): personal account and stats views.
+- AI Curator (`/ai`): goal-driven draft plan workflow (feature-flagged).
 - Admin (`/admin/users`): user management (admin only).
+
+Navigation note:
+- The “Menu” dropdown in the header is the canonical in-app navigation surface.
 
 ## Login (username + password)
 - First login bootstraps an admin user (if no users exist yet) using the bootstrap credentials.
@@ -109,12 +164,12 @@ Optional local commit hooks:
 
 ## Feature snapshot
 - Social learning flows: share/review/recommend courses and paths.
-- Activity mailbox and team activity view.
-- My learning execution view (`Learning` and `Shared` tabs).
+- Team activity and mailbox view.
+- Explore-first content workflow (courses, paths, articles).
 - AI draft planner endpoint (`POST /ai/plan`) for proposed learning plans.
 
 ## Conventional commits
-We use Conventional Commits for automated release notes.
+Use Conventional Commits for automated release notes.
 
 Format:
 `type(scope): description`
@@ -131,7 +186,7 @@ Examples:
 - `fix(tracking): prevent empty status save`
 - `chore: add semantic-release config`
 
-## API endpoints (read-first)
+## API quick reference
 - `GET /health`
 - `POST /telemetry/events` (authenticated frontend product events sink)
 
@@ -142,6 +197,8 @@ Endpoint families:
 - Articles (+ reviews): `/articles/*`
 - Tracking/stats: `/tracking/*`
 - Notifications/activity: `/notifications/*`
+- Teams/activity context: `/teams/*`
+- URL preview metadata: `/url-preview/*`
 - Telemetry/events: `/telemetry/*`
 - AI draft planning: `/ai/*`
 
@@ -198,11 +255,11 @@ Owner/admin-only (creator or admin):
 
 ## Tracking
 - Set status per course: `interested`, `in_progress`, or `completed`.
-- Tracking is managed from `Courses`, `Paths` details, and `My learning`.
+- Tracking is managed from Explore course/path views and dashboard-oriented pages.
 
 ## Paths
 - Create learning paths by selecting courses and ordering them.
-- Select a path from the Paths page.
+- Select paths from Explore or related UI flows.
 - Update per-path status (`not_selected`, `selected`, `completed`) and per-course tracking status.
 - Delete paths you created (admins can delete any).
 
@@ -218,6 +275,8 @@ SESSION_DAYS=7
 BOOTSTRAP_ADMIN_USERNAME=admin
 BOOTSTRAP_ADMIN_PASSWORD=change-me
 NICEGUI_STORAGE_SECRET=change-me-too
+FEATURE_AI_CURATOR=1
+FEATURE_ARTICLES=1
 ```
 
 ## Troubleshooting
@@ -228,7 +287,7 @@ NICEGUI_STORAGE_SECRET=change-me-too
 - Login bootstrap not working:
   - Ensure database is empty and bootstrap env vars are set.
 - Port conflict:
-  - Check/stop processes on ports `8000` (API) and `8080` (UI).
+  - Check/stop processes on ports `8000` (API), `8080` (UI), and `5432` (Postgres).
 
 ## Production notes
 - Use a managed Postgres instance and run Alembic migrations during deploy.

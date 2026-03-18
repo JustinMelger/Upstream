@@ -107,7 +107,7 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
     """Build share-course dialog and return an open helper."""
     create_dialog = ui.dialog()
     with create_dialog, ui.card().classes("lp-card lp-dialog w-[min(700px,95vw)]"):
-        ui.label("Share Course").classes("text-xl font-semibold")
+        ui.label("Share Learning Item").classes("text-xl font-semibold")
         ui.label("Save a draft if you want feedback before publishing.").classes("text-xs").style("color: var(--lp-muted)")
 
         create_title = ui.input("Title").props("clearable").classes("w-full")
@@ -484,7 +484,7 @@ def build_share_course_dialog(  # noqa: C901, PLR0915
 
         with ui.row().classes("justify-end mt-4"):
 
-            @guard_ui_action(title="Share course failed")
+            @guard_ui_action(title="Share learning item failed")
             async def _create_submit() -> None:
                 dh_raw = str(create_duration_hours.value or "")
                 dh = parse_duration_hours(dh_raw)

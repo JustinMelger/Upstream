@@ -1,4 +1,4 @@
-"""Detail dialog flows for Explore page cards."""
+"""Detail dialog flows for Explore course/article card interactions."""
 
 from __future__ import annotations
 
@@ -29,31 +29,6 @@ class ExploreCourseDetailsDeps:
     on_tracking_changed: Callable[[str], None]
     normalize_course_view_mode: Callable[[bool], str]
     format_short_date: Callable[[Any], str]
-
-
-def open_explore_path_details_dialog(*, path_row: dict[str, Any], card_vm: Any) -> None:
-    """Open a lightweight in-place path details dialog for Explore."""
-    title = str(path_row.get("name") or "").strip() or "Path"
-    description = str(path_row.get("description") or "").strip()
-    with ui.dialog() as details_dialog:
-        with ui.card().classes("lp-card lp-dialog w-[min(640px,95vw)]"):
-            ui.label(title).classes("text-lg font-semibold")
-            ui.label("Overview").classes("text-xs font-semibold mt-2").style("color: var(--lp-muted)")
-            ui.label(description or "No description provided yet.").classes("text-sm").style("color: var(--lp-muted)")
-            with ui.row().classes("items-center gap-2 flex-wrap mt-1"):
-                if card_vm.shared_by:
-                    ui.label(f"Shared by {card_vm.shared_by}").classes("lp-meta-chip lp-meta-chip--quiet")
-                ui.label(card_vm.tracking_label_text).classes(card_vm.tracking_chip_cls)
-            if card_vm.total_courses > 0:
-                ui.label(f"Progress: {card_vm.completed}/{card_vm.total_courses} completed").classes("text-sm").style(
-                    "color: var(--lp-muted)"
-                )
-                ui.linear_progress(card_vm.progress, show_value=False).classes("w-full mt-1")
-            if card_vm.next_title:
-                ui.label(f"Next: {card_vm.next_title}").classes("text-xs").style("color: var(--lp-muted)")
-            with ui.row().classes("justify-end items-center gap-2 w-full mt-3"):
-                ui.button("Close", on_click=details_dialog.close).props("outline")
-    details_dialog.open()
 
 
 def open_explore_article_details_dialog(*, article_row: dict[str, Any], focus_reviews: bool) -> None:

@@ -8,6 +8,7 @@ from typing import Any, Awaitable, Callable
 from nicegui import ui
 from pydantic import BaseModel, ConfigDict
 
+from frontend.ui.nicegui.core.action_feedback import review_deleted_message, review_saved_message
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 
 
@@ -19,8 +20,8 @@ class ReviewPanelText(BaseModel):
     section_title: str = "Reviews"
     empty_text: str = "No reviews yet."
     save_label: str = "Save review"
-    save_success_text: str = "Review saved"
-    delete_success_text: str = "Review deleted"
+    save_success_text: str = review_saved_message()
+    delete_success_text: str = review_deleted_message()
     save_error_title: str = "Review submit failed"
     delete_error_title: str = "Delete review failed"
 

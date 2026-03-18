@@ -77,6 +77,7 @@ def test_explore_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> 
         "detail_course.py",
         "detail_flow.py",
         "detail_path.py",
+        "detail_video.py",
         "list_items.py",
         "list_sections.py",
         "page.py",

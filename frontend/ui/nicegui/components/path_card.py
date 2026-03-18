@@ -12,6 +12,7 @@ from frontend.ui.nicegui.components.card_frame import (
     render_card_content_column,
     render_card_topright,
 )
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 
 
 @dataclass(slots=True)
@@ -25,6 +26,7 @@ class PathCardDisplay:
     rating_badge: str
     recommendation_badge: str
     can_edit: bool
+    is_tracked: bool
     shared_by: str
     tracking_label_text: str
     tracking_chip_cls: str
@@ -35,6 +37,7 @@ class PathCardDisplay:
     milestone_class: str
     impact: str
     next_title: str
+    compact_calm: bool = False
 
 
 @dataclass(slots=True)
@@ -49,10 +52,17 @@ class PathCardCallbacks:
     on_view: Callable[[], Any]
     on_track_toggle: Callable[[], Any]
     track_toggle_label: str
+    on_primary: Callable[[], Any] | None = None
+    primary_label: str = ""
 
 
 def _render_path_menu(*, display: PathCardDisplay, actions: PathCardCallbacks) -> None:
-    with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+    path_menu = apply_icon_button_a11y(
+        ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+        label="Open path actions",
+        tooltip="Path actions",
+    )
+    with path_menu:
         ui.menu_item("Review", actions.on_review)
         ui.menu_item("Recommend", actions.on_recommend)
         ui.menu_item("Copy link", actions.on_copy_link)
@@ -62,6 +72,20 @@ def _render_path_menu(*, display: PathCardDisplay, actions: PathCardCallbacks) -
 
 
 def _render_compact_progress(*, display: PathCardDisplay) -> None:
+    if display.compact_calm:
+        if display.is_tracked and display.total_courses > 0:
+            ui.label(f"{display.completed} / {display.total_courses} courses completed").classes(
+                "text-xs lp-path-progress-label lp-path-context-line"
+            )
+            if float(display.progress) > 0:
+                ui.linear_progress(float(display.progress), show_value=False).classes("w-full lp-path-progress-line--compact")
+            return
+        if display.total_courses > 0:
+            ui.label(f"{display.total_courses} courses").classes("text-xs lp-path-progress-label lp-path-context-line")
+            return
+        ui.label("Path").classes("text-xs lp-card-subtitle lp-path-context-line")
+        return
+
     with ui.row().classes("items-center gap-2 flex-wrap w-full lp-path-context-line"):
         ui.label(f"{display.completed}/{display.total_courses} completed").classes("text-xs lp-path-progress-label")
         ui.label(display.milestone).classes(f"{display.milestone_class} lp-path-milestone")
@@ -96,6 +120,13 @@ def _render_progress_block(*, display: PathCardDisplay, compact_mode: bool) -> N
 
 def _render_action_row(*, actions: PathCardCallbacks) -> None:
     def _render_actions() -> None:
+        if actions.on_primary is not None and str(actions.primary_label or "").strip():
+            label = str(actions.primary_label or "").strip().lower()
+            tone_class = "lp-path-primary-cta--active" if "continue" in label else "lp-path-primary-cta--subtle"
+            ui.button(actions.primary_label, on_click=actions.on_primary).props("dense no-caps").classes(
+                f"lp-path-primary-cta {tone_class}"
+            )
+            return
         ui.button("Open details", on_click=actions.on_view).props("dense")
         ui.button(actions.track_toggle_label, on_click=actions.on_track_toggle).props("outline dense")
 
@@ -112,24 +143,25 @@ def render_path_card(
     compact_mode = "lp-path-card--compact" in suffix
     with ui.card().classes(f"w-full lp-accent-card lp-card--hover lp-path-card{suffix}"):
         with render_card_topright():
-            if display.is_new:
+            if display.is_new and not display.compact_calm:
                 ui.label("New").classes("lp-chip lp-chip--sky")
-            elif display.is_updated:
+            elif display.is_updated and not display.compact_calm:
                 ui.label("Updated").classes("lp-chip lp-chip--teal")
-            if display.rating_badge:
+            if display.rating_badge and not display.compact_calm:
                 ui.label(f"★ {display.rating_badge}").classes("lp-meta-chip lp-meta-chip--rating")
-            if display.recommendation_badge:
+            if display.recommendation_badge and not display.compact_calm:
                 ui.label(display.recommendation_badge).classes("lp-meta-chip")
             _render_path_menu(display=display, actions=actions)
 
         with render_card_content_column(classes="lp-path-card-content lp-course-card-stack"):
             ui.label(display.path_row.get("name") or "").classes("text-lg font-semibold lp-card-title")
             with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-path-meta-row"):
-                if display.shared_by:
+                if display.shared_by and not display.compact_calm:
                     ui.label(f"Shared by {display.shared_by}").classes("text-xs lp-card-subtitle").style(
                         "color: var(--lp-muted)"
                     )
-                ui.label(display.tracking_label_text).classes(display.tracking_chip_cls)
+                if not display.compact_calm:
+                    ui.label(display.tracking_label_text).classes(display.tracking_chip_cls)
 
             _render_progress_block(display=display, compact_mode=compact_mode)
             if (not compact_mode) and str(display.path_row.get("description") or "").strip():

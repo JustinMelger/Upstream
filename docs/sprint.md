@@ -34,31 +34,54 @@ Execution slices:
   - [ ] Normalize card/button/chip/input treatment across `Explore`, `Home`, and detail pages.
   - [ ] Remove remaining visual one-offs that conflict with canonical component styling.
 - [ ] Slice 10.2: motion + interaction polish
-  - [ ] Add 120-200ms transitions for list/filter/sort state changes.
-  - [ ] Add subtle stagger/enter animations for key card lists.
-  - [ ] Standardize inline feedback patterns for save/track/select/review actions.
+  - [x] Add 120-200ms transitions for list/filter/sort state changes.
+  - [x] Add subtle stagger/enter animations for key card lists.
+  - [x] Standardize inline feedback patterns for save/track/select/review actions.
 - [ ] Slice 10.3: page identity pass
-  - [ ] Strengthen page-specific hero language and section framing for `Home` and `Explore`.
-  - [ ] Keep interaction model unchanged while making each primary page visually distinct.
+  - [x] Strengthen page-specific hero language and section framing for `Home` and `Explore`.
+  - [x] Keep interaction model unchanged while making each primary page visually distinct.
 - [ ] Slice 10.3b: targeted page redesign implementation
-  - [ ] Redesign `Home` hero + first-scroll section layout for stronger “what to do next” clarity.
-  - [ ] Redesign `Explore` top section and card-density rhythm for faster scan + action.
-  - [ ] Redesign one detail page template (`course` preferred) as the new reference pattern.
-  - [ ] Reuse redesigned template patterns in path/article details where low-risk.
-- [ ] Slice 10.4: first-time clarity + accessibility polish
-  - [ ] Complete any remaining onboarding intro and empty-state next-action inconsistencies.
-  - [ ] Ensure visible focus states and keyboard flow for menus/dropdowns/dialog triggers.
-  - [ ] Ensure icon-only actions expose clear ARIA labels and visible tooltips/text hints where needed.
+  - [x] Redesign `Home` hero + first-scroll section layout for stronger “what to do next” clarity.
+  - [x] Redesign `Explore` top section and card-density rhythm for faster scan + action.
+  - [x] Redesign one detail page template (`course` preferred) as the new reference pattern.
+  - [x] Reuse redesigned template patterns in path/article details where low-risk.
+- [x] Slice 10.4: first-time clarity + accessibility polish
+  - [x] Complete any remaining onboarding intro and empty-state next-action inconsistencies.
+  - [x] Ensure visible focus states and keyboard flow for menus/dropdowns/dialog triggers.
+  - [x] Ensure icon-only actions expose clear ARIA labels and visible tooltips/text hints where needed.
 - [ ] Slice 10.5: visual quality gate hardening
   - [ ] Commit stable visual baselines and enable strict visual-regression enforcement in CI (`11D` remaining item).
+  - [ ] Deferred: explicit user decision on 2026-03-09 to skip strict visual-baseline enforcement for now; keep this item queued.
+- [ ] Slice 10.6: learning-item unification (`video` + `course` + `article`)
+  - [x] Naming foundation: use `Learning item` as canonical shared UI term for course/article surfaces.
+  - [x] Unified UI mapping: add shared view-model contract with `learning_item_type` (`video`, `article`, `course`, `doc`).
+  - [x] Share flow consolidation: merge `/share/course` + `/share/article` into `/share/item` and keep route redirects.
+  - [x] Type-tag system: show compact content-type tags (`Video`, `Article`) on cards + detail surfaces.
+  - [x] Explore simplification: keep one scalable Learning Items catalog section (no duplicated course/article rails).
+  - [x] Copy/IA cleanup: remove mixed wording drift (`Share course` vs `Share article`) across routes and labels.
+  - [x] Compatibility + telemetry: preserve old links and add tracking for old-route usage during migration.
+- [ ] Slice 10.7: learning-item subtype completion
+  - [ ] Lock the initial subtype taxonomy to `video|course|article` and document `Learning item` as the primary shareable object.
+  - [ ] Add URL/provider-based subtype detection so YouTube links map to `video`, Udemy links map to `course`, and generic written links map to `article` unless a stronger rule exists.
+  - [ ] Extend `/share/item` to support explicit subtype selection and auto-detection while preserving compatibility redirects from `/share/course` and `/share/article`.
+  - [ ] Restore course share validation and field parity on the new share page, especially the required-description behavior.
+  - [ ] Rework Explore learning-item rendering so available videos, courses, and articles remain visible in the default state rather than being hidden by naive concatenation.
+  - [ ] Add focused tests for subtype detection, `/share/item` publish behavior, Explore mixed rendering, and compatibility route contracts.
 
 Validation and acceptance criteria:
 - [ ] Core pages (`Home`, `Explore`, detail pages) use one consistent typography/spacing/component language.
+- [ ] Shared content surfaces use one consistent `Learning item` terminology model without course/article naming drift.
+- [ ] Learning-item subtype taxonomy is stable and explicit:
+  - [ ] YouTube links classify as `video`.
+  - [ ] Udemy links classify as `course`.
+  - [ ] Generic written links classify as `article` unless a stronger rule exists.
+  - [ ] `/share/item` supports explicit subtype selection and successful publish flows for `video`, `course`, and `article`.
+  - [ ] Explore uses one learning-item model without hiding one available subtype behind another in the default view.
 - [ ] Interaction transitions are present, subtle, and consistent (no abrupt state jumps on major list/filter/card updates).
 - [ ] First-time clarity goals are measurably improved:
-  - [ ] no ambiguous empty-state next steps on primary pages.
-  - [ ] intro/onboarding flow is dismissible and non-blocking.
-- [ ] Accessibility UX polish passes focused checks for keyboard navigation + visible focus + icon-action labeling on touched surfaces.
+  - [x] no ambiguous empty-state next steps on primary pages.
+  - [x] intro/onboarding flow is dismissible and non-blocking.
+- [x] Accessibility UX polish passes focused checks for keyboard navigation + visible focus + icon-action labeling on touched surfaces.
 - [ ] CI enforces visual snapshots strictly with committed stable baselines.
 - [ ] Design review output is documented and actionable (before/after evidence + accepted redesign decisions).
 
@@ -66,6 +89,41 @@ Tracking:
 - [ ] Update roadmap checkboxes for completed `11A/11C/11D/11E` UX-style items at sprint close.
 - [ ] Record before/after screenshots for `Home`, `Explore`, and one detail page variant in CI artifacts.
 - [ ] Add a short design-review log section in this file (decision, rationale, affected pages/components).
+- [ ] Add/maintain focused regression coverage for `/share/item`, subtype detection, and Explore mixed learning-item visibility rather than broad new snapshot churn.
+
+### Sprint 10 Design-Review Log (2026-03-07)
+Reference checklist: `docs/ui_system.md`
+
+- Decision: adopt a single SaaS-polish governance checklist for primary pages.
+  - Rationale: prevent local visual fixes from diverging into per-page styles.
+  - Affected: `Home`, `Explore`, `Profile`, `Teams`, shared `theme.py`.
+
+- Audit snapshot (current):
+  - `Home`: mostly pass.
+    - Pass: dominant next action, clear hierarchy, strong card language.
+    - Partial: occasional title/hero size drift (recently reduced), keep monitoring.
+  - `Explore`: mostly pass.
+    - Pass: compact card rhythm, single primary per card, improved empty states.
+    - Partial: ensure all rails keep identical hover intensity and metadata density.
+  - `Profile`: partial -> mostly pass after redesign.
+    - Pass: overview + controls + metrics + chart + table structure.
+    - Partial: continue segmented-control and table rhythm tuning from visual QA.
+  - `Teams`: partial.
+    - Pass: card language and empty/error blocks exist.
+    - Missing: full section-header/microcopy consistency and stronger first-viewport next-action clarity.
+
+- Must-change-now (remaining in Sprint 10):
+  - [x] Teams page hierarchy pass (title/microcopy/action rhythm in first viewport).
+  - [x] Cross-page hover/elevation normalization audit (cards + action rows).
+  - [x] Empty-state copy consistency pass using one instructional style.
+
+- Defer (post Sprint 10 unless time remains):
+  - [ ] Full strict visual-baseline CI enforcement (`11D` final open checkbox).
+  - [ ] Extended chart/table interaction features (sorting/filter controls on analytics blocks).
+
+- Decision (2026-03-09): canonicalize share to `/share/item` while keeping explicit type choices at entry points.
+  - Rationale: reduce implementation complexity and route sprawl without sacrificing user clarity in “what am I sharing?”
+  - Affected: `frontend/ui/nicegui/pages/share/*`, `frontend/ui/nicegui/pages/explore/*`, route/test contracts, terminology copy.
 
 ## Sprint 1 — IA foundation (11E-first)
 - [x] Complete `11E.0` instrumentation baseline for first-action and nav/search events.
@@ -88,10 +146,11 @@ Tracking:
   - [x] `11A.2` Topbar clarity pass.
 
 ## Sprint 3 — Terminology + First-Time Clarity + Share-Flow UX
-- [ ] Complete `11E.6` terminology alignment:
+- [x] Complete `11E.6` terminology alignment:
   - [x] Canonicalize language for `Track` vs `Save` vs `Select` across cards, dialogs, and filters.
   - [x] Align `Shared` vs `Recommended` semantics in labels and page copy.
   - [x] Add contextual purpose subtitles under primary page titles (`Home`, `Explore`, `Teams`, `Profile`).
+  - [x] Finish learning-item unification follow-through: `/share/item` subtype routing, Explore mixed-feed subtype signaling, first-class `video`, and capability-aware copy on Home/Explore/Activity/Teams.
 - [ ] Complete `11E.7` first-time user clarity pass:
   - [x] Add dismissible 3-step first-login intro.
   - [x] Ensure each key empty state has exactly one primary action.
@@ -132,14 +191,166 @@ Tracking:
   - [x] Add architecture regression guard for complexity in active page modules (prevent new regressions).
   - [x] Keep legacy-page excludes fixed (no broadened ignore scope).
   - [x] Roll out CI ratchet mode: fail on new violations first, then enforce full thresholds.
-- [ ] Complete open Phase `11D` engineering items:
+  - [ ] Complete open Phase `11D` engineering items:
   - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
     - [x] Phase slice: add Playwright smoke coverage for `login` + `track` and upload screenshots/log artifacts in CI.
     - [x] Phase slice: add `review` + `select path` smoke coverage.
     - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
     - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
+
+## Sprint 11 — Social Learning Hub v1 (Teams + Scoped Sharing)
+- [ ] Align execution to roadmap `Phase 11F`.
+
+- [ ] Slice 11.0: UX flow baseline (no-team and first-team activation)
+  - [ ] `/teams` empty state: primary `Create team` action and optional `Join team` secondary action.
+  - [ ] `Home` no-team social placeholders: low-noise cards with clear CTA to `/teams`.
+  - [ ] Post-create activation: auto-open team detail with add-member/share-first prompts.
+
+- [ ] Slice 11.1: share audience model (API + persistence)
+  - [ ] Add audience scope to shares (`public`, `my_teams`, `selected_teams`).
+  - [ ] Add team-target persistence model for selected-team shares.
+  - [ ] Add backend filtering so visibility matches selected scope.
+
+- [ ] Slice 11.2: Explore share dialog audience selector
+  - [ ] Add audience selector to share flows.
+  - [ ] Add team multi-select UI when `selected_teams` is chosen.
+  - [ ] Add concise “who can see this” helper copy and confirmation context.
+
+- [ ] Slice 11.3: Home + Teams + Shared-tab semantic alignment
+  - [ ] Add consistent audience badges on shared items.
+  - [ ] Ensure social modules on Home reflect team-scoped relevance.
+  - [ ] Align Shared tab wording and visuals to same scope semantics.
+
+- [ ] Slice 11.4: team review-request loop (v1.1)
+  - [ ] Add backend `review_requests` schema + migration + API endpoints.
+  - [ ] Add `Request review` action on team-scoped shared items.
+  - [ ] Add “Conversations needing you” integration from open review requests.
+  - [ ] Add completion/dismiss/cancel request flows.
+
+- [ ] Slice 11.5: conversational course discussions (v1.2)
+  - [ ] Add backend discussion thread/message schema + migration.
+  - [ ] Add discussion API endpoints for create/list/reply/resolve/reopen.
+  - [ ] Add frontend discussion entry point (`Discuss`) on course surfaces.
+  - [ ] Add compact thread timeline view in course detail.
+  - [ ] Integrate open mentions/replies into “Conversations needing you.”
+
+- [ ] Slice 11.6: tests and quality gates
+  - [ ] API tests for audience scope and visibility enforcement.
+  - [ ] API tests for review-request permissions and lifecycle.
+  - [ ] API tests for discussion thread/message lifecycle and permissions.
+  - [ ] Frontend integration tests for no-team and first-team flows.
+  - [ ] Frontend integration tests for review-request UX states.
+  - [ ] Frontend integration tests for discussion thread UX states.
+  - [ ] Keep `ruff` and scoped `mypy` green for all touched modules.
+
+- [ ] Exit criteria
+  - [ ] New user can create/join a team in under 60 seconds (instrumented).
+  - [ ] Visibility model is explicit in UI (no ambiguity about share audience).
+  - [ ] No regression for users who only use solo learning/discovery.
   - [x] Isolate backend integration test auth/session state to reduce intermittent `401/404/500` failures.
   - [x] Sync `docs/architecture_backend.md` with current course/recommendation/review model + service flow details.
+
+## Sprint 12 — Open Items Timebox (Phase 11 Closure, Queued)
+Goal: close the highest-value open roadmap items in Phase `11` with a strict timebox and ship-ready quality gates.
+
+Dependency:
+- [ ] Start only after Sprint 10 exit criteria are fully completed.
+- [ ] Keep Sprint 12 in queued state while Sprint 10 is active.
+
+Timebox:
+- [ ] 2 weeks
+
+Scope priorities:
+- [ ] P0: `11F` collaboration model and UX flow baseline (`11.0` through `11.3` slices from Sprint 11).
+- [ ] P1: `11D` strict visual baseline enforcement in CI.
+- [ ] P1: `11E` remaining open clarity/consistency acceptance checks.
+- [ ] P2: `11F` v1.1/v1.2 collaboration expansion (`review_requests`, threaded discussions) if P0/P1 complete early.
+
+Execution slices:
+- [ ] Slice 12.0: open-item lock and sequencing
+  - [ ] Freeze active open-item list from `docs/roadmap.md` (Phase `11` only).
+  - [ ] Tag each item as `must-close-now` vs `defer`.
+  - [ ] Map each `must-close-now` item to an owning sprint slice and test gate.
+- [ ] Slice 12.1: teams + no-team activation UX
+  - [ ] `/teams` empty state with `Create team` primary CTA and `Join team` secondary path.
+  - [ ] `Home` no-team social placeholder with direct CTA to `/teams`.
+  - [ ] Post-create activation flow with add-member/share-first prompts.
+- [ ] Slice 12.2: audience scoping and visibility semantics
+  - [ ] Share audience scope (`public`, `my_teams`, `selected_teams`) in API + persistence.
+  - [ ] Explore share dialog audience selector + team multi-select.
+  - [ ] Audience badges and wording alignment across `Home`, `Teams`, and `Shared` surfaces.
+- [ ] Slice 12.3: CI quality gate completion
+  - [ ] Commit stable visual snapshots.
+  - [ ] Enable strict visual-regression enforcement in pipeline.
+  - [ ] Keep `ruff` primary style gate green on all touched modules.
+- [ ] Slice 12.4: optional collaboration expansion (only if capacity remains)
+  - [ ] Review-request loop (`review_requests` model/API/UX).
+  - [ ] Threaded course discussion baseline (model/API/UX entrypoint).
+
+Acceptance criteria:
+- [ ] Highest-priority Phase `11` open items are reduced with no regression in solo learning flows.
+- [ ] Team onboarding path is clear for users with zero teams (create/join in under 60s target, instrumented).
+- [ ] Share visibility semantics are explicit and consistent across primary pages.
+- [ ] CI runs with strict visual baseline enforcement and passes required gates (`ruff`, scoped `mypy`, tests).
+
+Tracking:
+- [ ] Update `docs/roadmap.md` checkboxes for each closed item during the sprint.
+- [ ] Record sprint-end delta: `Phase 11 open before` vs `Phase 11 open after`.
+
+## Sprint 13 — Paths As Ordered Learning Items (Queued)
+Goal: move paths from ordered courses to ordered learning items so `/share/path`, path details, and path editing support `course|video|article` without regressing the current clean architecture boundaries.
+
+Dependency:
+- [ ] Start after the current path share/detail route-first model remains stable under targeted regression coverage.
+- [ ] Keep phase-1 progress semantics explicit: course tracking continues to drive path progress until generic learning-item completion exists.
+
+Timebox:
+- [ ] 2 weeks
+
+Scope priorities:
+- [ ] P0: backend path model migration from course-only membership to ordered typed items.
+- [ ] P0: frontend `/share/path` and path detail support for mixed learning items.
+- [ ] P1: cross-surface cleanup so path summaries and copy say `learning items`, not `courses`, where the model is mixed.
+- [ ] P1: docs/tests/architecture guard updates for the new contract.
+- [ ] P2: generic learning-item completion for paths is explicitly deferred.
+
+Execution slices:
+- [ ] Slice 13.0: path data model + migration
+  - [ ] Add backend `path_items` persistence with `path_id`, `item_type`, `item_id`, and `position`.
+  - [ ] Migrate existing path-course membership into `item_type="course"` rows.
+  - [ ] Keep service/repository code aligned to complexity thresholds by extracting parse/validation helpers instead of adding inline branching.
+- [ ] Slice 13.1: path API + service contract
+  - [ ] Replace course-only path mutation payloads with ordered typed items.
+  - [ ] Validate `course|video|article` references against the correct backing domain before persistence.
+  - [ ] Return ordered typed items from path detail/list payloads instead of course-only membership shapes.
+- [ ] Slice 13.2: `/share/path` and edit-path UX
+  - [ ] Replace course-only selectors with mixed learning-item selection and ordering.
+  - [ ] Label the composition field as `Learning items in order`.
+  - [ ] Show subtype chips and concise source metadata in the picker so mixed-item selection stays scannable.
+- [ ] Slice 13.3: path detail rendering
+  - [ ] Render mixed path sequences with visible subtype chips and correct deep-link navigation per item type.
+  - [ ] Update path summary copy to reflect `learning items` rather than `courses`.
+  - [ ] Keep the routed path detail page as the canonical experience; do not reintroduce hover/dialog-first behavior.
+- [ ] Slice 13.4: progress semantics and compatibility
+  - [ ] Preserve current course-based progress as the explicit phase-1 rule for mixed paths.
+  - [ ] Make videos/articles visible steps in the path without implying unsupported completion tracking.
+  - [ ] Add compatibility handling for legacy course-only paths during the migration window.
+- [ ] Slice 13.5: tests, docs, and architecture guards
+  - [ ] Add backend tests for mixed-item path create/update/detail and migration behavior.
+  - [ ] Add frontend tests for `/share/path`, mixed path detail rendering, and deep-link routing for course/video/article items.
+  - [ ] Update roadmap/architecture docs and keep route/service-boundary guard tests in sync.
+
+Acceptance criteria:
+- [ ] A path can contain ordered `course`, `video`, and `article` items through the canonical `/share/path` flow.
+- [ ] Existing course-only paths migrate cleanly with no broken detail pages or edit flows.
+- [ ] Path detail pages render mixed sequences and open the correct subtype detail route for each item.
+- [ ] Phase-1 progress semantics are explicit and truthful: course tracking still drives progress; videos/articles do not fake completion state.
+- [ ] Touched modules remain within the existing clean-code/complexity guardrails (`ruff`, scoped `mypy`, architecture tests, focused regression tests).
+
+Tracking:
+- [ ] Update `docs/roadmap.md` to mark the path model as ordered learning items once persistence and UI contracts are implemented.
+- [ ] Record the migration contract in `docs/architecture_frontend.md` and `docs/architecture_backend.md`.
+- [ ] Keep a short implementation log here if phase-1 scope cuts change (especially progress semantics).
 
 ## Sprint TBD — Phase 14 User Testing + Pilot Validation
 - [ ] Run 5 first-time-user usability tests and log confusion points.
@@ -152,6 +363,7 @@ Tracking:
   - [x] `11E.4`: replace dialog-first Explore detail behavior with dedicated detail routes (`course/path/article`).
   - [x] `11E.4`: convert `/courses`, `/paths`, `/articles` into thin compatibility/deep-link routes and finalize redirect/deprecation plan.
   - [x] `11E.6`: finish cross-page terminology consistency across cards + detail dialogs.
+  - [x] `11E.6`: make subtype capability differences explicit so shared surfaces stop treating every learning item like a course (`course`: tracking/recommendations/reviews, `article`: reviews, `video`: lightweight share/detail).
 - [ ] Close highest-impact open `11A` visual-system modernization items:
   - [ ] `11A.1`: Modernization Sprint 1 (typography scale + spacing rhythm + unified component language).
   - [ ] `11A.4`: complete page-identity pass (distinct but consistent section language + hero treatments).

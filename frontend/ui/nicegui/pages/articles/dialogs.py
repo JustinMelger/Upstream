@@ -40,7 +40,7 @@ def build_share_article_dialog(  # noqa: C901, PLR0915
     """Build share dialog and return open callback."""
     share_dialog = ui.dialog()
     with share_dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
-        ui.label("Share article").classes("text-xl font-semibold")
+        ui.label("Share Learning Item").classes("text-xl font-semibold")
         new_title = ui.input("Title").props("clearable").classes("w-full")
         new_url = ui.input("URL").props("clearable").classes("w-full")
         title_suggest_hint = ui.label("").classes("text-xs").style("color: var(--lp-muted)")

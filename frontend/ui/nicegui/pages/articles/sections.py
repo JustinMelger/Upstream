@@ -16,6 +16,7 @@ from frontend.ui.nicegui.components.card_frame import (
 )
 from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
+from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.pages.articles.ui_glue import ActiveFilterChip
 
 
@@ -72,8 +73,13 @@ def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
                 with ui.row().classes(
                     "items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"
                 ):
-                    with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
-                        ui.menu_item("Share article", on_share)
+                    topbar_menu = apply_icon_button_a11y(
+                        ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+                        label="Open article toolbar actions",
+                        tooltip="More actions",
+                    )
+                    with topbar_menu:
+                        ui.menu_item("Share learning item", on_share)
     return ArticlesTopbarControls(search_input=search_input, sort_filter=sort_filter, meta=meta)
 
 
@@ -172,7 +178,12 @@ def render_article_card(
         with render_card_topright():
             if is_new:
                 ui.label("New").classes("lp-chip lp-chip--sky")
-            with ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"):
+            card_menu = apply_icon_button_a11y(
+                ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+                label="Open article actions",
+                tooltip="Article actions",
+            )
+            with card_menu:
                 ui.menu_item("Review", review_action)
 
         with render_card_main_row(classes="lp-article-card-main"):
@@ -183,6 +194,7 @@ def render_article_card(
 
                 subtitle_parts = [part.strip() for part in str(subtitle_text or "").split("·") if str(part).strip()]
                 with ui.row().classes("items-center gap-2 flex-wrap lp-article-meta-row"):
+                    ui.label("Article").classes("lp-meta-chip lp-meta-chip--quiet")
                     if subtitle_parts:
                         ui.label(subtitle_parts[0]).classes("text-xs lp-card-subtitle lp-article-byline")
                     if len(subtitle_parts) > 1:

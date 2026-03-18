@@ -18,7 +18,7 @@ from frontend.ui.nicegui.pages.activity.route_init import resolve_activity_tab
 from frontend.ui.nicegui.pages.activity.sections import render_activity_error, render_activity_items, render_empty_activity
 from frontend.ui.nicegui.pages.activity.state import ActivityPageState
 from frontend.ui.nicegui.pages.activity.transitions import begin_activity_load, finalize_activity_load
-from frontend.ui.nicegui.pages.activity.ui_glue import target_url
+from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views
 
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
@@ -38,15 +38,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         with render_container():
             request = getattr(ui.context.client, "request", None)
             initial_tab = resolve_activity_tab(request=request)
-            ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600")
+            ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600 lp-teams-subtitle")
 
-            with ui.row().classes("items-center justify-between w-full"):
+            with ui.row().classes("items-center justify-between w-full lp-teams-topbar"):
                 tab_filter = (
                     ui.radio({"inbox": "Inbox", "team": "Team activity"}, value=initial_tab)
                     .props("inline dense")
-                    .classes("text-sm")
+                    .classes("text-sm lp-teams-tabs")
                 )
-                refresh_btn = ui.button("Refresh").props("dense outline")
+                refresh_btn = ui.button("Refresh").props("dense outline").classes("lp-teams-refresh")
 
             @ui.refreshable
             def activity_list() -> None:
@@ -54,12 +54,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 if state.error_message:
                     render_activity_error(message=state.error_message, on_retry=_load)
                     return
-                if not state.events:
+                event_views = build_activity_event_views(events=state.events)
+                if not event_views:
                     render_empty_activity(current_tab=current_tab, on_primary=lambda: ui.navigate.to("/explore"))
                     return
                 render_activity_items(
-                    events=state.events,
-                    on_open=lambda t, tid: ui.navigate.to(target_url(target_type=t, target_id=int(tid))),
+                    events=event_views,
+                    on_open=lambda target: ui.navigate.to(str(target.open_url)),
                 )
 
             @guard_ui_action(title="Load activity failed")

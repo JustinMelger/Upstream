@@ -15,8 +15,10 @@ from backend.database.async_repositories.path_recommendations import (
 )
 from backend.database.async_repositories.path_reviews import PathReviewsRepository as SQLPathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository as SQLPathsRepository
+from backend.database.async_repositories.teams import TeamsRepository as SQLTeamsRepository
 from backend.database.async_repositories.tracking import TrackingRepository as SQLTrackingRepository
 from backend.database.async_repositories.user_paths import UserPathsRepository as SQLUserPathsRepository
+from backend.database.async_repositories.videos import VideosRepository as SQLVideosRepository
 from backend.database.session import get_session
 from backend.services.article_reviews_service import ArticleReviewsService
 from backend.services.articles_service import ArticlesService
@@ -28,9 +30,11 @@ from backend.services.notifications_service import NotificationsService
 from backend.services.path_recommendations_service import PathRecommendationsService
 from backend.services.path_reviews_service import PathReviewsService
 from backend.services.paths_service import PathsService
+from backend.services.teams_service import TeamsService
 from backend.services.tracking_service import TrackingService
 from backend.services.url_preview_service import UrlPreviewService
 from backend.services.user_paths_service import UserPathsService
+from backend.services.videos_service import VideosService
 
 
 _URL_PREVIEW_SERVICE = UrlPreviewService()
@@ -69,6 +73,14 @@ async def get_articles_service(session: AsyncSession = Depends(get_session)) -> 
     """Provide a request-scoped ArticlesService dependency."""
     return ArticlesService(
         SQLArticlesRepository(session),
+        url_preview_service=_URL_PREVIEW_SERVICE,
+    )
+
+
+async def get_videos_service(session: AsyncSession = Depends(get_session)) -> VideosService:
+    """Provide a request-scoped VideosService dependency."""
+    return VideosService(
+        SQLVideosRepository(session),
         url_preview_service=_URL_PREVIEW_SERVICE,
     )
 
@@ -112,6 +124,14 @@ async def get_notifications_service(
 ) -> NotificationsService:
     """Provide a request-scoped NotificationsService dependency."""
     return NotificationsService(SQLNotificationsRepository(session))
+
+
+async def get_teams_service(session: AsyncSession = Depends(get_session)) -> TeamsService:
+    """Provide a request-scoped TeamsService dependency."""
+    return TeamsService(
+        SQLTeamsRepository(session),
+        auth=AuthService(SQLAuthRepository(session)),
+    )
 
 
 async def require_session(

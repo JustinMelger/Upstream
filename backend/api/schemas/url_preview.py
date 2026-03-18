@@ -14,6 +14,7 @@ class UrlPreviewMetadataResponse(APIModel):
 
     source_url: str
     normalized_url: str
+    suggested_learning_item_type: str = ""
     title: str = ""
     description: str = ""
     site_name: str = ""

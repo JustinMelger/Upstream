@@ -78,7 +78,7 @@ def test_catalog_pages_use_expected_scope_variants() -> None:
 def test_catalog_identity_hero_used_on_primary_catalog_pages() -> None:
     page = Path("frontend/ui/nicegui/pages/explore/page.py")
     imports = _imports_for(page)
-    assert "frontend.ui.nicegui.components.catalog_hero" not in imports
+    assert "frontend.ui.nicegui.components.catalog_hero" in imports
 
 
 def test_catalog_variant_css_selectors_are_defined_in_theme() -> None:

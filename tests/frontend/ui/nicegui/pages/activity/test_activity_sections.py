@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from frontend.ui.nicegui.pages.activity import sections as activity_sections
+from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views
 
 
 class _FakeElement:
@@ -27,6 +28,7 @@ class _FakeContainer(_FakeElement):
 class _FakeUi:
     def __init__(self) -> None:
         self.buttons: list[tuple[str, Any]] = []
+        self.labels: list[str] = []
 
     def column(self) -> _FakeContainer:
         return _FakeContainer()
@@ -38,6 +40,7 @@ class _FakeUi:
         return _FakeContainer()
 
     def label(self, _text: str = "") -> _FakeElement:
+        self.labels.append(str(_text))
         return _FakeElement()
 
     def button(self, label: str, on_click=None) -> _FakeElement:  # noqa: ANN001
@@ -45,30 +48,24 @@ class _FakeUi:
         return _FakeElement()
 
 
-def test_render_activity_items_skips_invalid_target_id_and_logs_warning(monkeypatch) -> None:  # noqa: ANN001
+def test_render_activity_items_renders_open_action_for_typed_events(monkeypatch) -> None:  # noqa: ANN001
     fake_ui = _FakeUi()
     monkeypatch.setattr(activity_sections, "ui", fake_ui)
 
-    warnings: list[dict[str, Any] | None] = []
-
-    class _Logger:
-        def warning(self, _message: str, *, extra: dict[str, Any] | None = None) -> None:
-            warnings.append(extra)
-
-    monkeypatch.setattr(activity_sections, "logger", _Logger())
-
     opened: list[tuple[str, int]] = []
     activity_sections.render_activity_items(
-        events=[
-            {"message": "bad", "target_type": "course", "target_id": "bad"},
-            {"message": "ok", "target_type": "course", "target_id": 4},
-        ],
-        on_open=lambda t, tid: opened.append((t, tid)),
+        events=build_activity_event_views(
+            events=[{"message": "ok", "target_type": "course", "target_id": 4, "target_label": "Course"}]
+        ),
+        on_open=lambda target: opened.append((str(target.target_type), int(target.target_id))),
     )
 
-    assert len(warnings) == 1
-    assert isinstance(warnings[0], dict)
     assert len(fake_ui.buttons) == 1
+    click = fake_ui.buttons[0][1]
+    assert click is not None
+    click()
+    assert opened == [("course", 4)]
+    assert "Course · tracking + reviews · Course" in fake_ui.labels
 
 
 def test_render_empty_activity_exposes_primary_explore_action(monkeypatch) -> None:  # noqa: ANN001
@@ -83,6 +80,10 @@ def test_render_empty_activity_exposes_primary_explore_action(monkeypatch) -> No
 
     assert captured.get("primary_label") == "Explore"
     assert callable(captured.get("on_primary"))
+    assert (
+        captured.get("description")
+        == "When teammates share, recommend, or rate learning items and paths, updates will appear here."
+    )
 
 
 def test_render_activity_error_exposes_retry_action(monkeypatch) -> None:  # noqa: ANN001

@@ -32,6 +32,7 @@ def test_all_page_modules_expose_register() -> None:
         pages.learning,
         pages.login,
         pages.profile,
+        pages.share,
         pages.teams,
     ]
     for mod in page_modules:

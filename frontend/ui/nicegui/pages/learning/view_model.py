@@ -5,18 +5,111 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from frontend.ui.nicegui.core.learning_items import (
+    infer_learning_item_type,
+    learning_item_capabilities,
+    LearningItemCapabilities,
+)
+
+
+@dataclass(slots=True)
+class SharedLearningItemView:
+    """Typed shared learning-item card projection for non-Explore surfaces."""
+
+    item_type: str
+    item_id: int
+    title: str
+    capabilities: LearningItemCapabilities
+    review_summary_row: dict[str, Any] | None
+    recommendation_summary_row: dict[str, Any] | None
+
 
 @dataclass(slots=True)
 class SharedTabView:
     """Projection of shared-tab data consumed by UI renderers."""
 
+    shared_learning_items: list[SharedLearningItemView]
     shared_courses: list[dict[str, Any]]
+    shared_videos: list[dict[str, Any]]
     shared_paths: list[dict[str, Any]]
     shared_articles: list[dict[str, Any]]
     shared_course_review_summary_by_id: dict[int, dict[str, Any]]
     shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]]
     shared_path_review_summary_by_id: dict[int, dict[str, Any]]
     shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]]
+
+
+def _shared_learning_item_sort_key(item: SharedLearningItemView) -> tuple[str, int, str]:
+    return (item.item_type, int(item.item_id), str(item.title or "").lower())
+
+
+def build_shared_learning_item_views(
+    *,
+    shared_courses: list[dict[str, Any]],
+    shared_videos: list[dict[str, Any]],
+    shared_articles: list[dict[str, Any]],
+    course_review_summary_by_id: dict[int, dict[str, Any]],
+    course_recommendation_summary_by_id: dict[int, dict[str, Any]],
+) -> list[SharedLearningItemView]:
+    """Build typed shared learning-item rows from shared courses/articles."""
+    items: list[SharedLearningItemView] = []
+    for row in list(shared_courses or []):
+        item_id = int(row.get("id") or 0)
+        if item_id <= 0:
+            continue
+        title = str(row.get("title") or "").strip()
+        if not title:
+            continue
+        item_type = infer_learning_item_type(
+            url=str(row.get("url") or ""),
+            provider=str(row.get("provider") or ""),
+            fallback="course",
+        )
+        items.append(
+            SharedLearningItemView(
+                item_type=item_type,
+                item_id=item_id,
+                title=title,
+                capabilities=learning_item_capabilities(item_type),
+                review_summary_row=dict(course_review_summary_by_id.get(item_id) or {}) or None,
+                recommendation_summary_row=dict(course_recommendation_summary_by_id.get(item_id) or {}) or None,
+            )
+        )
+    for row in list(shared_articles or []):
+        item_id = int(row.get("id") or 0)
+        if item_id <= 0:
+            continue
+        title = str(row.get("title") or "").strip()
+        if not title:
+            continue
+        items.append(
+            SharedLearningItemView(
+                item_type="article",
+                item_id=item_id,
+                title=title,
+                capabilities=learning_item_capabilities("article"),
+                review_summary_row=None,
+                recommendation_summary_row=None,
+            )
+        )
+    for row in list(shared_videos or []):
+        item_id = int(row.get("id") or 0)
+        if item_id <= 0:
+            continue
+        title = str(row.get("title") or "").strip()
+        if not title:
+            continue
+        items.append(
+            SharedLearningItemView(
+                item_type="video",
+                item_id=item_id,
+                title=title,
+                capabilities=learning_item_capabilities("video"),
+                review_summary_row=None,
+                recommendation_summary_row=None,
+            )
+        )
+    return sorted(items, key=_shared_learning_item_sort_key)
 
 
 @dataclass(slots=True)
@@ -70,6 +163,7 @@ def build_recently_shared_in_teams(
 
     feed: list[dict[str, Any]] = []
     _append_rows("course", list(data.get("courses") or []), "title")
+    _append_rows("video", list(data.get("videos") or []), "title")
     _append_rows("path", list(data.get("paths") or []), "name")
     _append_rows("article", list(data.get("articles") or []), "title")
     feed.sort(key=lambda row: str(row.get("updated_at") or ""), reverse=True)
@@ -78,12 +172,25 @@ def build_recently_shared_in_teams(
 
 def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
     """Build typed shared-tab projection from raw page data payload."""
+    shared_courses = list(data.get("shared_courses") or [])
+    shared_videos = list(data.get("shared_videos") or [])
+    shared_articles = list(data.get("shared_articles") or [])
+    shared_course_review_summary_by_id = dict(data.get("shared_course_review_summary_by_id") or {})
+    shared_course_recommendation_summary_by_id = dict(data.get("shared_course_recommendation_summary_by_id") or {})
     return SharedTabView(
-        shared_courses=list(data.get("shared_courses") or []),
+        shared_learning_items=build_shared_learning_item_views(
+            shared_courses=shared_courses,
+            shared_videos=shared_videos,
+            shared_articles=shared_articles,
+            course_review_summary_by_id=shared_course_review_summary_by_id,
+            course_recommendation_summary_by_id=shared_course_recommendation_summary_by_id,
+        ),
+        shared_courses=shared_courses,
+        shared_videos=shared_videos,
         shared_paths=list(data.get("shared_paths") or []),
-        shared_articles=list(data.get("shared_articles") or []),
-        shared_course_review_summary_by_id=dict(data.get("shared_course_review_summary_by_id") or {}),
-        shared_course_recommendation_summary_by_id=dict(data.get("shared_course_recommendation_summary_by_id") or {}),
+        shared_articles=shared_articles,
+        shared_course_review_summary_by_id=shared_course_review_summary_by_id,
+        shared_course_recommendation_summary_by_id=shared_course_recommendation_summary_by_id,
         shared_path_review_summary_by_id=dict(data.get("shared_path_review_summary_by_id") or {}),
         shared_path_recommendation_summary_by_id=dict(data.get("shared_path_recommendation_summary_by_id") or {}),
     )

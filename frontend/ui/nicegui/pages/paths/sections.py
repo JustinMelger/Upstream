@@ -108,6 +108,7 @@ def render_paths_cards_block(
                 rating_badge=card_vm.rating_badge,
                 recommendation_badge=card_vm.recommendation_badge,
                 can_edit=can_edit,
+                is_tracked=is_tracked,
                 shared_by=card_vm.shared_by,
                 tracking_label_text=card_vm.tracking_label_text,
                 tracking_chip_cls=card_vm.tracking_chip_cls,
@@ -172,23 +173,22 @@ def render_paths_empty_state(
 ) -> bool:
     """Render the matching empty-state block and return whether one was rendered."""
     if empty_state == "selected_empty":
-        ui.label("No roadmap selected yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Select a path to start moving milestone by milestone.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("No selected path yet.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("Browse and select a path to start milestone progress.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Browse all paths", on_click=on_browse_all).props("outline")
         return True
 
     if empty_state == "catalog_empty":
         ui.label("No path library yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Share the first roadmap to define structured learning journeys.").classes("text-sm").style(
-            "color: var(--lp-muted)"
-        )
+        ui.label("Share a path to create your team learning roadmap.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Share a path", on_click=on_share).props("outline")
         return True
 
     if empty_state == "filters_empty":
-        ui.label("No roadmaps match this filter set.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("No paths match this filter set.").classes("text-sm").style("color: var(--lp-muted)")
+        ui.label("Reset filters to see more path options.").classes("text-sm").style("color: var(--lp-muted)")
         with ui.row().classes("items-center gap-2"):
             ui.button("Reset all", on_click=on_reset_all).props("outline")
         return True

@@ -17,6 +17,11 @@ def test_resolve_activity_tab_accepts_team() -> None:
     assert resolve_activity_tab(request=req) == "team"
 
 
+def test_resolve_activity_tab_accepts_my_teams() -> None:
+    req = _Req(query_params={"tab": "my_teams"})
+    assert resolve_activity_tab(request=req) == "my_teams"
+
+
 def test_resolve_activity_tab_normalizes_unknown() -> None:
     req = _Req(query_params={"tab": "nope"})
     assert resolve_activity_tab(request=req) == "inbox"

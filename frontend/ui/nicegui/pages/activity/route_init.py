@@ -11,6 +11,6 @@ def resolve_activity_tab(*, request: Any) -> str:
     get = getattr(query_params, "get", None)
     raw = get("tab", "inbox") if callable(get) else "inbox"
     tab = str(raw or "").strip().lower()
-    if tab not in {"inbox", "team"}:
+    if tab not in {"inbox", "my_teams", "team"}:
         return "inbox"
     return tab
