@@ -91,6 +91,32 @@ class NotificationsService:
     @notifications_error_handler()
     async def list_activity(self, *, current_user: str, limit: int = 30, scope: str = "inbox") -> list[dict]:
         """Return activity rows for inbox or team timeline scope."""
+        username, safe_limit, source_limit, is_team = self._parse_activity_request(
+            current_user=current_user,
+            limit=limit,
+            scope=scope,
+        )
+        sources = await self._load_activity_sources(
+            username=username,
+            safe_limit=safe_limit,
+            source_limit=source_limit,
+            is_team=is_team,
+        )
+        events = self._build_activity_events(
+            username=username,
+            is_team=is_team,
+            sources=sources,
+        )
+        return self._finalize_events(events=events, limit=safe_limit)
+
+    def _parse_activity_request(
+        self,
+        *,
+        current_user: str,
+        limit: int,
+        scope: str,
+    ) -> tuple[str, int, int, bool]:
+        """Validate request inputs and derive safe query limits."""
         data = self._parse_activity_query(
             {
                 "current_user": current_user,
@@ -99,41 +125,58 @@ class NotificationsService:
             }
         )
         username = str(data.current_user or "").strip()
-        if not username:
+        scope_value = str(data.scope or "inbox").strip().lower()
+        if not username or scope_value not in {"inbox", "team"}:
             raise NotificationsServiceError(detail="invalid_payload", status_code=400)
         safe_limit = max(1, min(data.limit or 30, 100))
         source_limit = max(20, safe_limit * 4)
-        scope_value = str(data.scope or "inbox").strip().lower()
-        if scope_value not in {"inbox", "team"}:
-            raise NotificationsServiceError(detail="invalid_payload", status_code=400)
-        is_team = scope_value == "team"
+        return username, safe_limit, source_limit, scope_value == "team"
 
+    async def _load_activity_sources(
+        self,
+        *,
+        username: str,
+        safe_limit: int,
+        source_limit: int,
+        is_team: bool,
+    ) -> dict[str, list[dict]]:
+        """Load raw activity rows from the repository."""
         async with session_scope(self._repo.session):
-            course_shares = await self._repo.list_recent_course_share_events(limit=source_limit) if is_team else []
-            video_shares = await self._repo.list_recent_video_share_events(limit=source_limit) if is_team else []
-            course_recommendations = await self._repo.list_recent_course_recommendation_events(limit=source_limit)
-            path_recommendations = await self._repo.list_recent_path_recommendation_events(limit=source_limit)
-            course_reviews = await self._repo.list_recent_course_review_events(limit=source_limit)
-            path_reviews = await self._repo.list_recent_path_review_events(limit=source_limit)
-            article_reviews = await self._repo.list_recent_article_review_events(limit=source_limit)
-            video_reviews = await self._repo.list_recent_video_review_events(limit=source_limit)
-            own_course_recommendations = (
-                await self._repo.list_recent_course_recommendation_events_by_user(created_by=username, limit=safe_limit)
-                if is_team
-                else []
-            )
-            own_path_recommendations = (
-                await self._repo.list_recent_path_recommendation_events_by_user(created_by=username, limit=safe_limit)
-                if is_team
-                else []
-            )
+            return {
+                "course_shares": await self._repo.list_recent_course_share_events(limit=source_limit) if is_team else [],
+                "video_shares": await self._repo.list_recent_video_share_events(limit=source_limit) if is_team else [],
+                "course_recommendations": await self._repo.list_recent_course_recommendation_events(limit=source_limit),
+                "path_recommendations": await self._repo.list_recent_path_recommendation_events(limit=source_limit),
+                "course_reviews": await self._repo.list_recent_course_review_events(limit=source_limit),
+                "path_reviews": await self._repo.list_recent_path_review_events(limit=source_limit),
+                "article_reviews": await self._repo.list_recent_article_review_events(limit=source_limit),
+                "video_reviews": await self._repo.list_recent_video_review_events(limit=source_limit),
+                "own_course_recommendations": (
+                    await self._repo.list_recent_course_recommendation_events_by_user(created_by=username, limit=safe_limit)
+                    if is_team
+                    else []
+                ),
+                "own_path_recommendations": (
+                    await self._repo.list_recent_path_recommendation_events_by_user(created_by=username, limit=safe_limit)
+                    if is_team
+                    else []
+                ),
+            }
 
+    def _build_activity_events(
+        self,
+        *,
+        username: str,
+        is_team: bool,
+        sources: dict[str, list[dict]],
+    ) -> list[ActivityEvent]:
+        """Convert raw repository rows into activity events."""
         events: list[ActivityEvent] = []
-        events.extend(self._build_course_share_events(rows=course_shares, username=username))
-        events.extend(self._build_video_share_events(rows=video_shares, username=username))
+        events.extend(self._build_course_share_events(rows=sources["course_shares"], username=username))
+        events.extend(self._build_video_share_events(rows=sources["video_shares"], username=username))
         events.extend(
             self._build_recommendation_events(
-                rows=list(course_recommendations) + list(own_course_recommendations),
+                rows=list(sources["course_recommendations"]) + list(sources["own_course_recommendations"]),
                 username=username,
                 is_team=is_team,
                 kind="course",
@@ -141,46 +184,19 @@ class NotificationsService:
         )
         events.extend(
             self._build_recommendation_events(
-                rows=list(path_recommendations) + list(own_path_recommendations),
+                rows=list(sources["path_recommendations"]) + list(sources["own_path_recommendations"]),
                 username=username,
                 is_team=is_team,
                 kind="path",
             )
         )
+        events.extend(self._build_rating_events(rows=sources["course_reviews"], username=username, is_team=is_team, kind="course"))
+        events.extend(self._build_rating_events(rows=sources["path_reviews"], username=username, is_team=is_team, kind="path"))
         events.extend(
-            self._build_rating_events(
-                rows=course_reviews,
-                username=username,
-                is_team=is_team,
-                kind="course",
-            )
+            self._build_rating_events(rows=sources["article_reviews"], username=username, is_team=is_team, kind="article")
         )
-        events.extend(
-            self._build_rating_events(
-                rows=path_reviews,
-                username=username,
-                is_team=is_team,
-                kind="path",
-            )
-        )
-        events.extend(
-            self._build_rating_events(
-                rows=article_reviews,
-                username=username,
-                is_team=is_team,
-                kind="article",
-            )
-        )
-        events.extend(
-            self._build_rating_events(
-                rows=video_reviews,
-                username=username,
-                is_team=is_team,
-                kind="video",
-            )
-        )
-
-        return self._finalize_events(events=events, limit=safe_limit)
+        events.extend(self._build_rating_events(rows=sources["video_reviews"], username=username, is_team=is_team, kind="video"))
+        return events
 
     @staticmethod
     def _parse_activity_query(payload: dict) -> NotificationActivityQuery:
