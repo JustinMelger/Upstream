@@ -1,3 +1,17 @@
+# [0.11.0](https://github.com/JustinMelger/learning-platform/compare/v0.10.0...v0.11.0) (2026-03-18)
+
+
+### Bug Fixes
+
+* fmt error ([f18b653](https://github.com/JustinMelger/learning-platform/commit/f18b6530a1eaaae6ff9bb1b5ce99fed7087c5b05))
+* mypy error entires ([1a01575](https://github.com/JustinMelger/learning-platform/commit/1a01575fb9c557376557d3137ac9918756a1d3dd))
+* mypy strict core code ([90f3413](https://github.com/JustinMelger/learning-platform/commit/90f34136a85116630047b4de49299a0675d0e291))
+
+
+### Features
+
+* add video as first class ([9ae5dd3](https://github.com/JustinMelger/learning-platform/commit/9ae5dd385eae97686627ac0b12a8761e1f886615))
+
 # [0.10.0](https://github.com/JustinMelger/learning-platform/compare/v0.9.1...v0.10.0) (2026-03-18)
 
 
