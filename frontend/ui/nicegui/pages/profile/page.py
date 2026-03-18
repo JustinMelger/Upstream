@@ -15,7 +15,7 @@ from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.home.helpers_compat import _top_contributors
+from frontend.ui.nicegui.pages.home.helpers import top_contributors
 from frontend.ui.nicegui.pages.home.state import HomePageState
 from frontend.ui.nicegui.pages.home.transitions import begin_home_load, finalize_home_load, should_render_team_section
 from frontend.ui.nicegui.pages.profile.controller import ProfilePageController
@@ -231,7 +231,7 @@ def _render_profile_team_sections(*, ctx: ProfileStatsPageContext) -> None:
     if not should_render_team_section(is_admin=ctx.is_admin, mode_value=ctx.mode_value):
         return
 
-    contributors = _top_contributors(ctx.state.team_stats_by_user, limit=6)
+    contributors = top_contributors(ctx.state.team_stats_by_user, limit=6)
     ui.label("Team Activity").classes("lp-profile-section-title mt-1")
     ui.label("See how your team is progressing").classes("lp-profile-muted mb-1")
     with ui.element("section").classes("lp-home-grid-12"):

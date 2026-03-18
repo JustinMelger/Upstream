@@ -182,7 +182,6 @@ Suggested frontend routes (NiceGUI `ui.page`), aligned to backend domains:
 - `/explore/articles/{article_id}`: Article detail route.
 - `/share/item`: Canonical learning-item share route (`?type=video|course|article`).
 - `/share/path`: Canonical path share route.
-- `/share/course` and `/share/article`: compatibility redirects to `/share/item`.
 - `/teams`: Inbox + team activity feed.
 - `/profile`: Profile landing route (redirects to `/profile/stats`).
 - `/profile/stats`: Full statistics dashboard.

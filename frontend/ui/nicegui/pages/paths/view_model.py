@@ -139,19 +139,15 @@ def _compute_path_progress(
 
 
 def _path_course_rows(*, detail: dict[str, Any]) -> list[dict[str, Any]]:
-    """Return ordered course rows from typed items when available."""
+    """Return ordered course rows from typed items."""
     items = [row for row in list(detail.get("items") or []) if isinstance(row, dict)]
-    if items:
-        return [row for row in items if normalize_learning_item_type(str(row.get("type") or ""), default="course") == "course"]
-    return [row for row in list(detail.get("courses") or []) if isinstance(row, dict)]
+    return [row for row in items if normalize_learning_item_type(str(row.get("type") or ""), default="course") == "course"]
 
 
 def _has_learning_items(*, detail: dict[str, Any]) -> bool:
     """Return whether the path contains any learning items at all."""
     items = [row for row in list(detail.get("items") or []) if isinstance(row, dict)]
-    if items:
-        return bool(items)
-    return bool([row for row in list(detail.get("courses") or []) if isinstance(row, dict)])
+    return bool(items)
 
 
 def recommendation_authors(rows: list[dict[str, Any]] | None) -> list[str]:

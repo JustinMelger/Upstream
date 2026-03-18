@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.path_items import encode_path_item_ref, learning_item_option_label
 from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
-from frontend.ui.nicegui.pages.paths.item_helpers import encode_path_item_ref, learning_item_option_label
 from frontend.ui.nicegui.pages.videos.controller import VideosPageController
 
 

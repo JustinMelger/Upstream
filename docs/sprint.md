@@ -118,18 +118,18 @@ Execution slices:
 - [ ] Slice 10.6: learning-item unification (`video` + `course` + `article`)
   - [x] Naming foundation: use `Learning item` as canonical shared UI term for course/article surfaces.
   - [x] Unified UI mapping: add shared view-model contract with `learning_item_type` (`video`, `article`, `course`, `doc`).
-  - [x] Share flow consolidation: merge `/share/course` + `/share/article` into `/share/item` and keep route redirects.
+  - [x] Share flow consolidation: merge `/share/course` + `/share/article` into `/share/item`.
   - [x] Type-tag system: show compact content-type tags (`Video`, `Article`) on cards + detail surfaces.
   - [x] Explore simplification: keep one scalable Learning Items catalog section (no duplicated course/article rails).
   - [x] Copy/IA cleanup: remove mixed wording drift (`Share course` vs `Share article`) across routes and labels.
-  - [x] Compatibility + telemetry: preserve old links and add tracking for old-route usage during migration.
+  - [x] Compatibility + telemetry: tracked old-route usage during migration and retired the redirects after rollout.
 - [x] Slice 10.7: learning-item subtype completion
   - [x] Lock the initial subtype taxonomy to `video|course|article` and document `Learning item` as the primary shareable object.
   - [x] Add URL/provider-based subtype detection so YouTube links map to `video`, Udemy links map to `course`, and generic written links map to `article` unless a stronger rule exists.
-  - [x] Extend `/share/item` to support explicit subtype selection and auto-detection while preserving compatibility redirects from `/share/course` and `/share/article`.
+  - [x] Extend `/share/item` to support explicit subtype selection and auto-detection for `video|course|article`.
   - [x] Restore course share validation and field parity on the new share page, especially the required-description behavior.
   - [x] Rework Explore learning-item rendering so available videos, courses, and articles remain visible in the default state rather than being hidden by naive concatenation.
-  - [x] Add focused tests for subtype detection, `/share/item` publish behavior, Explore mixed rendering, and compatibility route contracts.
+  - [x] Add focused tests for subtype detection, `/share/item` publish behavior, and Explore mixed rendering.
 
 Validation and acceptance criteria:
 - [ ] Core pages (`Home`, `Explore`, detail pages) use one consistent typography/spacing/component language.
@@ -306,7 +306,7 @@ Delivered:
 
 Implementation notes:
 - backend persistence moved from `path_courses` to `path_items`
-- service/API contracts now treat ordered typed `items` as canonical, with legacy `course_ids` compatibility during the migration window
+- service/API contracts now treat ordered typed `items` as the path mutation contract
 - frontend copy now uses `learning items` where the model is mixed
 
 ## Sprint TBD — Phase 14 User Testing + Pilot Validation

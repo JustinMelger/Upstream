@@ -8,7 +8,7 @@ from typing import Any
 from nicegui import app, ui
 
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
-from frontend.ui.nicegui.pages.paths.item_helpers import build_path_item_payloads, decode_path_item_ref, encode_path_item_ref
+from frontend.ui.nicegui.core.path_items import build_path_item_payloads, decode_path_item_ref, encode_path_item_ref
 
 
 def build_share_path_dialog(
@@ -38,10 +38,6 @@ def build_share_path_dialog(
             create_name.value = str(draft.get("name") or "")
             create_description.value = str(draft.get("description") or "")
             item_refs = list(draft.get("item_refs") or [])
-            if not item_refs:
-                item_refs = [
-                    encode_path_item_ref(item_type="course", item_id=int(cid)) for cid in list(draft.get("course_ids") or [])
-                ]
             create_item_refs.value = item_refs
             create_item_refs.update()
 
@@ -155,15 +151,6 @@ def _ordered_item_refs_from_detail(detail: dict[str, Any]) -> list[str]:
         except (TypeError, ValueError):
             continue
         ordered_item_refs.append(item_ref)
-    if ordered_item_refs:
-        return ordered_item_refs
-    for row in list(detail.get("courses") or []):
-        if not isinstance(row, dict):
-            continue
-        try:
-            ordered_item_refs.append(encode_path_item_ref(item_type="course", item_id=int(row.get("id") or 0)))
-        except (TypeError, ValueError):
-            continue
     return ordered_item_refs
 
 

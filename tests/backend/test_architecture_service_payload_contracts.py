@@ -191,7 +191,7 @@ def test_paths_service_typed_item_mutation_contract_stays_explicit() -> None:
 
     path_mutation_payload = _class_def(tree, "PathMutationPayload")
     assert path_mutation_payload is not None, "Expected PathMutationPayload dataclass in paths_service"
-    assert _annotated_field_names(path_mutation_payload) >= {"items", "course_ids"}
+    assert _annotated_field_names(path_mutation_payload) >= {"items"}
 
     methods = _service_methods(tree)
     for method_name in {"create_path", "update_path"}:

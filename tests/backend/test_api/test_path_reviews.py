@@ -21,7 +21,7 @@ async def _create_user(app_client, token, username, role="user"):
 async def _create_path(app_client, token, name: str):
     created = await app_client.post(
         "/paths",
-        json={"name": name, "description": "desc", "course_ids": []},
+        json={"name": name, "description": "desc", "items": []},
         headers={"X-Session-Token": token},
     )
     assert created.status_code == 200

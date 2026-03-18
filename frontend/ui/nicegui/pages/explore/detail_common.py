@@ -8,8 +8,8 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.path_items import path_course_ids
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.paths.item_helpers import path_course_ids
 
 
 def parse_detail_id(raw_id: str) -> int:

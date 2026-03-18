@@ -24,7 +24,6 @@ class PathMutationPayload:
 
     name: str | None = None
     description: str | None = None
-    course_ids: list[int] | None = None
     items: list[PathItemMutationPayload] | None = None
     created_by: str | None = None
 
@@ -71,7 +70,6 @@ class PathsService:
             "name": path.name,
             "description": path.description or "",
             "created_by": path.created_by,
-            "courses": [self._course_payload(item) for item in items if item.item_type == "course"],
             "items": [self._item_payload(item) for item in items],
         }
 
@@ -80,7 +78,7 @@ class PathsService:
         """Create a learning path with ordered learning items.
 
         Args:
-            payload: Path payload with typed items or legacy course_ids.
+            payload: Path payload with typed items.
 
         Returns:
             Created path payload.
@@ -150,25 +148,12 @@ class PathsService:
             True if deleted.
         """
         async with session_scope(self._repo.session):
-            return (await self._repo.delete_path_with_courses(path_id)) > 0
+            return (await self._repo.delete_path_with_items(path_id)) > 0
 
     @staticmethod
     def _path_payload(path: PathRecord) -> dict:
         """Convert a path record into an API payload."""
         return {"id": path.id, "name": path.name, "description": path.description or "", "created_by": path.created_by}
-
-    @staticmethod
-    def _course_payload(course: PathLearningItemRecord) -> dict:
-        """Convert a course-shaped path item into the legacy course payload."""
-        return {
-            "id": course.id,
-            "title": course.title or "",
-            "provider": course.provider or "",
-            "category": course.category or "",
-            "level": course.level or "",
-            "duration_hours": course.duration_hours,
-            "url": course.url or "",
-        }
 
     @staticmethod
     def _item_payload(item: PathLearningItemRecord) -> dict:
@@ -196,19 +181,15 @@ class PathsService:
 
     @staticmethod
     def _normalize_items_payload(data: PathMutationPayload) -> list[dict[str, int | str]]:
-        """Normalize typed path items, falling back to legacy course_ids when needed."""
+        """Normalize typed path items into persistence order."""
         raw_items = list(data.items or [])
-        if raw_items:
-            sortable: list[tuple[int, int, str, int]] = []
-            for idx, raw_item in enumerate(raw_items):
-                item_type = str(raw_item.type or "").strip().lower()
-                item_id = int(raw_item.id or 0)
-                position = int(raw_item.position) if raw_item.position is not None else idx
-                sortable.append((position, idx, item_type, item_id))
-            normalized: list[dict[str, int | str]] = []
-            for out_idx, (_position, _idx, item_type, item_id) in enumerate(sorted(sortable)):
-                normalized.append({"type": item_type, "id": item_id, "position": out_idx})
-            return normalized
-        return [
-            {"type": "course", "id": int(course_id), "position": idx} for idx, course_id in enumerate(data.course_ids or [])
-        ]
+        sortable: list[tuple[int, int, str, int]] = []
+        for idx, raw_item in enumerate(raw_items):
+            item_type = str(raw_item.type or "").strip().lower()
+            item_id = int(raw_item.id or 0)
+            position = int(raw_item.position) if raw_item.position is not None else idx
+            sortable.append((position, idx, item_type, item_id))
+        normalized: list[dict[str, int | str]] = []
+        for out_idx, (_position, _idx, item_type, item_id) in enumerate(sorted(sortable)):
+            normalized.append({"type": item_type, "id": item_id, "position": out_idx})
+        return normalized

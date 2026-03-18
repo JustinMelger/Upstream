@@ -110,13 +110,11 @@ def test_documented_routes_exist_in_page_modules() -> None:
         assert route in declared_routes, f"Missing documented route: {route}"
 
 
-def test_share_route_contract_includes_compatibility_routes() -> None:
+def test_share_route_contract_uses_canonical_routes_only() -> None:
     share_page = _PAGES_ROOT / "share" / "page.py"
     declared_routes = _decorated_routes(share_page)
     assert "/share/item" in declared_routes
     assert "/share/path" in declared_routes
-    assert "/share/course" in declared_routes
-    assert "/share/article" in declared_routes
 
 
 def test_non_login_pages_require_auth_guard() -> None:
@@ -192,12 +190,9 @@ def test_architecture_docs_describe_typed_path_items_contract() -> None:
 
     assert "ordered typed learning items (`course|video|article`)" in backend_doc
     assert "ordered `items` entries (`type`, `id`, `position`)" in backend_doc
-    assert "legacy `course_ids` are still accepted" in backend_doc
     assert "PATH_ITEMS" in backend_doc
-    assert "compatibility `courses` projection" in backend_doc
 
-    assert "ordered typed `items` (`type`, `id`, `position`) as the canonical mutation contract" in standards_doc
-    assert "`course_ids` remains compatibility-only input" in standards_doc
+    assert "ordered typed `items` (`type`, `id`, `position`) as the mutation contract" in standards_doc
 
 
 def test_pages_and_services_do_not_import_httpx_directly() -> None:

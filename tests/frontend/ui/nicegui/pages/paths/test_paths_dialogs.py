@@ -13,7 +13,6 @@ def test_ordered_item_refs_from_detail_prefers_typed_items() -> None:
             {"type": "course", "id": 11},
             {"type": "article", "id": 4},
         ],
-        "courses": [{"id": 99}],
     }
 
     assert dialogs._ordered_item_refs_from_detail(detail) == [
@@ -21,13 +20,6 @@ def test_ordered_item_refs_from_detail_prefers_typed_items() -> None:
         "course:11",
         "article:4",
     ]
-
-
-@pytest.mark.unit
-def test_ordered_item_refs_from_detail_falls_back_to_legacy_courses() -> None:
-    detail = {"courses": [{"id": 10}, {"id": "12"}, {"id": "bad"}]}
-
-    assert dialogs._ordered_item_refs_from_detail(detail) == ["course:10", "course:12"]
 
 
 @pytest.mark.unit

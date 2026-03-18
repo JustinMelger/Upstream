@@ -18,16 +18,25 @@ pytestmark = pytest.mark.anyio
 
 @pytest.mark.unit
 async def test_create_path_and_get_courses(db_session):
-    """Paths include ordered course lists."""
+    """Paths include ordered course items."""
     courses = CoursesService(CoursesRepository(db_session))
     paths = PathsService(PathsRepository(db_session))
     course_a = (await courses.create_course({"title": "Course A", "description": "A"}))["id"]
     course_b = (await courses.create_course({"title": "Course B", "description": "B"}))["id"]
 
-    path = await paths.create_path({"name": "Data Path", "description": "Desc", "course_ids": [course_b, course_a]})
+    path = await paths.create_path(
+        {
+            "name": "Data Path",
+            "description": "Desc",
+            "items": [
+                {"type": "course", "id": course_b, "position": 0},
+                {"type": "course", "id": course_a, "position": 1},
+            ],
+        }
+    )
     fetched = await paths.get_path(path["id"])
     assert fetched["name"] == "Data Path"
-    assert [course["id"] for course in fetched["courses"]] == [course_b, course_a]
+    assert [item["id"] for item in fetched["items"]] == [course_b, course_a]
 
 
 @pytest.mark.unit
@@ -75,16 +84,16 @@ async def test_create_path_with_mixed_learning_items(db_session):
 
     assert [item["type"] for item in fetched["items"]] == ["video", "course", "article"]
     assert [item["id"] for item in fetched["items"]] == [video_id, course_id, article_id]
-    assert [course["id"] for course in fetched["courses"]] == [course_id]
+    assert [item["id"] for item in fetched["items"] if item["type"] == "course"] == [course_id]
 
 
 @pytest.mark.unit
 async def test_create_path_duplicate_name(db_session):
     """Creating a duplicate path name returns a 409-domain error."""
     paths = PathsService(PathsRepository(db_session))
-    await paths.create_path({"name": "Duplicate", "course_ids": []})
+    await paths.create_path({"name": "Duplicate", "items": []})
     with pytest.raises(PathsServiceError) as excinfo:
-        await paths.create_path({"name": "Duplicate", "course_ids": []})
+        await paths.create_path({"name": "Duplicate", "items": []})
     assert excinfo.value.status_code == 409
     assert str(excinfo.value.detail) == "duplicate_name"
 
@@ -95,11 +104,13 @@ async def test_update_and_delete_path(db_session):
     courses = CoursesService(CoursesRepository(db_session))
     paths = PathsService(PathsRepository(db_session))
     course_id = (await courses.create_course({"title": "Course C", "description": "C"}))["id"]
-    path = await paths.create_path({"name": "Initial", "description": "", "course_ids": [course_id]})
+    path = await paths.create_path(
+        {"name": "Initial", "description": "", "items": [{"type": "course", "id": course_id, "position": 0}]}
+    )
 
-    updated = await paths.update_path(path["id"], {"name": "Updated", "description": "New", "course_ids": []})
+    updated = await paths.update_path(path["id"], {"name": "Updated", "description": "New", "items": []})
     assert updated["name"] == "Updated"
-    assert updated["courses"] == []
+    assert updated["items"] == []
 
     assert await paths.delete_path(path["id"]) is True
 
@@ -124,7 +135,7 @@ async def test_create_path_invalid_payload_type_returns_invalid_payload(db_sessi
     """Service-level payload parsing rejects invalid types."""
     paths = PathsService(PathsRepository(db_session))
     with pytest.raises(PathsServiceError) as excinfo:
-        await paths.create_path({"name": ["bad"], "course_ids": []})
+        await paths.create_path({"name": ["bad"], "items": []})
     assert excinfo.value.status_code == 400
     assert str(excinfo.value.detail) == "invalid_payload"
 
@@ -134,7 +145,7 @@ async def test_paths_service_works_inside_existing_transaction_scope(db_session)
     """Service methods can run safely when caller already started a transaction."""
     paths = PathsService(PathsRepository(db_session))
     async with db_session.begin():
-        created = await paths.create_path({"name": "Nested Path", "course_ids": []})
+        created = await paths.create_path({"name": "Nested Path", "items": []})
         listed = await paths.list_paths()
     assert int(created["id"]) > 0
     assert any(str(row.get("name") or "") == "Nested Path" for row in listed)

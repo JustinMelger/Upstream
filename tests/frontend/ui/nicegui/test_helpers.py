@@ -14,12 +14,12 @@ import pytest
 from frontend.ui.nicegui.components.filters import filter_selected_paths
 from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, tracking_chip_class, tracking_label
 from frontend.ui.nicegui.pages.courses.ui_glue import parse_duration_hours
-from frontend.ui.nicegui.pages.home.helpers_compat import (
-    _ids_by_status,
-    _parse_iso_ts,
-    _recent_courses,
-    _recent_tracking,
-    _tracking_map,
+from frontend.ui.nicegui.pages.home.helpers import (
+    ids_by_status,
+    parse_iso_ts,
+    recent_courses,
+    recent_tracking,
+    tracking_map,
 )
 
 
@@ -58,10 +58,10 @@ def test_home_tracking_map_and_ids_by_status() -> None:
         {"course_id": 12, "status": "completed"},
         {"course_id": "bad", "status": "completed"},
     ]
-    tracking = _tracking_map(tracking_rows)
+    tracking = tracking_map(tracking_rows)
     assert tracking == {10: "interested", 11: "in_progress", 12: "completed"}
 
-    interested, in_progress, completed = _ids_by_status(tracking)
+    interested, in_progress, completed = ids_by_status(tracking)
     assert interested == [10]
     assert in_progress == [11]
     assert completed == [12]
@@ -74,7 +74,7 @@ def test_home_recent_tracking_sorts_by_updated_at_desc() -> None:
         {"course_id": 2, "updated_at": "2026-02-03T00:00:00Z"},
         {"course_id": 3, "updated_at": "invalid"},
     ]
-    recent = _recent_tracking(rows, limit=2)
+    recent = recent_tracking(rows, limit=2)
     assert [int(r["course_id"]) for r in recent] == [2, 1]
 
 
@@ -85,13 +85,13 @@ def test_home_recent_courses_sorts_by_created_at_desc() -> None:
         {"id": 2, "created_at": "2026-02-02T00:00:00Z"},
         {"id": 3, "created_at": None},
     ]
-    recent = _recent_courses(courses, limit=2)
+    recent = recent_courses(courses, limit=2)
     assert [int(c["id"]) for c in recent] == [2, 1]
 
 
 @pytest.mark.unit
 def test_home_parse_iso_ts_accepts_z() -> None:
-    dt = _parse_iso_ts("2026-02-01T12:30:00Z")
+    dt = parse_iso_ts("2026-02-01T12:30:00Z")
     assert isinstance(dt, datetime)
     assert dt.tzinfo is not None
     assert dt.astimezone(timezone.utc).isoformat().startswith("2026-02-01T12:30:00")

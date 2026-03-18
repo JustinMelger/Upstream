@@ -61,7 +61,12 @@ def test_map_path_card_view_for_tracked_path_includes_progress_and_badges() -> N
         "created_at": (now - timedelta(days=3)).isoformat(),
         "updated_at": (now - timedelta(days=1)).isoformat(),
     }
-    detail = {"courses": [{"id": 10, "title": "HTTP"}, {"id": 11, "title": "FastAPI"}]}
+    detail = {
+        "items": [
+            {"type": "course", "id": 10, "title": "HTTP"},
+            {"type": "course", "id": 11, "title": "FastAPI"},
+        ]
+    }
     tracking = {10: {"status": "completed"}, 11: {"status": "in_progress"}}
     vm = view_model.map_path_card_view(
         path_row=row,

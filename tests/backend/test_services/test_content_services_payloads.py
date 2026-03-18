@@ -48,7 +48,7 @@ async def test_create_path_review_invalid_payload_type_returns_invalid_payload(d
     """Service-level payload parsing rejects invalid path review payload types."""
     paths = PathsService(PathsRepository(db_session))
     reviews = PathReviewsService(PathReviewsRepository(db_session))
-    path_id = int((await paths.create_path({"name": "Path", "course_ids": []}))["id"])
+    path_id = int((await paths.create_path({"name": "Path", "items": []}))["id"])
     with pytest.raises(PathReviewsServiceError) as excinfo:
         await reviews.create_review(path_id=path_id, payload={"rating": {"bad": 1}, "text": ""}, created_by="admin")
     assert excinfo.value.status_code == 400
@@ -86,7 +86,7 @@ async def test_create_path_recommendation_invalid_payload_type_returns_invalid_p
     """Service-level payload parsing rejects invalid path recommendation payload types."""
     paths = PathsService(PathsRepository(db_session))
     recommendations = PathRecommendationsService(PathRecommendationsRepository(db_session))
-    path_id = int((await paths.create_path({"name": "Path", "course_ids": []}))["id"])
+    path_id = int((await paths.create_path({"name": "Path", "items": []}))["id"])
     with pytest.raises(PathRecommendationsServiceError) as excinfo:
         await recommendations.create_recommendation(path_id=path_id, payload={"note": ["bad"]}, created_by="admin")
     assert excinfo.value.status_code == 400

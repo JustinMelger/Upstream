@@ -112,7 +112,13 @@ def render_path_item(
                 inferred_total = 0
         total_courses = int(card_vm.total_courses or 0) if is_tracked else max(0, inferred_total)
         if total_courses <= 0 and isinstance(detail, dict):
-            total_courses = len([c for c in list(detail.get("courses") or []) if isinstance(c, dict)])
+            total_courses = len(
+                [
+                    row
+                    for row in list(detail.get("items") or [])
+                    if isinstance(row, dict) and str(row.get("type") or "") == "course"
+                ]
+            )
 
         if not is_tracked:
             primary_label = "Track path"

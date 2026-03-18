@@ -14,18 +14,6 @@ class PathListItem(APIModel):
     created_by: str | None
 
 
-class PathCourseItem(APIModel):
-    """Course payload as embedded within a path."""
-
-    id: int
-    title: str
-    provider: str
-    category: str
-    level: str
-    duration_hours: float | None
-    url: str
-
-
 class PathDetailResponse(APIModel):
     """Path detail response payload."""
 
@@ -33,7 +21,6 @@ class PathDetailResponse(APIModel):
     name: str
     description: str
     created_by: str | None
-    courses: list[PathCourseItem] = Field(default_factory=list)
     items: list["PathLearningItem"] = Field(default_factory=list)
 
 
@@ -65,7 +52,6 @@ class PathCreateRequest(APIModel):
 
     name: StrictStr | None = None
     description: StrictStr | None = None
-    course_ids: list[StrictInt] = Field(default_factory=list)
     items: list[PathItemRequest] = Field(default_factory=list)
 
 
@@ -74,7 +60,6 @@ class PathUpdateRequest(APIModel):
 
     name: StrictStr | None = None
     description: StrictStr | None = None
-    course_ids: list[StrictInt] = Field(default_factory=list)
     items: list[PathItemRequest] = Field(default_factory=list)
 
 

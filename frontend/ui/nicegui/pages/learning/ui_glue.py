@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from frontend.ui.nicegui.core.feed_copy import format_learning_inventory_text
+from frontend.ui.nicegui.core.path_items import path_course_ids
 
 
 def compute_next_visibility(
@@ -74,14 +75,9 @@ def compute_path_progress(
     tracking_by_course_id: dict[int, dict[str, Any]],
 ) -> tuple[int, int, float]:
     """Return (completed, total, ratio) for a path detail payload."""
-    courses = [c for c in list(detail.get("courses") or []) if isinstance(c, dict)]
     total = 0
     completed = 0
-    for course in courses:
-        try:
-            cid = int(course.get("id") or 0)
-        except (TypeError, ValueError):
-            continue
+    for cid in path_course_ids(detail=detail):
         if cid <= 0:
             continue
         total += 1

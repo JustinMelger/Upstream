@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import delete, func, select, text, update
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
@@ -52,7 +51,16 @@ class PathsRepository(RepositoryDateTimeCodec):
         if not path:
             return None
 
-        rows = await self._list_path_item_rows(path_id)
+        items_result = await self.session.execute(
+            select(
+                PathItemModel.item_type,
+                PathItemModel.item_id,
+                PathItemModel.position,
+            )
+            .where(PathItemModel.path_id == path_id)
+            .order_by(func.coalesce(PathItemModel.position, 9999).asc(), PathItemModel.id.asc())
+        )
+        rows: list[Any] = list(items_result.all())
         items = await self._load_learning_items(rows)
         return (
             PathRecord(id=path.id, name=path.name, description=path.description, created_by=path.created_by),
@@ -149,8 +157,8 @@ class PathsRepository(RepositoryDateTimeCodec):
             )
         return self._rowcount(result)
 
-    async def delete_path_with_courses(self, path_id: int) -> int:
-        """Delete a path and its course links.
+    async def delete_path_with_items(self, path_id: int) -> int:
+        """Delete a path and its typed learning-item links.
 
         Args:
             path_id: Path ID.
@@ -231,43 +239,11 @@ class PathsRepository(RepositoryDateTimeCodec):
             )
         return out
 
-    async def _list_path_item_rows(self, path_id: int) -> list[Any]:
-        """Return ordered typed path-item rows, tolerating legacy pre-migration schemas."""
-        try:
-            items_result = await self.session.execute(
-                select(
-                    PathItemModel.item_type,
-                    PathItemModel.item_id,
-                    PathItemModel.position,
-                )
-                .where(PathItemModel.path_id == path_id)
-                .order_by(func.coalesce(PathItemModel.position, 9999).asc(), PathItemModel.id.asc())
-            )
-            return list(items_result.all())
-        except ProgrammingError:
-            legacy_result = await self.session.execute(
-                text(
-                    """
-                    SELECT 'course' AS item_type, course_id AS item_id, position
-                    FROM path_courses
-                    WHERE path_id = :path_id
-                    ORDER BY COALESCE(position, 9999) ASC, id ASC
-                    """
-                ),
-                {"path_id": int(path_id)},
-            )
-            return list(legacy_result.mappings().all())
-
     @staticmethod
     def _row_value(row: Any, key: str) -> Any:
-        """Read a field from SQLAlchemy rows or mapping rows."""
+        """Read a field from SQLAlchemy rows."""
         if hasattr(row, key):
             return getattr(row, key)
-        if hasattr(row, "__getitem__"):
-            try:
-                return row[key]
-            except (KeyError, TypeError, IndexError):
-                return None
         return None
 
     async def _load_course_items(self, ids: set[int]) -> dict[int, dict[str, object]]:

@@ -192,7 +192,7 @@ async def test_perform_create_update_delete_path_reload_page() -> None:
         events.append("reload")
 
     await perform_create_path(
-        payload={"name": "P1", "course_ids": [1]},
+        payload={"name": "P1", "items": [{"type": "course", "id": 1, "position": 0}]},
         controller=controller,  # type: ignore[arg-type]
         reload_page=_reload,
     )

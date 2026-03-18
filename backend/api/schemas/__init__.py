@@ -50,7 +50,6 @@ from backend.api.schemas.path_reviews import (
 )
 from backend.api.schemas.paths import (
     DeletePathResponse,
-    PathCourseItem,
     PathCreateRequest,
     PathDetailResponse,
     PathListItem,
@@ -134,7 +133,6 @@ __all__ = [
     "CourseRecommendationSummaryItem",
     "DeleteCourseRecommendationResponse",
     "PathListItem",
-    "PathCourseItem",
     "PathDetailResponse",
     "PathCreateRequest",
     "PathUpdateRequest",

@@ -371,7 +371,7 @@ Execution sequencing (prioritized):
 - [x] Share-flow simplification: merge course/article share surfaces into one `/share/item` experience with type-aware fields and preview.
 - [x] Type signaling: add compact type badges (`Video`, `Article`) on cards and detail headers to preserve content clarity after naming unification.
 - [x] Explore IA simplification: treat courses/articles as one scalable Learning Items catalog with shared filters/sort and no duplicate rails.
-- [x] Compatibility migration: keep `/share/course` and `/share/article` as compatibility routes that redirect to `/share/item`.
+- [x] Compatibility migration complete: legacy course/article share entrypoints were folded into `/share/item` and the temporary redirects were retired after rollout.
 - [x] Telemetry + guardrails: instrument migration usage and add tests to prevent terminology regressions.
 
 Canonical product model for the next implementation phase:

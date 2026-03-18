@@ -157,7 +157,7 @@ async def test_notifications_activity_includes_course_path_and_article_ratings(a
 
     create_path = await app_client.post(
         "/paths",
-        json={"name": "Rated Path", "description": "desc", "course_ids": [course_id]},
+        json={"name": "Rated Path", "description": "desc", "items": [{"type": "course", "id": course_id, "position": 0}]},
         headers={"X-Session-Token": alice_token},
     )
     assert create_path.status_code == 200

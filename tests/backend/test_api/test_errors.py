@@ -18,10 +18,10 @@ async def test_service_error_returns_standard_envelope_for_409_duplicate_path_na
     """Duplicate path names return a domain error envelope with status/message/timestamp."""
     token = await _login_admin(app_client)
 
-    first = await app_client.post("/paths", json={"name": "Duplicate", "course_ids": []}, headers={"X-Session-Token": token})
+    first = await app_client.post("/paths", json={"name": "Duplicate", "items": []}, headers={"X-Session-Token": token})
     assert first.status_code == 200
 
-    second = await app_client.post("/paths", json={"name": "Duplicate", "course_ids": []}, headers={"X-Session-Token": token})
+    second = await app_client.post("/paths", json={"name": "Duplicate", "items": []}, headers={"X-Session-Token": token})
     assert second.status_code == 409
     body = second.json()
     assert body.get("status") == "error"

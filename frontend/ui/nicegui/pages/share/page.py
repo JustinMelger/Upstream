@@ -9,7 +9,6 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
 from frontend.ui.nicegui.pages.share.controller import SharePageController
 from frontend.ui.nicegui.pages.share.helpers import normalize_requested_share_type
 from frontend.ui.nicegui.pages.share.page_item_ui import render_share_item_page
@@ -57,21 +56,3 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             render_catalog_scope_fn=render_catalog_scope,
             notify=safe_notify,
         )
-
-    @ui.page("/share/course")
-    async def share_course_compat_page() -> None:
-        track_ui_event_nowait(
-            api=api,
-            event_name="share_compat_redirect_used",
-            context={"from": "/share/course", "to": "/share/item", "item_type": "course"},
-        )
-        ui.navigate.to("/share/item?type=course")
-
-    @ui.page("/share/article")
-    async def share_article_compat_page() -> None:
-        track_ui_event_nowait(
-            api=api,
-            event_name="share_compat_redirect_used",
-            context={"from": "/share/article", "to": "/share/item", "item_type": "article"},
-        )
-        ui.navigate.to("/share/item?type=article")

@@ -23,7 +23,7 @@ def _imports_for(path: Path) -> set[str]:
 
 @pytest.mark.unit
 def test_home_pure_modules_do_not_import_nicegui() -> None:
-    for filename in ["controller.py", "state.py", "transitions.py", "helpers_compat.py"]:
+    for filename in ["controller.py", "state.py", "transitions.py", "helpers.py"]:
         imports = _imports_for(_HOME_DIR / filename)
         assert "nicegui" not in imports
         assert not any(name.startswith("nicegui.") for name in imports)

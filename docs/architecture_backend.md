@@ -230,7 +230,6 @@ erDiagram
 - User path selection, unselection, and status updates.
 - Any authenticated user can create paths; only the creator (or admin) can edit/delete.
 - Service-boundary contract: path create/update payloads accept ordered `items` entries (`type`, `id`, `position`).
-- Compatibility rule during the migration window: legacy `course_ids` are still accepted at the service boundary and normalized into `course` path items before persistence.
 
 ### Tracking service
 - Track per-user course progress (interested / in_progress / completed).

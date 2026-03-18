@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from frontend.ui.nicegui.core.errors import guard_ui_action
-from frontend.ui.nicegui.pages.paths.item_helpers import build_path_item_payloads, encode_path_item_ref
+from frontend.ui.nicegui.core.path_items import build_path_item_payloads, encode_path_item_ref
 from frontend.ui.nicegui.pages.share.controller import SharePageController
 from frontend.ui.nicegui.pages.share.page_path_form import PathShareControls
 
@@ -29,11 +29,6 @@ def wire_path_draft(*, controls: PathShareControls, draft_key: str, app_module: 
         controls.name_input.value = str(raw.get("name") or "")
         controls.description_input.value = str(raw.get("description") or "")
         item_refs = list(raw.get("item_refs") or [])
-        if not item_refs:
-            item_refs = [
-                encode_path_item_ref(item_type="course", item_id=int(course_id))
-                for course_id in list(raw.get("course_ids") or [])
-            ]
         controls.item_refs_input.value = item_refs
         controls.item_refs_input.update()
 

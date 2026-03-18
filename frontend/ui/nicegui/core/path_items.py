@@ -42,9 +42,7 @@ def count_course_items(*, detail: dict[str, Any] | None) -> int:
     if not isinstance(detail, dict):
         return 0
     items = [row for row in list(detail.get("items") or []) if isinstance(row, dict)]
-    if items:
-        return sum(1 for row in items if normalize_learning_item_type(str(row.get("type") or ""), default="course") == "course")
-    return len([row for row in list(detail.get("courses") or []) if isinstance(row, dict)])
+    return sum(1 for row in items if normalize_learning_item_type(str(row.get("type") or ""), default="course") == "course")
 
 
 def path_course_ids(*, detail: dict[str, Any] | None) -> list[int]:
@@ -53,19 +51,8 @@ def path_course_ids(*, detail: dict[str, Any] | None) -> list[int]:
         return []
     items = [row for row in list(detail.get("items") or []) if isinstance(row, dict)]
     out: list[int] = []
-    if items:
-        for row in items:
-            if normalize_learning_item_type(str(row.get("type") or ""), default="course") != "course":
-                continue
-            try:
-                cid = int(row.get("id") or 0)
-            except (TypeError, ValueError):
-                continue
-            if cid > 0:
-                out.append(cid)
-        return out
-    for row in list(detail.get("courses") or []):
-        if not isinstance(row, dict):
+    for row in items:
+        if normalize_learning_item_type(str(row.get("type") or ""), default="course") != "course":
             continue
         try:
             cid = int(row.get("id") or 0)

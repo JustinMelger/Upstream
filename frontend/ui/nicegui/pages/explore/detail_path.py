@@ -13,6 +13,7 @@ from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
+from frontend.ui.nicegui.core.path_items import count_course_items, encode_path_item_ref, learning_item_option_label
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.courses.ui_glue import format_short_date
 from frontend.ui.nicegui.pages.explore.detail_common import (
@@ -22,11 +23,6 @@ from frontend.ui.nicegui.pages.explore.detail_common import (
 )
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.dialogs import open_edit_path_dialog
-from frontend.ui.nicegui.pages.paths.item_helpers import (
-    count_course_items,
-    encode_path_item_ref,
-    learning_item_option_label,
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -387,7 +383,7 @@ async def render_explore_path_detail_page(*, store: SessionStore, api: ApiClient
 
         detail = dict(bundle.detail or {})
         items = [row for row in list(detail.get("items") or []) if isinstance(row, dict)]
-        courses = [c for c in list(detail.get("courses") or []) if isinstance(c, dict)]
+        courses = [row for row in items if str(row.get("type") or "") == "course"]
         can_edit = bool(is_admin or (str(detail.get("created_by") or "").strip() == username))
         path_reviews = list(bundle.path_reviews or [])
         selected_rows = await api.get("/paths/selected/list")

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.paths.item_helpers import (
+from frontend.ui.nicegui.core.path_items import (
     build_path_item_payloads,
     count_course_items,
     decode_path_item_ref,
@@ -32,13 +32,12 @@ def test_path_course_ids_prefers_typed_items_when_present() -> None:
             {"type": "article", "id": 3},
             {"type": "course", "id": 9},
         ],
-        "courses": [{"id": 1}],
     }
     assert path_course_ids(detail=detail) == [5, 9]
     assert count_course_items(detail=detail) == 2
 
 
-def test_path_course_ids_falls_back_to_legacy_courses() -> None:
-    detail = {"courses": [{"id": 11}, {"id": "12"}]}
-    assert path_course_ids(detail=detail) == [11, 12]
-    assert count_course_items(detail=detail) == 2
+def test_path_course_ids_returns_empty_without_typed_items() -> None:
+    detail = {}
+    assert path_course_ids(detail=detail) == []
+    assert count_course_items(detail=detail) == 0

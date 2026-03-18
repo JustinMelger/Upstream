@@ -29,7 +29,6 @@ class _FakeApi:
             return {
                 "id": 42,
                 "items": [{"type": "course", "id": 101}, {"type": "video", "id": 7}, {"type": "course", "id": 102}],
-                "courses": [{"id": 101}, {"id": 102}],
             }
         if path == "/paths/reviews/summary":
             return [{"path_id": 42, "avg_rating": 4.0, "review_count": 3}]
@@ -159,15 +158,15 @@ async def test_controller_path_mutations_call_expected_endpoints() -> None:
     api = _FakeApi()
     controller = PathsPageController(api=api)
 
-    await controller.create_path(payload={"name": "P1", "course_ids": [1]})
-    await controller.update_path(path_id=42, payload={"name": "P2", "course_ids": [2]})
+    await controller.create_path(payload={"name": "P1", "items": [{"type": "course", "id": 1, "position": 0}]})
+    await controller.update_path(path_id=42, payload={"name": "P2", "items": [{"type": "course", "id": 2, "position": 0}]})
     await controller.save_recommendation(path_id=42, note="Great path")
     await controller.save_path_review(path_id=42, rating=5, text="Excellent")
     await controller.delete_path_review(path_id=42, review_id=7)
     await controller.delete_path(path_id=42)
 
-    assert ("POST", "/paths", {"name": "P1", "course_ids": [1]}) in api.calls
-    assert ("PUT", "/paths/42", {"name": "P2", "course_ids": [2]}) in api.calls
+    assert ("POST", "/paths", {"name": "P1", "items": [{"type": "course", "id": 1, "position": 0}]}) in api.calls
+    assert ("PUT", "/paths/42", {"name": "P2", "items": [{"type": "course", "id": 2, "position": 0}]}) in api.calls
     assert ("POST", "/paths/42/recommendations", {"note": "Great path"}) in api.calls
     assert ("POST", "/paths/42/reviews", {"rating": 5, "text": "Excellent"}) in api.calls
     assert ("DELETE", "/paths/42/reviews/7", None) in api.calls
