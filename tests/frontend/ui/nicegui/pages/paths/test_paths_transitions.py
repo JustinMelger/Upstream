@@ -46,6 +46,7 @@ def test_clear_paths_state_on_load_error_resets_all_collections() -> None:
         tracking_by_course_id={10: {"course_id": 10, "status": "interested"}},
         courses=[{"id": 10}],
         course_by_id={10: {"id": 10}},
+        learning_item_options={"course:10": "Course · X"},
         path_review_summary_by_id={1: {"path_id": 1, "review_count": 1}},
         path_recommendation_summary_by_id={1: {"path_id": 1, "recommendation_count": 1}},
     )
@@ -56,6 +57,7 @@ def test_clear_paths_state_on_load_error_resets_all_collections() -> None:
     assert state.tracking_by_course_id == {}
     assert state.courses == []
     assert state.course_by_id == {}
+    assert state.learning_item_options == {}
     assert state.path_review_summary_by_id == {}
     assert state.path_recommendation_summary_by_id == {}
 

@@ -1,10 +1,16 @@
 import pytest
 
 from backend.core.errors import PathsServiceError
+from backend.database.async_repositories.articles import ArticlesRepository
+from backend.database.async_repositories.auth import AuthRepository
 from backend.database.async_repositories.courses import CoursesRepository
 from backend.database.async_repositories.paths import PathsRepository
+from backend.database.async_repositories.videos import VideosRepository
+from backend.services.articles_service import ArticlesService
+from backend.services.auth_service import AuthService
 from backend.services.courses_service import CoursesService
 from backend.services.paths_service import PathsService
+from backend.services.videos_service import VideosService
 
 
 pytestmark = pytest.mark.anyio
@@ -22,6 +28,54 @@ async def test_create_path_and_get_courses(db_session):
     fetched = await paths.get_path(path["id"])
     assert fetched["name"] == "Data Path"
     assert [course["id"] for course in fetched["courses"]] == [course_b, course_a]
+
+
+@pytest.mark.unit
+async def test_create_path_with_mixed_learning_items(db_session):
+    """Paths can store ordered course, video, and article items together."""
+    courses = CoursesService(CoursesRepository(db_session))
+    videos = VideosService(VideosRepository(db_session))
+    articles = ArticlesService(ArticlesRepository(db_session))
+    auth = AuthService(AuthRepository(db_session))
+    paths = PathsService(PathsRepository(db_session))
+    await auth.create_user("admin", "pass123", "admin")
+
+    course_id = (await courses.create_course({"title": "Course A", "description": "A"}))["id"]
+    video_id = (
+        await videos.create_video(
+            payload={
+                "title": "Video A",
+                "description": "Watch this",
+                "provider": "YouTube",
+                "category": "Data",
+                "url": "https://www.youtube.com/watch?v=test-a",
+            },
+            created_by="admin",
+        )
+    )["id"]
+    article_id = (
+        await articles.create_article(
+            payload={"title": "Article A", "url": "https://example.com/article-a"},
+            created_by="admin",
+        )
+    )["id"]
+
+    path = await paths.create_path(
+        {
+            "name": "Mixed Path",
+            "description": "Desc",
+            "items": [
+                {"type": "video", "id": video_id, "position": 0},
+                {"type": "course", "id": course_id, "position": 1},
+                {"type": "article", "id": article_id, "position": 2},
+            ],
+        }
+    )
+    fetched = await paths.get_path(path["id"])
+
+    assert [item["type"] for item in fetched["items"]] == ["video", "course", "article"]
+    assert [item["id"] for item in fetched["items"]] == [video_id, course_id, article_id]
+    assert [course["id"] for course in fetched["courses"]] == [course_id]
 
 
 @pytest.mark.unit
@@ -48,6 +102,21 @@ async def test_update_and_delete_path(db_session):
     assert updated["courses"] == []
 
     assert await paths.delete_path(path["id"]) is True
+
+
+@pytest.mark.unit
+async def test_create_path_rejects_missing_item_refs(db_session):
+    """Typed path item refs must point at existing learning items."""
+    paths = PathsService(PathsRepository(db_session))
+    with pytest.raises(PathsServiceError) as excinfo:
+        await paths.create_path(
+            {
+                "name": "Broken Path",
+                "items": [{"type": "video", "id": 999}],
+            }
+        )
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "invalid_item_refs"
 
 
 @pytest.mark.unit

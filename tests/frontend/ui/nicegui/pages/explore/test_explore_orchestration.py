@@ -11,6 +11,7 @@ from frontend.ui.nicegui.pages.explore.orchestration import (
     load_explore_articles_background,
     load_explore_courses,
     load_explore_paths_background,
+    load_explore_videos_background,
     set_explore_tracking_status,
 )
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
@@ -81,6 +82,26 @@ class _ArticlesController:
         return _ArticlesBundle(
             articles=[{"id": 21, "title": "API design"}],
             review_summary_by_article_id={21: {"article_id": 21, "review_count": 1}},
+        )
+
+
+@dataclass(slots=True)
+class _VideosBundle:
+    videos: list[dict[str, Any]]
+    review_summary_by_video_id: dict[int, dict[str, Any]]
+
+
+class _VideosController:
+    def __init__(self, *, fail_load: bool = False) -> None:
+        self.fail_load = bool(fail_load)
+
+    async def load_list_bundle(self, *, params: Any | None) -> _VideosBundle:
+        if self.fail_load:
+            raise ApiError(status_code=503, message="videos_unavailable")
+        assert params is None
+        return _VideosBundle(
+            videos=[{"id": 31, "title": "Architecture walkthrough"}],
+            review_summary_by_video_id={31: {"video_id": 31, "review_count": 2}},
         )
 
 
@@ -213,6 +234,53 @@ async def test_load_explore_articles_background_handles_error_and_refreshes_filt
     assert state.article_review_summary_by_article_id == {}
     assert warnings == ["504: articles_timeout"]
     assert events == ["refresh", "filters", "refresh"]
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_load_explore_videos_background_copies_payloads_and_review_summaries() -> None:
+    state = ExplorePageState()
+    controller = _VideosController()
+    events: list[str] = []
+    warnings: list[str] = []
+
+    await load_explore_videos_background(
+        state=state,
+        videos_controller=controller,
+        refresh_ui=lambda: events.append("refresh"),
+        notify_warning=lambda message: warnings.append(message),
+    )
+
+    assert state.videos_loading is False
+    assert state.videos == [{"id": 31, "title": "Architecture walkthrough"}]
+    assert int(state.video_review_summary_by_video_id[31]["review_count"]) == 2
+    assert warnings == []
+    assert events == ["refresh", "refresh"]
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_load_explore_videos_background_handles_errors_without_crashing() -> None:
+    state = ExplorePageState(
+        videos=[{"id": 1}],
+        video_review_summary_by_video_id={1: {"video_id": 1, "review_count": 1}},
+    )
+    controller = _VideosController(fail_load=True)
+    warnings: list[str] = []
+    events: list[str] = []
+
+    await load_explore_videos_background(
+        state=state,
+        videos_controller=controller,
+        refresh_ui=lambda: events.append("refresh"),
+        notify_warning=lambda message: warnings.append(message),
+    )
+
+    assert state.videos == []
+    assert state.video_review_summary_by_video_id == {}
+    assert warnings == ["503: videos_unavailable"]
+    assert state.videos_loading is False
+    assert events == ["refresh", "refresh"]
 
 
 @pytest.mark.unit

@@ -24,8 +24,7 @@ class LoadAllPathsDeps:
     controller: Any
     refresh_btn: Any
     meta: Any
-    create_course_ids: Any
-    compute_course_options: Callable[[list[dict[str, Any]] | None], dict[int, str]]
+    create_item_refs: Any
     recompute_facet_options: Callable[[], None]
     refresh_paths_list_ui: Callable[[], None]
     notify_error: Callable[[str], None]
@@ -183,8 +182,8 @@ async def load_all_paths(
     deps.refresh_paths_list_ui()
     try:
         await deps.controller.load_all(state=controller_state)
-        deps.create_course_ids.options = deps.compute_course_options(controller_state.courses)
-        deps.create_course_ids.update()
+        deps.create_item_refs.options = dict(controller_state.learning_item_options)
+        deps.create_item_refs.update()
         deps.recompute_facet_options()
         deps.refresh_paths_list_ui()
         ok = True

@@ -24,16 +24,16 @@ async def render_share_path_page(
     """Render the dedicated path share route."""
     username = str(user.get("username") or "")
     draft_key = f"share_path_page_draft::{username}"
-    course_options = await controller.load_path_course_options()
+    learning_item_options = await controller.load_path_learning_item_options()
 
     render_shell_fn(title="Share Path", store=store, api=api)
     with render_catalog_scope_fn(variant="explore").classes("lp-container lp-share-scope"):
         render_share_scaffold(
             ui_module=ui_module,
             title="Share Path",
-            subtitle="Share a structured path your team can follow together.",
+            subtitle="Share a structured path your team can follow across courses, videos, and articles.",
         )
-        controls = build_path_controls(ui_module=ui_module, course_options=course_options)
+        controls = build_path_controls(ui_module=ui_module, learning_item_options=learning_item_options)
         wire_path_draft(controls=controls, draft_key=draft_key, app_module=app_module, notify=notify)
         wire_path_actions(
             controls=controls,

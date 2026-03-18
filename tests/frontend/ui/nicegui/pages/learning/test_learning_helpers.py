@@ -41,8 +41,8 @@ def test_compute_path_progress_counts_completed() -> None:
     tracking = {1: {"status": "completed"}, 2: {"status": "in_progress"}}
     completed, total, ratio = compute_path_progress(detail=detail, tracking_by_course_id=tracking)
     assert completed == 1
-    assert total == 3
-    assert ratio == pytest.approx(1 / 3)
+    assert total == 2
+    assert ratio == pytest.approx(1 / 2)
 
 
 @pytest.mark.unit

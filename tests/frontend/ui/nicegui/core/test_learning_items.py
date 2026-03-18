@@ -49,6 +49,7 @@ def test_learning_item_helpers_normalize_and_label_supported_types() -> None:
     assert learning_item_type_label("course") == "Course"
     assert learning_item_primary_action_label("video") == "Watch video"
     assert learning_item_primary_action_label("article") == "Read article"
+    assert learning_item_review_action_label("video") == "Review video"
     assert learning_item_review_action_label("course") == "Review course"
     assert learning_item_review_action_label("article") == "Review article"
     assert learning_item_source_action_label("course") == "Open course source"
@@ -68,5 +69,5 @@ def test_learning_item_capabilities_match_current_product_model() -> None:
     assert article.supports_reviews is True
     assert article.supports_recommendations is False
     assert video.supports_tracking is False
-    assert video.supports_reviews is False
+    assert video.supports_reviews is True
     assert video.supports_recommendations is False

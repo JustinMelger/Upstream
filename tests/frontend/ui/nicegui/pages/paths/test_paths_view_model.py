@@ -96,3 +96,39 @@ def test_map_path_card_view_for_untracked_path_hides_learning_fields() -> None:
     assert vm.completed == 0 and vm.total_courses == 0
     assert vm.milestone == ""
     assert vm.card_class_suffix == ""
+
+
+@pytest.mark.unit
+def test_compute_outcomes_uses_typed_course_items_for_progress_and_next_step() -> None:
+    detail = {
+        "items": [
+            {"type": "video", "id": 9, "title": "Intro"},
+            {"type": "course", "id": 10, "title": "HTTP"},
+            {"type": "article", "id": 5, "title": "Readme"},
+            {"type": "course", "id": 11, "title": "FastAPI"},
+        ]
+    }
+    tracking = {10: {"status": "completed"}, 11: {"status": "in_progress"}}
+
+    out = view_model.compute_outcomes(detail=detail, tracking_by_course_id=tracking)
+
+    assert out["completed"] == 1
+    assert out["total"] == 2
+    assert out["next_course"] == {"type": "course", "id": 11, "title": "FastAPI"}
+
+
+@pytest.mark.unit
+def test_compute_outcomes_for_learning_item_only_path_uses_reference_copy() -> None:
+    detail = {
+        "items": [
+            {"type": "video", "id": 9, "title": "Intro"},
+            {"type": "article", "id": 5, "title": "Readme"},
+        ]
+    }
+
+    out = view_model.compute_outcomes(detail=detail, tracking_by_course_id={})
+
+    assert out["completed"] == 0
+    assert out["total"] == 0
+    assert out["milestone"] == "Reference path"
+    assert out["impact"] == "Add a course to enable progress tracking."

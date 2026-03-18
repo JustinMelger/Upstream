@@ -195,8 +195,15 @@ async def _load_shared_summaries(
     *,
     api: ApiClient,
     shared_course_ids: list[int],
+    shared_video_ids: list[int],
     shared_path_ids: list[int],
-) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+) -> tuple[
+    dict[int, dict[str, Any]],
+    dict[int, dict[str, Any]],
+    dict[int, dict[str, Any]],
+    dict[int, dict[str, Any]],
+    dict[int, dict[str, Any]],
+]:
     shared_course_reviews = await _load_summary_map(
         api=api,
         path="/courses/reviews/summary",
@@ -212,6 +219,14 @@ async def _load_shared_summaries(
         ids=shared_course_ids,
         row_id_key="course_id",
         log_context="shared_course_recommendations",
+    )
+    shared_video_reviews = await _load_summary_map(
+        api=api,
+        path="/videos/reviews/summary",
+        param_key="video_ids",
+        ids=shared_video_ids,
+        row_id_key="video_id",
+        log_context="shared_video_reviews",
     )
     shared_path_reviews = await _load_summary_map(
         api=api,
@@ -232,6 +247,7 @@ async def _load_shared_summaries(
     return (
         shared_course_reviews,
         shared_course_recommendations,
+        shared_video_reviews,
         shared_path_reviews,
         shared_path_recommendations,
     )
@@ -268,6 +284,7 @@ def _build_learning_collections(
     tracked_ids_sorted = sorted(int(c.get("id") or 0) for c in tracked_courses if int(c.get("id") or 0) > 0)
     selected_ids_sorted = sorted(int(pid) for pid in selected_ids if int(pid) > 0)
     shared_course_ids = sorted(int(c.get("id") or 0) for c in shared_courses if int(c.get("id") or 0) > 0)
+    shared_video_ids = sorted(int(v.get("id") or 0) for v in shared_videos if int(v.get("id") or 0) > 0)
     shared_path_ids = sorted(int(p.get("id") or 0) for p in shared_paths if int(p.get("id") or 0) > 0)
     return (
         shared_courses,
@@ -278,6 +295,7 @@ def _build_learning_collections(
         tracked_ids_sorted,
         selected_ids_sorted,
         shared_course_ids,
+        shared_video_ids,
         shared_path_ids,
     )
 
@@ -333,6 +351,7 @@ async def load_my_learning_data(
         tracked_ids_sorted,
         selected_ids_sorted,
         shared_course_ids,
+        shared_video_ids,
         shared_path_ids,
     ) = _build_learning_collections(
         courses=courses,
@@ -397,11 +416,13 @@ async def load_my_learning_data(
     (
         shared_course_review_summary_by_id,
         shared_course_recommendation_summary_by_id,
+        shared_video_review_summary_by_id,
         shared_path_review_summary_by_id,
         shared_path_recommendation_summary_by_id,
     ) = await _load_shared_summaries(
         api=api,
         shared_course_ids=shared_course_ids,
+        shared_video_ids=shared_video_ids,
         shared_path_ids=shared_path_ids,
     )
 
@@ -428,6 +449,7 @@ async def load_my_learning_data(
         "recommended_paths_for_you": recommended_paths_for_you,
         "shared_course_review_summary_by_id": shared_course_review_summary_by_id,
         "shared_course_recommendation_summary_by_id": shared_course_recommendation_summary_by_id,
+        "shared_video_review_summary_by_id": shared_video_review_summary_by_id,
         "shared_path_review_summary_by_id": shared_path_review_summary_by_id,
         "shared_path_recommendation_summary_by_id": shared_path_recommendation_summary_by_id,
     }

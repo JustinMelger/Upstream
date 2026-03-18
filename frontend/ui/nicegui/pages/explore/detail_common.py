@@ -9,6 +9,7 @@ from nicegui import ui
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.pages.paths.item_helpers import path_course_ids
 
 
 def parse_detail_id(raw_id: str) -> int:
@@ -45,14 +46,4 @@ def render_detail_scope(*, store: SessionStore, api: ApiClient) -> Any:
 
 def parse_path_course_ids(path_detail: dict[str, Any]) -> list[int]:
     """Parse path course ids from detail payload."""
-    out: list[int] = []
-    for row in list(path_detail.get("courses") or []):
-        if not isinstance(row, dict):
-            continue
-        try:
-            cid = int(row.get("id") or 0)
-        except (TypeError, ValueError):
-            continue
-        if cid > 0:
-            out.append(cid)
-    return out
+    return path_course_ids(detail=path_detail)

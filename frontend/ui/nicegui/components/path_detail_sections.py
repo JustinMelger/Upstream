@@ -45,11 +45,11 @@ class PathDetailLearningView:
     is_tracked: bool
     tracking_label_text: str
     next_title: str
-    courses_rows: list[dict[str, Any]]
+    item_rows: list[dict[str, Any]]
 
 
 def render_path_detail_learning_section(*, view: PathDetailLearningView, on_open_next: Callable[[], Any] | None) -> None:
-    """Render progress + next step + course list for the detail dialog."""
+    """Render progress + next step + learning-item list for the detail dialog."""
     if view.total_courses > 0:
         ui.label(f"Progress: {view.completed}/{view.total_courses} completed").classes("text-sm").style(
             "color: var(--lp-muted)"
@@ -68,25 +68,28 @@ def render_path_detail_learning_section(*, view: PathDetailLearningView, on_open
         elif view.total_courses > 0:
             ui.label("Path completed").classes("lp-chip lp-chip--lime")
 
-    ui.label("Courses").classes("text-lg font-semibold mt-4")
-    if not view.courses_rows:
-        ui.label("No courses in this path yet.").classes("text-sm").style("color: var(--lp-muted)")
+    ui.label("Learning items").classes("text-lg font-semibold mt-4")
+    if not view.item_rows:
+        ui.label("No learning items in this path yet.").classes("text-sm").style("color: var(--lp-muted)")
         return
     with ui.column().classes("w-full gap-2"):
-        for idx, course in enumerate(view.courses_rows, start=1):
-            title = str(course.get("title") or "").strip() or f"Course #{int(course.get('id') or 0)}"
-            provider = str(course.get("provider") or "").strip()
-            category = str(course.get("category") or "").strip()
-            reviews = str(course.get("reviews") or "").strip()
+        for idx, item in enumerate(view.item_rows, start=1):
+            item_type = str(item.get("type") or "course").strip().lower() or "course"
+            fallback_label = item_type.capitalize()
+            title = str(item.get("title") or "").strip() or f"{fallback_label} #{int(item.get('id') or 0)}"
+            provider = str(item.get("provider") or "").strip()
+            category = str(item.get("category") or "").strip()
+            reviews = str(item.get("reviews") or "").strip()
+            status = str(item.get("tracking_status") or "")
             with ui.card().classes("w-full lp-card"):
                 ui.label(f"{idx}. {title}").classes("font-medium")
                 with ui.row().classes("items-center gap-2 flex-wrap"):
+                    ui.label(item_type.capitalize()).classes("lp-chip lp-chip--subtle")
                     if provider:
                         ui.label(provider).classes("lp-chip lp-chip--subtle")
                     if category:
                         ui.label(category).classes("lp-chip lp-chip--subtle")
                     if reviews:
                         ui.label(reviews).classes("lp-chip lp-chip--subtle")
-                    ui.label(tracking_label(str(course.get("tracking_status") or ""))).classes(
-                        tracking_chip_class(str(course.get("tracking_status") or ""))
-                    )
+                    if item_type == "course":
+                        ui.label(tracking_label(status)).classes(tracking_chip_class(status))

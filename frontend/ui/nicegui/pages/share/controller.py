@@ -6,6 +6,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
 from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
+from frontend.ui.nicegui.pages.paths.item_helpers import encode_path_item_ref, learning_item_option_label
 from frontend.ui.nicegui.pages.videos.controller import VideosPageController
 
 
@@ -43,18 +44,33 @@ class SharePageController:
         """Create an article row from share form payload."""
         return dict(await self._articles.create_article(payload=dict(payload or {})) or {})
 
-    async def load_path_course_options(self) -> dict[int, str]:
-        """Load selectable course options for path sharing."""
+    async def load_path_learning_item_options(self) -> dict[str, str]:
+        """Load selectable learning-item options for path sharing."""
         bundle = await self._courses.load_list_bundle()
-        options: dict[int, str] = {}
+        video_rows = await self._videos.load_list()
+        article_bundle = await self._articles.load_list_bundle()
+        options: dict[str, str] = {}
         for row in list(bundle.courses or []):
             course_id = int(row.get("id") or 0)
             if course_id <= 0:
                 continue
-            title = str(row.get("title") or "").strip()
-            if not title:
+            options[encode_path_item_ref(item_type="course", item_id=course_id)] = learning_item_option_label(
+                item_type="course", row=row
+            )
+        for row in list(video_rows or []):
+            video_id = int(row.get("id") or 0)
+            if video_id <= 0:
                 continue
-            options[course_id] = title
+            options[encode_path_item_ref(item_type="video", item_id=video_id)] = learning_item_option_label(
+                item_type="video", row=row
+            )
+        for row in list(article_bundle.articles or []):
+            article_id = int(row.get("id") or 0)
+            if article_id <= 0:
+                continue
+            options[encode_path_item_ref(item_type="article", item_id=article_id)] = learning_item_option_label(
+                item_type="article", row=row
+            )
         return options
 
     async def create_path(self, *, payload: dict[str, object]) -> dict[str, object]:

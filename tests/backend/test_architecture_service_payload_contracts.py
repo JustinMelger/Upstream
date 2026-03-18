@@ -58,6 +58,21 @@ def _parse_helpers(tree: ast.Module) -> list[ast.FunctionDef]:
     return helpers
 
 
+def _class_def(tree: ast.Module, name: str) -> ast.ClassDef | None:
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef) and node.name == name:
+            return node
+    return None
+
+
+def _annotated_field_names(node: ast.ClassDef) -> set[str]:
+    fields: set[str] = set()
+    for item in node.body:
+        if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+            fields.add(item.target.id)
+    return fields
+
+
 def _excepts_validation_error(handler: ast.ExceptHandler) -> bool:
     if isinstance(handler.type, ast.Name):
         return handler.type.id == "ValidationError"
@@ -118,6 +133,7 @@ def test_service_entrypoints_use_typed_parse_helpers() -> None:
         Path("backend/services/paths_service.py"): {"create_path", "update_path"},
         Path("backend/services/articles_service.py"): {"create_article"},
         Path("backend/services/videos_service.py"): {"create_video"},
+        Path("backend/services/video_reviews_service.py"): {"create_review"},
         Path("backend/services/course_reviews_service.py"): {"create_review"},
         Path("backend/services/path_reviews_service.py"): {"create_review"},
         Path("backend/services/article_reviews_service.py"): {"create_review"},
@@ -162,3 +178,32 @@ def test_parse_helpers_map_validation_error_to_invalid_payload_domain_error() ->
                 "*ServiceError(detail='invalid_payload', status_code=400)"
             )
     assert found_any_helper, "Expected at least one service payload parse helper in backend/services"
+
+
+def test_paths_service_typed_item_mutation_contract_stays_explicit() -> None:
+    """Guard the Sprint 13 path mutation boundary against drifting back to course-only payloads."""
+    path = Path("backend/services/paths_service.py")
+    tree = _parse(path)
+
+    path_item_payload = _class_def(tree, "PathItemMutationPayload")
+    assert path_item_payload is not None, "Expected PathItemMutationPayload dataclass in paths_service"
+    assert _annotated_field_names(path_item_payload) >= {"type", "id", "position"}
+
+    path_mutation_payload = _class_def(tree, "PathMutationPayload")
+    assert path_mutation_payload is not None, "Expected PathMutationPayload dataclass in paths_service"
+    assert _annotated_field_names(path_mutation_payload) >= {"items", "course_ids"}
+
+    methods = _service_methods(tree)
+    for method_name in {"create_path", "update_path"}:
+        method = methods.get(method_name)
+        assert method is not None, f"Missing expected service method {method_name} in {path}"
+        called_helpers = {
+            inner.func.attr
+            for inner in ast.walk(method)
+            if isinstance(inner, ast.Call)
+            and isinstance(inner.func, ast.Attribute)
+            and isinstance(inner.func.value, ast.Name)
+            and inner.func.value.id == "self"
+        }
+        assert "_parse_mutation_payload" in called_helpers
+        assert "_normalize_items_payload" in called_helpers

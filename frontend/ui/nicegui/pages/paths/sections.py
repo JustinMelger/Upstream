@@ -82,7 +82,7 @@ def render_paths_cards_block(
                 get_path_detail=lambda _pid: deps.controller.get_path_detail(path_id=int(_pid)),
                 on_open_edit=lambda _pid, _detail: open_edit_path_dialog(
                     detail=_detail,
-                    course_by_id=deps.controller_state.course_by_id,
+                    learning_item_options=deps.controller_state.learning_item_options,
                     detail_dialog=None,
                     on_save=partial(
                         perform_update_path,

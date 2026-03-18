@@ -1,5 +1,31 @@
 # Roadmap
 
+## Current V1 Snapshot
+- Implemented core product contract:
+  - share `course|article|video`
+  - create mixed learning paths
+  - review `course|article|video|path`
+  - track courses and path progress
+  - see content other people shared
+- Current subtype capability model:
+  - `course`: tracking + reviews + recommendations
+  - `article`: reviews
+  - `video`: reviews without tracking/recommendations
+
+## Release Focus
+- Finish broader regression validation across backend, frontend, and smoke flows.
+- Keep docs/readme aligned with the current v1 contract.
+- Fix any remaining release-significant QA issues found in regression/manual validation.
+
+## Deferred Focus
+- Auth enhancements (`Phase 3b`).
+- Visual-system modernization and motion polish (`Phase 11A` open items).
+- Media pipeline durability and thumbnail quality work (`Phase 11A.3` open items).
+- Activity feed v2 (`Phase 11B`).
+- Reliability/accessibility expansion beyond current shipped baseline (`Phase 11C`).
+- Strict visual-regression enforcement in CI (`Phase 11D` close-out).
+- Team-scoped audience/collaboration model (`Phase 11F`) and pilot validation (`Phase 14`).
+
 ## Phase 1 — MVP catalog
 - [x] Stable data model for courses.
 - [x] Search + filter UI.
@@ -360,17 +386,17 @@ Implementation plan for the remaining learning-item unification work:
 - Explore completion: replace naive course-first/article-second concatenation with intentional mixed discovery behavior that preserves visible subtype diversity and keeps subtype chips explicit.
 - Shared frontend contract: introduce one reusable learning-item card/view-model abstraction for Explore and later team/profile/social surfaces.
 - Backend-adjacent support: extend URL metadata suggestions to emit a suggested learning-item subtype that distinguishes YouTube, Udemy, and article-like links without requiring table consolidation.
-- Capability alignment: keep `video` first-class without forcing fake feature parity; in the current phase `course` keeps the heavier tracking/recommendation workflow, `article` keeps reviews, and `video` remains a lighter share/detail flow until product demand justifies more.
+- Capability alignment: keep `video` first-class without forcing fake feature parity; in the current phase `course` keeps the heavier tracking/recommendation workflow, `article` keeps reviews, and `video` supports reviews while remaining non-trackable/non-recommendable until product demand justifies more.
 
 Follow-on implementation track: paths as ordered learning items
-- [ ] Product model extension: paths should store ordered learning items (`course|video|article`), not only course membership.
-- [ ] Persistence migration: replace course-only path membership with typed `path_items` rows (`path_id`, `item_type`, `item_id`, `position`) and migrate existing paths as `course` items.
-- [ ] Path API contract: change path create/update/detail payloads from course-only membership to ordered typed item lists.
-- [ ] Share/edit UX: make `/share/path` and path editing support mixed learning-item selection with subtype chips and ordering controls.
-- [ ] Path detail contract: render mixed sequences and route each path item to the correct canonical detail page.
-- [ ] Progress semantics, phase 1: keep course tracking as the explicit driver of path progress until generic learning-item completion exists; do not fake progress for videos/articles.
-- [ ] Cross-surface cleanup: update path summaries, copy, and view models to speak in `learning items` once mixed-item support is live.
-- [ ] Tests/docs/guards: add migration coverage, mixed-item path API/frontend tests, and update architecture docs/guardrails alongside the implementation.
+- [x] Product model extension: paths should store ordered learning items (`course|video|article`), not only course membership.
+- [x] Persistence migration: replace course-only path membership with typed `path_items` rows (`path_id`, `item_type`, `item_id`, `position`) and migrate existing paths as `course` items.
+- [x] Path API contract: change path create/update/detail payloads from course-only membership to ordered typed item lists.
+- [x] Share/edit UX: make `/share/path` and path editing support mixed learning-item selection with subtype chips and ordering controls.
+- [x] Path detail contract: render mixed sequences and route each path item to the correct canonical detail page.
+- [x] Progress semantics, phase 1: keep course tracking as the explicit driver of path progress until generic learning-item completion exists; do not fake progress for videos/articles.
+- [x] Cross-surface cleanup: update path summaries, copy, and view models to speak in `learning items` once mixed-item support is live.
+- [x] Tests/docs/guards: add migration coverage, mixed-item path API/frontend tests, and update architecture docs/guardrails alongside the implementation.
 
 #### Phase 11E.7 — First-Time User Clarity Pass
 - [x] Onboarding intro: add lightweight, dismissible 3-step first-login walkthrough.

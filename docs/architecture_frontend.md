@@ -194,7 +194,7 @@ Notes:
 - Admin routes additionally check `role == "admin"`.
 - Some routes may be feature-flagged via environment variables (see Feature Flags below).
 - Canonical product model: a learning item is the primary shareable unit (`video`, `course`, `article` in the current phase), while a path is a separate object composed of learning items.
-- Subtype capability model: keep one shared learning-item contract, but do not force feature symmetry. In the current phase, `course` supports tracking + reviews + recommendations, `article` supports reviews, and `video` is a lightweight first-class item without tracking/recommendation flows.
+- Subtype capability model: keep one shared learning-item contract, but do not force feature symmetry. In the current phase, `course` supports tracking + reviews + recommendations, `article` supports reviews, and `video` supports reviews without tracking/recommendation flows.
 
 ## Feature Flags
 

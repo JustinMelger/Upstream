@@ -111,3 +111,23 @@ def test_notifications_build_rating_events_team_sets_you_variant() -> None:
     out = NotificationsService._build_rating_events(rows=rows, username="alice", is_team=True, kind="article")
     assert len(out) == 1
     assert out[0].event_type == "you_rated_article"
+
+
+@pytest.mark.unit
+def test_notifications_build_rating_events_supports_video_kind() -> None:
+    """Video review events should reuse the generic rating-event builder."""
+    rows = [
+        {
+            "review_id": 12,
+            "video_id": 31,
+            "created_by": "bob",
+            "created_at": "2026-03-18T10:00:00+00:00",
+            "title": "Async walkthrough",
+            "video_owner": "alice",
+            "rating": 4,
+        }
+    ]
+    out = NotificationsService._build_rating_events(rows=rows, username="alice", is_team=False, kind="video")
+    assert len(out) == 1
+    assert out[0].event_type == "your_video_rated"
+    assert out[0].target_type == "video"

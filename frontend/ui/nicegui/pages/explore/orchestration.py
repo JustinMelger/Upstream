@@ -119,9 +119,12 @@ async def load_explore_videos_background(
     state.videos_loading = True
     refresh_ui()
     try:
-        state.videos = list(await asyncio.wait_for(videos_controller.load_list(), timeout=6.0) or [])
+        videos_bundle = await asyncio.wait_for(videos_controller.load_list_bundle(params=None), timeout=6.0)
+        state.videos = list(videos_bundle.videos or [])
+        state.video_review_summary_by_video_id = dict(videos_bundle.review_summary_by_video_id or {})
     except (ApiError, TimeoutError) as exc:
         state.videos = []
+        state.video_review_summary_by_video_id = {}
         notify_warning(str(exc))
     finally:
         state.videos_loading = False

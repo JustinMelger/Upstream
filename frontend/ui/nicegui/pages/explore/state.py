@@ -17,6 +17,7 @@ class ExplorePageState:
     paths_loading: bool = False
     courses: list[dict[str, Any]] = field(default_factory=list)
     videos: list[dict[str, Any]] = field(default_factory=list)
+    video_review_summary_by_video_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     tracking_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     course_review_summary_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     course_recommendation_summary_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)

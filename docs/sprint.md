@@ -5,7 +5,50 @@
 - Complete all open non-user-testing items in Phase `11` before starting Phase `14` user testing/pilot validation work.
 - Keep roadmap as strategy/source of truth and use this file for sprint execution tracking.
 
-## Sprint 10 — UX + Style Modernization (Active)
+## Current V1 Status
+- Core v1 product contract is implemented:
+  - share `course|article|video`
+  - create mixed learning paths
+  - review `course|article|video|path`
+  - track courses and path progress
+  - see content other people shared
+- Explicit phase-1 capability rule:
+  - `course`: tracking + reviews + recommendations
+  - `article`: reviews
+  - `video`: reviews without tracking/recommendations
+- Remaining v1 close-out work is release-hardening, not major feature delivery:
+  - broader regression pass
+  - final docs/readme alignment
+  - optional polish on activity wording / summary placement
+
+## Release Blockers
+- [ ] Run a broader regression pass across backend API, frontend service/controller/view-model, and relevant E2E smoke flows.
+- [ ] Finish final docs/readme alignment for the current v1 contract:
+  - videos support reviews
+  - videos do not support tracking/recommendations
+  - paths support mixed `course|video|article` items
+- [ ] Decide whether any remaining first-use/reliability issues found in regression or manual QA must be fixed before calling v1 stable.
+
+## Deferred / Post-V1
+- [ ] Visual-system modernization work (`11A.1`, remaining `11A.4` polish).
+- [ ] Media pipeline durability and thumbnail quality work (`11A.3`).
+- [ ] Strict visual-regression baseline enforcement in CI (`11D` close-out).
+- [ ] Activity feed v2 (`11B`) filters, pagination, relative timestamps, malformed-row resilience.
+- [ ] Reliability/accessibility expansion (`11C`) beyond the current shipped baseline.
+- [ ] Team-scoped audience sharing and collaboration model work (`11F` / Sprint 11+).
+- [ ] Pilot/user-testing work (Phase 14) after release-hardening is complete.
+
+## Completed Highlights
+- [x] Canonical learning-item model and `/share/item` flow shipped for `video|course|article`.
+- [x] Explore-first routing and legacy catalog route removal completed.
+- [x] Mixed-item paths shipped with typed `path_items` persistence and `/share/path` support.
+- [x] Video reviews shipped:
+  - CRUD on dedicated video detail
+  - summary badges on Explore/shared surfaces
+  - activity feed support for video ratings
+- [x] Architecture/doc guardrails updated with the new contracts.
+
+## Active Workstream — UX + Style Modernization
 Goal: deliver a coherent, modern visual system and interaction polish across `Home`, `Explore`, and detail surfaces, while finishing first-time clarity gaps.
 
 Timebox:
@@ -149,91 +192,12 @@ Reference checklist: `docs/ui_system.md`
   - Rationale: reduce implementation complexity and route sprawl without sacrificing user clarity in “what am I sharing?”
   - Affected: `frontend/ui/nicegui/pages/share/*`, `frontend/ui/nicegui/pages/explore/*`, route/test contracts, terminology copy.
 
-## Sprint 1 — IA foundation (11E-first)
-- [x] Complete `11E.0` instrumentation baseline for first-action and nav/search events.
-- [x] Complete `11E.1` top-level navigation simplification (`Home`, `Explore`, `Teams`, `Profile`) + legacy redirects.
-- [x] Start `11E.2` by merging `My learning` + `Insights` into `Home` and relocating full stats to `Profile > Stats`.
-- [x] Ship architecture/test/doc sync for new routes and nav:
-  - [x] `tests/frontend/ui/nicegui/test_routes.py`
-  - [x] `tests/frontend/ui/nicegui/core/test_core_navigation.py`
-  - [x] `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`
-  - [x] `docs/architecture_frontend.md`
+## Archived Sprint Highlights
+- Sprints 1–5 established the Explore-first IA, canonical share flow, terminology alignment, frontend architecture hardening, and the current quality-gate baseline.
+- Sprint 13 delivered typed path items and mixed-item path UX/contracts.
+- Detailed historical checkbox execution remains in git history; this file now focuses on active work, release blockers, and deferred work.
 
-## Sprint 2 — Discovery + density + targeted 11A follow-up
-- [x] Complete `11E.2` Explore consolidation (tabs: `All`, `Courses`, `Paths`, `Articles`) and remove duplicate discovery sections.
-- [x] Complete `11E.3` and `11E.4` so `Home` has one dominant next action and `Explore` is search-dominant.
-- [x] Complete `11E.5` action-density constraints (one primary CTA + one state control per card).
-- [x] Add a unified `Share` entry point in `Explore` (course/path/article chooser) and de-emphasize duplicate share CTAs on deep-link pages.
-- [x] Resume highest-impact open `11A` items only after IA settles:
-  - [x] `11A.2` Card consistency pass.
-  - [x] `11A.2` Action hierarchy pass.
-  - [x] `11A.2` Topbar clarity pass.
-
-## Sprint 3 — Terminology + First-Time Clarity + Share-Flow UX
-- [x] Complete `11E.6` terminology alignment:
-  - [x] Canonicalize language for `Track` vs `Save` vs `Select` across cards, dialogs, and filters.
-  - [x] Align `Shared` vs `Recommended` semantics in labels and page copy.
-  - [x] Add contextual purpose subtitles under primary page titles (`Home`, `Explore`, `Teams`, `Profile`).
-  - [x] Finish learning-item unification follow-through: `/share/item` subtype routing, Explore mixed-feed subtype signaling, first-class `video`, and capability-aware copy on Home/Explore/Activity/Teams.
-- [ ] Complete `11E.7` first-time user clarity pass:
-  - [x] Add dismissible 3-step first-login intro.
-  - [x] Ensure each key empty state has exactly one primary action.
-  - [x] Ensure no primary page loads without an unambiguous next step.
-  - [ ] Concrete `11E.7` acceptance slices:
-    - [x] Audit `Home`, `Explore`, `Teams`, and `Profile` empty states against the current IA and keep one obvious next step per page.
-    - [x] Recheck onboarding copy and hints against canonical routes (`/home`, `/explore`, `/teams`, `/share/item`, `/share/path`) and remove stale wording.
-    - [x] Verify no-team and no-content states clearly route users to `Teams` and `Explore` without mixed team/share terminology.
-    - [x] Add focused integration coverage for “one clear next action” on key first-use empty states.
-- [ ] Complete open Share-flow UX actions from `11A.3`:
-  - [x] Trigger URL metadata suggestion on paste/blur with debounce (keep manual suggest button).
-  - [x] Add inline “suggested vs edited” indicators for autofilled fields.
-  - [x] Add live URL validation + duplicate hints pre-submit.
-  - [x] Add post-submit success summary with quick follow-up actions.
-
-## Sprint 4 — Share Reliability + Catalog Polish
-- [ ] Complete highest-impact open `11A.3` reliability/productivity items:
-  - [x] Share flow reliability (Courses/Articles): persist unsent draft form state with autosave + recovery after refresh/navigation and explicit “discard draft” action.
-  - [x] Share flow productivity (Courses/Articles): add one-click “apply all suggestions” and per-field “re-suggest” actions.
-  - [x] Share flow safety (Courses/Articles): provide “metadata unavailable” fallback UX with smart placeholders/examples.
-- [ ] Complete open `11A.2` catalog polish follow-ups:
-  - [x] Topbar clarity follow-up (Articles): add explicit sort labeling/grouping and separate count metadata from action controls.
-  - [x] Empty-state density polish (Articles): tighten spacing and reduce vertical whitespace while preserving CTA prominence.
-  - [x] Filter rail visual-weight pass (catalog pages): further de-emphasize rail contrast/surface treatment so cards remain dominant.
-  - [x] Explore course-card UX baseline: finalize accepted course-card look/feel and CTA behavior in Explore.
-  - [x] Explore parity follow-up: align path/article cards to the accepted course-card slot rhythm and baseline alignment in Explore.
-
-
-## Sprint 5 — Hardening + Phase 11 Readiness (Non-UX)
-- [ ] Stabilize quality gates and type discipline:
-  - [x] Resolve current `mypy` baseline errors in `frontend/ui/nicegui/pages/paths/*` and `frontend/ui/nicegui/pages/explore/page.py`.
-  - [ ] Keep `ruff` and `mypy` green on touched modules for every sprint slice.
-  - [x] Add/update targeted tests for any extracted orchestration/controller helpers.
-  - [x] Lint ratchet near-term target for non-legacy modules:
-    - [x] `mccabe<=25`
-    - [x] `max-branches<=20`
-    - [x] `max-statements<=100`
-    - [x] `max-args<=10`
-    - [x] `max-returns<=8`
-  - [x] Define enforcement tiers in `pyproject.toml` (strict in `services/controllers/orchestration/reducers`, slightly looser in UI composition modules).
-  - [x] Remove temporary per-file complexity ignores from active modules by extracting long/high-branch functions.
-  - [x] Reduce argument-heavy APIs (`PLR0913`) using typed payload/context objects (dataclass/view-model based).
-  - [x] Add architecture regression guard for complexity in active page modules (prevent new regressions).
-  - [x] Keep legacy-page excludes fixed (no broadened ignore scope).
-  - [x] Roll out CI ratchet mode: fail on new violations first, then enforce full thresholds.
-  - [ ] Complete open Phase `11D` engineering items:
-    - [ ] Add visual regression/smoke e2e checks for critical flows (`login`, `track`, `review`, `select path`).
-      - [x] Phase slice: add Playwright smoke coverage for `login` + `track` and upload screenshots/log artifacts in CI.
-      - [x] Phase slice: add `review` + `select path` smoke coverage.
-      - [x] Phase slice: add visual-regression snapshot assertion harness + baseline update workflow.
-      - [ ] Phase slice: commit stable baseline images and enable strict visual-regression enforcement in CI.
-    - [ ] Concrete `11D` close-out slices:
-      - [x] Keep the ratchet + strict-core CI script aligned with the workflow entrypoint (`scripts/lint_quality_gate.sh` + `.github/workflows/ci.yml`) and remove shell-flow bugs that can hide real failures.
-      - [x] Fix active strict-core regressions exposed by the quality gate in `backend/services`, `frontend/ui/nicegui/core`, and `frontend/ui/nicegui/services`.
-      - [ ] Commit stable visual baseline images for the existing smoke/visual flows.
-      - [ ] Enable strict visual snapshot enforcement in CI once baselines are committed and stable.
-      - [ ] Decide and document the E2E environment contract: fail on true regressions, skip only when the external/browser environment is unavailable.
-
-## Sprint 11 — Social Learning Hub v1 (Teams + Scoped Sharing)
+## Deferred Workstream — Social Learning Hub v1 (Teams + Scoped Sharing)
 - [ ] Align execution to roadmap `Phase 11F`.
 
 - [ ] Slice 11.0: UX flow baseline (no-team and first-team activation)
@@ -332,60 +296,18 @@ Tracking:
 - [ ] Update `docs/roadmap.md` checkboxes for each closed item during the sprint.
 - [ ] Record sprint-end delta: `Phase 11 open before` vs `Phase 11 open after`.
 
-## Sprint 13 — Paths As Ordered Learning Items (Queued)
-Goal: move paths from ordered courses to ordered learning items so `/share/path`, path details, and path editing support `course|video|article` without regressing the current clean architecture boundaries.
+## Sprint 13 — Paths As Ordered Learning Items (Completed)
+Delivered:
+- paths now store ordered typed learning items (`course|video|article`)
+- `/share/path` and path editing support mixed learning-item sequences
+- path detail pages render mixed sequences and route each item to the correct detail page
+- phase-1 progress semantics remain explicit: course tracking drives path progress; videos/articles do not fake completion
+- docs/tests/architecture guards were updated alongside the migration
 
-Dependency:
-- [ ] Start after the current path share/detail route-first model remains stable under targeted regression coverage.
-- [ ] Keep phase-1 progress semantics explicit: course tracking continues to drive path progress until generic learning-item completion exists.
-
-Timebox:
-- [ ] 2 weeks
-
-Scope priorities:
-- [ ] P0: backend path model migration from course-only membership to ordered typed items.
-- [ ] P0: frontend `/share/path` and path detail support for mixed learning items.
-- [ ] P1: cross-surface cleanup so path summaries and copy say `learning items`, not `courses`, where the model is mixed.
-- [ ] P1: docs/tests/architecture guard updates for the new contract.
-- [ ] P2: generic learning-item completion for paths is explicitly deferred.
-
-Execution slices:
-- [ ] Slice 13.0: path data model + migration
-  - [ ] Add backend `path_items` persistence with `path_id`, `item_type`, `item_id`, and `position`.
-  - [ ] Migrate existing path-course membership into `item_type="course"` rows.
-  - [ ] Keep service/repository code aligned to complexity thresholds by extracting parse/validation helpers instead of adding inline branching.
-- [ ] Slice 13.1: path API + service contract
-  - [ ] Replace course-only path mutation payloads with ordered typed items.
-  - [ ] Validate `course|video|article` references against the correct backing domain before persistence.
-  - [ ] Return ordered typed items from path detail/list payloads instead of course-only membership shapes.
-- [ ] Slice 13.2: `/share/path` and edit-path UX
-  - [ ] Replace course-only selectors with mixed learning-item selection and ordering.
-  - [ ] Label the composition field as `Learning items in order`.
-  - [ ] Show subtype chips and concise source metadata in the picker so mixed-item selection stays scannable.
-- [ ] Slice 13.3: path detail rendering
-  - [ ] Render mixed path sequences with visible subtype chips and correct deep-link navigation per item type.
-  - [ ] Update path summary copy to reflect `learning items` rather than `courses`.
-  - [ ] Keep the routed path detail page as the canonical experience; do not reintroduce hover/dialog-first behavior.
-- [ ] Slice 13.4: progress semantics and compatibility
-  - [ ] Preserve current course-based progress as the explicit phase-1 rule for mixed paths.
-  - [ ] Make videos/articles visible steps in the path without implying unsupported completion tracking.
-  - [ ] Add compatibility handling for legacy course-only paths during the migration window.
-- [ ] Slice 13.5: tests, docs, and architecture guards
-  - [ ] Add backend tests for mixed-item path create/update/detail and migration behavior.
-  - [ ] Add frontend tests for `/share/path`, mixed path detail rendering, and deep-link routing for course/video/article items.
-  - [ ] Update roadmap/architecture docs and keep route/service-boundary guard tests in sync.
-
-Acceptance criteria:
-- [ ] A path can contain ordered `course`, `video`, and `article` items through the canonical `/share/path` flow.
-- [ ] Existing course-only paths migrate cleanly with no broken detail pages or edit flows.
-- [ ] Path detail pages render mixed sequences and open the correct subtype detail route for each item.
-- [ ] Phase-1 progress semantics are explicit and truthful: course tracking still drives progress; videos/articles do not fake completion state.
-- [ ] Touched modules remain within the existing clean-code/complexity guardrails (`ruff`, scoped `mypy`, architecture tests, focused regression tests).
-
-Tracking:
-- [ ] Update `docs/roadmap.md` to mark the path model as ordered learning items once persistence and UI contracts are implemented.
-- [ ] Record the migration contract in `docs/architecture_frontend.md` and `docs/architecture_backend.md`.
-- [ ] Keep a short implementation log here if phase-1 scope cuts change (especially progress semantics).
+Implementation notes:
+- backend persistence moved from `path_courses` to `path_items`
+- service/API contracts now treat ordered typed `items` as canonical, with legacy `course_ids` compatibility during the migration window
+- frontend copy now uses `learning items` where the model is mixed
 
 ## Sprint TBD — Phase 14 User Testing + Pilot Validation
 - [ ] Run 5 first-time-user usability tests and log confusion points.
@@ -398,7 +320,7 @@ Tracking:
   - [x] `11E.4`: replace dialog-first Explore detail behavior with dedicated detail routes (`course/path/article`).
   - [x] `11E.4`: convert `/courses`, `/paths`, `/articles` into thin compatibility/deep-link routes and finalize redirect/deprecation plan.
   - [x] `11E.6`: finish cross-page terminology consistency across cards + detail dialogs.
-  - [x] `11E.6`: make subtype capability differences explicit so shared surfaces stop treating every learning item like a course (`course`: tracking/recommendations/reviews, `article`: reviews, `video`: lightweight share/detail).
+- [x] `11E.6`: make subtype capability differences explicit so shared surfaces stop treating every learning item like a course (`course`: tracking/recommendations/reviews, `article`: reviews, `video`: reviews without tracking/recommendations).
 - [ ] Close highest-impact open `11A` visual-system modernization items:
   - [ ] `11A.1`: Modernization Sprint 1 (typography scale + spacing rhythm + unified component language).
   - [ ] `11A.4`: complete page-identity pass (distinct but consistent section language + hero treatments).

@@ -22,4 +22,11 @@ def test_ai_curator_draft_course_to_payload_maps_fields() -> None:
 
 def test_ai_curator_build_path_payload_filters_non_positive_ids() -> None:
     out = build_path_payload(name="N", description="D", course_ids=[1, 0, -1, 2])
-    assert out == {"name": "N", "description": "D", "course_ids": [1, 2]}
+    assert out == {
+        "name": "N",
+        "description": "D",
+        "items": [
+            {"type": "course", "id": 1, "position": 0},
+            {"type": "course", "id": 2, "position": 1},
+        ],
+    }

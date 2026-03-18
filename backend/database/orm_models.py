@@ -54,21 +54,25 @@ class Path(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str | None] = mapped_column(ForeignKey("users.username", ondelete="SET NULL"), nullable=True)
 
-    courses: Mapped[list["PathCourse"]] = relationship(back_populates="path", cascade="all, delete-orphan")
+    items: Mapped[list["PathItem"]] = relationship(back_populates="path", cascade="all, delete-orphan")
 
 
-class PathCourse(Base):
-    """ORM model mapping paths to ordered courses."""
+class PathItem(Base):
+    """ORM model mapping paths to ordered learning items."""
 
-    __tablename__ = "path_courses"
-    __table_args__ = (UniqueConstraint("path_id", "course_id", name="uq_path_courses_path_course"),)
+    __tablename__ = "path_items"
+    __table_args__ = (
+        UniqueConstraint("path_id", "item_type", "item_id", name="uq_path_items_path_type_item"),
+        CheckConstraint("item_type in ('course', 'video', 'article')", name="ck_path_items_type"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     path_id: Mapped[int] = mapped_column(ForeignKey("paths.id", ondelete="CASCADE"), nullable=False)
-    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    item_type: Mapped[str] = mapped_column(Text, nullable=False)
+    item_id: Mapped[int] = mapped_column(Integer, nullable=False)
     position: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    path: Mapped[Path] = relationship(back_populates="courses")
+    path: Mapped[Path] = relationship(back_populates="items")
 
 
 class Session(Base):
@@ -199,6 +203,24 @@ class ArticleReview(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     article_id: Mapped[int] = mapped_column(ForeignKey("articles.id", ondelete="CASCADE"), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class VideoReview(Base):
+    """ORM model for video reviews."""
+
+    __tablename__ = "video_reviews"
+    __table_args__ = (
+        UniqueConstraint("video_id", "created_by", name="uq_video_reviews_video_created_by"),
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_video_reviews_rating"),
+        Index("idx_video_reviews_video_id", "video_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    video_id: Mapped[int] = mapped_column(ForeignKey("videos.id", ondelete="CASCADE"), nullable=False)
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
     text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str] = mapped_column(ForeignKey("users.username", ondelete="CASCADE"), nullable=False)

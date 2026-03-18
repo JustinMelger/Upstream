@@ -16,6 +16,7 @@ class PathsPageState:
     tracking_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     courses: list[dict[str, Any]] = field(default_factory=list)
     course_by_id: dict[int, dict[str, Any]] = field(default_factory=dict)
+    learning_item_options: dict[str, str] = field(default_factory=dict)
     path_review_summary_by_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     path_recommendation_summary_by_id: dict[int, dict[str, Any]] = field(default_factory=dict)
 

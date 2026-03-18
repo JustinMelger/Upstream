@@ -25,6 +25,7 @@ _SOURCE_ACTION_LABELS = {
     "article": "Open article source",
 }
 _REVIEW_ACTION_LABELS = {
+    "video": "Review video",
     "course": "Review course",
     "article": "Review article",
 }
@@ -60,7 +61,7 @@ _TYPE_CAPABILITIES = {
     "video": LearningItemCapabilities(
         item_type="video",
         supports_tracking=False,
-        supports_reviews=False,
+        supports_reviews=True,
         supports_recommendations=False,
     ),
     "course": LearningItemCapabilities(

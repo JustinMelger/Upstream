@@ -150,6 +150,7 @@ def render_explore_sections(
                         render_video_item(
                             video=row,
                             item_classes="lp-courses-grid-item",
+                            state=deps.state,
                         )
                         continue
                     render_course_item(

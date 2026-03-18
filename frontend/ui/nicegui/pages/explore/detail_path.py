@@ -22,6 +22,11 @@ from frontend.ui.nicegui.pages.explore.detail_common import (
 )
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.dialogs import open_edit_path_dialog
+from frontend.ui.nicegui.pages.paths.item_helpers import (
+    count_course_items,
+    encode_path_item_ref,
+    learning_item_option_label,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +36,7 @@ class PathMainPanelContext:
     username: str
     is_admin: bool
     detail: dict[str, Any]
+    items: list[dict[str, Any]]
     courses: list[dict[str, Any]]
     path_reviews: list[dict[str, Any]]
     tracking_by_course_id: dict[int, dict[str, Any]]
@@ -74,6 +80,20 @@ def _path_progress(
     return completed, total, max(0.0, min(1.0, float(completed) / float(total)))
 
 
+def _path_item_type(item: dict[str, Any]) -> str:
+    return str(item.get("type") or "course").strip().lower() or "course"
+
+
+def _path_item_route(item: dict[str, Any]) -> str:
+    item_type = _path_item_type(item)
+    item_id = _safe_int(item.get("id"))
+    if item_type == "article":
+        return f"/explore/articles/{item_id}"
+    if item_type == "video":
+        return f"/explore/videos/{item_id}"
+    return f"/explore/courses/{item_id}"
+
+
 def _path_duration_range(*, courses: list[dict[str, Any]]) -> str:
     durations = [_safe_float(row.get("duration_hours")) for row in courses if _safe_float(row.get("duration_hours")) > 0]
     if not durations:
@@ -101,54 +121,86 @@ def _stars(*, avg: float) -> str:
 
 def _render_path_sequence_card(
     *,
+    items: list[dict[str, Any]],
     courses: list[dict[str, Any]],
     tracking_by_course_id: dict[int, dict[str, Any]],
 ) -> None:
     with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-path-sequence-card"):
         ui.label("Path Sequence").classes("text-base font-semibold")
-        if not courses:
-            ui.label("No courses in this path yet.").classes("lp-explore-detail-muted")
+        if not items:
+            ui.label("No learning items in this path yet.").classes("lp-explore-detail-muted")
             return
         with ui.column().classes("w-full gap-2"):
-            for idx, row in enumerate(courses, start=1):
-                cid = _safe_int(row.get("id"))
-                title = str(row.get("title") or f"Course {idx}").strip()
-                level = str(row.get("level") or row.get("difficulty") or "").strip()
-                duration = _safe_float(row.get("duration_hours"))
-                status = _course_status(course=row, tracking_by_course_id=tracking_by_course_id)
-                status_label = {
-                    "completed": "Completed",
-                    "in_progress": "In progress",
-                    "interested": "Tracked",
-                }.get(status, "Not tracked")
-                with ui.element("div").classes("lp-path-sequence-item w-full"):
-                    with ui.row().classes("w-full items-center justify-between"):
-                        with ui.column().classes("gap-0"):
-                            ui.label(title).classes("text-base")
-                            meta_bits: list[str] = []
-                            if duration > 0:
-                                meta_bits.append(f"{duration:.1f}h".replace(".0h", "h"))
-                            if level:
-                                meta_bits.append(level)
-                            if meta_bits:
-                                ui.label(" • ".join(meta_bits)).classes("lp-explore-detail-muted")
-                        if status == "completed":
-                            ui.label("✓ Completed").classes("lp-chip lp-chip--lime")
-                        elif status == "in_progress":
-                            ui.button(
-                                "Continue course", on_click=lambda _cid=cid: ui.navigate.to(f"/explore/courses/{_cid}")
-                            ).props("dense")
-                        else:
-                            ui.button(
-                                "Start course", on_click=lambda _cid=cid: ui.navigate.to(f"/explore/courses/{_cid}")
-                            ).props("outline dense")
-                    if status == "in_progress":
-                        ui.linear_progress(0.55, show_value=False).classes("w-full")
-                    elif status == "completed":
-                        ui.linear_progress(1.0, show_value=False).classes("w-full")
-                    else:
-                        ui.linear_progress(0.0, show_value=False).classes("w-full")
-                    ui.label(status_label).classes("lp-explore-detail-muted")
+            for idx, row in enumerate(items, start=1):
+                _render_path_sequence_item(idx=idx, row=row, tracking_by_course_id=tracking_by_course_id)
+
+
+def _render_path_sequence_item(
+    *,
+    idx: int,
+    row: dict[str, Any],
+    tracking_by_course_id: dict[int, dict[str, Any]],
+) -> None:
+    """Render one typed learning-item row in the path sequence."""
+    item_type = _path_item_type(row)
+    cid = _safe_int(row.get("id"))
+    title = str(row.get("title") or f"{item_type.title()} {idx}").strip()
+    level = str(row.get("level") or row.get("difficulty") or "").strip()
+    duration = _safe_float(row.get("duration_hours"))
+    status = _course_status(course=row, tracking_by_course_id=tracking_by_course_id) if item_type == "course" else ""
+    status_label = {
+        "completed": "Completed",
+        "in_progress": "In progress",
+        "interested": "Tracked",
+    }.get(status, "Not tracked")
+    with ui.element("div").classes("lp-path-sequence-item w-full"):
+        with ui.row().classes("w-full items-center justify-between"):
+            with ui.column().classes("gap-0"):
+                ui.label(title).classes("text-base")
+                meta_bits = _path_sequence_meta_bits(item_type=item_type, duration=duration, level=level)
+                if meta_bits:
+                    ui.label(" • ".join(meta_bits)).classes("lp-explore-detail-muted")
+            _render_path_sequence_action(item_type=item_type, cid=cid, row=row, status=status)
+        _render_path_sequence_progress(item_type=item_type, status=status, status_label=status_label)
+
+
+def _path_sequence_meta_bits(*, item_type: str, duration: float, level: str) -> list[str]:
+    """Build compact meta text for a path sequence row."""
+    meta_bits = [item_type.title()]
+    if duration > 0:
+        meta_bits.append(f"{duration:.1f}h".replace(".0h", "h"))
+    if level:
+        meta_bits.append(level)
+    return meta_bits
+
+
+def _render_path_sequence_action(*, item_type: str, cid: int, row: dict[str, Any], status: str) -> None:
+    """Render the right-side action for one path sequence row."""
+    if item_type != "course":
+        ui.button("Open item", on_click=lambda _row=dict(row): ui.navigate.to(_path_item_route(_row))).props("outline dense")
+        return
+    if status == "completed":
+        ui.label("✓ Completed").classes("lp-chip lp-chip--lime")
+        return
+    if status == "in_progress":
+        ui.button("Continue course", on_click=lambda _cid=cid: ui.navigate.to(f"/explore/courses/{_cid}")).props("dense")
+        return
+    ui.button("Start course", on_click=lambda _cid=cid: ui.navigate.to(f"/explore/courses/{_cid}")).props("outline dense")
+
+
+def _render_path_sequence_progress(*, item_type: str, status: str, status_label: str) -> None:
+    """Render the progress/status line for one path sequence row."""
+    if item_type != "course":
+        ui.linear_progress(0.0, show_value=False).classes("w-full")
+        ui.label("Reference step").classes("lp-explore-detail-muted")
+        return
+    if status == "in_progress":
+        ui.linear_progress(0.55, show_value=False).classes("w-full")
+    elif status == "completed":
+        ui.linear_progress(1.0, show_value=False).classes("w-full")
+    else:
+        ui.linear_progress(0.0, show_value=False).classes("w-full")
+    ui.label(status_label).classes("lp-explore-detail-muted")
 
 
 def _render_path_main_panel(
@@ -173,7 +225,7 @@ def _render_path_main_panel(
                 ui.label("Tracked" if panel.is_selected else "Not tracked").classes(
                     "lp-chip lp-chip--teal" if panel.is_selected else "lp-chip lp-chip--muted"
                 )
-            bits = [f"{len(panel.courses)} courses"]
+            bits = [f"{len(panel.items)} learning items"]
             level = str(panel.detail.get("level") or panel.detail.get("difficulty") or "").strip()
             if level:
                 bits.append(level)
@@ -191,7 +243,7 @@ def _render_path_main_panel(
 
         ui.label("Path Sequence").classes("text-lg font-semibold mt-2")
         ui.label("Follow the steps to complete the path.").classes("lp-explore-detail-muted")
-        _render_path_sequence_card(courses=panel.courses, tracking_by_course_id=panel.tracking_by_course_id)
+        _render_path_sequence_card(items=panel.items, courses=panel.courses, tracking_by_course_id=panel.tracking_by_course_id)
 
         ui.label("Reviews").classes("text-lg font-semibold mt-2")
         with ui.row().classes("items-center gap-2"):
@@ -221,6 +273,7 @@ def _render_path_info_panel(
     pid: int,
     detail: dict[str, Any],
     courses: list[dict[str, Any]],
+    items: list[dict[str, Any]],
     can_edit: bool,
     is_selected: bool,
 ) -> None:
@@ -251,10 +304,10 @@ def _render_path_info_panel(
 
         ui.separator()
         ui.label("Resources").classes("text-sm font-semibold")
-        for row in courses[:6]:
-            cid = _safe_int(row.get("id"))
-            title = str(row.get("title") or f"Course {cid}").strip()
-            ui.link(title, f"/explore/courses/{cid}").classes("lp-explore-detail-muted")
+        for row in items[:6]:
+            item_id = _safe_int(row.get("id"))
+            title = str(row.get("title") or f"Item {item_id}").strip()
+            ui.link(title, _path_item_route(row)).classes("lp-explore-detail-muted")
 
         if can_edit:
             ui.separator()
@@ -263,17 +316,28 @@ def _render_path_info_panel(
             @guard_ui_action(title="Open edit failed")
             async def _open_edit_path() -> None:
                 detail_row = await controller.get_path_detail(path_id=pid)
-                courses_rows = list(await api.get("/courses") or [])
-                course_by_id: dict[int, dict[str, Any]] = {}
+                courses_rows = [row for row in list(await api.get("/courses") or []) if isinstance(row, dict)]
+                videos_rows = [row for row in list(await api.get("/videos") or []) if isinstance(row, dict)]
+                articles_rows = [row for row in list(await api.get("/articles") or []) if isinstance(row, dict)]
+                learning_item_options: dict[str, str] = {}
                 for row in courses_rows:
-                    if not isinstance(row, dict):
-                        continue
-                    try:
-                        rid = int(row.get("id") or 0)
-                    except (TypeError, ValueError):
-                        continue
+                    rid = _safe_int(row.get("id"))
                     if rid > 0:
-                        course_by_id[rid] = row
+                        learning_item_options[encode_path_item_ref(item_type="course", item_id=rid)] = (
+                            learning_item_option_label(item_type="course", row=row)
+                        )
+                for row in videos_rows:
+                    rid = _safe_int(row.get("id"))
+                    if rid > 0:
+                        learning_item_options[encode_path_item_ref(item_type="video", item_id=rid)] = (
+                            learning_item_option_label(item_type="video", row=row)
+                        )
+                for row in articles_rows:
+                    rid = _safe_int(row.get("id"))
+                    if rid > 0:
+                        learning_item_options[encode_path_item_ref(item_type="article", item_id=rid)] = (
+                            learning_item_option_label(item_type="article", row=row)
+                        )
 
                 async def _save(payload: dict[str, Any]) -> None:
                     await controller.update_path(path_id=pid, payload=dict(payload or {}))
@@ -281,7 +345,7 @@ def _render_path_info_panel(
 
                 await open_edit_path_dialog(
                     detail=detail_row,
-                    course_by_id=course_by_id,
+                    learning_item_options=learning_item_options,
                     detail_dialog=None,
                     on_save=_save,
                 )
@@ -322,6 +386,7 @@ async def render_explore_path_detail_page(*, store: SessionStore, api: ApiClient
             return
 
         detail = dict(bundle.detail or {})
+        items = [row for row in list(detail.get("items") or []) if isinstance(row, dict)]
         courses = [c for c in list(detail.get("courses") or []) if isinstance(c, dict)]
         can_edit = bool(is_admin or (str(detail.get("created_by") or "").strip() == username))
         path_reviews = list(bundle.path_reviews or [])
@@ -345,6 +410,7 @@ async def render_explore_path_detail_page(*, store: SessionStore, api: ApiClient
                     username=username,
                     is_admin=is_admin,
                     detail=detail,
+                    items=items,
                     courses=courses,
                     path_reviews=path_reviews,
                     tracking_by_course_id=tracking_by_course_id,
@@ -357,6 +423,7 @@ async def render_explore_path_detail_page(*, store: SessionStore, api: ApiClient
                 pid=pid,
                 detail=detail,
                 courses=courses,
+                items=items or courses,
                 can_edit=can_edit,
                 is_selected=is_selected,
             )

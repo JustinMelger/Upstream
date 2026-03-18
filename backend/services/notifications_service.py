@@ -116,6 +116,7 @@ class NotificationsService:
             course_reviews = await self._repo.list_recent_course_review_events(limit=source_limit)
             path_reviews = await self._repo.list_recent_path_review_events(limit=source_limit)
             article_reviews = await self._repo.list_recent_article_review_events(limit=source_limit)
+            video_reviews = await self._repo.list_recent_video_review_events(limit=source_limit)
             own_course_recommendations = (
                 await self._repo.list_recent_course_recommendation_events_by_user(created_by=username, limit=safe_limit)
                 if is_team
@@ -168,6 +169,14 @@ class NotificationsService:
                 username=username,
                 is_team=is_team,
                 kind="article",
+            )
+        )
+        events.extend(
+            self._build_rating_events(
+                rows=video_reviews,
+                username=username,
+                is_team=is_team,
+                kind="video",
             )
         )
 
@@ -307,7 +316,7 @@ class NotificationsService:
         stars: str,
         username: str,
         is_team: bool,
-        kind: Literal["course", "path", "article"],
+        kind: Literal["course", "path", "article", "video"],
     ) -> tuple[str, str] | None:
         if is_team:
             if actor == username:
@@ -321,23 +330,26 @@ class NotificationsService:
 
     @staticmethod
     def _build_rating_events(
-        *, rows: list[dict], username: str, is_team: bool, kind: Literal["course", "path", "article"]
+        *, rows: list[dict], username: str, is_team: bool, kind: Literal["course", "path", "article", "video"]
     ) -> list[ActivityEvent]:
-        """Build course/path/article rating events."""
+        """Build course/path/article/video rating events."""
         owner_key = {
             "course": "course_owner",
             "path": "path_owner",
             "article": "article_owner",
+            "video": "video_owner",
         }[kind]
         id_key = {
             "course": "course_id",
             "path": "path_id",
             "article": "article_id",
+            "video": "video_id",
         }[kind]
         label_key = {
             "course": "title",
             "path": "name",
             "article": "title",
+            "video": "title",
         }[kind]
         out: list[ActivityEvent] = []
         for row in rows:

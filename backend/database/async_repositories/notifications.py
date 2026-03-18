@@ -14,6 +14,7 @@ from backend.database.orm_models import (
     PathRecommendation as PathRecommendationModel,
     PathReview as PathReviewModel,
     Video as VideoModel,
+    VideoReview as VideoReviewModel,
 )
 
 
@@ -287,6 +288,37 @@ class NotificationsRepository(RepositoryDateTimeCodec):
                 "rating": int(r.rating or 0),
                 "title": str(r.title or ""),
                 "article_owner": str(r.article_owner or ""),
+            }
+            for r in rows
+            if str(r.created_by or "").strip() and str(r.created_at or "").strip()
+        ]
+
+    async def list_recent_video_review_events(self, *, limit: int) -> list[dict]:
+        """Return recent video review rows with video owner/title."""
+        result = await self.session.execute(
+            select(
+                VideoReviewModel.id,
+                VideoReviewModel.video_id,
+                VideoReviewModel.created_by,
+                VideoReviewModel.created_at,
+                VideoReviewModel.rating,
+                VideoModel.title,
+                VideoModel.created_by.label("video_owner"),
+            )
+            .join(VideoModel, VideoModel.id == VideoReviewModel.video_id)
+            .order_by(VideoReviewModel.created_at.desc(), VideoReviewModel.id.desc())
+            .limit(int(limit))
+        )
+        rows = result.all()
+        return [
+            {
+                "review_id": int(r.id),
+                "video_id": int(r.video_id),
+                "created_by": str(r.created_by or ""),
+                "created_at": self._as_iso_or_empty(r.created_at),
+                "rating": int(r.rating or 0),
+                "title": str(r.title or ""),
+                "video_owner": str(r.video_owner or ""),
             }
             for r in rows
             if str(r.created_by or "").strip() and str(r.created_at or "").strip()

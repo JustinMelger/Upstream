@@ -57,3 +57,75 @@ async def test_video_create_get_and_list(app_client):
     assert listing.status_code == 200
     rows = listing.json()
     assert any(int(row.get("id") or 0) == int(payload["id"]) for row in rows)
+
+
+@pytest.mark.integration
+async def test_video_review_lifecycle_and_moderation(app_client):
+    admin_token = await _login_admin(app_client)
+    await _create_user(app_client, admin_token, "alice", role="user")
+    await _create_user(app_client, admin_token, "bob", role="user")
+
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_token = alice_login.json()["token"]
+    bob_token = bob_login.json()["token"]
+
+    create = await app_client.post(
+        "/videos",
+        json={
+            "title": "System Design video",
+            "description": "Watch this",
+            "provider": "YouTube",
+            "category": "Architecture",
+            "url": "https://www.youtube.com/watch?v=video-review",
+        },
+        headers={"X-Session-Token": alice_token},
+    )
+    assert create.status_code == 200
+    video_id = int(create.json()["id"])
+
+    review = await app_client.post(
+        f"/videos/{video_id}/reviews",
+        json={"rating": 4, "text": "Useful walkthrough"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert review.status_code == 200
+    review_id = int(review.json()["id"])
+    assert review.json()["created_by"] == "alice"
+
+    review2 = await app_client.post(
+        f"/videos/{video_id}/reviews",
+        json={"rating": 5, "text": "Updated"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert review2.status_code == 200
+    assert int(review2.json()["id"]) == review_id
+    assert int(review2.json()["rating"]) == 5
+
+    listing = await app_client.get(f"/videos/{video_id}/reviews", headers={"X-Session-Token": bob_token})
+    assert listing.status_code == 200
+    rows = listing.json()
+    assert rows and int(rows[0]["id"]) == review_id
+
+    summary = await app_client.get(
+        "/videos/reviews/summary",
+        params={"video_ids": [video_id]},
+        headers={"X-Session-Token": bob_token},
+    )
+    assert summary.status_code == 200
+    srows = summary.json()
+    assert srows and int(srows[0]["video_id"]) == video_id
+    assert int(srows[0]["review_count"]) == 1
+
+    forbidden = await app_client.delete(
+        f"/videos/{video_id}/reviews/{review_id}",
+        headers={"X-Session-Token": bob_token},
+    )
+    assert forbidden.status_code == 403
+
+    deleted = await app_client.delete(
+        f"/videos/{video_id}/reviews/{review_id}",
+        headers={"X-Session-Token": admin_token},
+    )
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"] is True

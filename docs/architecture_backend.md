@@ -226,9 +226,11 @@ erDiagram
 - Enforces duplicate protection on create (`url`, normalized title+provider).
 
 ### Path service
-- CRUD for learning paths with ordered course lists.
+- CRUD for learning paths with ordered typed learning items (`course|video|article`).
 - User path selection, unselection, and status updates.
 - Any authenticated user can create paths; only the creator (or admin) can edit/delete.
+- Service-boundary contract: path create/update payloads accept ordered `items` entries (`type`, `id`, `position`).
+- Compatibility rule during the migration window: legacy `course_ids` are still accepted at the service boundary and normalized into `course` path items before persistence.
 
 ### Tracking service
 - Track per-user course progress (interested / in_progress / completed).
@@ -533,11 +535,12 @@ classDiagram
 
   class PathsRepository {
     +list_paths(): list[PathRecord]
-    +get_path(path_id): (PathRecord, list[PathCourseRecord])|None
-    +create_path_with_courses(name, description, course_ids, created_by): int
+    +get_path(path_id): (PathRecord, list[PathLearningItemRecord])|None
+    +create_path_with_items(name, description, items, created_by): int
     +path_name_exists(name): bool
     +path_name_exists_for_other_id(path_id, name): bool
-    +update_path_with_courses(path_id, name, description, course_ids): int
+    +has_missing_learning_items(items): bool
+    +update_path_with_items(path_id, name, description, items): int
     +delete_path_with_courses(path_id): int
   }
 
@@ -574,16 +577,17 @@ classDiagram
 
 ```mermaid
 erDiagram
-  PATHS ||--o{ PATH_COURSES : "includes"
+  PATHS ||--o{ PATH_ITEMS : "includes"
   PATHS {
     INTEGER id
     STRING name
     STRING description
   }
-  PATH_COURSES {
+  PATH_ITEMS {
     INTEGER id
     INTEGER path_id
-    INTEGER course_id
+    STRING item_type
+    INTEGER item_id
     INTEGER position
   }
   USER_PATHS {
@@ -610,6 +614,10 @@ erDiagram
     TIMESTAMP created_at
   }
 ```
+
+Path detail responses expose ordered typed `items` as the canonical membership shape.
+They also keep a compatibility `courses` projection for course-backed items so existing
+course-only progress/review flows can continue during the current phase.
 
 ## Tracking Architecture
 

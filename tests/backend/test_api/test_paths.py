@@ -20,6 +20,32 @@ async def _create_course(app_client, token, title):
     return response.json()["id"]
 
 
+async def _create_video(app_client, token, title):
+    response = await app_client.post(
+        "/videos",
+        json={
+            "title": title,
+            "description": f"desc: {title}",
+            "provider": "YouTube",
+            "category": "Data",
+            "url": f"https://www.youtube.com/watch?v={title.lower().replace(' ', '-')}",
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert response.status_code == 200
+    return response.json()["id"]
+
+
+async def _create_article(app_client, token, title):
+    response = await app_client.post(
+        "/articles",
+        json={"title": title, "url": f"https://example.com/{title.lower().replace(' ', '-')}"},
+        headers={"X-Session-Token": token},
+    )
+    assert response.status_code == 200
+    return response.json()["id"]
+
+
 async def _create_user(app_client, token, username, role="user"):
     return await app_client.post(
         "/auth/users",
@@ -101,6 +127,38 @@ async def test_path_lifecycle_and_selection(app_client):
     delete = await app_client.delete(f"/paths/{path_id}", headers={"X-Session-Token": alice_token})
     assert delete.status_code == 200
     assert delete.json()["deleted"] is True
+
+
+@pytest.mark.integration
+async def test_create_path_with_mixed_learning_items_returns_items_and_legacy_courses(app_client):
+    """Mixed path payloads return typed items while preserving legacy course list compatibility."""
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Mixed Path Course")
+    video_id = await _create_video(app_client, token, "Mixed Path Video")
+    article_id = await _create_article(app_client, token, "Mixed Path Article")
+
+    create = await app_client.post(
+        "/paths",
+        json={
+            "name": "Mixed Learning Path",
+            "description": "Learn in mixed media",
+            "items": [
+                {"type": "video", "id": video_id, "position": 0},
+                {"type": "course", "id": course_id, "position": 1},
+                {"type": "article", "id": article_id, "position": 2},
+            ],
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert create.status_code == 200
+    payload = create.json()
+    assert [item["type"] for item in payload["items"]] == ["video", "course", "article"]
+    assert [int(item["id"]) for item in payload["items"]] == [video_id, course_id, article_id]
+    assert [int(course["id"]) for course in payload["courses"]] == [course_id]
+
+    detail = await app_client.get(f"/paths/{int(payload['id'])}", headers={"X-Session-Token": token})
+    assert detail.status_code == 200
+    assert [item["type"] for item in detail.json()["items"]] == ["video", "course", "article"]
 
 
 @pytest.mark.integration

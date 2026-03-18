@@ -37,7 +37,15 @@ def test_review_only_modal_mode_flags_are_stable() -> None:
 
 @pytest.mark.unit
 def test_auto_seed_tracking_collects_only_untracked_course_ids() -> None:
-    detail = {"courses": [{"id": 10}, {"id": "11"}, {"id": "bad"}, {"foo": "bar"}, 12]}
+    detail = {
+        "items": [
+            {"type": "video", "id": 7},
+            {"type": "course", "id": 10},
+            {"type": "course", "id": "11"},
+            {"type": "article", "id": 2},
+            {"type": "course", "id": "bad"},
+        ]
+    }
     tracking = {11: {"status": "completed"}}
     assert paths_service.untracked_path_course_ids(detail=detail, tracking_by_course_id=tracking) == [10]
 
@@ -56,13 +64,20 @@ class _FakeApi:
     async def get(self, path: str):
         self.calls.append(("GET", path, None))
         if path == "/paths/42":
-            return {"id": 42, "courses": [{"id": 101}, {"id": 102}]}
+            return {
+                "id": 42,
+                "items": [{"type": "course", "id": 101}, {"type": "video", "id": 9}, {"type": "course", "id": 102}],
+            }
         if path == "/paths":
             return [{"id": 42, "name": "P1"}]
         if path == "/paths/selected/list":
             return [{"id": 42, "status": "interested"}]
         if path == "/courses":
             return [{"id": 101, "title": "C1"}]
+        if path == "/videos":
+            return [{"id": 9, "title": "V1"}]
+        if path == "/articles":
+            return [{"id": 5, "title": "A1"}]
         return {}
 
 
@@ -110,12 +125,17 @@ async def test_unselect_path_calls_expected_endpoint() -> None:
 @pytest.mark.anyio
 async def test_load_paths_page_data_returns_expected_shapes() -> None:
     api = _FakeApi()
-    paths, selected_by_id, courses, course_by_id = await paths_service.load_paths_page_data(api=api)
+    paths, selected_by_id, courses, course_by_id, learning_item_options = await paths_service.load_paths_page_data(api=api)
 
     assert isinstance(paths, list) and len(paths) == 1
     assert selected_by_id == {42: {"id": 42, "status": "interested"}}
     assert isinstance(courses, list) and len(courses) == 1
     assert course_by_id == {101: {"id": 101, "title": "C1"}}
+    assert learning_item_options == {
+        "course:101": "C1 (Course)",
+        "video:9": "V1 (Video)",
+        "article:5": "A1 (Article)",
+    }
 
 
 class _FakeApiWithDetailFailure:

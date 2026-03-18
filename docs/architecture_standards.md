@@ -31,6 +31,7 @@ Use it as the default guide before adding or refactoring code.
 - Keep repository concerns out of routers.
 - Keep persistence/session internals out of service business logic.
 - Prefer typed payload parsing at service boundaries (pydantic dataclasses).
+- For paths, treat ordered typed `items` (`type`, `id`, `position`) as the canonical mutation contract; `course_ids` remains compatibility-only input until the fallback is removed.
 
 ## 3) Mutation & Error Patterns
 

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from nicegui import ui
 
+from frontend.ui.nicegui.components.reviews_panel import render_reviews_panel, ReviewPanelHooks
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.guards import require_user
@@ -13,8 +16,32 @@ from frontend.ui.nicegui.core.learning_items import (
 )
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.pages.courses.ui_glue import format_short_date
 from frontend.ui.nicegui.pages.explore.detail_common import parse_detail_id, render_breadcrumb, render_detail_scope
 from frontend.ui.nicegui.pages.videos.controller import VideosPageController
+
+
+def _safe_int(value: Any) -> int:
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _avg_rating(*, reviews: list[dict[str, Any]]) -> tuple[float, int]:
+    ratings: list[int] = []
+    for row in reviews:
+        rating = _safe_int(row.get("rating"))
+        if 1 <= rating <= 5:
+            ratings.append(rating)
+    if not ratings:
+        return 0.0, 0
+    return float(sum(ratings)) / float(len(ratings)), len(ratings)
+
+
+def _stars(*, avg: float) -> str:
+    rounded = max(0, min(5, int(round(float(avg)))))
+    return ("★" * rounded) + ("☆" * (5 - rounded))
 
 
 async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClient, video_id: str) -> None:
@@ -22,6 +49,8 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
     user = await require_user(store, api)
     if user is None:
         return
+    username = str(user.get("username") or "")
+    is_admin = str(user.get("role") or "") == "admin"
     vid = parse_detail_id(video_id)
     with render_detail_scope(store=store, api=api):
         with ui.row().classes("w-full items-center"):
@@ -35,6 +64,7 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
         controller = VideosPageController(api=api)
         try:
             video = await controller.load_video(video_id=vid)
+            reviews = await controller.load_video_reviews(video_id=vid)
         except ApiError as exc:
             ui.label(f"Video unavailable ({exc.status_code})").classes("text-sm")
             return
@@ -48,6 +78,7 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
         category = str(video.get("category") or "").strip()
         source_url = str(video.get("url") or "").strip()
         owner = str(video.get("created_by") or "").strip()
+        avg_rating, review_count = _avg_rating(reviews=reviews)
         with ui.row().classes("w-full items-start gap-4 lp-refresh-region"):
             with ui.column().classes("lp-explore-detail-main"):
                 with ui.element("header").classes("lp-explore-detail-hero"):
@@ -67,6 +98,34 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
                             on_click=lambda: ui.navigate.to(source_url, new_tab=True),
                         ).props("unelevated")
                     ui.label(description or "Open the source to continue learning.").classes("lp-explore-detail-muted")
+
+                ui.label("Reviews").classes("text-lg font-semibold mt-2")
+                with ui.row().classes("items-center gap-2"):
+                    if review_count > 0:
+                        ui.label(_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
+                        ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
+                        ui.label(f"{review_count} reviews").classes("lp-explore-detail-muted")
+                    else:
+                        ui.label("No reviews yet").classes("lp-explore-detail-muted")
+
+                with ui.card().classes(
+                    "lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"
+                ):
+                    render_reviews_panel(
+                        username=username,
+                        is_admin=is_admin,
+                        reviews=reviews,
+                        on_save=lambda rating, text: controller.save_video_review(
+                            video_id=vid,
+                            rating=int(rating),
+                            text=str(text or ""),
+                        ),
+                        on_delete=lambda review_id: controller.delete_video_review(
+                            video_id=vid,
+                            review_id=int(review_id),
+                        ),
+                        hooks=ReviewPanelHooks(format_date=format_short_date),
+                    )
 
             with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):
                 ui.label("Video Actions").classes("text-base font-semibold")

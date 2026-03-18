@@ -14,6 +14,8 @@ _PAGES_ROOT = Path("frontend/ui/nicegui/pages")
 _SERVICES_ROOT = Path("frontend/ui/nicegui/services")
 _MAIN_FILE = Path("frontend/ui/nicegui/main.py")
 _PYPROJECT_FILE = Path("pyproject.toml")
+_BACKEND_ARCH_DOC = Path("docs/architecture_backend.md")
+_STANDARDS_DOC = Path("docs/architecture_standards.md")
 
 
 def _parse(path: Path) -> ast.Module:
@@ -182,6 +184,20 @@ def test_main_create_app_keeps_feature_flag_gates() -> None:
     assert "courses.register(store=store, api=api)" not in source
     assert "paths.register(store=store, api=api)" not in source
     assert "articles.register(store=store, api=api)" not in source
+
+
+def test_architecture_docs_describe_typed_path_items_contract() -> None:
+    backend_doc = _BACKEND_ARCH_DOC.read_text(encoding="utf-8")
+    standards_doc = _STANDARDS_DOC.read_text(encoding="utf-8")
+
+    assert "ordered typed learning items (`course|video|article`)" in backend_doc
+    assert "ordered `items` entries (`type`, `id`, `position`)" in backend_doc
+    assert "legacy `course_ids` are still accepted" in backend_doc
+    assert "PATH_ITEMS" in backend_doc
+    assert "compatibility `courses` projection" in backend_doc
+
+    assert "ordered typed `items` (`type`, `id`, `position`) as the canonical mutation contract" in standards_doc
+    assert "`course_ids` remains compatibility-only input" in standards_doc
 
 
 def test_pages_and_services_do_not_import_httpx_directly() -> None:

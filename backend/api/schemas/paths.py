@@ -33,7 +33,31 @@ class PathDetailResponse(APIModel):
     name: str
     description: str
     created_by: str | None
-    courses: list[PathCourseItem]
+    courses: list[PathCourseItem] = Field(default_factory=list)
+    items: list["PathLearningItem"] = Field(default_factory=list)
+
+
+class PathLearningItem(APIModel):
+    """Typed learning-item payload embedded within a path."""
+
+    type: str
+    id: int
+    title: str
+    description: str = ""
+    provider: str = ""
+    category: str = ""
+    level: str = ""
+    duration_hours: float | None = None
+    url: str = ""
+    preview_image_url: str = ""
+
+
+class PathItemRequest(APIModel):
+    """Typed learning-item reference used in path mutation payloads."""
+
+    type: StrictStr | None = None
+    id: StrictInt | None = None
+    position: StrictInt | None = None
 
 
 class PathCreateRequest(APIModel):
@@ -42,6 +66,7 @@ class PathCreateRequest(APIModel):
     name: StrictStr | None = None
     description: StrictStr | None = None
     course_ids: list[StrictInt] = Field(default_factory=list)
+    items: list[PathItemRequest] = Field(default_factory=list)
 
 
 class PathUpdateRequest(APIModel):
@@ -50,6 +75,7 @@ class PathUpdateRequest(APIModel):
     name: StrictStr | None = None
     description: StrictStr | None = None
     course_ids: list[StrictInt] = Field(default_factory=list)
+    items: list[PathItemRequest] = Field(default_factory=list)
 
 
 class DeletePathResponse(APIModel):

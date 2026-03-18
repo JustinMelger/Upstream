@@ -51,16 +51,19 @@ class PathRecord:
 
 
 @dataclass(frozen=True)
-class PathCourseRecord:
-    """Course row within a learning path (includes ordering position)."""
+class PathLearningItemRecord:
+    """Learning item row within a path (includes subtype and ordering position)."""
 
+    item_type: str
     id: int
     title: str
+    description: str | None
     provider: str | None
     category: str | None
     level: str | None
     duration_hours: float | None
     url: str | None
+    preview_image_url: str | None
     position: int | None
 
 
@@ -140,6 +143,18 @@ class ArticleReviewRecord:
 
     id: int
     article_id: int
+    rating: int
+    text: str | None
+    created_by: str
+    created_at: str
+
+
+@dataclass(frozen=True)
+class VideoReviewRecord:
+    """Video review row representation."""
+
+    id: int
+    video_id: int
     rating: int
     text: str | None
     created_by: str
