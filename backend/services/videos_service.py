@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
+from typing import Callable
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 
-from backend.core.errors import error_handler, ServiceError
+from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.videos import VideosRepository
 from backend.database.models import VideoRecord
 from backend.database.tx import session_scope
@@ -24,7 +25,7 @@ class VideosServiceError(ServiceError):
 def videos_error_handler(
     message: str = "An unexpected error occurred while handling videos",
     status_code: int = 500,
-):
+) -> Callable[[F], F]:
     """Wrap uncaught video errors into a domain ServiceError."""
     return error_handler(
         service_error=VideosServiceError,
@@ -110,7 +111,7 @@ class VideosService:
         created = await self.get_video_by_id(video_id=video_id)
         if not created:
             raise VideosServiceError(detail="create_failed", status_code=500)
-        return created
+        return dict(created)
 
     @staticmethod
     def _parse_create_payload(payload: dict) -> VideoCreatePayload:
