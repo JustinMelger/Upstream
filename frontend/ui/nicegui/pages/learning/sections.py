@@ -208,9 +208,9 @@ def _render_tracked_course_card(
                     )
 
                 overflow_menu = apply_icon_button_a11y(
-                    ui.dropdown_button("", icon="more_horiz", auto_close=True).props("dense outline").classes(
-                        "lp-home-row-overflow"
-                    ),
+                    ui.dropdown_button("", icon="more_horiz", auto_close=True)
+                    .props("dense outline")
+                    .classes("lp-home-row-overflow"),
                     label="Open tracking actions",
                     tooltip="Tracking actions",
                 )

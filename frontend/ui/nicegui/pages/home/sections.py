@@ -47,9 +47,9 @@ def render_admin_team_section(*, team_stats_by_user: list[dict[str, Any]], contr
     ui.separator()
     ui.label("Team stats by user").classes("text-lg font-semibold")
     if not team_stats_by_user:
-        ui.label(
-            "No team stats yet. Invite teammates and start sharing learning items to see progress here."
-        ).classes("text-sm text-gray-600")
+        ui.label("No team stats yet. Invite teammates and start sharing learning items to see progress here.").classes(
+            "text-sm text-gray-600"
+        )
     else:
         ui.table(
             columns=[
