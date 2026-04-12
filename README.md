@@ -21,6 +21,7 @@ Core workflows:
 ## Docs
 - Architecture: [docs/architecture.md](docs/architecture.md)
 - Architecture & coding standards (one-pager): [docs/architecture_standards.md](docs/architecture_standards.md)
+- V1 product spec: [docs/v1/README.md](docs/v1/README.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)
 - E2E notes: [tests/e2e/README.md](tests/e2e/README.md)
 
