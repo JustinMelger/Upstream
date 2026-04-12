@@ -112,22 +112,6 @@ async def run_unselect_path_flow(
     return True
 
 
-async def refresh_path_recommendation_summary(
-    *,
-    path_id: int,
-    controller: PathsPageController,
-    state: PathsPageState,
-    refresh_paths_list_ui: Callable[[], None],
-) -> None:
-    """Refresh recommendation summary map entry for a single path."""
-    row = await controller.load_recommendation_summary_for_path(path_id=int(path_id))
-    if isinstance(row, dict):
-        state.path_recommendation_summary_by_id[int(path_id)] = row
-    else:
-        state.path_recommendation_summary_by_id.pop(int(path_id), None)
-    refresh_paths_list_ui()
-
-
 async def perform_create_path(
     *,
     payload: dict[str, Any],

@@ -25,7 +25,7 @@ async def test_notifications_requires_auth(app_client):
 
 
 @pytest.mark.integration
-async def test_notifications_activity_includes_shares_and_recommendations(app_client):
+async def test_notifications_activity_includes_course_shares(app_client):
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "alice", role="user")
     await _create_user(app_client, admin_token, "bob", role="user")
@@ -43,19 +43,10 @@ async def test_notifications_activity_includes_shares_and_recommendations(app_cl
     assert create_course.status_code == 200
     course_id = int(create_course.json()["id"])
 
-    recommend = await app_client.post(
-        f"/courses/{course_id}/recommendations",
-        json={"note": "Worth sharing"},
-        headers={"X-Session-Token": bob_token},
-    )
-    assert recommend.status_code == 200
-
     alice_feed = await app_client.get("/notifications/activity", headers={"X-Session-Token": alice_token})
     assert alice_feed.status_code == 200
     alice_rows = list(alice_feed.json() or [])
-    assert alice_rows
-    event_types = {str(r.get("event_type") or "") for r in alice_rows}
-    assert "your_course_recommended" in event_types
+    assert alice_rows == []
 
     bob_feed = await app_client.get("/notifications/activity", headers={"X-Session-Token": bob_token})
     assert bob_feed.status_code == 200
@@ -72,7 +63,6 @@ async def test_notifications_activity_includes_shares_and_recommendations(app_cl
     assert bob_team_rows
     bob_team_types = {str(r.get("event_type") or "") for r in bob_team_rows}
     assert "course_shared" in bob_team_types
-    assert "you_recommended_course" in bob_team_types
 
 
 @pytest.mark.integration
@@ -109,31 +99,6 @@ async def test_notifications_activity_includes_video_shares(app_client):
     assert bob_team_rows
     bob_team_types = {str(r.get("event_type") or "") for r in bob_team_rows}
     assert "video_shared" in bob_team_types
-
-
-@pytest.mark.integration
-async def test_notifications_activity_includes_self_recommend_on_own_shared_course(app_client):
-    admin_token = await _login_admin(app_client)
-
-    create_course = await app_client.post(
-        "/courses",
-        json={"title": "Own Course", "description": "desc", "url": "https://example.com/own-course"},
-        headers={"X-Session-Token": admin_token},
-    )
-    assert create_course.status_code == 200
-    course_id = int(create_course.json()["id"])
-
-    recommend = await app_client.post(
-        f"/courses/{course_id}/recommendations",
-        json={"note": "I recommend this"},
-        headers={"X-Session-Token": admin_token},
-    )
-    assert recommend.status_code == 200
-
-    feed = await app_client.get("/notifications/activity", headers={"X-Session-Token": admin_token})
-    assert feed.status_code == 200
-    rows = list(feed.json() or [])
-    assert rows == []
 
 
 @pytest.mark.integration

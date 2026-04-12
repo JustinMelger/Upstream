@@ -146,25 +146,6 @@ async def load_selected_paths(*, api: ApiClient) -> list[dict[str, Any]]:
     return list(await api.get("/paths/selected/list") or [])
 
 
-async def load_path_recommendation_summaries(*, api: ApiClient, path_ids: list[int]) -> dict[int, dict[str, Any]]:
-    """Load recommendation summary items for the given path ids and index them by path id."""
-    if not path_ids:
-        return {}
-    rows = await api.get("/paths/recommendations/summary", params={"path_ids": [int(i) for i in path_ids if int(i) > 0]})
-    out: dict[int, dict[str, Any]] = {}
-    for row in list(rows or []):
-        if not isinstance(row, dict):
-            continue
-        try:
-            pid = int(row.get("path_id") or 0)
-        except (TypeError, ValueError):
-            continue
-        if pid <= 0:
-            continue
-        out[pid] = row
-    return out
-
-
 def _selected_path_ids(selected_rows: list[dict[str, Any]]) -> list[int]:
     """Extract numeric path ids from selected rows."""
     out: list[int] = []

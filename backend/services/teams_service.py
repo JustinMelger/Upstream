@@ -337,8 +337,6 @@ class TeamsService:
             "course_review": "reviewed a course",
             "path_review": "reviewed a path",
             "article_review": "reviewed an article",
-            "course_recommendation": "recommended a course",
-            "path_recommendation": "recommended a path",
         }
         action = action_map.get(str(event_type), f"updated {target_type}")
         return f"{actor} {action}".strip()

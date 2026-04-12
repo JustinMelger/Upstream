@@ -190,8 +190,6 @@ def resolve_learning_tab_context(
     """Build the bundled learning-tab context from page state."""
     learning_vm = build_learning_tab_view(
         data=page_ctx.state.data,
-        dismissed_recommended_course_ids=set(),
-        dismissed_recommended_path_ids=set(),
     )
     recently_shared_in_teams = build_recently_shared_in_teams(
         data=page_ctx.state.data,

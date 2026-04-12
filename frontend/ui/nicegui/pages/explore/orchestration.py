@@ -27,7 +27,6 @@ async def load_explore_courses(
         state.courses = list(bundle.courses or [])
         state.tracking_by_course_id = dict(bundle.tracking_by_course_id or {})
         state.course_review_summary_by_course_id = dict(bundle.review_summary_by_course_id or {})
-        state.course_recommendation_summary_by_course_id = dict(bundle.recommendation_summary_by_course_id or {})
         state.loaded_once = True
         refresh_filter_options()
         refresh_ui()
@@ -57,7 +56,6 @@ async def load_explore_paths_background(
         state.selected_by_path_id = dict(paths_state.selected_by_id or {})
         state.selected_detail_by_path_id = dict(paths_state.selected_detail_by_path_id or {})
         state.path_review_summary_by_id = dict(paths_state.path_review_summary_by_id or {})
-        state.path_recommendation_summary_by_id = dict(paths_state.path_recommendation_summary_by_id or {})
         if paths_state.tracking_by_course_id:
             state.tracking_by_course_id = dict(paths_state.tracking_by_course_id)
     except (ApiError, TimeoutError) as exc:
@@ -65,7 +63,6 @@ async def load_explore_paths_background(
         state.selected_by_path_id = {}
         state.selected_detail_by_path_id = {}
         state.path_review_summary_by_id = {}
-        state.path_recommendation_summary_by_id = {}
         notify_warning(str(exc))
     finally:
         state.paths_loading = False

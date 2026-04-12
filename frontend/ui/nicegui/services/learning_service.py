@@ -62,16 +62,6 @@ async def clear_tracking_status(*, api: ApiClient, course_id: int) -> None:
     await api.post("/tracking/delete", {"course_id": int(course_id)})
 
 
-async def save_recommended_course(*, api: ApiClient, course_id: int) -> None:
-    """Save a recommended course as interested."""
-    await set_tracking_status(api=api, course_id=int(course_id), status="interested")
-
-
-async def save_recommended_path(*, api: ApiClient, path_id: int) -> None:
-    """Save a recommended path as selected."""
-    await api.post(f"/paths/{int(path_id)}/select", {})
-
-
 def _int_id_list(rows: list[dict[str, Any]], *, key: str) -> list[int]:
     out: list[int] = []
     for row in rows:
@@ -95,33 +85,6 @@ async def _load_selected_path_details(*, api: ApiClient, selected_ids: list[int]
     return index_by_int_id(ok_details, key="id")
 
 
-async def _load_recommendation_summaries(
-    *,
-    api: ApiClient,
-    courses: list[dict[str, Any]],
-    paths: list[dict[str, Any]],
-) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
-    all_course_ids = sorted(int(c.get("id") or 0) for c in courses if isinstance(c, dict) and int(c.get("id") or 0) > 0)
-    all_path_ids = sorted(int(p.get("id") or 0) for p in paths if isinstance(p, dict) and int(p.get("id") or 0) > 0)
-    course_map = await _load_summary_map(
-        api=api,
-        path="/courses/recommendations/summary",
-        param_key="course_ids",
-        ids=all_course_ids,
-        row_id_key="course_id",
-        log_context="all_course_recommendations",
-    )
-    path_map = await _load_summary_map(
-        api=api,
-        path="/paths/recommendations/summary",
-        param_key="path_ids",
-        ids=all_path_ids,
-        row_id_key="path_id",
-        log_context="all_path_recommendations",
-    )
-    return course_map, path_map
-
-
 async def _pending_review_ids(
     *,
     api: ApiClient,
@@ -142,55 +105,6 @@ async def _pending_review_ids(
     return pending
 
 
-def _recommended_courses_for_user(
-    *,
-    courses: list[dict[str, Any]],
-    tracking_by_course_id: dict[int, dict[str, Any]],
-    username: str,
-    recommendation_summary_by_id: dict[int, dict[str, Any]],
-) -> list[dict[str, Any]]:
-    out: list[dict[str, Any]] = []
-    for course in courses:
-        cid = int(course.get("id") or 0)
-        if cid <= 0 or cid in tracking_by_course_id or str(course.get("created_by") or "") == username:
-            continue
-        count = int((recommendation_summary_by_id.get(cid) or {}).get("recommendation_count") or 0)
-        if count <= 0:
-            continue
-        out.append(
-            {"course_id": cid, "course": course, "recommendation_count": count, "why": f"{count} teammate recommendation(s)"}
-        )
-    return sorted(
-        out,
-        key=lambda row: (int(row.get("recommendation_count") or 0), int(row.get("course_id") or 0)),
-        reverse=True,
-    )[:5]
-
-
-def _recommended_paths_for_user(
-    *,
-    paths: list[dict[str, Any]],
-    selected_ids: list[int],
-    username: str,
-    recommendation_summary_by_id: dict[int, dict[str, Any]],
-) -> list[dict[str, Any]]:
-    out: list[dict[str, Any]] = []
-    selected_set = {int(pid) for pid in selected_ids}
-    for path in paths:
-        pid = int(path.get("id") or 0)
-        if pid <= 0 or pid in selected_set or str(path.get("created_by") or "") == username:
-            continue
-        count = int((recommendation_summary_by_id.get(pid) or {}).get("recommendation_count") or 0)
-        if count <= 0:
-            continue
-        out.append({"path_id": pid, "path": path, "recommendation_count": count, "why": f"{count} teammate recommendation(s)"})
-    return sorted(
-        out,
-        key=lambda row: (int(row.get("recommendation_count") or 0), int(row.get("path_id") or 0)),
-        reverse=True,
-    )[:5]
-
-
 async def _load_shared_summaries(
     *,
     api: ApiClient,
@@ -198,8 +112,6 @@ async def _load_shared_summaries(
     shared_video_ids: list[int],
     shared_path_ids: list[int],
 ) -> tuple[
-    dict[int, dict[str, Any]],
-    dict[int, dict[str, Any]],
     dict[int, dict[str, Any]],
     dict[int, dict[str, Any]],
     dict[int, dict[str, Any]],
@@ -211,14 +123,6 @@ async def _load_shared_summaries(
         ids=shared_course_ids,
         row_id_key="course_id",
         log_context="shared_course_reviews",
-    )
-    shared_course_recommendations = await _load_summary_map(
-        api=api,
-        path="/courses/recommendations/summary",
-        param_key="course_ids",
-        ids=shared_course_ids,
-        row_id_key="course_id",
-        log_context="shared_course_recommendations",
     )
     shared_video_reviews = await _load_summary_map(
         api=api,
@@ -236,20 +140,10 @@ async def _load_shared_summaries(
         row_id_key="path_id",
         log_context="shared_path_reviews",
     )
-    shared_path_recommendations = await _load_summary_map(
-        api=api,
-        path="/paths/recommendations/summary",
-        param_key="path_ids",
-        ids=shared_path_ids,
-        row_id_key="path_id",
-        log_context="shared_path_recommendations",
-    )
     return (
         shared_course_reviews,
-        shared_course_recommendations,
         shared_video_reviews,
         shared_path_reviews,
-        shared_path_recommendations,
     )
 
 
@@ -382,12 +276,6 @@ async def load_my_learning_data(
         log_context="selected_path_reviews",
     )
 
-    course_recommendation_summary_by_id, path_recommendation_summary_by_id = await _load_recommendation_summaries(
-        api=api,
-        courses=courses,
-        paths=paths,
-    )
-
     pending_course_review_ids = await _pending_review_ids(
         api=api,
         ids=tracked_ids_sorted,
@@ -401,25 +289,10 @@ async def load_my_learning_data(
         endpoint_builder=lambda pid: f"/paths/{int(pid)}/reviews",
     )
 
-    recommended_courses_for_you = _recommended_courses_for_user(
-        courses=courses,
-        tracking_by_course_id=tracking_by_course_id,
-        username=username,
-        recommendation_summary_by_id=course_recommendation_summary_by_id,
-    )
-    recommended_paths_for_you = _recommended_paths_for_user(
-        paths=paths,
-        selected_ids=selected_ids_sorted,
-        username=username,
-        recommendation_summary_by_id=path_recommendation_summary_by_id,
-    )
-
     (
         shared_course_review_summary_by_id,
-        shared_course_recommendation_summary_by_id,
         shared_video_review_summary_by_id,
         shared_path_review_summary_by_id,
-        shared_path_recommendation_summary_by_id,
     ) = await _load_shared_summaries(
         api=api,
         shared_course_ids=shared_course_ids,
@@ -442,15 +315,9 @@ async def load_my_learning_data(
         "shared_articles": shared_articles,
         "course_review_summary_by_id": course_review_summary_by_id,
         "path_review_summary_by_id": path_review_summary_by_id,
-        "course_recommendation_summary_by_id": course_recommendation_summary_by_id,
-        "path_recommendation_summary_by_id": path_recommendation_summary_by_id,
         "pending_course_review_ids": pending_course_review_ids,
         "pending_path_review_ids": pending_path_review_ids,
-        "recommended_courses_for_you": recommended_courses_for_you,
-        "recommended_paths_for_you": recommended_paths_for_you,
         "shared_course_review_summary_by_id": shared_course_review_summary_by_id,
-        "shared_course_recommendation_summary_by_id": shared_course_recommendation_summary_by_id,
         "shared_video_review_summary_by_id": shared_video_review_summary_by_id,
         "shared_path_review_summary_by_id": shared_path_review_summary_by_id,
-        "shared_path_recommendation_summary_by_id": shared_path_recommendation_summary_by_id,
     }

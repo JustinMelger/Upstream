@@ -11,7 +11,6 @@ from frontend.ui.nicegui.pages.courses.orchestration import (
     perform_delete_course_from_dialog,
     perform_set_tracking,
     perform_update_course,
-    refresh_course_recommendation_summary,
     reload_tracking_only,
 )
 from frontend.ui.nicegui.pages.courses.state import CoursesPageState
@@ -21,8 +20,6 @@ class _Controller:
     def __init__(self) -> None:
         self.calls: list[tuple[str, int, str]] = []
         self.fail_reload = False
-        self.summary_row: dict | None = {"course_id": 7, "recommendation_count": 4}
-        self.cache_cleared: list[tuple[int, str]] = []
 
     async def reload_tracking(self) -> dict[int, dict]:
         if self.fail_reload:
@@ -34,12 +31,6 @@ class _Controller:
 
     async def clear_tracking_status(self, *, course_id: int) -> None:
         self.calls.append(("clear", int(course_id), ""))
-
-    async def load_recommendation_summary_for_course(self, *, course_id: int) -> dict | None:
-        return self.summary_row
-
-    def clear_course_detail_cache(self, *, course_id: int, cache_scope: str) -> None:
-        self.cache_cleared.append((int(course_id), str(cache_scope)))
 
     async def create_course(self, *, payload: dict) -> dict:
         self.calls.append(("create", int(payload.get("id") or 0), str(payload.get("title") or "")))
@@ -119,26 +110,6 @@ async def test_perform_clear_tracking_calls_controller_and_reload() -> None:
     assert ok is True
     assert ("clear", 7, "") in controller.calls
     assert events == ["recompute", "refresh"]
-
-
-@pytest.mark.unit
-@pytest.mark.anyio
-async def test_refresh_course_recommendation_summary_updates_state_and_cache() -> None:
-    controller = _Controller()
-    state = CoursesPageState()
-    refreshed: list[str] = []
-
-    await refresh_course_recommendation_summary(
-        course_id=7,
-        username="alice",
-        controller=controller,
-        page_state=state,
-        refresh_courses_list_ui=lambda: refreshed.append("refresh"),
-    )
-
-    assert state.recommendation_summary_by_course_id[7]["recommendation_count"] == 4
-    assert controller.cache_cleared == [(7, "alice")]
-    assert refreshed == ["refresh"]
 
 
 @pytest.mark.unit

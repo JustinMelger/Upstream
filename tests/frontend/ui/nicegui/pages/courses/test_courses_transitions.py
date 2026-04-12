@@ -43,13 +43,11 @@ def test_clear_courses_state_on_load_error_resets_all_collections() -> None:
         courses=[{"id": 1}],
         tracking_by_course_id={1: {"course_id": 1, "status": "interested"}},
         review_summary_by_course_id={1: {"course_id": 1, "review_count": 1}},
-        recommendation_summary_by_course_id={1: {"course_id": 1, "recommendation_count": 1}},
     )
     clear_courses_state_on_load_error(state=state)
     assert state.courses == []
     assert state.tracking_by_course_id == {}
     assert state.review_summary_by_course_id == {}
-    assert state.recommendation_summary_by_course_id == {}
 
 
 @pytest.mark.unit

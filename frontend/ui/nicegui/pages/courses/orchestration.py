@@ -81,7 +81,6 @@ async def load_courses(
         page_state.courses = list(bundle.courses or [])
         page_state.tracking_by_course_id = dict(bundle.tracking_by_course_id or {})
         page_state.review_summary_by_course_id = dict(bundle.review_summary_by_course_id or {})
-        page_state.recommendation_summary_by_course_id = dict(bundle.recommendation_summary_by_course_id or {})
         recompute_facet_options()
         refresh_courses_list_ui()
         ok = True
@@ -159,25 +158,6 @@ async def perform_clear_tracking(
         refresh_courses_list_ui=refresh_courses_list_ui,
         notify_error=notify_error,
     )
-
-
-async def refresh_course_recommendation_summary(
-    *,
-    course_id: int,
-    username: str,
-    controller: Any,
-    page_state: CoursesPageState,
-    refresh_courses_list_ui: Callable[[], None],
-) -> None:
-    """Refresh recommendation summary map entry for a single course."""
-    row = await controller.load_recommendation_summary_for_course(course_id=int(course_id))
-    if isinstance(row, dict):
-        page_state.recommendation_summary_by_course_id[int(course_id)] = row
-    else:
-        page_state.recommendation_summary_by_course_id.pop(int(course_id), None)
-    controller.clear_course_detail_cache(course_id=int(course_id), cache_scope=str(username or ""))
-    refresh_courses_list_ui()
-
 
 async def perform_create_course(
     *,

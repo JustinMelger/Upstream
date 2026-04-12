@@ -4,15 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database.async_repositories.article_reviews import ArticleReviewsRepository as SQLArticleReviewsRepository
 from backend.database.async_repositories.articles import ArticlesRepository as SQLArticlesRepository
 from backend.database.async_repositories.auth import AuthRepository as SQLAuthRepository
-from backend.database.async_repositories.course_recommendations import (
-    CourseRecommendationsRepository as SQLCourseRecommendationsRepository,
-)
 from backend.database.async_repositories.course_reviews import CourseReviewsRepository as SQLCourseReviewsRepository
 from backend.database.async_repositories.courses import CoursesRepository as SQLCoursesRepository
 from backend.database.async_repositories.notifications import NotificationsRepository as SQLNotificationsRepository
-from backend.database.async_repositories.path_recommendations import (
-    PathRecommendationsRepository as SQLPathRecommendationsRepository,
-)
 from backend.database.async_repositories.path_reviews import PathReviewsRepository as SQLPathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository as SQLPathsRepository
 from backend.database.async_repositories.teams import TeamsRepository as SQLTeamsRepository
@@ -24,11 +18,9 @@ from backend.database.session import get_session
 from backend.services.article_reviews_service import ArticleReviewsService
 from backend.services.articles_service import ArticlesService
 from backend.services.auth_service import AuthService
-from backend.services.course_recommendations_service import CourseRecommendationsService
 from backend.services.course_reviews_service import CourseReviewsService
 from backend.services.courses_service import CoursesService
 from backend.services.notifications_service import NotificationsService
-from backend.services.path_recommendations_service import PathRecommendationsService
 from backend.services.path_reviews_service import PathReviewsService
 from backend.services.paths_service import PathsService
 from backend.services.teams_service import TeamsService
@@ -51,7 +43,6 @@ async def get_courses_service(session: AsyncSession = Depends(get_session)) -> C
     """Provide a request-scoped CoursesService dependency."""
     return CoursesService(
         SQLCoursesRepository(session),
-        recommendations_repo=SQLCourseRecommendationsRepository(session),
         url_preview_service=_URL_PREVIEW_SERVICE,
     )
 
@@ -107,23 +98,9 @@ async def get_video_reviews_service(session: AsyncSession = Depends(get_session)
     return VideoReviewsService(SQLVideoReviewsRepository(session))
 
 
-async def get_course_recommendations_service(
-    session: AsyncSession = Depends(get_session),
-) -> CourseRecommendationsService:
-    """Provide a request-scoped CourseRecommendationsService dependency."""
-    return CourseRecommendationsService(SQLCourseRecommendationsRepository(session))
-
-
 async def get_path_reviews_service(session: AsyncSession = Depends(get_session)) -> PathReviewsService:
     """Provide a request-scoped PathReviewsService dependency."""
     return PathReviewsService(SQLPathReviewsRepository(session))
-
-
-async def get_path_recommendations_service(
-    session: AsyncSession = Depends(get_session),
-) -> PathRecommendationsService:
-    """Provide a request-scoped PathRecommendationsService dependency."""
-    return PathRecommendationsService(SQLPathRecommendationsRepository(session))
 
 
 async def get_notifications_service(

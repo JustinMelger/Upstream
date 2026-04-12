@@ -8,8 +8,6 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.services.learning_service import (
     clear_tracking_status,
     load_my_learning_data,
-    save_recommended_course,
-    save_recommended_path,
     set_tracking_status,
 )
 
@@ -41,11 +39,3 @@ class LearningPageController:
     async def clear_tracking_status(self, *, course_id: int) -> None:
         """Clear tracking status for a course."""
         await clear_tracking_status(api=self._api, course_id=int(course_id))
-
-    async def save_recommended_course(self, *, course_id: int) -> None:
-        """Track a recommended course as interested."""
-        await save_recommended_course(api=self._api, course_id=int(course_id))
-
-    async def save_recommended_path(self, *, path_id: int) -> None:
-        """Select a recommended path."""
-        await save_recommended_path(api=self._api, path_id=int(path_id))

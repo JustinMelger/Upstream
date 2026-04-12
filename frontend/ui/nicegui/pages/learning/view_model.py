@@ -21,7 +21,6 @@ class SharedLearningItemView:
     title: str
     capabilities: LearningItemCapabilities
     review_summary_row: dict[str, Any] | None
-    recommendation_summary_row: dict[str, Any] | None
 
 
 @dataclass(slots=True)
@@ -34,10 +33,8 @@ class SharedTabView:
     shared_paths: list[dict[str, Any]]
     shared_articles: list[dict[str, Any]]
     shared_course_review_summary_by_id: dict[int, dict[str, Any]]
-    shared_course_recommendation_summary_by_id: dict[int, dict[str, Any]]
     shared_video_review_summary_by_id: dict[int, dict[str, Any]]
     shared_path_review_summary_by_id: dict[int, dict[str, Any]]
-    shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]]
 
 
 def _shared_learning_item_sort_key(item: SharedLearningItemView) -> tuple[str, int, str]:
@@ -50,7 +47,6 @@ def build_shared_learning_item_views(
     shared_videos: list[dict[str, Any]],
     shared_articles: list[dict[str, Any]],
     course_review_summary_by_id: dict[int, dict[str, Any]],
-    course_recommendation_summary_by_id: dict[int, dict[str, Any]],
     video_review_summary_by_id: dict[int, dict[str, Any]],
 ) -> list[SharedLearningItemView]:
     """Build typed shared learning-item rows from shared courses/articles."""
@@ -74,7 +70,6 @@ def build_shared_learning_item_views(
                 title=title,
                 capabilities=learning_item_capabilities(item_type),
                 review_summary_row=dict(course_review_summary_by_id.get(item_id) or {}) or None,
-                recommendation_summary_row=dict(course_recommendation_summary_by_id.get(item_id) or {}) or None,
             )
         )
     for row in list(shared_articles or []):
@@ -91,7 +86,6 @@ def build_shared_learning_item_views(
                 title=title,
                 capabilities=learning_item_capabilities("article"),
                 review_summary_row=None,
-                recommendation_summary_row=None,
             )
         )
     for row in list(shared_videos or []):
@@ -108,7 +102,6 @@ def build_shared_learning_item_views(
                 title=title,
                 capabilities=learning_item_capabilities("video"),
                 review_summary_row=dict(video_review_summary_by_id.get(item_id) or {}) or None,
-                recommendation_summary_row=None,
             )
         )
     return sorted(items, key=_shared_learning_item_sort_key)
@@ -126,8 +119,6 @@ class LearningTabView:
     path_review_summary_by_id: dict[int, dict[str, Any]]
     pending_course_review_ids: list[int]
     pending_path_review_ids: list[int]
-    recommended_courses: list[dict[str, Any]]
-    recommended_paths: list[dict[str, Any]]
 
 
 def build_recently_shared_in_teams(
@@ -178,7 +169,6 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
     shared_videos = list(data.get("shared_videos") or [])
     shared_articles = list(data.get("shared_articles") or [])
     shared_course_review_summary_by_id = dict(data.get("shared_course_review_summary_by_id") or {})
-    shared_course_recommendation_summary_by_id = dict(data.get("shared_course_recommendation_summary_by_id") or {})
     shared_video_review_summary_by_id = dict(data.get("shared_video_review_summary_by_id") or {})
     return SharedTabView(
         shared_learning_items=build_shared_learning_item_views(
@@ -186,7 +176,6 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
             shared_videos=shared_videos,
             shared_articles=shared_articles,
             course_review_summary_by_id=shared_course_review_summary_by_id,
-            course_recommendation_summary_by_id=shared_course_recommendation_summary_by_id,
             video_review_summary_by_id=shared_video_review_summary_by_id,
         ),
         shared_courses=shared_courses,
@@ -194,18 +183,14 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
         shared_paths=list(data.get("shared_paths") or []),
         shared_articles=shared_articles,
         shared_course_review_summary_by_id=shared_course_review_summary_by_id,
-        shared_course_recommendation_summary_by_id=shared_course_recommendation_summary_by_id,
         shared_video_review_summary_by_id=shared_video_review_summary_by_id,
         shared_path_review_summary_by_id=dict(data.get("shared_path_review_summary_by_id") or {}),
-        shared_path_recommendation_summary_by_id=dict(data.get("shared_path_recommendation_summary_by_id") or {}),
     )
 
 
 def build_learning_tab_view(
     *,
     data: dict[str, Any],
-    dismissed_recommended_course_ids: set[int],
-    dismissed_recommended_path_ids: set[int],
 ) -> LearningTabView:
     """Build typed learning-tab projection from raw page data payload."""
 
@@ -227,20 +212,6 @@ def build_learning_tab_view(
     pending_course_review_ids = _sorted_positive_ids(list(data.get("pending_course_review_ids") or []))
     pending_path_review_ids = _sorted_positive_ids(list(data.get("pending_path_review_ids") or []))
 
-    recommended_courses = [
-        r
-        for r in list(data.get("recommended_courses_for_you") or [])
-        if isinstance(r, dict)
-        and (course_id := _valid_int_id(r.get("course_id"))) is not None
-        and course_id not in dismissed_recommended_course_ids
-    ]
-    recommended_paths = [
-        r
-        for r in list(data.get("recommended_paths_for_you") or [])
-        if isinstance(r, dict)
-        and (path_id := _valid_int_id(r.get("path_id"))) is not None
-        and path_id not in dismissed_recommended_path_ids
-    ]
     return LearningTabView(
         tracked_courses=list(data.get("tracked_courses") or []),
         tracking_by_course_id=dict(data.get("tracking_by_course_id") or {}),
@@ -250,6 +221,4 @@ def build_learning_tab_view(
         path_review_summary_by_id=dict(data.get("path_review_summary_by_id") or {}),
         pending_course_review_ids=pending_course_review_ids,
         pending_path_review_ids=pending_path_review_ids,
-        recommended_courses=recommended_courses,
-        recommended_paths=recommended_paths,
     )

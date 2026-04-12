@@ -15,5 +15,3 @@ class LearningPageState:
     page_size: int = 12
     tracked_visible: int = 12
     selected_visible: int = 12
-    dismissed_recommended_course_ids: set[int] = field(default_factory=set)
-    dismissed_recommended_path_ids: set[int] = field(default_factory=set)

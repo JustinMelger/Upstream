@@ -34,9 +34,6 @@ def build_explore_course_actions(
         _ = course_row
         await _open_explore_course_details(int(cid), bool(focus))
 
-    async def _open_course_recommend(cid: int) -> None:
-        ui.navigate.to(f"/explore/courses/{int(cid)}?view=reviews")
-
     async def _open_course_delete(cid: int) -> None:
         ui.navigate.to(f"/explore/courses/{int(cid)}")
 
@@ -45,7 +42,6 @@ def build_explore_course_actions(
         course_url=course_url,
         course_row=course_row,
         on_open_details=_open_course_details,
-        on_open_recommend=_open_course_recommend,
         on_open_edit=lambda row: ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}"),
         on_confirm_delete=_open_course_delete,
     )

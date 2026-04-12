@@ -17,8 +17,6 @@ class _FakeApi:
             return [{"course_id": 7, "status": "in_progress"}]
         if path == "/courses/reviews/summary":
             return [{"course_id": 7, "avg_rating": 4.5, "review_count": 2}]
-        if path == "/courses/recommendations/summary":
-            return [{"course_id": 7, "recommendation_count": 3}]
         return {}
 
 
@@ -33,7 +31,6 @@ async def test_courses_controller_load_list_bundle() -> None:
     assert [int(c["id"]) for c in bundle.courses] == [7, 8]
     assert bundle.tracking_by_course_id == {7: {"course_id": 7, "status": "in_progress"}}
     assert bundle.review_summary_by_course_id[7]["review_count"] == 2
-    assert bundle.recommendation_summary_by_course_id[7]["recommendation_count"] == 3
     assert ("GET", "/courses", {"q": "fastapi"}) in api.calls
 
 
@@ -46,13 +43,3 @@ async def test_courses_controller_reload_tracking() -> None:
     tracking = await controller.reload_tracking()
     assert tracking == {7: {"course_id": 7, "status": "in_progress"}}
 
-
-@pytest.mark.unit
-@pytest.mark.anyio
-async def test_courses_controller_load_recommendation_summary_for_course() -> None:
-    api = _FakeApi()
-    controller = CoursesPageController(api=api)
-
-    row = await controller.load_recommendation_summary_for_course(course_id=7)
-    assert isinstance(row, dict)
-    assert int(row.get("recommendation_count") or 0) == 3

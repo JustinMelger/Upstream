@@ -13,7 +13,6 @@ from frontend.ui.nicegui.services.courses_service import index_tracking_by_cours
 from frontend.ui.nicegui.services.paths_service import (
     index_courses_by_int_id,
     index_rows_by_int_id,
-    load_path_recommendation_summaries,
     load_paths_page_data,
     select_path_and_seed_tracking,
     unselect_path,
@@ -107,30 +106,6 @@ class PathsPageController:
         await self._api.delete(f"/paths/{int(path_id)}")
         return True
 
-    async def get_path_recommendations(self, *, path_id: int) -> list[dict[str, Any]]:
-        """Load recommendations rows for a path."""
-        rows = await self._api.get(f"/paths/{int(path_id)}/recommendations")
-        return [r for r in list(rows or []) if isinstance(r, dict)]
-
-    async def get_user_recommendation_note(self, *, path_id: int, username: str) -> str:
-        """Return current user's recommendation note for a path, if present."""
-        rows = await self.get_path_recommendations(path_id=path_id)
-        for row in rows:
-            if str(row.get("created_by") or "") == str(username):
-                return str(row.get("note") or "")
-        return ""
-
-    async def save_recommendation(self, *, path_id: int, note: str) -> dict[str, Any]:
-        """Create or update current user's recommendation for a path."""
-        payload = await self._api.post(f"/paths/{int(path_id)}/recommendations", {"note": str(note or "").strip()})
-        return dict(payload or {}) if isinstance(payload, dict) else {}
-
-    async def load_recommendation_summary_for_path(self, *, path_id: int) -> dict[str, Any] | None:
-        """Load recommendation summary row for a single path id."""
-        rows = await load_path_recommendation_summaries(api=self._api, path_ids=[int(path_id)])
-        row = rows.get(int(path_id))
-        return dict(row) if isinstance(row, dict) else None
-
     async def save_path_review(self, *, path_id: int, rating: int, text: str) -> dict[str, Any]:
         """Create or update current user's review for a path."""
         payload = await self._api.post(
@@ -173,25 +148,19 @@ class PathsPageController:
         return out
 
     async def load_path_detail_bundle(self, *, path_id: int) -> PathDetailBundle:
-        """Load path detail dialog data (best-effort for social side payloads)."""
+        """Load path detail dialog data (best-effort for review side payloads)."""
         detail = await self.get_path_detail(path_id=path_id)
 
         path_reviews: list[dict[str, Any]] = []
-        path_recommendations: list[dict[str, Any]] = []
         try:
-            reviews_result, recommendations_result = await asyncio.gather(
-                self._api.get(f"/paths/{int(path_id)}/reviews"),
-                self._api.get(f"/paths/{int(path_id)}/recommendations"),
-            )
+            reviews_result = await self._api.get(f"/paths/{int(path_id)}/reviews")
             path_reviews = [r for r in list(reviews_result or []) if isinstance(r, dict)]
-            path_recommendations = [r for r in list(recommendations_result or []) if isinstance(r, dict)]
         except ApiError as exc:
             logger.warning(
-                "Path social payload unavailable",
+                "Path review payload unavailable",
                 extra={"path_id": int(path_id), "status_code": int(exc.status_code)},
             )
             path_reviews = []
-            path_recommendations = []
 
         course_ids_in_path = path_course_ids(detail=detail)
 
@@ -208,7 +177,6 @@ class PathsPageController:
         return PathDetailBundle(
             detail=detail,
             path_reviews=path_reviews,
-            path_recommendations=path_recommendations,
             course_review_summary_by_course_id=course_review_summary_by_course_id,
         )
 
@@ -272,12 +240,10 @@ class PathsPageController:
                 path_ids.append(pid)
 
         state.path_review_summary_by_id = {}
-        state.path_recommendation_summary_by_id = {}
         if not path_ids:
             return
 
         summaries = await self._api.get("/paths/reviews/summary", params={"path_ids": path_ids})
-        state.path_recommendation_summary_by_id = await load_path_recommendation_summaries(api=self._api, path_ids=path_ids)
         for row in list(summaries or []):
             if not isinstance(row, dict):
                 continue

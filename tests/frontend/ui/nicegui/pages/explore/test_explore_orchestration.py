@@ -23,7 +23,6 @@ class _CoursesBundle:
     courses: list[dict[str, Any]]
     tracking_by_course_id: dict[int, dict[str, Any]]
     review_summary_by_course_id: dict[int, dict[str, Any]]
-    recommendation_summary_by_course_id: dict[int, dict[str, Any]]
 
 
 class _CoursesController:
@@ -39,7 +38,6 @@ class _CoursesController:
             courses=[{"id": 7, "title": "Async Python"}],
             tracking_by_course_id={7: {"course_id": 7, "status": "interested"}},
             review_summary_by_course_id={7: {"course_id": 7, "review_count": 3}},
-            recommendation_summary_by_course_id={7: {"course_id": 7, "recommendation_count": 2}},
         )
 
     async def set_tracking_status(self, *, course_id: int, status: str) -> None:
@@ -61,7 +59,6 @@ class _PathsController:
         state.selected_by_id = {11: {"id": 11, "status": "interested"}}
         state.selected_detail_by_path_id = {11: {"id": 11, "courses": [{"id": 7}]}}
         state.path_review_summary_by_id = {11: {"path_id": 11, "review_count": 4}}
-        state.path_recommendation_summary_by_id = {11: {"path_id": 11, "recommendation_count": 5}}
         if self.seed_tracking:
             state.tracking_by_course_id = {7: {"course_id": 7, "status": "in_progress"}}
 
@@ -125,7 +122,6 @@ async def test_load_explore_courses_updates_state_and_spawns_background_loads() 
     assert state.courses == [{"id": 7, "title": "Async Python"}]
     assert state.tracking_by_course_id[7]["status"] == "interested"
     assert state.course_review_summary_by_course_id[7]["review_count"] == 3
-    assert state.course_recommendation_summary_by_course_id[7]["recommendation_count"] == 2
     assert events == ["refresh", "filters", "refresh", "spawn", "refresh"]
 
 
@@ -149,7 +145,6 @@ async def test_load_explore_paths_background_copies_payloads_and_tracking() -> N
     assert state.selected_by_path_id[11]["status"] == "interested"
     assert state.selected_detail_by_path_id[11]["id"] == 11
     assert state.path_review_summary_by_id[11]["review_count"] == 4
-    assert state.path_recommendation_summary_by_id[11]["recommendation_count"] == 5
     assert state.tracking_by_course_id[7]["status"] == "in_progress"
     assert warnings == []
     assert events == ["refresh", "refresh"]
@@ -163,7 +158,6 @@ async def test_load_explore_paths_background_handles_errors_without_crashing() -
         selected_by_path_id={1: {"id": 1}},
         selected_detail_by_path_id={1: {"id": 1}},
         path_review_summary_by_id={1: {"path_id": 1, "review_count": 1}},
-        path_recommendation_summary_by_id={1: {"path_id": 1, "recommendation_count": 1}},
     )
     controller = _PathsController(fail_load=True)
     warnings: list[str] = []
@@ -180,7 +174,6 @@ async def test_load_explore_paths_background_handles_errors_without_crashing() -
     assert state.selected_by_path_id == {}
     assert state.selected_detail_by_path_id == {}
     assert state.path_review_summary_by_id == {}
-    assert state.path_recommendation_summary_by_id == {}
     assert warnings == ["502: paths_unavailable"]
     assert state.paths_loading is False
     assert events == ["refresh", "refresh"]

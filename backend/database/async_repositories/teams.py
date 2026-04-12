@@ -9,9 +9,7 @@ from backend.database.async_repositories.datetime_utils import RepositoryDateTim
 from backend.database.models import TeamMemberRecord, TeamRecord
 from backend.database.orm_models import (
     ArticleReview as ArticleReviewModel,
-    CourseRecommendation as CourseRecommendationModel,
     CourseReview as CourseReviewModel,
-    PathRecommendation as PathRecommendationModel,
     PathReview as PathReviewModel,
     Team as TeamModel,
     TeamMember as TeamMemberModel,
@@ -218,42 +216,10 @@ class TeamsRepository(RepositoryDateTimeCodec):
             .limit(int(limit))
         )
 
-        recommendation_rows = await self.session.execute(
-            select(
-                CourseRecommendationModel.id.label("event_id"),
-                CourseRecommendationModel.created_by.label("actor"),
-                CourseRecommendationModel.created_at.label("created_at"),
-                CourseRecommendationModel.course_id.label("target_id"),
-                literal("course").label("target_type"),
-                literal("course_recommendation").label("event_type"),
-            )
-            .where(CourseRecommendationModel.created_by.in_(members_select))
-            .where(CourseRecommendationModel.created_at.is_not(None))
-            .order_by(CourseRecommendationModel.created_at.desc(), CourseRecommendationModel.id.desc())
-            .limit(int(limit))
-        )
-
-        path_recommendation_rows = await self.session.execute(
-            select(
-                PathRecommendationModel.id.label("event_id"),
-                PathRecommendationModel.created_by.label("actor"),
-                PathRecommendationModel.created_at.label("created_at"),
-                PathRecommendationModel.path_id.label("target_id"),
-                literal("path").label("target_type"),
-                literal("path_recommendation").label("event_type"),
-            )
-            .where(PathRecommendationModel.created_by.in_(members_select))
-            .where(PathRecommendationModel.created_at.is_not(None))
-            .order_by(PathRecommendationModel.created_at.desc(), PathRecommendationModel.id.desc())
-            .limit(int(limit))
-        )
-
         all_rows = [
             *course_review_rows.mappings().all(),
             *path_review_rows.mappings().all(),
             *article_review_rows.mappings().all(),
-            *recommendation_rows.mappings().all(),
-            *path_recommendation_rows.mappings().all(),
         ]
         payload_rows = [
             {
