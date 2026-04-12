@@ -17,5 +17,5 @@ async def list_activity_notifications(
     current_user: str = Depends(require_session),
     notifications: NotificationsService = Depends(get_notifications_service),
 ) -> list[dict[str, Any]]:
-    """Return a lightweight activity feed for shared/recommended content."""
+    """Return a lightweight activity feed for shared and rated content."""
     return await notifications.list_activity(current_user=current_user, limit=int(limit), scope=str(scope))

@@ -2,18 +2,14 @@ import pytest
 
 from backend.database.async_repositories.article_reviews import ArticleReviewsRepository
 from backend.database.async_repositories.articles import ArticlesRepository
-from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
 from backend.database.async_repositories.course_reviews import CourseReviewsRepository
 from backend.database.async_repositories.courses import CoursesRepository
-from backend.database.async_repositories.path_recommendations import PathRecommendationsRepository
 from backend.database.async_repositories.path_reviews import PathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository
 from backend.services.article_reviews_service import ArticleReviewsService, ArticleReviewsServiceError
 from backend.services.articles_service import ArticlesService, ArticlesServiceError
-from backend.services.course_recommendations_service import CourseRecommendationsService, CourseRecommendationsServiceError
 from backend.services.course_reviews_service import CourseReviewsService, CourseReviewsServiceError
 from backend.services.courses_service import CoursesService
-from backend.services.path_recommendations_service import PathRecommendationsService, PathRecommendationsServiceError
 from backend.services.path_reviews_service import PathReviewsService, PathReviewsServiceError
 from backend.services.paths_service import PathsService
 
@@ -64,30 +60,3 @@ async def test_create_article_review_invalid_payload_type_returns_invalid_payloa
     assert excinfo.value.status_code == 400
     assert str(excinfo.value.detail) == "invalid_payload"
 
-
-@pytest.mark.unit
-async def test_create_course_recommendation_invalid_payload_type_returns_invalid_payload(db_session):
-    """Service-level payload parsing rejects invalid course recommendation payload types."""
-    courses = CoursesService(CoursesRepository(db_session))
-    recommendations = CourseRecommendationsService(CourseRecommendationsRepository(db_session))
-    course_id = int((await courses.create_course({"title": "Course", "description": "Desc"}))["id"])
-    with pytest.raises(CourseRecommendationsServiceError) as excinfo:
-        await recommendations.create_recommendation(
-            course_id=course_id,
-            payload={"note": ["bad"]},
-            created_by="admin",
-        )
-    assert excinfo.value.status_code == 400
-    assert str(excinfo.value.detail) == "invalid_payload"
-
-
-@pytest.mark.unit
-async def test_create_path_recommendation_invalid_payload_type_returns_invalid_payload(db_session):
-    """Service-level payload parsing rejects invalid path recommendation payload types."""
-    paths = PathsService(PathsRepository(db_session))
-    recommendations = PathRecommendationsService(PathRecommendationsRepository(db_session))
-    path_id = int((await paths.create_path({"name": "Path", "items": []}))["id"])
-    with pytest.raises(PathRecommendationsServiceError) as excinfo:
-        await recommendations.create_recommendation(path_id=path_id, payload={"note": ["bad"]}, created_by="admin")
-    assert excinfo.value.status_code == 400
-    assert str(excinfo.value.detail) == "invalid_payload"

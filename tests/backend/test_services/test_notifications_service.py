@@ -32,26 +32,6 @@ def test_notifications_finalize_events_dedupes_sorts_and_limits() -> None:
     """Finalization keeps newest deduped rows and applies limit."""
     events = [
         ActivityEvent(
-            event_id="course_recommended:1",
-            event_type="course_recommended",
-            created_at="2026-02-20T10:00:00+00:00",
-            actor="alice",
-            message="old",
-            target_type="course",
-            target_id=7,
-            target_label="A",
-        ),
-        ActivityEvent(
-            event_id="course_recommended:1",
-            event_type="course_recommended",
-            created_at="2026-02-20T11:00:00+00:00",
-            actor="alice",
-            message="new",
-            target_type="course",
-            target_id=7,
-            target_label="A",
-        ),
-        ActivityEvent(
             event_id="path_rated:2",
             event_type="path_rated",
             created_at="2026-02-20T12:00:00+00:00",
@@ -65,33 +45,6 @@ def test_notifications_finalize_events_dedupes_sorts_and_limits() -> None:
     out = NotificationsService._finalize_events(events=events, limit=1)
     assert len(out) == 1
     assert out[0]["event_id"] == "path_rated:2"
-
-
-@pytest.mark.unit
-def test_notifications_build_recommendation_events_inbox_filters_to_owners_content() -> None:
-    """Inbox scope should only include recommendations on user's shared content."""
-    rows = [
-        {
-            "recommendation_id": 1,
-            "course_id": 11,
-            "created_by": "bob",
-            "created_at": "2026-02-20T10:00:00+00:00",
-            "title": "Course A",
-            "course_owner": "alice",
-        },
-        {
-            "recommendation_id": 2,
-            "course_id": 12,
-            "created_by": "alice",
-            "created_at": "2026-02-20T11:00:00+00:00",
-            "title": "Course B",
-            "course_owner": "alice",
-        },
-    ]
-    out = NotificationsService._build_recommendation_events(rows=rows, username="alice", is_team=False, kind="course")
-    assert len(out) == 1
-    assert out[0].event_type == "your_course_recommended"
-    assert out[0].target_id == 11
 
 
 @pytest.mark.unit

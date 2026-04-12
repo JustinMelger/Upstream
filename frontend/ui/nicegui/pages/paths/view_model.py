@@ -144,27 +144,6 @@ def _has_learning_items(*, detail: dict[str, Any]) -> bool:
     return bool(items)
 
 
-def recommendation_authors(rows: list[dict[str, Any]] | None) -> list[str]:
-    """Return sorted unique recommendation authors."""
-    return sorted(
-        {
-            str(r.get("created_by") or "").strip()
-            for r in list(rows or [])
-            if isinstance(r, dict) and str(r.get("created_by") or "").strip()
-        }
-    )
-
-
-def latest_activity_day(*, reviews: list[dict[str, Any]] | None, recommendations: list[dict[str, Any]] | None) -> str:
-    """Return latest activity date (YYYY-MM-DD) across review/recommendation rows."""
-    timestamps: list[str] = []
-    for row in list(reviews or []) + list(recommendations or []):
-        created_at = str(row.get("created_at") or "").strip()
-        if created_at:
-            timestamps.append(created_at)
-    return max(timestamps)[:10] if timestamps else ""
-
-
 def enrich_path_courses(
     *,
     courses: list[dict[str, Any]] | None,

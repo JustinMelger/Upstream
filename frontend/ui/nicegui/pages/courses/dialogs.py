@@ -59,43 +59,6 @@ def _apply_course_suggestion(
     return True
 
 
-async def open_recommend_course_dialog(
-    *,
-    course_id: int,
-    username: str,
-    load_recommendations: Callable[[int], Awaitable[list[dict[str, Any]]]],
-    save_recommendation: Callable[[int, str], Awaitable[dict[str, Any]]],
-    on_saved: Callable[[], Awaitable[None]],
-) -> None:
-    """Open recommend dialog for a course and persist note."""
-    existing_note = ""
-    try:
-        rows = await load_recommendations(int(course_id))
-        for row in list(rows or []):
-            if str(row.get("created_by") or "") == username:
-                existing_note = str(row.get("note") or "")
-                break
-    except ApiError:
-        existing_note = ""
-
-    with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):
-        ui.label("Recommend course").classes("text-lg font-semibold")
-        note = ui.textarea("Why this helps (optional)", value=existing_note).props("autogrow").classes("w-full")
-        with ui.row().classes("justify-end mt-4"):
-
-            @guard_ui_action(title="Recommend failed")
-            async def _save() -> None:
-                await save_recommendation(int(course_id), str(note.value or "").strip())
-                safe_notify("Recommendation saved", type="positive")
-                dialog.close()
-                await on_saved()
-
-            ui.button("Recommend", on_click=_save)
-            ui.button("Cancel", on_click=dialog.close).props("outline")
-
-    dialog.open()
-
-
 def build_share_course_dialog(  # noqa: C901, PLR0915
     *,
     username: str,

@@ -5,10 +5,8 @@ import pytest
 from backend.database.async_repositories.article_reviews import ArticleReviewsRepository
 from backend.database.async_repositories.articles import ArticlesRepository
 from backend.database.async_repositories.auth import AuthRepository
-from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
 from backend.database.async_repositories.course_reviews import CourseReviewsRepository
 from backend.database.async_repositories.courses import CoursesRepository, CreateCoursePayload
-from backend.database.async_repositories.path_recommendations import PathRecommendationsRepository
 from backend.database.async_repositories.path_reviews import PathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository
 from backend.database.async_repositories.tracking import TrackingRepository
@@ -74,8 +72,8 @@ async def test_user_paths_repo_accepts_datetime_timestamps(db_session):
 
 
 @pytest.mark.unit
-async def test_content_review_recommendation_repos_accept_datetime_and_return_iso(db_session):
-    """Timestamp-migrated content/review/recommendation repos keep ISO string contract."""
+async def test_content_and_review_repos_accept_datetime_and_return_iso(db_session):
+    """Timestamp-migrated content and review repos keep ISO string contract."""
     auth = AuthService(AuthRepository(db_session))
     await auth.create_user("alice", "pass123", "user")
 
@@ -85,9 +83,6 @@ async def test_content_review_recommendation_repos_accept_datetime_and_return_is
     course_reviews = CourseReviewsRepository(db_session)
     path_reviews = PathReviewsRepository(db_session)
     article_reviews = ArticleReviewsRepository(db_session)
-    course_recs = CourseRecommendationsRepository(db_session)
-    path_recs = PathRecommendationsRepository(db_session)
-
     now = datetime.now(timezone.utc)
     async with db_session.begin():
         course_id = await courses_repo.create_course(
@@ -140,26 +135,11 @@ async def test_content_review_recommendation_repos_accept_datetime_and_return_is
             created_by="alice",
             created_at=now,
         )
-        await course_recs.create_recommendation(
-            course_id=int(course_id),
-            note="recommended",
-            created_by="alice",
-            created_at=now,
-        )
-        await path_recs.create_recommendation(
-            path_id=int(path_id),
-            note="recommended",
-            created_by="alice",
-            created_at=now,
-        )
-
     course = await courses_repo.get_course_by_id(int(course_id))
     article = await articles_repo.get_article_by_id(int(article_id))
     c_review = (await course_reviews.list_for_course(course_id=int(course_id)))[0]
     p_review = (await path_reviews.list_for_path(path_id=int(path_id)))[0]
     a_review = (await article_reviews.list_for_article(article_id=int(article_id)))[0]
-    c_rec = (await course_recs.list_for_course(course_id=int(course_id)))[0]
-    p_rec = (await path_recs.list_for_path(path_id=int(path_id)))[0]
 
     assert course is not None and article is not None
     _assert_iso_utc(str(course.created_at or ""))
@@ -167,5 +147,3 @@ async def test_content_review_recommendation_repos_accept_datetime_and_return_is
     _assert_iso_utc(str(c_review.created_at or ""))
     _assert_iso_utc(str(p_review.created_at or ""))
     _assert_iso_utc(str(a_review.created_at or ""))
-    _assert_iso_utc(str(c_rec.created_at or ""))
-    _assert_iso_utc(str(p_rec.created_at or ""))

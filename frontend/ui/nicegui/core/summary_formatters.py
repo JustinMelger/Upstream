@@ -1,4 +1,4 @@
-"""Shared formatting helpers for rating/recommendation summary rows."""
+"""Shared formatting helpers for review summary rows."""
 
 from __future__ import annotations
 
@@ -25,16 +25,3 @@ def format_review_summary(row: dict[str, Any] | None, *, style: ReviewSummarySty
     if style == "star":
         return f"★ {avg:.1f} ({count})"
     return f"{avg:.1f}/5 ({count})"
-
-
-def format_recommendation_summary(row: dict[str, Any] | None) -> str:
-    """Format a recommendation summary row into a compact badge label."""
-    if not isinstance(row, dict):
-        return ""
-    try:
-        count = int(row.get("recommendation_count") or 0)
-    except (TypeError, ValueError):
-        count = 0
-    if count <= 0:
-        return ""
-    return f"↗ {count} rec"

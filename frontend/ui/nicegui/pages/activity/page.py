@@ -1,4 +1,4 @@
-"""Activity feed page for shared/recommended notifications."""
+"""Activity feed page for shared and rated notifications."""
 
 from __future__ import annotations
 

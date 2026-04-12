@@ -11,8 +11,6 @@ from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.services.learning_service import (
     clear_tracking_status,
     load_my_learning_data,
-    save_recommended_course,
-    save_recommended_path,
     set_tracking_status,
 )
 
@@ -76,14 +74,10 @@ async def test_learning_tracking_mutation_use_cases_call_expected_endpoints() ->
     api = _Api()
     await set_tracking_status(api=api, course_id=3, status="in_progress")
     await clear_tracking_status(api=api, course_id=3)
-    await save_recommended_course(api=api, course_id=9)
-    await save_recommended_path(api=api, path_id=4)
 
     assert calls == [
         ("/tracking", {"course_id": 3, "status": "in_progress"}),
         ("/tracking/delete", {"course_id": 3}),
-        ("/tracking", {"course_id": 9, "status": "interested"}),
-        ("/paths/4/select", {}),
     ]
 
 
@@ -96,8 +90,6 @@ async def test_load_my_learning_data_keeps_working_when_summary_endpoints_fail_w
                 "/courses/reviews/summary",
                 "/videos/reviews/summary",
                 "/paths/reviews/summary",
-                "/courses/recommendations/summary",
-                "/paths/recommendations/summary",
             }:
                 raise ApiError(status_code=503, message="backend_unreachable")
             return self.payloads.get(path)
@@ -120,8 +112,6 @@ async def test_load_my_learning_data_keeps_working_when_summary_endpoints_fail_w
     assert data["course_review_summary_by_id"] == {}
     assert data["path_review_summary_by_id"] == {}
     assert data["shared_video_review_summary_by_id"] == {}
-    assert data["course_recommendation_summary_by_id"] == {}
-    assert data["path_recommendation_summary_by_id"] == {}
 
 
 @pytest.mark.unit

@@ -17,12 +17,6 @@ class _FakeApi:
 
     async def get(self, path: str, params: dict | None = None):
         self.calls.append(("GET", path, params))
-        if path == "/paths/recommendations/summary":
-            return [
-                {"path_id": 1, "recommendation_count": 2},
-                {"path_id": "2", "recommendation_count": 1},
-                {"path_id": "bad", "recommendation_count": 9},
-            ]
         if path == "/paths/7":
             return {
                 "id": 7,
@@ -36,25 +30,6 @@ class _FakeApi:
         if path == "/tracking":
             return [{"course_id": 101, "status": "completed"}]
         return []
-
-
-@pytest.mark.unit
-@pytest.mark.anyio
-async def test_load_path_recommendation_summaries_filters_invalid_rows_and_ids() -> None:
-    api = _FakeApi()
-    out = await paths_service.load_path_recommendation_summaries(api=api, path_ids=[1, 2, 0, -1])
-    assert set(out.keys()) == {1, 2}
-    assert out[1]["recommendation_count"] == 2
-    assert ("GET", "/paths/recommendations/summary", {"path_ids": [1, 2]}) in api.calls
-
-
-@pytest.mark.unit
-@pytest.mark.anyio
-async def test_load_path_recommendation_summaries_short_circuit_on_empty_ids() -> None:
-    api = _FakeApi()
-    out = await paths_service.load_path_recommendation_summaries(api=api, path_ids=[])
-    assert out == {}
-    assert api.calls == []
 
 
 @pytest.mark.unit
