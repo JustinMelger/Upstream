@@ -11,7 +11,7 @@ from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import tracking_label
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
 from frontend.ui.nicegui.core.path_items import path_course_ids
-from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions, load_more_selected, load_more_tracked
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
 from frontend.ui.nicegui.pages.learning.onboarding import (
@@ -176,7 +176,6 @@ def render_shared_view(*, state: LearningPageState, nav_actions: LearningNavigat
         render_shared_tab(
             shared_vm=shared_vm,
             review_summary_label=lambda row: format_review_summary(row, style="star"),
-            recommendation_summary_label=format_recommendation_summary,
             nav_actions=nav_actions,
         )
 
@@ -191,8 +190,8 @@ def resolve_learning_tab_context(
     """Build the bundled learning-tab context from page state."""
     learning_vm = build_learning_tab_view(
         data=page_ctx.state.data,
-        dismissed_recommended_course_ids=page_ctx.state.dismissed_recommended_course_ids,
-        dismissed_recommended_path_ids=page_ctx.state.dismissed_recommended_path_ids,
+        dismissed_recommended_course_ids=set(),
+        dismissed_recommended_path_ids=set(),
     )
     recently_shared_in_teams = build_recently_shared_in_teams(
         data=page_ctx.state.data,

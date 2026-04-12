@@ -94,8 +94,10 @@ def render_explore_sections(
     if visible_courses:
         with ui.element("section").classes("w-full lp-explore-section-block"):
             with ui.column().classes("w-full gap-2 lp-courses-section"):
-                ui.label("Recommended for you").classes("lp-courses-section-title")
-                ui.label("Start here based on your activity and selected scope.").classes("lp-courses-section-subtitle")
+                ui.label("Featured courses").classes("lp-courses-section-title")
+                ui.label("Start here with highlighted courses from the current scope.").classes(
+                    "lp-courses-section-subtitle"
+                )
             render_explore_course_spotlight(
                 shown_courses=visible_courses,
                 tracking_by_course_id=deps.state.tracking_by_course_id,

@@ -50,7 +50,6 @@ def render_course_item(
             course_row=course,
             tracked_row=tracked if isinstance(tracked, dict) else None,
             review_summary_row=state.course_review_summary_by_course_id.get(course_id),
-            recommendation_summary_row=state.course_recommendation_summary_by_course_id.get(course_id),
         )
         render_course_card(
             ctx=CourseCardContext(
@@ -98,7 +97,6 @@ def render_path_item(
             detail=state.selected_detail_by_path_id.get(path_id),
             tracking_by_course_id=dict(state.tracking_by_course_id or {}),
             review_summary_row=state.path_review_summary_by_id.get(path_id),
-            recommendation_summary_row=state.path_recommendation_summary_by_id.get(path_id),
         )
         detail = state.selected_detail_by_path_id.get(path_id) or {}
         raw_course_ids = path.get("course_ids")
@@ -138,9 +136,6 @@ def render_path_item(
         def _open_path_reviews() -> None:
             ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
 
-        def _open_path_recommend() -> None:
-            ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
-
         def _copy_path_link() -> None:
             copy_path_link(path_id=path_id)
 
@@ -163,7 +158,6 @@ def render_path_item(
                 is_new=False,
                 is_updated=False,
                 rating_badge="",
-                recommendation_badge="",
                 can_edit=can_edit,
                 is_tracked=is_tracked,
                 shared_by="",
@@ -180,7 +174,6 @@ def render_path_item(
             ),
             actions=PathCardCallbacks(
                 on_review=_open_path_reviews,
-                on_recommend=_open_path_recommend,
                 on_copy_link=_copy_path_link,
                 on_edit=_open_path_edit,
                 on_delete=_open_path_delete,

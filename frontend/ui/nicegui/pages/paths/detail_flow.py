@@ -17,11 +17,8 @@ from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.state import PathsPageState
 from frontend.ui.nicegui.pages.paths.view_model import (
     compute_outcomes,
-    format_recommendation_badge,
     format_review_summary,
-    latest_activity_day,
     path_tracking_label,
-    recommendation_authors,
     summarize_path_reviews,
 )
 
@@ -45,8 +42,6 @@ async def open_path_details_dialog(
     detail = dict(bundle.detail or {})
     normalized_view_mode = _normalize_view_mode(view_mode)
     path_reviews: list[dict[str, Any]] = list(bundle.path_reviews or [])
-    path_recommendations: list[dict[str, Any]] = list(bundle.path_recommendations or [])
-
     item_rows = list((detail.get("items") or []) if isinstance(detail, dict) else [])
     outcomes = compute_outcomes(
         detail=detail if isinstance(detail, dict) else {},
@@ -67,15 +62,15 @@ async def open_path_details_dialog(
 
     with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(900px,95vw)]"):
         summary = format_review_summary(state.path_review_summary_by_id.get(int(path_id)))
-        rec_badge = format_recommendation_badge(state.path_recommendation_summary_by_id.get(int(path_id)))
-        rec_by = recommendation_authors(path_recommendations)
-        latest_activity = latest_activity_day(reviews=path_reviews, recommendations=path_recommendations)
+        latest_activity = ""
+        for row in path_reviews:
+            created_at = str(row.get("created_at") or "").strip()
+            if created_at:
+                latest_activity = max(latest_activity, created_at[:10])
         render_path_detail_header(
             name=str(detail.get("name") or ""),
             description=str(detail.get("description") or ""),
             review_summary=summary,
-            recommendation_badge=rec_badge,
-            recommended_by=", ".join(rec_by[:3]),
             latest_activity=latest_activity,
         )
         if normalized_view_mode != "reviews":

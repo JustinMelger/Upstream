@@ -7,7 +7,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.learning_items import normalize_learning_item_type
-from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary as _format_review
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary as _format_review
 
 
 @dataclass(slots=True)
@@ -17,7 +17,6 @@ class PathCardView:
     is_new: bool
     is_updated: bool
     rating_badge: str
-    recommendation_badge: str
     shared_by: str
     tracking_label_text: str
     tracking_chip_cls: str
@@ -39,11 +38,6 @@ def format_review_summary(row: dict[str, Any] | None) -> str:
 def format_rating_badge(row: dict[str, Any] | None) -> str:
     """Format a compact rating badge for path cards (e.g., '4.2/5 (12)')."""
     return format_review_summary(row)
-
-
-def format_recommendation_badge(row: dict[str, Any] | None) -> str:
-    """Format a compact recommendation badge for path cards."""
-    return format_recommendation_summary(row)
 
 
 def path_tracking_label(is_tracked: bool) -> str:
@@ -220,7 +214,6 @@ def map_path_card_view(
     detail: dict[str, Any] | None,
     tracking_by_course_id: dict[int, dict[str, Any]],
     review_summary_row: dict[str, Any] | None,
-    recommendation_summary_row: dict[str, Any] | None,
 ) -> PathCardView:
     """Map path + state payloads to card display values."""
     outcomes: dict[str, Any] = {}
@@ -245,7 +238,6 @@ def map_path_card_view(
         is_new=is_new,
         is_updated=is_updated,
         rating_badge=format_rating_badge(review_summary_row),
-        recommendation_badge=format_recommendation_badge(recommendation_summary_row),
         shared_by=str(path_row.get("created_by") or "").strip(),
         tracking_label_text=path_tracking_label(is_tracked),
         tracking_chip_cls=path_tracking_chip_class(is_tracked),

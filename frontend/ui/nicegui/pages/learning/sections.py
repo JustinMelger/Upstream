@@ -363,9 +363,7 @@ def render_shared_content(
     shared_learning_items: list[Any],
     shared_paths: list[dict[str, Any]],
     shared_path_review_summary_by_id: dict[int, dict[str, Any]],
-    shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]],
     review_summary_label: Any,
-    recommendation_summary_label: Any,
     on_open_learning_item: Any,
     on_review_learning_item: Any,
     on_view_path: Any,
@@ -402,10 +400,7 @@ def render_shared_content(
                                 learning_item_review_action_label(item_type),
                                 on_click=on_review_learning_item(item),
                             ).props("dense outline").classes("lp-track-continue-btn")
-                parts = [
-                    review_summary_label(item.review_summary_row),
-                    recommendation_summary_label(item.recommendation_summary_row),
-                ]
+                parts = [review_summary_label(item.review_summary_row)]
                 parts = [part for part in parts if part]
                 if parts:
                     ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
@@ -431,10 +426,7 @@ def render_shared_content(
                         ui.button("Review", on_click=on_review_path(pid)).props("dense outline").classes(
                             "lp-track-continue-btn"
                         )
-                parts = [
-                    review_summary_label(shared_path_review_summary_by_id.get(pid)),
-                    recommendation_summary_label(shared_path_recommendation_summary_by_id.get(pid)),
-                ]
+                parts = [review_summary_label(shared_path_review_summary_by_id.get(pid))]
                 parts = [part for part in parts if part]
                 if parts:
                     ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
@@ -663,7 +655,6 @@ def render_shared_tab(
     *,
     shared_vm: Any,
     review_summary_label: Any,
-    recommendation_summary_label: Any,
     nav_actions: Any,
 ) -> None:
     """Compose shared-tab UI from the shared view-model."""
@@ -671,9 +662,7 @@ def render_shared_tab(
         shared_learning_items=shared_vm.shared_learning_items,
         shared_paths=shared_vm.shared_paths,
         shared_path_review_summary_by_id=shared_vm.shared_path_review_summary_by_id,
-        shared_path_recommendation_summary_by_id=shared_vm.shared_path_recommendation_summary_by_id,
         review_summary_label=review_summary_label,
-        recommendation_summary_label=recommendation_summary_label,
         on_open_learning_item=lambda item: (
             nav_actions.make_article_view_action(int(item.item_id))
             if str(item.item_type or "") == "article"

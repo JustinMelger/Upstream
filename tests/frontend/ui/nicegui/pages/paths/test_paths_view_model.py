@@ -27,20 +27,6 @@ def test_enrich_path_courses_attaches_reviews_and_tracking_status() -> None:
 
 
 @pytest.mark.unit
-def test_recommendation_authors_and_latest_activity_day() -> None:
-    recommendations = [
-        {"created_by": "zoe", "created_at": "2026-02-01T00:00:00Z"},
-        {"created_by": "alice", "created_at": "2026-02-03T00:00:00Z"},
-        {"created_by": "alice", "created_at": "2026-02-02T00:00:00Z"},
-        {"created_by": "", "created_at": "2026-02-04T00:00:00Z"},
-    ]
-    reviews = [{"created_at": "2026-02-05T00:00:00Z"}]
-
-    assert view_model.recommendation_authors(recommendations) == ["alice", "zoe"]
-    assert view_model.latest_activity_day(reviews=reviews, recommendations=recommendations) == "2026-02-05"
-
-
-@pytest.mark.unit
 def test_summarize_path_reviews_computes_average_and_count() -> None:
     summary = view_model.summarize_path_reviews(
         path_id=7,
@@ -74,12 +60,10 @@ def test_map_path_card_view_for_tracked_path_includes_progress_and_badges() -> N
         detail=detail,
         tracking_by_course_id=tracking,
         review_summary_row={"avg_rating": 4.5, "review_count": 2},
-        recommendation_summary_row={"recommendation_count": 3},
     )
     assert vm.is_updated is True
     assert vm.is_new is False
     assert vm.rating_badge == "4.5/5 (2)"
-    assert vm.recommendation_badge == "↗ 3 rec"
     assert vm.completed == 1 and vm.total_courses == 2
     assert vm.milestone in {"Halfway", "Started"}
     assert vm.next_title == "FastAPI"
@@ -95,7 +79,6 @@ def test_map_path_card_view_for_untracked_path_hides_learning_fields() -> None:
         detail=None,
         tracking_by_course_id={},
         review_summary_row=None,
-        recommendation_summary_row=None,
     )
     assert vm.tracking_label_text == "Not tracked"
     assert vm.completed == 0 and vm.total_courses == 0

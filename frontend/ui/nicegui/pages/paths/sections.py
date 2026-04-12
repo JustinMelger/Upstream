@@ -13,7 +13,7 @@ from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
 from frontend.ui.nicegui.pages.paths.actions import build_path_card_actions, PathCardActionDeps
 from frontend.ui.nicegui.pages.paths.dialogs import open_edit_path_dialog
-from frontend.ui.nicegui.pages.paths.orchestration import perform_update_path, refresh_path_recommendation_summary
+from frontend.ui.nicegui.pages.paths.orchestration import perform_update_path
 from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
 from frontend.ui.nicegui.pages.paths.ui_glue import compute_expanded_visible_count
 from frontend.ui.nicegui.pages.paths.view_model import map_path_card_view
@@ -57,28 +57,11 @@ def render_paths_cards_block(
             detail=detail if isinstance(detail, dict) else None,
             tracking_by_course_id=deps.controller_state.tracking_by_course_id,
             review_summary_row=deps.controller_state.path_review_summary_by_id.get(path_id),
-            recommendation_summary_row=deps.controller_state.path_recommendation_summary_by_id.get(path_id),
         )
         actions = build_path_card_actions(
             path_id=path_id,
             is_tracked=is_tracked,
             deps=PathCardActionDeps(
-                username=deps.username,
-                get_user_note=lambda _path_id, _username: deps.controller.get_user_recommendation_note(
-                    path_id=int(_path_id),
-                    username=str(_username),
-                ),
-                save_recommendation=lambda _path_id, _note: deps.controller.save_recommendation(
-                    path_id=int(_path_id),
-                    note=str(_note),
-                ),
-                on_saved=partial(
-                    refresh_path_recommendation_summary,
-                    path_id=path_id,
-                    controller=deps.controller,
-                    state=deps.controller_state,
-                    refresh_paths_list_ui=deps.refresh_paths_list_ui,
-                ),
                 get_path_detail=lambda _pid: deps.controller.get_path_detail(path_id=int(_pid)),
                 on_open_edit=lambda _pid, _detail: open_edit_path_dialog(
                     detail=_detail,
@@ -106,7 +89,6 @@ def render_paths_cards_block(
                 is_new=card_vm.is_new,
                 is_updated=card_vm.is_updated,
                 rating_badge=card_vm.rating_badge,
-                recommendation_badge=card_vm.recommendation_badge,
                 can_edit=can_edit,
                 is_tracked=is_tracked,
                 shared_by=card_vm.shared_by,
@@ -122,7 +104,6 @@ def render_paths_cards_block(
             ),
             actions=PathCardCallbacks(
                 on_review=actions.on_review,
-                on_recommend=actions.on_recommend,
                 on_copy_link=actions.on_copy_link,
                 on_edit=actions.on_edit,
                 on_delete=actions.on_delete,
@@ -199,5 +180,5 @@ def render_paths_empty_state(
 def render_paths_collection_intro() -> None:
     """Render section heading above the paths result list."""
     with ui.column().classes("w-full gap-1 lp-courses-section"):
-        ui.label("Teammate-recommended paths").classes("lp-courses-section-title")
-        ui.label("Structured journeys your team recommends to build momentum").classes("lp-courses-section-subtitle")
+        ui.label("Learning paths").classes("lp-courses-section-title")
+        ui.label("Structured journeys your team shared to build momentum").classes("lp-courses-section-subtitle")

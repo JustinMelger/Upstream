@@ -15,8 +15,6 @@ def render_path_detail_header(
     name: str,
     description: str,
     review_summary: str,
-    recommendation_badge: str,
-    recommended_by: str,
     latest_activity: str,
 ) -> None:
     """Render static header metadata for the path detail dialog."""
@@ -24,10 +22,6 @@ def render_path_detail_header(
     ui.label(description).classes("text-sm text-gray-600")
     if review_summary:
         ui.label(f"Reviews: {review_summary}").classes("text-sm").style("color: var(--lp-muted)")
-    if recommendation_badge:
-        ui.label(recommendation_badge).classes("text-sm").style("color: var(--lp-muted)")
-    if recommended_by:
-        ui.label(f"Recommended by teammates: {recommended_by}").classes("text-xs").style("color: var(--lp-muted)")
     if latest_activity:
         ui.label(f"Latest activity: {latest_activity}").classes("text-xs").style("color: var(--lp-muted)")
 

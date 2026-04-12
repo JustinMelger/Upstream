@@ -37,13 +37,12 @@ async def _load_course_detail_payload(
     controller: CoursesPageController,
     course_id: int,
     username: str,
-) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], dict[int, dict[str, Any]]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[int, dict[str, Any]]]:
     bundle = await controller.load_course_detail_bundle(course_id=course_id, cache_scope=username)
     tracking_by_course_id = await controller.reload_tracking()
     return (
         dict(bundle.course or {}),
         list(bundle.reviews or []),
-        list(bundle.recommendations or []),
         tracking_by_course_id,
     )
 
@@ -196,7 +195,6 @@ def _render_course_info_panel(
     current_status: str,
     source_url: str,
     can_edit: bool,
-    recommendations: list[dict[str, Any]],
 ) -> None:
     with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):
         ui.label("Course Info").classes("text-base font-semibold")
@@ -282,15 +280,6 @@ def _render_course_info_panel(
                 learning_item_source_action_label("course"),
                 on_click=lambda: ui.navigate.to(source_url, new_tab=True),
             ).props("flat")
-        if recommendations:
-            ui.separator()
-            ui.label("Recent recommendations").classes("text-sm font-semibold")
-            for row in recommendations[:3]:
-                by = str(row.get("created_by") or "").strip()
-                note = str(row.get("note") or "").strip()
-                text = f"{by}: {note}" if by and note else by or note
-                if text:
-                    ui.label(text).classes("lp-explore-detail-muted")
 
 
 async def render_explore_course_detail_page(*, store: SessionStore, api: ApiClient, course_id: str) -> None:
@@ -314,7 +303,7 @@ async def render_explore_course_detail_page(*, store: SessionStore, api: ApiClie
 
         controller = CoursesPageController(api=api)
         try:
-            course, reviews, recommendations, tracking_by_course_id = await _load_course_detail_payload(
+            course, reviews, tracking_by_course_id = await _load_course_detail_payload(
                 controller=controller,
                 course_id=cid,
                 username=username,
@@ -348,5 +337,4 @@ async def render_explore_course_detail_page(*, store: SessionStore, api: ApiClie
                 current_status=current_status,
                 source_url=source_url,
                 can_edit=can_edit,
-                recommendations=recommendations,
             )

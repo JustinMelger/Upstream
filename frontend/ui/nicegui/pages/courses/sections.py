@@ -332,7 +332,6 @@ def _render_course_card_menu(ctx: CourseCardContext) -> None:
         with card_menu:
             ui.menu_item("Open details", ctx.actions.on_view)
             ui.menu_item("Review", ctx.actions.on_review)
-            ui.menu_item("Recommend", ctx.actions.on_recommend)
             if ctx.has_video_preview:
                 ui.menu_item("Preview", ctx.on_toggle_preview)
             if ctx.has_url:
@@ -353,8 +352,6 @@ def _render_course_card_header(ctx: CourseCardContext) -> None:
             ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
         if ctx.card_vm.rating_badge:
             ui.label(ctx.card_vm.rating_badge).classes("lp-meta-chip lp-meta-chip--rating")
-        if ctx.card_vm.recommendation_badge:
-            ui.label(ctx.card_vm.recommendation_badge).classes("lp-meta-chip")
 
 
 def _render_course_card_context_meta(ctx: CourseCardContext) -> None:
