@@ -115,6 +115,14 @@ def _render_progress_block(*, display: PathCardDisplay, compact_mode: bool) -> N
         ui.label("Select to track milestones").classes("text-xs lp-card-subtitle lp-path-context-line")
 
 
+def _render_review_line(*, display: PathCardDisplay) -> None:
+    review_text = str(display.rating_badge or "").strip() or "No reviews yet"
+    review_classes = "lp-card-review-line"
+    if not str(display.rating_badge or "").strip():
+        review_classes += " lp-card-review-line--empty"
+    ui.label(review_text).classes(review_classes)
+
+
 def _render_action_row(*, actions: PathCardCallbacks) -> None:
     def _render_actions() -> None:
         if actions.on_primary is not None and str(actions.primary_label or "").strip():
@@ -163,4 +171,5 @@ def render_path_card(
                 ui.label(display.path_row.get("description") or "").classes(
                     "text-sm text-gray-600 lp-card-body lp-path-description"
                 )
+            _render_review_line(display=display)
             _render_action_row(actions=actions)

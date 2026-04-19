@@ -140,10 +140,11 @@ class AuthService:
             Token and expiry payload.
         """
         data = self._parse_session_payload({"colleague_id": colleague_id})
-        username = str(data.colleague_id or "").strip()
-        user = await self.get_user(username)
+        candidate = str(data.colleague_id or "").strip()
+        user = await self.get_user(candidate)
         if not user:
             raise AuthServiceError(detail="user_not_found", status_code=404)
+        username = str(user.username or "").strip()
 
         now = datetime.now(timezone.utc)
         expires_at = now + timedelta(days=settings.session_days)
@@ -207,7 +208,9 @@ class AuthService:
             Number of sessions revoked.
         """
         data = self._parse_session_payload({"colleague_id": colleague_id})
-        username = str(data.colleague_id or "").strip()
+        candidate = str(data.colleague_id or "").strip()
+        user = await self.get_user(candidate)
+        username = str((user.username if user is not None else candidate) or "").strip()
         async with session_scope(self._repo.session):
             return await self._repo.revoke_sessions(username)
 

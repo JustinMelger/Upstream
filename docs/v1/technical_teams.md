@@ -37,7 +37,7 @@ The older `frontend/ui/nicegui/pages/activity/*` package should not be treated a
 - `teams`
 - `team_members`
 
-Activity is assembled from existing review/recommendation events rather than stored as a dedicated team-activity entity.
+Activity is assembled from existing share/review events rather than stored as a dedicated team-activity entity.
 
 ## Permission Model
 

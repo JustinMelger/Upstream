@@ -10,7 +10,7 @@ from frontend.ui.nicegui.core.datetime_utils import format_time
 _format_time = format_time
 
 
-def _user_row(u: dict[str, Any]) -> dict[str, Any]:
+def user_row(u: dict[str, Any]) -> dict[str, Any]:
     """Map a backend user payload into a table row."""
     return {
         "username": u.get("username") or "",
@@ -22,7 +22,7 @@ def _user_row(u: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _filter_users(users: list[dict[str, Any]] | None, needle: str) -> list[dict[str, Any]]:
+def filter_users(users: list[dict[str, Any]] | None, needle: str) -> list[dict[str, Any]]:
     """Filter users by substring match on username or role."""
     all_users = list(users or [])
     if not needle:

@@ -44,7 +44,7 @@ def render_paths_topbar(
                 sort_filter = (
                     ui.select(
                         {
-                            "": "Recommended",
+                            "": "Best match",
                             "top_rated": "Top rated",
                             "most_reviewed": "Most reviewed",
                             "newest": "Recently added",

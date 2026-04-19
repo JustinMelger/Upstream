@@ -56,6 +56,22 @@ async def test_session_lifecycle(db_session):
 
 
 @pytest.mark.unit
+async def test_session_creation_and_revocation_use_canonical_username(db_session):
+    """Mixed-case auth inputs should resolve to the stored username casing."""
+    auth_service = AuthService(AuthRepository(db_session))
+    await auth_service.create_user("Alice", "pass123", "user")
+
+    token = (await auth_service.create_session("alice"))["token"]
+    session = await auth_service.get_session(token)
+    assert session is not None
+    assert session["colleague_id"] == "Alice"
+
+    revoked = await auth_service.revoke_sessions("ALICE")
+    assert revoked == 1
+    assert await auth_service.get_session(token) is None
+
+
+@pytest.mark.unit
 async def test_expired_session_is_purged(db_session):
     """Expired sessions are removed and not returned."""
     auth_service = AuthService(AuthRepository(db_session))

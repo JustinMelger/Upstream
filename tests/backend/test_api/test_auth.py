@@ -115,3 +115,29 @@ async def test_reset_password_not_found(app_client):
     )
     assert response.status_code == 404
     assert response.json().get("message") == "user_not_found"
+
+
+@pytest.mark.integration
+async def test_login_with_different_username_casing_uses_canonical_user_identity(app_client):
+    """Case-insensitive login should still create a canonical session identity."""
+    admin_token = await _login_admin(app_client)
+    created = await app_client.post(
+        "/auth/users",
+        json={"username": "Alice", "password": "pass123", "role": "user"},
+        headers={"X-Session-Token": admin_token},
+    )
+    assert created.status_code == 200
+
+    login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    assert login.status_code == 200
+    payload = login.json()
+    assert payload["username"] == "Alice"
+
+    token = payload["token"]
+    me = await app_client.get("/auth/me", headers={"X-Session-Token": token})
+    assert me.status_code == 200
+    assert me.json()["username"] == "Alice"
+
+    logout = await app_client.post("/auth/logout", headers={"X-Session-Token": token})
+    assert logout.status_code == 200
+    assert logout.json()["revoked"] >= 1

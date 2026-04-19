@@ -8,9 +8,9 @@
   - track courses and path progress
   - see content other people shared
 - Current subtype capability model:
-  - `course`: tracking + reviews + recommendations
+  - `course`: tracking + reviews
   - `article`: reviews
-  - `video`: reviews without tracking/recommendations
+  - `video`: reviews
 
 ## Release Focus
 - Finish broader regression validation across backend, frontend, and smoke flows.
@@ -19,6 +19,7 @@
 
 ## Deferred Focus
 - Auth enhancements (`Phase 3b`).
+- AI Curator expansion beyond the current draft-only feature flag.
 - Visual-system modernization and motion polish (`Phase 11A` open items).
 - Media pipeline durability and thumbnail quality work (`Phase 11A.3` open items).
 - Activity feed v2 (`Phase 11B`).

@@ -85,8 +85,8 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 ui.label("Learning dashboard").classes("lp-home-title")
             render_catalog_hero(
                 eyebrow="",
-                title="Ship one meaningful learning step today",
-                subtitle="Continue your next course or respond to team feedback.",
+                title="Keep your learning momentum visible",
+                subtitle="Continue a tracked course, check shared activity, and move the next step forward.",
             )
 
             render_intro_panel()

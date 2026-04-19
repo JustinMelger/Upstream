@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.guards import require_user
@@ -28,7 +29,13 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         with render_container():
             request = getattr(ui.context.client, "request", None)
             ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600 lp-teams-subtitle")
-            ui.label("Team workspace").classes("lp-home-title")
+            ui.label("Teams and activity").classes("lp-home-title")
+            render_catalog_hero(
+                eyebrow="",
+                title="Keep shared learning moving with less coordination overhead",
+                subtitle="Create a team, check activity, and follow up on what needs attention from one workspace.",
+            )
+            ui.element("div").classes("h-3")
             view = _TeamsPageView(
                 controller=TeamsPageController(api=api),
                 state=TeamsPageState(),

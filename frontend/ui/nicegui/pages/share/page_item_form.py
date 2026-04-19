@@ -67,8 +67,13 @@ class ArticleShareControls:
 def render_share_scaffold(*, ui_module: Any, title: str, subtitle: str) -> None:
     """Render the common share-page title/subtitle block."""
     with ui_module.column().classes("w-full gap-1 lp-share-header"):
+        with ui_module.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
+            ui_module.label("Share").classes("text-xs font-medium uppercase tracking-[0.18em]").style(
+                "color: var(--lp-muted)"
+            )
+            ui_module.button("Back to Explore", on_click=lambda: ui_module.navigate.to("/explore")).props("flat dense")
         ui_module.label(title).classes("lp-home-title")
-        ui_module.label(subtitle).classes("text-sm").style("color: var(--lp-muted)")
+        ui_module.label(subtitle).classes("text-sm max-w-3xl").style("color: var(--lp-muted)")
 
 
 def render_share_type_picker(*, ui_module: Any, current_type: str) -> None:

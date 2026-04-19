@@ -60,13 +60,12 @@ The canonical single-item share UI is centralized under `/share/item`.
 ## Accepted V1 Constraints
 
 - no attempt to unify all subtype behaviors behind an artificial shared mutation model
-- recommendation APIs may still exist in the codebase, but they are not part of the v1 product contract
 - tracking remains course/path specific
+- URL metadata/autofill is optional support behavior, not a core product promise
 
 ## Release Risks
 
 - docs and UI copy may overstate symmetry across item types
-- existing recommendation code may remain in the repo even if the release hides it
 - metadata/autofill can be mistaken for core item persistence behavior
 - video support should be presented as lightweight but valid, not as an unfinished course variant
 

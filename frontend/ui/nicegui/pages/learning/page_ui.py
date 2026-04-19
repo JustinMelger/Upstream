@@ -140,8 +140,10 @@ def render_intro_panel() -> None:
         if not should_show_home_intro(storage_user=app.storage.user):
             return
         with ui.card().classes("lp-card w-full"):
-            ui.label("Welcome to Home").classes("text-md font-semibold")
-            ui.label("Start here in three quick steps.").classes("text-sm").style("color: var(--lp-muted)")
+            ui.label("How to use Home").classes("text-md font-semibold")
+            ui.label("Use this page to pick up the next useful learning action quickly.").classes("text-sm").style(
+                "color: var(--lp-muted)"
+            )
             for idx, step in enumerate(INTRO_STEPS, start=1):
                 with ui.row().classes("items-start gap-2 w-full"):
                     ui.label(str(idx)).classes("lp-chip lp-chip--sky")

@@ -10,7 +10,7 @@ from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
 
 TAB_OPTIONS = {"all": "All", "courses": "Courses", "videos": "Videos", "paths": "Paths", "articles": "Articles"}
 SORT_OPTIONS = {
-    "": "Recommended",
+    "": "Best match",
     "newest": "Newest",
     "title_az": "Title A-Z",
 }

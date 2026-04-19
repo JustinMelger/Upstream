@@ -7,16 +7,16 @@
 Learning Hub is an internal learning platform for shared skill development.
 
 At a glance:
-- FastAPI backend APIs for auth, catalog, tracking, activity, and AI draft planning
+- FastAPI backend APIs for auth, catalog, tracking, activity, and optional AI draft planning
 - NiceGUI frontend for day-to-day learning workflows and team visibility
 - Postgres persistence with Alembic migrations
 - Optional local observability stack (OpenTelemetry, Prometheus, Tempo, Loki, Grafana)
 
 Core workflows:
-- Curate courses, paths, and articles
+- Share courses, articles, videos, and mixed learning paths
 - Track progress per user and across teams
-- Share recommendations and reviews
-- Generate draft learning plans from goals (`POST /ai/plan`)
+- Review learning items and paths
+- Use Teams as a lightweight workspace for membership and activity
 
 ## Docs
 - Architecture: [docs/architecture.md](docs/architecture.md)
@@ -102,7 +102,7 @@ API:
 UI:
 - `BACKEND_URL`: backend base URL used by NiceGUI frontend.
 - `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage.
-- `FEATURE_AI_CURATOR`: enable AI Curator page (`1` enabled, `0` disabled).
+- `FEATURE_AI_CURATOR`: enable AI Curator page (`1` enabled, `0` disabled). Default is `0` for v1.
 - `FEATURE_ARTICLES`: enable article-specific frontend features (`1` enabled, `0` disabled).
 
 ## Contributor quick start
@@ -151,9 +151,9 @@ Optional local commit hooks:
   - `/explore/courses/{course_id}`
   - `/explore/paths/{path_id}`
   - `/explore/articles/{article_id}`
-- Teams (`/teams`): mailbox-style team activity and updates.
+- Teams (`/teams`): basic workspace for membership, inbox, and team activity.
 - Profile (`/profile`, `/profile/stats`): personal account and stats views.
-- AI Curator (`/ai`): goal-driven draft plan workflow (feature-flagged).
+- AI Curator (`/ai`): goal-driven draft plan workflow (feature-flagged, off by default for v1).
 - Admin (`/admin/users`): user management (admin only).
 
 Navigation note:
@@ -164,10 +164,10 @@ Navigation note:
 - Admins can create additional user accounts from the Admin page.
 
 ## Feature snapshot
-- Social learning flows: share/review/recommend courses and paths.
-- Team activity and mailbox view.
-- Explore-first content workflow (courses, paths, articles).
-- AI draft planner endpoint (`POST /ai/plan`) for proposed learning plans.
+- Social learning flows: share and review learning items and paths.
+- Team activity and mailbox view within a basic Teams workspace.
+- Explore-first content workflow (courses, paths, articles, videos).
+- Optional AI draft planner endpoint (`POST /ai/plan`) kept out of the core v1 narrative.
 
 ## Conventional commits
 Use Conventional Commits for automated release notes.
@@ -193,15 +193,16 @@ Examples:
 
 Endpoint families:
 - Auth/session: `/auth/*`
-- Courses (+ reviews/recommendations): `/courses/*`
-- Paths (+ select/status + reviews/recommendations): `/paths/*`
+- Courses (+ reviews): `/courses/*`
+- Paths (+ select/status + reviews): `/paths/*`
 - Articles (+ reviews): `/articles/*`
+- Videos (+ reviews): `/videos/*`
 - Tracking/stats: `/tracking/*`
 - Notifications/activity: `/notifications/*`
 - Teams/activity context: `/teams/*`
 - URL preview metadata: `/url-preview/*`
 - Telemetry/events: `/telemetry/*`
-- AI draft planning: `/ai/*`
+- AI draft planning: `/ai/*` (feature-flagged)
 
 ## Observability (OpenTelemetry + Prometheus + Grafana)
 - Start observability independently:
@@ -276,7 +277,7 @@ SESSION_DAYS=7
 BOOTSTRAP_ADMIN_USERNAME=admin
 BOOTSTRAP_ADMIN_PASSWORD=change-me
 NICEGUI_STORAGE_SECRET=change-me-too
-FEATURE_AI_CURATOR=1
+FEATURE_AI_CURATOR=0
 FEATURE_ARTICLES=1
 ```
 

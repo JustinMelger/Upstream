@@ -219,7 +219,9 @@ class AuthRepository(RepositoryDateTimeCodec):
         Returns:
             Number of sessions revoked.
         """
-        result = await self.session.execute(delete(SessionModel).where(SessionModel.colleague_id == colleague_id))
+        result = await self.session.execute(
+            delete(SessionModel).where(func.lower(SessionModel.colleague_id) == func.lower(colleague_id))
+        )
         return self._rowcount(result)
 
     async def purge_expired_sessions(self, now: str | datetime) -> int:

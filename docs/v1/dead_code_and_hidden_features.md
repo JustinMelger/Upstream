@@ -12,19 +12,13 @@ This document separates:
 
 Current state:
 
-- [frontend/ui/nicegui/pages/activity/page.py](/Users/justinmelger/Desktop/github/learning-platform/frontend/ui/nicegui/pages/activity/page.py:27) still defines a full `/teams` page.
-- [frontend/ui/nicegui/pages/teams/page.py](/Users/justinmelger/Desktop/github/learning-platform/frontend/ui/nicegui/pages/teams/page.py:21) also defines `/teams`.
-- [frontend/ui/nicegui/main.py](/Users/justinmelger/Desktop/github/learning-platform/frontend/ui/nicegui/main.py:37) registers the `teams` page, not the `activity` page.
+- the obsolete page-level route implementation in `pages/activity/page.py` has been removed
+- the shared `pages/activity` helper modules remain because the canonical Teams page still uses them
 
 Interpretation:
 
-- the old page-level route in `pages/activity/page.py` is stale
-- the entire `activity` package is not dead, because some helpers are still reused by the canonical Teams implementation
-
-Action:
-
-- remove or archive the old `activity/page.py` route implementation
-- keep reused helper/view-model modules only if the canonical Teams page still depends on them
+- the duplicate `/teams` route is no longer part of the shipped app
+- the remaining `activity` package is shared UI/domain support code, not a second page surface
 
 ## 2. Hidden But Real Features
 
@@ -32,15 +26,14 @@ Action:
 
 Current state:
 
-- backend recommendation APIs exist for courses and paths
-- recommendation summary data feeds list/detail/home surfaces
-- UI actions exist, but mostly as secondary menu/dialog actions
+- recommendation UI has been removed from the released frontend
+- recommendation backend APIs have been removed from the live app surface
+- dormant recommendation table/models still exist in the persistence layer
 
 Interpretation:
 
-- recommendations are implemented
-- they are not a dead feature
-- they are not strongly surfaced as a simple user-facing product concept
+- recommendations are not part of the shipped v1 product
+- remaining recommendation persistence artifacts are cleanup debt, not release scope
 
 V1 decision:
 
@@ -49,9 +42,8 @@ V1 decision:
 
 Action:
 
-- hide recommendation UI
-- remove recommendation flows from v1 docs and release narrative
-- leave backend/data removal as an explicit cleanup decision rather than an accidental partial deletion
+- keep recommendation behavior out of the release narrative
+- leave table/model cleanup as a post-v1 persistence decision
 
 ### AI Curator
 
@@ -85,17 +77,13 @@ If the v1 decision is “reviews yes, recommendations no”, the affected areas 
 
 ### Backend
 
-- course recommendation endpoints in [backend/api/courses.py](/Users/justinmelger/Desktop/github/learning-platform/backend/api/courses.py:74)
-- path recommendation endpoints in [backend/api/paths.py](/Users/justinmelger/Desktop/github/learning-platform/backend/api/paths.py:71)
-- recommendation services and repositories
-- recommendation-derived notifications/activity events
+- recommendation endpoints, services, repositories, and derived activity behavior have been removed from the live app surface
+- recommendation table/model cleanup is still a separate persistence follow-up if desired
 
 ### Frontend
 
-- course card/menu recommend actions
-- path card/menu recommend actions
-- recommendation summaries shown on cards/detail/home
-- “recommended for you” or similar wording in learning/home surfaces
+- recommendation card/menu actions have been removed
+- recommendation summaries and “recommended for you” copy have been removed
 
 ### Docs
 
@@ -106,9 +94,9 @@ If the v1 decision is “reviews yes, recommendations no”, the affected areas 
 ## 5. Suggested Execution Order
 
 1. Remove recommendation language from v1 docs.
-2. Hide recommendation UI from the released frontend.
-3. Decide whether backend recommendation APIs remain dormant for now or are removed before release.
-4. Clean up stale route/page code.
+2. Remove recommendation UI and backend APIs from the released surface.
+3. Clean up stale route/page code.
+4. Decide whether dormant recommendation persistence artifacts should be deleted after release.
 
 ## 6. Removal Rule
 

@@ -8,6 +8,7 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_container, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons, render_inline_spinner
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
@@ -291,7 +292,13 @@ async def _render_profile_stats_page(*, store: SessionStore, api: ApiClient) -> 
     render_shell(title="Profile", store=store, api=api)
     with render_container().classes("lp-profile-scope"):
         ui.label(subtitle_for(PrimaryPage.PROFILE)).classes("text-sm text-gray-600")
-        ui.label("Profile analytics").classes("lp-home-title")
+        ui.label("Profile overview").classes("lp-home-title")
+        render_catalog_hero(
+            eyebrow="",
+            title="See your learning progress in one place",
+            subtitle="Track momentum, check completion trends, and review team stats without leaving your profile.",
+        )
+        ui.element("div").classes("h-3")
 
         @ui.refreshable
         def dashboard() -> None:

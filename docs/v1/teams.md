@@ -72,7 +72,7 @@ Owners and admins can:
 
 - `teams`
 - `team_members`
-- team activity is derived from other content/review/recommendation tables
+- team activity is derived from other content/share/review events
 
 ### Release constraints
 

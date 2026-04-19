@@ -29,6 +29,7 @@ The goal is to describe the product that will be supported in production, not ev
 - [Feature Matrix](./feature_matrix.md)
 - [Release Gaps](./release_gaps.md)
 - [Release Checklist](./release_checklist.md)
+- [Release Notes](./release_notes.md)
 - [Dead Code And Hidden Features](./dead_code_and_hidden_features.md)
 
 ## Focused Technical Notes

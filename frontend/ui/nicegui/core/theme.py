@@ -798,12 +798,14 @@ def apply_theme() -> None:
         .lp-catalog--explore .lp-path-card,
         .lp-catalog--explore .lp-article-card {
           width: 212px;
-          min-height: 258px;
+          min-height: 272px;
           border-radius: 12px;
           overflow: hidden;
           border: none !important;
           box-shadow: 0 7px 20px rgba(0, 0, 0, 0.34);
           transition: transform 160ms ease, box-shadow 180ms ease;
+          display: flex;
+          flex-direction: column;
         }
 
         .lp-catalog--explore .lp-course-card--surface,
@@ -866,6 +868,7 @@ def apply_theme() -> None:
           flex-direction: column;
           align-items: stretch;
           gap: 10px;
+          flex: 1 1 auto;
         }
 
         .lp-catalog--explore .lp-course-card-content,
@@ -875,14 +878,16 @@ def apply_theme() -> None:
           padding-right: 0;
           display: flex;
           flex-direction: column;
-          min-height: 120px;
+          min-height: 132px;
+          flex: 1 1 auto;
         }
 
         .lp-catalog--explore .lp-path-card .lp-card-content {
           padding-top: 22px;
           display: flex;
           flex-direction: column;
-          min-height: 120px;
+          min-height: 132px;
+          flex: 1 1 auto;
         }
 
         .lp-catalog--explore .lp-course-media-slot,
@@ -1086,6 +1091,22 @@ def apply_theme() -> None:
 
         .lp-catalog--explore .lp-course-progress-slot {
           min-height: 24px;
+        }
+
+        .lp-catalog--explore .lp-card-review-line {
+          min-height: 18px;
+          margin-top: 1px;
+          font-size: 0.74rem;
+          line-height: 1.25;
+          color: rgba(223, 232, 243, 0.8);
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+          overflow: hidden;
+        }
+
+        .lp-catalog--explore .lp-card-review-line--empty {
+          color: rgba(193, 206, 221, 0.46);
         }
 
         .lp-catalog--explore .lp-card-actions .lp-status-select,

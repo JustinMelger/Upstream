@@ -188,11 +188,31 @@ async def test_share_item_video_route_renders_video_copy(monkeypatch: pytest.Mon
     share_page.register(store=object(), api=object())  # type: ignore[arg-type]
     await fake_ui.routes["/share/item"]()
 
+    assert "Back to Explore" in fake_ui.buttons
     assert "Video" in fake_ui.buttons
     assert "Course" in fake_ui.buttons
     assert "Article" in fake_ui.buttons
     assert any(label.text == "Share a video your team should learn from." for label in fake_ui.labels)
     assert any(inp.label == "Video title" for inp in fake_ui.inputs)
+
+
+@pytest.mark.anyio
+async def test_share_item_back_to_explore_button_navigates_to_explore(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_ui = _FakeUi()
+    controller = _FakeController()
+    fake_ui.context.client.request.query_params = {"type": "course"}
+    monkeypatch.setattr(share_page, "ui", fake_ui)
+    monkeypatch.setattr(share_page, "app", SimpleNamespace(storage=SimpleNamespace(user={})))
+    monkeypatch.setattr(share_page, "render_shell", lambda **_kwargs: None)
+    monkeypatch.setattr(share_page, "render_catalog_scope", lambda **_kwargs: _FakeContainer())
+    monkeypatch.setattr(share_page, "require_user", _fake_require_user)
+    monkeypatch.setattr(share_page, "SharePageController", lambda **_kwargs: controller)
+
+    share_page.register(store=object(), api=object())  # type: ignore[arg-type]
+    await fake_ui.routes["/share/item"]()
+    await fake_ui.button_map["Back to Explore"].emit("click")
+
+    assert fake_ui.navigations[-1] == ("/explore", False)
 
 
 @pytest.mark.anyio
@@ -370,7 +390,7 @@ async def test_share_item_article_publish_success_navigates_to_articles_tab(monk
 
 
 @pytest.mark.anyio
-async def test_share_item_video_publish_success_navigates_and_persists_provider_default(
+async def test_share_item_video_publish_success_navigates_to_videos_tab_and_persists_provider_default(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fake_ui = _FakeUi()
@@ -406,4 +426,4 @@ async def test_share_item_video_publish_success_navigates_and_persists_provider_
     ]
     assert "share_video_page_draft::alice" not in storage
     assert notifications[-1] == ("Learning item published", "positive")
-    assert fake_ui.navigations[-1] == ("/explore/videos/12", False)
+    assert fake_ui.navigations[-1] == ("/explore?tab=videos", False)
