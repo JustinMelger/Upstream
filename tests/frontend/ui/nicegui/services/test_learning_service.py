@@ -47,6 +47,7 @@ async def test_load_my_learning_data_slices_tracked_selected_and_shared() -> Non
             "/videos": [{"id": 50, "title": "V1", "created_by": "alice"}],
             "/videos/reviews/summary": [{"video_id": 50, "avg_rating": 4.5, "review_count": 2}],
             "/articles": [{"id": 100, "title": "A1", "created_by": "alice"}],
+            "/articles/reviews/summary": [{"article_id": 100, "avg_rating": 5.0, "review_count": 1}],
         }
     )
 
@@ -59,6 +60,7 @@ async def test_load_my_learning_data_slices_tracked_selected_and_shared() -> Non
     assert [int(p["id"]) for p in data["shared_paths"]] == [10]
     assert [int(a["id"]) for a in data["shared_articles"]] == [100]
     assert int(data["shared_video_review_summary_by_id"][50]["review_count"]) == 2
+    assert int(data["shared_article_review_summary_by_id"][100]["review_count"]) == 1
 
 
 @pytest.mark.unit
@@ -89,6 +91,7 @@ async def test_load_my_learning_data_keeps_working_when_summary_endpoints_fail_w
             if path in {
                 "/courses/reviews/summary",
                 "/videos/reviews/summary",
+                "/articles/reviews/summary",
                 "/paths/reviews/summary",
             }:
                 raise ApiError(status_code=503, message="backend_unreachable")
@@ -112,6 +115,7 @@ async def test_load_my_learning_data_keeps_working_when_summary_endpoints_fail_w
     assert data["course_review_summary_by_id"] == {}
     assert data["path_review_summary_by_id"] == {}
     assert data["shared_video_review_summary_by_id"] == {}
+    assert data["shared_article_review_summary_by_id"] == {}
 
 
 @pytest.mark.unit

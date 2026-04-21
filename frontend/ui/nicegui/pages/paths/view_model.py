@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.learning_items import normalize_learning_item_type
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary as _format_review
 
@@ -205,17 +204,12 @@ def map_path_card_view(
         total_courses = int(outcomes.get("total") or 0)
         progress = float(outcomes.get("ratio") or 0.0)
 
-    created_at = parse_iso_datetime(path_row.get("created_at"))
-    updated_at = parse_iso_datetime(path_row.get("updated_at"))
-    is_updated = is_recent(updated_at) and created_at is not None and updated_at is not None and updated_at > created_at
-    is_new = (not is_updated) and is_recent(created_at)
-
     next_course = outcomes.get("next_course") if isinstance(outcomes, dict) else None
     next_title = str(next_course.get("title") or "").strip() if isinstance(next_course, dict) else ""
 
     return PathCardView(
-        is_new=is_new,
-        is_updated=is_updated,
+        is_new=False,
+        is_updated=False,
         rating_badge=format_rating_badge(review_summary_row),
         shared_by=str(path_row.get("created_by") or "").strip(),
         tracking_label_text=path_tracking_label(is_tracked),

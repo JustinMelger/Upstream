@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Callable
 
 from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values, PathsFilterValues
@@ -76,13 +76,6 @@ def sort_paths(
         return shown
     if sort_value == "name_az":
         return sorted(shown, key=lambda p: str(p.get("name") or "").strip().lower())
-    if sort_value == "newest":
-
-        def _created_key(p: dict[str, Any]) -> tuple[datetime, int]:
-            dt = parse_iso_datetime(p.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc)
-            return (dt, int(p.get("id") or 0))
-
-        return sorted(shown, key=_created_key, reverse=True)
     if sort_value == "top_rated":
 
         def _top_rated_key(p: dict[str, Any]) -> tuple[float, int, int]:

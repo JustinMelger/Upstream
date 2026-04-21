@@ -497,7 +497,7 @@ def render_home_focus_queue_panel(
             ui.label("Your next actions").classes("lp-home-queue-title")
             with ui.column().classes("w-full gap-1 lp-home-action-stats"):
                 with ui.row().classes("w-full items-center justify-between gap-2"):
-                    ui.label("Reviews pending").classes("lp-home-action-stat-label")
+                    ui.label("Course/path reviews pending").classes("lp-home-action-stat-label")
                     ui.label(str(max(0, pending_reviews))).classes("lp-home-action-stat-value")
                 with ui.row().classes("w-full items-center justify-between gap-2"):
                     ui.label("Tracked courses").classes("lp-home-action-stat-label")
@@ -610,7 +610,9 @@ def render_conversations_section(
         with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-home-convo-summary"):
             with ui.row().classes("items-center gap-2 flex-wrap"):
                 pending_label = (
-                    f"{total_pending_reviews} reviews waiting" if total_pending_reviews > 0 else "No pending reviews"
+                    f"{total_pending_reviews} course/path reviews waiting"
+                    if total_pending_reviews > 0
+                    else "No pending course/path reviews"
                 )
                 ui.label(pending_label).classes("text-xs lp-home-track-meta").style("color: var(--lp-muted)")
             if total_pending_reviews > 0:
@@ -621,7 +623,7 @@ def render_conversations_section(
 
         if not items:
             empty_copy = (
-                "No conversations are waiting right now. Start with your pending reviews."
+                "No conversations are waiting right now. Start with your pending course or path reviews."
                 if total_pending_reviews > 0
                 else "No conversations are waiting right now. Share a learning item or path to start team activity."
             )

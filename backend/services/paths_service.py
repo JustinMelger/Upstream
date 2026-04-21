@@ -97,6 +97,7 @@ class PathsService:
         async with session_scope(self._repo.session):
             if await self._repo.path_name_exists(name):
                 raise PathsServiceError(detail="duplicate_name", status_code=409)
+            self._ensure_unique_learning_item_refs(items)
             if await self._repo.has_missing_learning_items(items):
                 raise PathsServiceError(detail="invalid_item_refs", status_code=400)
             path_id = await self._repo.create_path_with_items(name, description, items, created_by)
@@ -129,6 +130,7 @@ class PathsService:
         async with session_scope(self._repo.session):
             if await self._repo.path_name_exists_for_other_id(path_id, name):
                 raise PathsServiceError(detail="duplicate_name", status_code=409)
+            self._ensure_unique_learning_item_refs(items)
             if await self._repo.has_missing_learning_items(items):
                 raise PathsServiceError(detail="invalid_item_refs", status_code=400)
             await self._repo.update_path_with_items(path_id, name, description, items)
@@ -193,3 +195,15 @@ class PathsService:
         for out_idx, (_position, _idx, item_type, item_id) in enumerate(sorted(sortable)):
             normalized.append({"type": item_type, "id": item_id, "position": out_idx})
         return normalized
+
+    @staticmethod
+    def _ensure_unique_learning_item_refs(items: list[dict[str, int | str]]) -> None:
+        """Reject duplicate typed learning-item refs within one path."""
+        seen: set[tuple[str, int]] = set()
+        for item in list(items or []):
+            item_type = str(item.get("type") or "").strip().lower()
+            item_id = int(item.get("id") or 0)
+            key = (item_type, item_id)
+            if key in seen:
+                raise PathsServiceError(detail="duplicate_item_refs", status_code=400)
+            seen.add(key)

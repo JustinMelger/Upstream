@@ -55,9 +55,11 @@ async def article_review_summaries(
 async def list_article_reviews(
     article_id: int,
     current_user: str = Depends(require_session),
+    articles: ArticlesService = Depends(get_articles_service),
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
 ) -> list[dict[str, Any]]:
     """List reviews for an article."""
+    require_row_exists(await articles.get_article_by_id(article_id=int(article_id)))
     return await reviews.list_reviews(article_id=article_id)
 
 
@@ -66,9 +68,11 @@ async def create_article_review(
     article_id: int,
     payload: ArticleReviewCreateRequest,
     current_user: str = Depends(require_session),
+    articles: ArticlesService = Depends(get_articles_service),
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
 ) -> dict[str, Any]:
     """Create/update current user's review for an article."""
+    require_row_exists(await articles.get_article_by_id(article_id=int(article_id)))
     return await reviews.create_review(article_id=article_id, payload=payload.model_dump(), created_by=current_user)
 
 

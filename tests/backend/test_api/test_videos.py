@@ -60,6 +60,23 @@ async def test_video_create_get_and_list(app_client):
 
 
 @pytest.mark.integration
+async def test_video_review_routes_return_404_for_missing_parent(app_client):
+    token = await _login_admin(app_client)
+
+    listing = await app_client.get("/videos/999999/reviews", headers={"X-Session-Token": token})
+    assert listing.status_code == 404
+    assert listing.json().get("message") == "not_found"
+
+    create = await app_client.post(
+        "/videos/999999/reviews",
+        json={"rating": 4, "text": "Useful"},
+        headers={"X-Session-Token": token},
+    )
+    assert create.status_code == 404
+    assert create.json().get("message") == "not_found"
+
+
+@pytest.mark.integration
 async def test_video_review_lifecycle_and_moderation(app_client):
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "alice", role="user")

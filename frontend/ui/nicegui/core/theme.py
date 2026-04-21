@@ -996,6 +996,14 @@ def apply_theme() -> None:
           align-items: center;
         }
 
+        .lp-catalog--explore .lp-article-card .lp-article-meta-row,
+        .lp-catalog--explore .lp-article-card .lp-article-context-line,
+        .lp-catalog--explore .lp-article-card .lp-article-tag-row {
+          display: none;
+          min-height: 0;
+          margin: 0;
+        }
+
         .lp-catalog--explore .lp-path-card .lp-path-context-line {
           white-space: nowrap;
           overflow: hidden;
@@ -1107,6 +1115,11 @@ def apply_theme() -> None:
 
         .lp-catalog--explore .lp-card-review-line--empty {
           color: rgba(193, 206, 221, 0.46);
+        }
+
+        .lp-catalog--explore .lp-card-meta-spacer {
+          min-height: 28px;
+          width: 100%;
         }
 
         .lp-catalog--explore .lp-card-actions .lp-status-select,

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-
 import pytest
 
 from frontend.ui.nicegui.pages.paths import view_model
@@ -40,12 +38,9 @@ def test_summarize_path_reviews_computes_average_and_count() -> None:
 
 @pytest.mark.unit
 def test_map_path_card_view_for_tracked_path_includes_progress_and_badges() -> None:
-    now = datetime.now(timezone.utc)
     row = {
         "id": 3,
         "created_by": "admin",
-        "created_at": (now - timedelta(days=3)).isoformat(),
-        "updated_at": (now - timedelta(days=1)).isoformat(),
     }
     detail = {
         "items": [
@@ -61,7 +56,7 @@ def test_map_path_card_view_for_tracked_path_includes_progress_and_badges() -> N
         tracking_by_course_id=tracking,
         review_summary_row={"avg_rating": 4.5, "review_count": 2},
     )
-    assert vm.is_updated is True
+    assert vm.is_updated is False
     assert vm.is_new is False
     assert vm.rating_badge == "4.5/5 (2)"
     assert vm.completed == 1 and vm.total_courses == 2
@@ -72,7 +67,7 @@ def test_map_path_card_view_for_tracked_path_includes_progress_and_badges() -> N
 
 @pytest.mark.unit
 def test_map_path_card_view_for_untracked_path_hides_learning_fields() -> None:
-    row = {"id": 7, "created_by": "alice", "created_at": "2026-02-01T00:00:00Z", "updated_at": "2026-02-01T00:00:00Z"}
+    row = {"id": 7, "created_by": "alice"}
     vm = view_model.map_path_card_view(
         path_row=row,
         is_tracked=False,

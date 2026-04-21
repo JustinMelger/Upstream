@@ -161,6 +161,26 @@ async def test_create_path_with_mixed_learning_items_returns_items_only(app_clie
 
 
 @pytest.mark.integration
+async def test_create_path_rejects_duplicate_learning_item_refs(app_client):
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Duplicate Ref Course")
+
+    create = await app_client.post(
+        "/paths",
+        json={
+            "name": "Duplicate Ref Path",
+            "items": [
+                {"type": "course", "id": course_id, "position": 0},
+                {"type": "course", "id": course_id, "position": 1},
+            ],
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert create.status_code == 400
+    assert create.json().get("message") == "duplicate_item_refs"
+
+
+@pytest.mark.integration
 async def test_select_path_is_idempotent_and_keeps_interested_status(app_client):
     """Selecting the same path multiple times keeps one selected row with interested status."""
     token = await _login_admin(app_client)
@@ -275,6 +295,33 @@ async def test_path_update_requires_owner_or_admin(app_client):
 
 
 @pytest.mark.integration
+async def test_update_path_rejects_duplicate_learning_item_refs(app_client):
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Duplicate Update Course")
+    created = await app_client.post(
+        "/paths",
+        json={"name": "Duplicate Update Path", "items": [{"type": "course", "id": course_id, "position": 0}]},
+        headers={"X-Session-Token": token},
+    )
+    assert created.status_code == 200
+    path_id = int(created.json()["id"])
+
+    update = await app_client.put(
+        f"/paths/{path_id}",
+        json={
+            "name": "Duplicate Update Path",
+            "items": [
+                {"type": "course", "id": course_id, "position": 0},
+                {"type": "course", "id": course_id, "position": 1},
+            ],
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert update.status_code == 400
+    assert update.json().get("message") == "duplicate_item_refs"
+
+
+@pytest.mark.integration
 async def test_get_path_not_found_returns_404(app_client):
     """Missing paths return 404."""
     token = await _login_admin(app_client)
@@ -352,4 +399,3 @@ async def test_path_review_lifecycle_and_moderation(app_client):
     )
     assert deleted.status_code == 200
     assert deleted.json()["deleted"] is True
-

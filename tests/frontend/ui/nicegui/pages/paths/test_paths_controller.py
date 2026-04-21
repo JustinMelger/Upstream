@@ -79,6 +79,10 @@ async def test_controller_select_path_seeds_tracking_and_returns_detail() -> Non
 
     assert seeded == 1
     assert isinstance(detail, dict) and int(detail.get("id") or 0) == 42
+    assert state.tracking_by_course_id == {
+        102: {"status": "completed"},
+        101: {"course_id": 101, "status": "interested"},
+    }
     assert ("POST", "/paths/42/select", {}) in api.calls
     assert ("POST", "/tracking", {"course_id": 101, "status": "interested"}) in api.calls
 

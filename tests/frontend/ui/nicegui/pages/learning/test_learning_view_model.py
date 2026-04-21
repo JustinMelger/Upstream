@@ -10,13 +10,14 @@ from frontend.ui.nicegui.pages.learning.view_model import (
 def test_build_shared_tab_view_projects_expected_fields() -> None:
     data = {
         "shared_courses": [
-            {"id": 1, "title": "Udemy course", "url": "https://www.udemy.com/course/test/", "provider": "Udemy"}
+            {"id": 1, "title": "YouTube-hosted course", "url": "https://www.youtube.com/watch?v=course-demo", "provider": "YouTube"}
         ],
         "shared_videos": [{"id": 4, "title": "Video title", "url": "https://youtu.be/demo"}],
         "shared_paths": [{"id": 2}],
         "shared_articles": [{"id": 3, "title": "Article title"}],
         "shared_course_review_summary_by_id": {1: {"review_count": 2}},
         "shared_video_review_summary_by_id": {4: {"review_count": 5}},
+        "shared_article_review_summary_by_id": {3: {"review_count": 7}},
         "shared_path_review_summary_by_id": {2: {"review_count": 3}},
     }
     vm = build_shared_tab_view(data=data)
@@ -28,8 +29,10 @@ def test_build_shared_tab_view_projects_expected_fields() -> None:
         ("course", 1),
         ("video", 4),
     ]
+    assert vm.shared_learning_items[1].capabilities.supports_tracking is True
     assert int((vm.shared_learning_items[1].review_summary_row or {})["review_count"]) == 2
     assert int((vm.shared_learning_items[2].review_summary_row or {})["review_count"]) == 5
+    assert int((vm.shared_learning_items[0].review_summary_row or {})["review_count"]) == 7
     assert vm.shared_learning_items[0].capabilities.supports_reviews is True
     assert vm.shared_learning_items[2].capabilities.supports_reviews is True
 

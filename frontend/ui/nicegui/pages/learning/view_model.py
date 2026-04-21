@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.learning_items import (
-    infer_learning_item_type,
     learning_item_capabilities,
     LearningItemCapabilities,
 )
@@ -34,6 +33,7 @@ class SharedTabView:
     shared_articles: list[dict[str, Any]]
     shared_course_review_summary_by_id: dict[int, dict[str, Any]]
     shared_video_review_summary_by_id: dict[int, dict[str, Any]]
+    shared_article_review_summary_by_id: dict[int, dict[str, Any]]
     shared_path_review_summary_by_id: dict[int, dict[str, Any]]
 
 
@@ -48,6 +48,7 @@ def build_shared_learning_item_views(
     shared_articles: list[dict[str, Any]],
     course_review_summary_by_id: dict[int, dict[str, Any]],
     video_review_summary_by_id: dict[int, dict[str, Any]],
+    article_review_summary_by_id: dict[int, dict[str, Any]],
 ) -> list[SharedLearningItemView]:
     """Build typed shared learning-item rows from shared courses/articles."""
     items: list[SharedLearningItemView] = []
@@ -58,11 +59,7 @@ def build_shared_learning_item_views(
         title = str(row.get("title") or "").strip()
         if not title:
             continue
-        item_type = infer_learning_item_type(
-            url=str(row.get("url") or ""),
-            provider=str(row.get("provider") or ""),
-            fallback="course",
-        )
+        item_type = "course"
         items.append(
             SharedLearningItemView(
                 item_type=item_type,
@@ -80,14 +77,14 @@ def build_shared_learning_item_views(
         if not title:
             continue
         items.append(
-            SharedLearningItemView(
-                item_type="article",
-                item_id=item_id,
-                title=title,
-                capabilities=learning_item_capabilities("article"),
-                review_summary_row=None,
+                SharedLearningItemView(
+                    item_type="article",
+                    item_id=item_id,
+                    title=title,
+                    capabilities=learning_item_capabilities("article"),
+                    review_summary_row=dict(article_review_summary_by_id.get(item_id) or {}) or None,
+                )
             )
-        )
     for row in list(shared_videos or []):
         item_id = int(row.get("id") or 0)
         if item_id <= 0:
@@ -170,6 +167,7 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
     shared_articles = list(data.get("shared_articles") or [])
     shared_course_review_summary_by_id = dict(data.get("shared_course_review_summary_by_id") or {})
     shared_video_review_summary_by_id = dict(data.get("shared_video_review_summary_by_id") or {})
+    shared_article_review_summary_by_id = dict(data.get("shared_article_review_summary_by_id") or {})
     return SharedTabView(
         shared_learning_items=build_shared_learning_item_views(
             shared_courses=shared_courses,
@@ -177,6 +175,7 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
             shared_articles=shared_articles,
             course_review_summary_by_id=shared_course_review_summary_by_id,
             video_review_summary_by_id=shared_video_review_summary_by_id,
+            article_review_summary_by_id=shared_article_review_summary_by_id,
         ),
         shared_courses=shared_courses,
         shared_videos=shared_videos,
@@ -184,6 +183,7 @@ def build_shared_tab_view(*, data: dict[str, Any]) -> SharedTabView:
         shared_articles=shared_articles,
         shared_course_review_summary_by_id=shared_course_review_summary_by_id,
         shared_video_review_summary_by_id=shared_video_review_summary_by_id,
+        shared_article_review_summary_by_id=shared_article_review_summary_by_id,
         shared_path_review_summary_by_id=dict(data.get("shared_path_review_summary_by_id") or {}),
     )
 

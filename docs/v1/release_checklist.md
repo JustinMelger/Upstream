@@ -52,6 +52,16 @@ Use `docs/roadmap.md` for post-v1 strategy.
   - [x] `docs/v1/*`
   - [x] roadmap wording where needed
   - [x] any UI copy that overpromises capability symmetry
+- [x] Enforce single-item-per-URL invariants across learning-item types:
+  - [x] reject duplicate article URLs on create
+  - [x] add regression tests for article duplicate-url handling
+- [x] Fix remaining shipped-page dead/broken controls:
+  - [x] make Teams inbox render without requiring a selected team
+  - [x] remove or wire the dead `Team settings` button on `/teams`
+- [x] Enforce path data invariants in the backend:
+  - [x] reject duplicate learning-item references within one path on create
+  - [x] reject duplicate learning-item references within one path on update
+  - [x] add regression tests for duplicate path-item refs
 
 ## P1: Strongly Recommended Before Release
 
@@ -65,6 +75,23 @@ Use `docs/roadmap.md` for post-v1 strategy.
 - [x] Review navigation and route exposure to ensure deferred features are not presented as core product capabilities.
 - [x] Write short release notes that reflect the scoped v1 product, not the full roadmap.
 - [x] Create a cleanup plan for recommendation backend/data removal if the team decides not to keep dormant APIs after release.
+- [x] Align learning-item review routes across content types:
+  - [x] return `404 not_found` for missing article review parents on list/create
+  - [x] return `404 not_found` for missing video review parents on list/create
+  - [x] add regression tests for missing article/video parent review routes
+- [x] Fix shared learning-item surface consistency:
+  - [x] keep shared course rows canonical as `course` instead of inferring subtype from URL/provider
+  - [x] load/display article review summaries on shared learning-item surfaces
+- [x] Align Home review-queue behavior with actual review-capable content:
+  - [x] decide whether article/video reviews should contribute to Home pending-review counts in v1
+  - [x] either include article/video review prompts or explicitly scope Home review prompts to tracked courses/selected paths only
+- [x] Fix path selection state refresh so seeded course tracking appears immediately after selecting a path.
+- [x] Align path API payloads with frontend expectations for freshness/sorting metadata:
+  - [x] decide whether `created_at` / `updated_at` should be returned for path list/detail payloads in v1
+  - [x] remove or defer frontend freshness/newest logic if timestamps stay out of the API
+- [x] Align path share publish UX with the other share flows:
+  - [x] decide whether path publish should return to `/explore?tab=paths` after success
+  - [x] keep publish success/redirect behavior consistent across course/article/video/path
 
 ## P2: Explicit Post-V1 Backlog
 

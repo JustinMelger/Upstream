@@ -36,14 +36,16 @@ class _FakeApi:
 @pytest.mark.anyio
 async def test_select_path_and_seed_tracking_counts_only_successful_seed_posts() -> None:
     api = _FakeApi()
+    tracking_by_course_id: dict[int, dict[str, object]] = {}
     seeded, detail = await paths_service.select_path_and_seed_tracking(
         api=api,
         path_id=7,
-        tracking_by_course_id={},
+        tracking_by_course_id=tracking_by_course_id,
     )
     # 101 succeeds, 102 raises and is ignored by gather(return_exceptions=True)
     assert seeded == 1
     assert isinstance(detail, dict) and int(detail.get("id") or 0) == 7
+    assert tracking_by_course_id == {101: {"course_id": 101, "status": "interested"}}
     assert ("POST", "/paths/7/select", {}) in api.calls
     assert ("GET", "/paths/7", None) in api.calls
 

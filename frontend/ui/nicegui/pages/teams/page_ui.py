@@ -121,6 +121,23 @@ class _TeamsPageView:
 
     def _render_team_detail_view(self) -> None:
         with ui.column().classes("w-full gap-3"):
+            current_tab = self._current_tab()
+            if current_tab == "inbox":
+                if self.state.error_message and not self.state.inbox_rows:
+                    render_error_block(
+                        title="Could not load inbox.",
+                        message=self.state.error_message,
+                        retry_label="Retry",
+                        on_retry=self.refresh_all,
+                    )
+                    return
+                ui.label("Inbox").classes("text-sm font-semibold")
+                render_inbox_activity(
+                    inbox_rows=build_activity_event_views(events=self.state.inbox_rows),
+                    on_open_target=self.open_activity_target,
+                )
+                return
+
             if self.state.error_message and not self.state.selected_team:
                 render_error_block(
                     title="Could not load team.",
@@ -162,17 +179,9 @@ class _TeamsPageView:
                             "Invite members",
                             on_click=lambda: ui.navigate.to(build_activity_tab_link(tab="my_teams")),
                         ).props("dense outline")
-                    ui.button("Team settings").props("dense flat")
             ui.separator()
 
             current_tab = self._current_tab()
-            if current_tab == "inbox":
-                ui.label("Inbox").classes("text-sm font-semibold")
-                render_inbox_activity(
-                    inbox_rows=build_activity_event_views(events=self.state.inbox_rows),
-                    on_open_target=self.open_activity_target,
-                )
-                return
             if current_tab == "team":
                 ui.label("Team activity").classes("text-sm font-semibold")
                 render_team_activity(

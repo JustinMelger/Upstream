@@ -85,9 +85,10 @@ async def select_path_and_seed_tracking(
         return_exceptions=True,
     )
     seeded = 0
-    for row in results:
+    for cid, row in zip(course_ids, results, strict=False):
         if not isinstance(row, Exception):
             seeded += 1
+            tracking_by_course_id[int(cid)] = {"course_id": int(cid), "status": "interested"}
     return seeded, detail
 
 

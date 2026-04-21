@@ -213,6 +213,8 @@ def render_article_card(
                             ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
                     else:
                         ui.label("").classes("lp-article-tag-placeholder")
+                if compact_mode:
+                    ui.element("div").classes("lp-card-meta-spacer")
                 review_classes = "lp-card-review-line lp-article-summary-chip"
                 if not str(summary_text or "").strip():
                     review_classes += " lp-card-review-line--empty"

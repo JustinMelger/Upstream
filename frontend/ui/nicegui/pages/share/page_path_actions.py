@@ -75,8 +75,6 @@ def wire_path_actions(
         )
         app_module.storage.user.pop(draft_key, None)
         notify("Path published", type="positive")
-        created_raw_id = created.get("id")
-        created_id = created_raw_id if isinstance(created_raw_id, int) else 0
-        ui_module.navigate.to(f"/explore/paths/{created_id}" if created_id > 0 else "/explore?tab=paths")
+        ui_module.navigate.to("/explore?tab=paths")
 
     controls.publish_btn.on("click", lambda *_: _publish())

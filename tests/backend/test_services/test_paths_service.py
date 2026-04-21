@@ -131,6 +131,50 @@ async def test_create_path_rejects_missing_item_refs(db_session):
 
 
 @pytest.mark.unit
+async def test_create_path_rejects_duplicate_learning_item_refs(db_session):
+    """Paths must not contain the same typed learning item more than once."""
+    courses = CoursesService(CoursesRepository(db_session))
+    paths = PathsService(PathsRepository(db_session))
+    course_id = (await courses.create_course({"title": "Course D", "description": "D"}))["id"]
+
+    with pytest.raises(PathsServiceError) as excinfo:
+        await paths.create_path(
+            {
+                "name": "Duplicate Refs",
+                "items": [
+                    {"type": "course", "id": course_id, "position": 0},
+                    {"type": "course", "id": course_id, "position": 1},
+                ],
+            }
+        )
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "duplicate_item_refs"
+
+
+@pytest.mark.unit
+async def test_update_path_rejects_duplicate_learning_item_refs(db_session):
+    """Path updates must reject duplicate typed learning item refs."""
+    courses = CoursesService(CoursesRepository(db_session))
+    paths = PathsService(PathsRepository(db_session))
+    course_id = (await courses.create_course({"title": "Course E", "description": "E"}))["id"]
+    path = await paths.create_path({"name": "Path E", "items": [{"type": "course", "id": course_id, "position": 0}]})
+
+    with pytest.raises(PathsServiceError) as excinfo:
+        await paths.update_path(
+            path["id"],
+            {
+                "name": "Path E",
+                "items": [
+                    {"type": "course", "id": course_id, "position": 0},
+                    {"type": "course", "id": course_id, "position": 1},
+                ],
+            },
+        )
+    assert excinfo.value.status_code == 400
+    assert str(excinfo.value.detail) == "duplicate_item_refs"
+
+
+@pytest.mark.unit
 async def test_create_path_invalid_payload_type_returns_invalid_payload(db_session):
     """Service-level payload parsing rejects invalid types."""
     paths = PathsService(PathsRepository(db_session))

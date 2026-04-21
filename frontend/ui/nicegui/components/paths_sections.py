@@ -47,7 +47,6 @@ def render_paths_topbar(
                             "": "Best match",
                             "top_rated": "Top rated",
                             "most_reviewed": "Most reviewed",
-                            "newest": "Recently added",
                             "name_az": "Name A-Z",
                         },
                         value="",

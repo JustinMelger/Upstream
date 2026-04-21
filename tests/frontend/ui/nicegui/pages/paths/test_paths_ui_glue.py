@@ -15,15 +15,15 @@ def test_collect_active_filter_chips_builds_expected_labels() -> None:
         scope_value="selected",
         search_value="api",
         status_value="tracked",
-        sort_value="newest",
+        sort_value="name_az",
         status_options={"tracked": "Tracked (2)"},
-        sort_options={"newest": "Newest"},
+        sort_options={"name_az": "Name A-Z"},
     )
     assert [(c.key, c.label) for c in chips] == [
         ("scope", "View: Selected"),
         ("search", "Search: api"),
         ("status", "Status: Tracked (2)"),
-        ("sort", "Sort: Newest"),
+        ("sort", "Sort: Name A-Z"),
     ]
 
 

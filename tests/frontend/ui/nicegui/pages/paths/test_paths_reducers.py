@@ -47,25 +47,17 @@ def test_apply_scope_and_status_uses_selected_map_and_status_matcher() -> None:
 
 
 @pytest.mark.unit
-def test_sort_paths_supports_newest_top_rated_and_most_reviewed() -> None:
+def test_sort_paths_supports_top_rated_most_reviewed_and_name_az() -> None:
     rows = [
-        {"id": 1, "name": "B", "created_at": "2026-02-01T00:00:00Z"},
-        {"id": 2, "name": "A", "created_at": "2026-02-03T00:00:00Z"},
-        {"id": 3, "name": "C", "created_at": "2026-02-02T00:00:00+00:00"},
+        {"id": 1, "name": "B"},
+        {"id": 2, "name": "A"},
+        {"id": 3, "name": "C"},
     ]
     summaries = {
         1: {"avg_rating": 4.0, "review_count": 2},
         2: {"avg_rating": 4.8, "review_count": 1},
         3: {"avg_rating": 4.8, "review_count": 5},
     }
-    newest = sort_paths(
-        paths=rows,
-        sort_value="newest",
-        path_review_summary_by_id=summaries,
-        parse_iso_datetime=parse_iso_datetime,
-    )
-    assert [int(r["id"]) for r in newest] == [2, 3, 1]
-
     top_rated = sort_paths(
         paths=rows,
         sort_value="top_rated",

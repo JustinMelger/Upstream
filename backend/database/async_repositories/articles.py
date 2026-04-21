@@ -85,3 +85,27 @@ class ArticlesRepository(RepositoryDateTimeCodec):
             created_by=str(row.created_by or ""),
             created_at=self._as_iso_or_empty(row.created_at),
         )
+
+    async def find_article_by_url(self, *, url: str) -> ArticleRecord | None:
+        """Find an article by normalized URL."""
+        normalized = str(url or "").strip().lower()
+        if not normalized:
+            return None
+        stmt = (
+            select(ArticleModel)
+            .where(func.lower(func.trim(ArticleModel.url)) == normalized)
+            .order_by(ArticleModel.id.asc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row:
+            return None
+        return ArticleRecord(
+            id=int(row.id),
+            title=str(row.title or ""),
+            url=str(row.url or ""),
+            tags=row.tags,
+            created_by=str(row.created_by or ""),
+            created_at=self._as_iso_or_empty(row.created_at),
+        )
