@@ -123,6 +123,7 @@ def _render_path_sequence_card(
 ) -> None:
     with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-path-sequence-card"):
         ui.label("Path Sequence").classes("text-base font-semibold")
+        ui.label("Follow the steps to complete the path.").classes("lp-explore-detail-muted")
         if not items:
             ui.label("No learning items in this path yet.").classes("lp-explore-detail-muted")
             return
@@ -237,19 +238,18 @@ def _render_path_main_panel(
                     on_click=lambda: ui.navigate.to(f"/explore/paths/{panel.pid}"),
                 ).props("dense")
 
-        ui.label("Path Sequence").classes("text-lg font-semibold mt-2")
-        ui.label("Follow the steps to complete the path.").classes("lp-explore-detail-muted")
         _render_path_sequence_card(items=panel.items, courses=panel.courses, tracking_by_course_id=panel.tracking_by_course_id)
 
-        ui.label("Reviews").classes("text-lg font-semibold mt-2")
-        with ui.row().classes("items-center gap-2"):
-            if review_count > 0:
-                ui.label(_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
-                ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
-                ui.label(f"{review_count} reviews").classes("lp-explore-detail-muted")
-            else:
-                ui.label("No reviews yet").classes("lp-explore-detail-muted")
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
+            with ui.row().classes("w-full items-center gap-2 flex-wrap"):
+                if review_count > 0:
+                    ui.label(_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
+                    ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
+                    ui.label(f"{review_count} review{'s' if review_count != 1 else ''}").classes(
+                        "lp-explore-detail-muted"
+                    )
+                else:
+                    ui.label("No reviews yet").classes("lp-explore-detail-muted")
             render_reviews_panel(
                 username=panel.username,
                 is_admin=panel.is_admin,

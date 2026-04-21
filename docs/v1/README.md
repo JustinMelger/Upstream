@@ -48,7 +48,7 @@ Learning Hub v1 is a learning-sharing platform where authenticated users can:
 - build mixed learning paths
 - review learning items and paths
 - track course progress and path progress
-- use basic teams for membership and team activity
+- use basic teams for membership and team activity around globally visible shared content
 - administer users as an admin
 
 ## Exit Criteria

@@ -1,0 +1,113 @@
+name: Publish Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish, for example v0.2.0 or v0.2.0-rc.1"
+        required: false
+        type: string
+  release:
+    types:
+      - published
+  push:
+    tags:
+      - "v*.*.*"
+      - "v*.*.*-rc.*"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/learning-platform
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Resolve release tag
+        id: ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.tag }}" ]; then
+            raw_tag="${{ inputs.tag }}"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            raw_tag="${{ github.event.release.tag_name }}"
+          else
+            raw_tag="${{ github.ref_name }}"
+          fi
+          semver_tag="${raw_tag#learning-platform-}"
+          prerelease="false"
+          if [[ "$semver_tag" == *-rc.* ]]; then
+            prerelease="true"
+          fi
+          echo "raw_tag=${raw_tag}" >> "$GITHUB_OUTPUT"
+          echo "semver_tag=${semver_tag}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${prerelease}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.raw_tag }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract stable Docker metadata
+        id: meta_stable
+        if: ${{ steps.ref.outputs.prerelease != 'true' }}
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.ref.outputs.semver_tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.ref.outputs.semver_tag }}
+            type=semver,pattern={{major}},value=${{ steps.ref.outputs.semver_tag }}
+            type=raw,value=latest
+
+      - name: Extract prerelease Docker metadata
+        id: meta_prerelease
+        if: ${{ steps.ref.outputs.prerelease == 'true' }}
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.ref.outputs.semver_tag }}
+            type=raw,value=rc
+
+      - name: Build smoke-test image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: learning-platform:smoke
+
+      - name: Smoke test container image
+        run: |
+          docker run --rm learning-platform:smoke python -c "import backend.main"
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.ref.outputs.prerelease == 'true' && steps.meta_prerelease.outputs.tags || steps.meta_stable.outputs.tags }}
+          labels: ${{ steps.ref.outputs.prerelease == 'true' && steps.meta_prerelease.outputs.labels || steps.meta_stable.outputs.labels }}
+
+      - name: Generate build provenance
+        if: ${{ github.event.repository.private == false }}
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

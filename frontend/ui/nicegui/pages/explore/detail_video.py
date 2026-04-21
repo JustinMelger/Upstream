@@ -99,18 +99,18 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
                         ).props("unelevated")
                     ui.label(description or "Open the source to continue learning.").classes("lp-explore-detail-muted")
 
-                ui.label("Reviews").classes("text-lg font-semibold mt-2")
-                with ui.row().classes("items-center gap-2"):
-                    if review_count > 0:
-                        ui.label(_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
-                        ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
-                        ui.label(f"{review_count} reviews").classes("lp-explore-detail-muted")
-                    else:
-                        ui.label("No reviews yet").classes("lp-explore-detail-muted")
-
                 with ui.card().classes(
                     "lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"
                 ):
+                    with ui.row().classes("w-full items-center gap-2 flex-wrap"):
+                        if review_count > 0:
+                            ui.label(_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
+                            ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
+                            ui.label(f"{review_count} review{'s' if review_count != 1 else ''}").classes(
+                                "lp-explore-detail-muted"
+                            )
+                        else:
+                            ui.label("No reviews yet").classes("lp-explore-detail-muted")
                     render_reviews_panel(
                         username=username,
                         is_admin=is_admin,

@@ -113,7 +113,12 @@ def render_explore_sections(
                     ui.label("Learning paths").classes("lp-courses-section-title")
                     ui.label("Structured tracks to guide your next steps.").classes("lp-courses-section-subtitle")
                 ui.link("View all paths", "/explore?tab=paths").classes("text-sm")
-            with ui.element("div").classes("lp-courses-grid lp-explore-path-grid"):
+            path_grid_class = "lp-courses-grid lp-explore-path-grid"
+            if len(shown_paths_rows) == 1:
+                path_grid_class += " lp-explore-path-grid--single"
+            elif len(shown_paths_rows) == 2:
+                path_grid_class += " lp-explore-path-grid--pair"
+            with ui.element("div").classes(path_grid_class):
                 for row in shown_paths_rows:
                     render_path_item(
                         path=row,
@@ -136,7 +141,12 @@ def render_explore_sections(
                     ui.label("Courses, videos, and articles across the current scope.").classes(
                         "lp-courses-section-subtitle"
                     )
-            with ui.element("div").classes("lp-courses-grid lp-explore-course-grid"):
+            item_grid_class = "lp-courses-grid lp-explore-course-grid"
+            if len(shown_learning_item_rows) == 1:
+                item_grid_class += " lp-explore-course-grid--single"
+            elif len(shown_learning_item_rows) == 2:
+                item_grid_class += " lp-explore-course-grid--pair"
+            with ui.element("div").classes(item_grid_class):
                 for item in shown_learning_item_rows:
                     row = dict(item.row or {})
                     item_type = str(item.learning_item_type or "").strip().lower()

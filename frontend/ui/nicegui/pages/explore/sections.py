@@ -47,7 +47,7 @@ def render_explore_share_dialog(*, on_share_learning_item: Any, on_share_path: A
 
     with ui.dialog() as share_dialog:
         with ui.card().classes("lp-card lp-dialog w-[min(540px,95vw)]"):
-            ui.label("Share with your team").classes("text-lg font-semibold")
+            ui.label("Share learning").classes("text-lg font-semibold")
             ui.label("Choose what you want to share.").classes("text-sm").style("color: var(--lp-muted)")
 
             with ui.column().classes("w-full gap-2 mt-2"):
@@ -66,8 +66,8 @@ def render_explore_share_dialog(*, on_share_learning_item: Any, on_share_path: A
 
 def render_explore_topbar(*, initial_tab: str, on_open_share: Any) -> ExploreTopbarControls:
     """Render Explore topbar and return control handles."""
-    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar w-full gap-2"):
-        with ui.row().classes("w-full items-center gap-2"):
+    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar lp-explore-toolbar w-full gap-2"):
+        with ui.row().classes("w-full items-center gap-2 flex-wrap"):
             search_input = (
                 ui.input("Search courses, videos, paths, and articles")
                 .props("clearable debounce=300 dense")
@@ -75,7 +75,8 @@ def render_explore_topbar(*, initial_tab: str, on_open_share: Any) -> ExploreTop
                 .style("flex: 1")
             )
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
-        with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
+            share_btn = ui.button("Share", on_click=on_open_share).props("dense")
+        with ui.row().classes("w-full items-center justify-end gap-2 flex-wrap"):
             with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
                 ui.label("View").classes("lp-topbar-group-label")
                 tab_filter = (
@@ -91,7 +92,6 @@ def render_explore_topbar(*, initial_tab: str, on_open_share: Any) -> ExploreTop
                     .style("min-width: 180px")
                     .classes("lp-topbar-secondary-control lp-transition-field")
                 )
-                share_btn = ui.button("Share", on_click=on_open_share).props("dense")
 
     return ExploreTopbarControls(
         search_input=search_input,

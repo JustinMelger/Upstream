@@ -51,10 +51,7 @@ class _TeamsPageView:
 
     def _render_topbar(self) -> None:
         with ui.card().classes("lp-card w-full lp-teams-shell lp-teams-overview-strip"):
-            with ui.column().classes("w-full gap-1"):
-                ui.label("What should I do next?").classes("lp-teams-overview-title")
-                ui.label("Create a team, invite members, and keep reviews moving.").classes("lp-teams-overview-body")
-            with ui.row().classes("items-center gap-2 w-full lp-teams-overview-actions"):
+            with ui.row().classes("items-center justify-end gap-2 w-full lp-teams-overview-actions"):
                 self.create_team_btn = ui.button("Create team").props("dense")
                 self.refresh_btn = ui.button("Refresh").props("dense outline").classes("lp-teams-refresh")
 
@@ -74,6 +71,46 @@ class _TeamsPageView:
         self.team_detail_view = ui.refreshable(self._render_team_detail_view)
 
     def _render_layout(self) -> None:
+        if not self.state.teams:
+            with ui.element("div").classes("lp-teams-empty-workspace"):
+                with ui.column().classes("w-full gap-2 lp-teams-empty-main"):
+                    ui.label("Start one team workspace").classes("lp-teams-empty-title")
+                    ui.label("Create a team first. Once teammates join, Inbox and Team activity become your shared follow-up space.").classes(
+                        "text-sm lp-teams-empty-copy"
+                    ).style("color: var(--lp-muted)")
+                    with ui.row().classes("items-center gap-2 flex-wrap"):
+                        ui.button("Create team", on_click=self.create_team_dialog.open).props("dense")
+                        ui.button("Refresh", on_click=self.refresh_all).props("dense outline").classes("lp-teams-refresh")
+                with ui.element("div").classes("lp-teams-empty-hints"):
+                    with ui.element("div").classes("lp-teams-empty-hint"):
+                        ui.label("1").classes("lp-chip lp-chip--sky")
+                        with ui.column().classes("gap-0"):
+                            ui.label("Create a team").classes("text-sm font-semibold")
+                            ui.label("Set up one workspace for shared learning.").classes("text-xs").style(
+                                "color: var(--lp-muted)"
+                            )
+                    with ui.element("div").classes("lp-teams-empty-hint"):
+                        ui.label("2").classes("lp-chip lp-chip--sky")
+                        with ui.column().classes("gap-0"):
+                            ui.label("Invite teammates").classes("text-sm font-semibold")
+                            ui.label("Add members so activity and reviews have an audience.").classes("text-xs").style(
+                                "color: var(--lp-muted)"
+                            )
+                    with ui.element("div").classes("lp-teams-empty-hint"):
+                        ui.label("3").classes("lp-chip lp-chip--sky")
+                        with ui.column().classes("gap-0"):
+                            ui.label("Use inbox and activity").classes("text-sm font-semibold")
+                            ui.label("Follow review requests and shared updates from one place.").classes("text-xs").style(
+                                "color: var(--lp-muted)"
+                            )
+            with ui.column().classes("w-full gap-2 lp-teams-empty-inbox"):
+                ui.label("Inbox").classes("text-sm font-semibold")
+                render_inbox_activity(
+                    inbox_rows=build_activity_event_views(events=self.state.inbox_rows),
+                    on_open_target=self.open_activity_target,
+                )
+            return
+
         with ui.element("div").classes("lp-teams-workspace-grid"):
             with ui.column().classes("w-full gap-2 lp-teams-sidebar"):
                 ui.label("Workspace").classes("text-xs lp-teams-sidebar-title")
@@ -93,7 +130,8 @@ class _TeamsPageView:
     def _bind_actions(self) -> None:
         self.create_team_btn.on_click(self.create_team_dialog.open)
         self.refresh_btn.on_click(self.refresh_all)
-        self.view_tabs.on("update:model-value", self.on_tab_change)
+        if self.view_tabs is not None:
+            self.view_tabs.on("update:model-value", self.on_tab_change)
 
     def _render_teams_list_view(self) -> None:
         with ui.card().classes("lp-card w-full lp-teams-shell lp-teams-list-shell"):
@@ -248,7 +286,7 @@ class _TeamsPageView:
             self.state.selected_team_id = int(team.get("id") or 0)
         except (TypeError, ValueError):
             self.state.selected_team_id = None
-        await self.refresh_all()
+        ui.navigate.to(build_activity_tab_link(tab="my_teams"))
 
     @guard_ui_action(title="Load teams failed")
     async def refresh_all(self) -> None:
@@ -257,6 +295,9 @@ class _TeamsPageView:
         self.state.loading = True
         try:
             self.state.teams = await self.controller.list_my_teams()
+            if self.view_tabs is None and self.state.teams:
+                ui.navigate.to(build_activity_tab_link(tab="my_teams"))
+                return
             self._sync_selected_team_id()
             await self.refresh_selected_team()
             self.state.error_message = None

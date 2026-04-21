@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provide a basic workspace for grouping users and viewing team-relevant activity.
+Provide a basic workspace for grouping users and viewing team-relevant activity around shared learning.
 
 ## Functional Design
 
@@ -14,6 +14,7 @@ Users can:
 - view teams they belong to
 - open team detail
 - see team member lists
+- see inbox activity
 - see team activity
 
 Owners and admins can:
@@ -27,12 +28,15 @@ Owners and admins can:
 - team creation
 - membership management
 - basic team detail
+- inbox and activity follow-up around shared learning
 - team activity feed
 - inbox/team activity tabs in the `/teams` surface
+- globally visible Explore catalog with team activity as a relevance lens
 
 ### Out of scope for v1
 
 - audience-scoped sharing
+- team-private catalog visibility
 - team invitations
 - review request workflows
 - discussions or conversations
@@ -42,8 +46,9 @@ Owners and admins can:
 
 1. User creates a team.
 2. Owner adds members.
-3. Member opens the team workspace.
-4. Team activity reflects member-generated events.
+3. Shared learning remains discoverable in Explore for authenticated users.
+4. Member opens the team workspace to follow inbox updates and team activity.
+5. Team activity reflects member-generated events and shared-learning momentum.
 
 ### Error behavior
 
@@ -67,6 +72,7 @@ Owners and admins can:
 
 - `/teams`
 - one page is the canonical team workspace route
+- Explore remains the canonical discovery/catalog route
 
 ### Data model
 
@@ -74,7 +80,14 @@ Owners and admins can:
 - `team_members`
 - team activity is derived from other content/share/review events
 
+### Visibility model
+
+- Explore is global for authenticated users in v1.
+- Team association is a relevance/activity context, not an access-control boundary.
+- Joining a team gives users better follow-up context through Inbox and team activity; it does not unlock hidden catalog items.
+
 ### Release constraints
 
 - Teams should be presented as a basic workspace feature, not a full collaboration platform.
+- Teams should not be described as private content spaces in v1.
 - Dead or duplicate `/teams` page implementations in the frontend should be removed or clearly marked non-canonical.

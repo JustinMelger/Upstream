@@ -31,7 +31,7 @@ async def render_share_path_page(
         render_share_scaffold(
             ui_module=ui_module,
             title="Share Path",
-            subtitle="Share a structured path your team can follow across courses, videos, and articles.",
+            subtitle="Share a structured path others can follow across courses, videos, and articles.",
         )
         controls = build_path_controls(ui_module=ui_module, learning_item_options=learning_item_options)
         wire_path_draft(controls=controls, draft_key=draft_key, app_module=app_module, notify=notify)

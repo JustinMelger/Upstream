@@ -24,10 +24,10 @@ def share_subtitle_for_type(item_type: str) -> str:
     """Return page subtitle text for one subtype."""
     normalized = normalize_requested_share_type(item_type)
     if normalized == "video":
-        return "Share a video your team should learn from."
+        return "Share a video others should learn from."
     if normalized == "article":
-        return "Share a useful article with your team."
-    return "Share a course your team should learn from."
+        return "Share a useful article for others to discover."
+    return "Share a course others should learn from."
 
 
 def share_title_input_label(item_type: str) -> str:

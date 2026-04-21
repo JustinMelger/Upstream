@@ -301,16 +301,17 @@ def render_selected_paths_section(
     on_browse_paths: Any,
 ) -> None:
     """Render selected-paths card and rows."""
-    card_classes = "lp-card w-full lp-home-path-shell"
     if not selected_paths:
-        card_classes += " lp-home-passive-empty"
-    with ui.card().classes(card_classes):
-        ui.label("Selected Path").classes("lp-home-section-title")
-        if not selected_paths:
-            ui.label("Select a path to track progress.").classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
+        with ui.element("div").classes("w-full lp-home-path-empty-shell"):
+            ui.label("Selected Path").classes("lp-home-section-title")
+            ui.label("No path selected yet. Pick one path to track progress here.").classes("text-sm lp-home-empty-copy").style(
+                "color: var(--lp-muted)"
+            )
             ui.button("Browse paths", on_click=on_browse_paths).props("dense outline").classes("lp-home-empty-btn")
-            return
+        return
 
+    with ui.card().classes("lp-card w-full lp-home-path-shell"):
+        ui.label("Selected Path").classes("lp-home-section-title")
         ui.separator().classes("lp-home-path-separator")
         for idx, row in enumerate(selected_paths[:selected_visible]):
             pid = int(row.get("id") or 0)
@@ -371,7 +372,7 @@ def render_shared_content(
 ) -> None:
     """Render shared tab content."""
     ui.label("You shared").classes("text-lg font-semibold mt-2")
-    ui.label("Content you shared with teammates.").classes("text-sm").style("color: var(--lp-muted)")
+    ui.label("Content you shared for others to discover.").classes("text-sm").style("color: var(--lp-muted)")
 
     with ui.card().classes("lp-card w-full lp-shared-shell"):
         ui.label("Learning items").classes("lp-home-section-title")
@@ -558,32 +559,33 @@ def render_team_snapshot_section(
                     with ui.element("div").classes("lp-home-stat-card"):
                         ui.label(str(value)).classes("lp-home-stat-value")
                         ui.label(label).classes("lp-home-stat-label")
-            ui.echart(
-                {
-                    "grid": {"left": 0, "right": 0, "top": 4, "bottom": 0},
-                    "xAxis": {"type": "category", "show": False, "data": ["M", "T", "W", "T", "F", "S", "S"]},
-                    "yAxis": {"type": "value", "show": False},
-                    "series": [
-                        {
-                            "type": "line",
-                            "data": [
-                                max(0, interested),
-                                max(1, in_progress),
-                                max(0, completed),
-                                max(1, shares_count),
-                                max(0, reviews_count),
-                                max(0, in_progress),
-                                max(0, interested),
-                            ],
-                            "smooth": True,
-                            "symbol": "none",
-                            "lineStyle": {"width": 2, "color": "#69b3f2"},
-                            "areaStyle": {"color": "rgba(105,179,242,0.12)"},
-                        }
-                    ],
-                }
-            ).classes("w-full h-16")
-        with ui.row().classes("w-full justify-end"):
+            with ui.element("div").classes("w-full lp-home-team-chart-wrap"):
+                ui.echart(
+                    {
+                        "grid": {"left": 0, "right": 0, "top": 4, "bottom": 0},
+                        "xAxis": {"type": "category", "show": False, "data": ["M", "T", "W", "T", "F", "S", "S"]},
+                        "yAxis": {"type": "value", "show": False},
+                        "series": [
+                            {
+                                "type": "line",
+                                "data": [
+                                    max(0, interested),
+                                    max(1, in_progress),
+                                    max(0, completed),
+                                    max(1, shares_count),
+                                    max(0, reviews_count),
+                                    max(0, in_progress),
+                                    max(0, interested),
+                                ],
+                                "smooth": True,
+                                "symbol": "none",
+                                "lineStyle": {"width": 2, "color": "#69b3f2"},
+                                "areaStyle": {"color": "rgba(105,179,242,0.12)"},
+                            }
+                        ],
+                    }
+                ).classes("w-full h-16 lp-home-team-chart")
+        with ui.row().classes("w-full justify-end lp-home-team-chart-footer"):
             ui.button("Open stats", on_click=on_open_full_stats).props("dense flat")
 
 
@@ -745,15 +747,6 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                 )
 
         with ui.element("section").classes("lp-home-grid-12 lp-home-grid-middle"):
-            with ui.element("div").classes("lp-home-span-3"):
-                render_conversations_section(
-                    items=recently_shared_in_teams,
-                    pending_course_review_ids=learning_vm.pending_course_review_ids,
-                    pending_path_review_ids=learning_vm.pending_path_review_ids,
-                    on_open_item=on_open_recently_shared_item,
-                    on_open_first_course_review=first_course_review_action,
-                    on_open_first_path_review=first_path_review_action,
-                )
             with ui.element("div").classes("lp-home-span-5 lp-home-col-stack"):
                 render_tracked_courses_section(
                     tracked_courses=learning_vm.tracked_courses,
@@ -772,17 +765,7 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                         f"View all tracked courses ({len(learning_vm.tracked_courses)})",
                         on_click=on_browse_courses,
                     ).props("outline dense")
-            with ui.element("div").classes("lp-home-span-4"):
-                render_team_snapshot_section(
-                    tracking_by_course_id=learning_vm.tracking_by_course_id,
-                    active_learners=active_learners,
-                    shares_count=shares_count,
-                    reviews_count=reviews_count,
-                    on_open_full_stats=on_open_full_stats,
-                )
-
-        with ui.element("section").classes("lp-home-grid-12 lp-home-grid-footer"):
-            with ui.element("div").classes("lp-home-span-12 lp-home-col-stack"):
+            with ui.element("div").classes("lp-home-span-4 lp-home-col-stack"):
                 render_selected_paths_section(
                     selected_paths=learning_vm.selected_paths,
                     selected_visible=state.selected_visible,
@@ -800,3 +783,22 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                         f"Load more ({state.selected_visible}/{len(learning_vm.selected_paths)})",
                         on_click=on_load_more_selected,
                     ).props("outline dense")
+            with ui.element("div").classes("lp-home-span-3"):
+                render_team_snapshot_section(
+                    tracking_by_course_id=learning_vm.tracking_by_course_id,
+                    active_learners=active_learners,
+                    shares_count=shares_count,
+                    reviews_count=reviews_count,
+                    on_open_full_stats=on_open_full_stats,
+                )
+
+        with ui.element("section").classes("lp-home-grid-12 lp-home-grid-footer"):
+            with ui.element("div").classes("lp-home-span-12 lp-home-col-stack"):
+                render_conversations_section(
+                    items=recently_shared_in_teams,
+                    pending_course_review_ids=learning_vm.pending_course_review_ids,
+                    pending_path_review_ids=learning_vm.pending_path_review_ids,
+                    on_open_item=on_open_recently_shared_item,
+                    on_open_first_course_review=first_course_review_action,
+                    on_open_first_path_review=first_path_review_action,
+                )

@@ -139,24 +139,29 @@ def render_intro_panel() -> None:
     def intro_panel() -> None:
         if not should_show_home_intro(storage_user=app.storage.user):
             return
-        with ui.card().classes("lp-card w-full"):
-            ui.label("How to use Home").classes("text-md font-semibold")
-            ui.label("Use this page to pick up the next useful learning action quickly.").classes("text-sm").style(
-                "color: var(--lp-muted)"
-            )
-            for idx, step in enumerate(INTRO_STEPS, start=1):
-                with ui.row().classes("items-start gap-2 w-full"):
-                    ui.label(str(idx)).classes("lp-chip lp-chip--sky")
-                    with ui.column().classes("gap-0"):
-                        ui.label(step.title).classes("text-sm font-semibold")
-                        ui.label(step.body).classes("text-xs").style("color: var(--lp-muted)")
+        with ui.card().classes("lp-card w-full lp-home-intro-card"):
+            with ui.row().classes("w-full items-start justify-between gap-3 flex-wrap"):
+                with ui.column().classes("gap-1 lp-home-intro-copy"):
+                    ui.label("Get started on Home").classes("text-md font-semibold lp-home-intro-title")
+                    ui.label("Use this page to keep one course, one path, and team activity in view.").classes("text-sm").style(
+                        "color: var(--lp-muted)"
+                    )
 
-            def _dismiss_intro() -> None:
-                dismiss_home_intro(storage_user=app.storage.user)
-                intro_panel.refresh()
+                def _dismiss_intro() -> None:
+                    dismiss_home_intro(storage_user=app.storage.user)
+                    intro_panel.refresh()
 
-            with ui.row().classes("justify-end w-full"):
-                ui.button("Dismiss", on_click=_dismiss_intro).props("dense outline")
+                ui.button("Dismiss", on_click=_dismiss_intro).props("dense flat").classes("lp-home-intro-dismiss")
+
+            with ui.element("div").classes("lp-home-intro-steps"):
+                for idx, step in enumerate(INTRO_STEPS, start=1):
+                    with ui.element("div").classes("lp-home-intro-step"):
+                        ui.label(str(idx)).classes("lp-chip lp-chip--sky")
+                        with ui.column().classes("gap-0"):
+                            ui.label(step.title).classes("text-sm font-semibold")
+                            ui.label(step.body).classes("text-xs").style(
+                                "color: var(--lp-muted)"
+                            )
 
     intro_panel()
 

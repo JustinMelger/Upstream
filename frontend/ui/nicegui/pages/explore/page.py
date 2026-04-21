@@ -6,7 +6,6 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.core.api_client import ApiClient
@@ -66,16 +65,12 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
     ui_flags = ExploreUiFlags()
 
     with render_catalog_scope(variant="explore").classes("lp-container"):
-        with ui.row().classes("w-full items-center"):
-            ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
-        render_catalog_hero(
-            eyebrow="",
-            title="Find the next course, video, path, or article worth sharing",
-            subtitle="Search broadly, then narrow by scope and filters to move from browse to action quickly.",
-        )
-        # Sticky topbar uses a negative top margin; reserve vertical space so it
-        # doesn't visually overlap this subtitle line.
-        ui.element("div").classes("h-3")
+        with ui.column().classes("w-full gap-1 lp-explore-header"):
+            ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600 lp-explore-header-kicker")
+            ui.label("Find the next course, video, path, or article worth sharing").classes("lp-home-title")
+            ui.label("Search broadly, then narrow by type to move from browse to action quickly.").classes(
+                "text-sm lp-explore-header-subtitle"
+            ).style("color: var(--lp-muted)")
 
         filter_controls: ExploreFilterControls | None = None
 

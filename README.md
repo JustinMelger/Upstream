@@ -16,7 +16,7 @@ Core workflows:
 - Share courses, articles, videos, and mixed learning paths
 - Track progress per user and across teams
 - Review learning items and paths
-- Use Teams as a lightweight workspace for membership and activity
+- Use Teams as a lightweight workspace for membership, inbox, and team activity around globally visible shared content
 
 ## Docs
 - Architecture: [docs/architecture.md](docs/architecture.md)
@@ -146,7 +146,7 @@ Optional local commit hooks:
 
 ## Pages
 - Home/Insights (`/` and `/home`): team-level progress and contribution visibility.
-- Explore (`/explore`): unified catalog for courses, paths, and articles.
+- Explore (`/explore`): unified global catalog for courses, paths, articles, and videos.
 - Explore detail routes:
   - `/explore/courses/{course_id}`
   - `/explore/paths/{path_id}`
@@ -166,8 +166,13 @@ Navigation note:
 ## Feature snapshot
 - Social learning flows: share and review learning items and paths.
 - Team activity and mailbox view within a basic Teams workspace.
-- Explore-first content workflow (courses, paths, articles, videos).
+- Explore-first content workflow (courses, paths, articles, videos) with global catalog visibility.
 - Optional AI draft planner endpoint (`POST /ai/plan`) kept out of the core v1 narrative.
+
+Visibility model in v1:
+- shared learning items and paths are globally visible in `Explore`
+- Teams provide a focused activity and follow-up workspace
+- Teams do not create private catalog silos in v1
 
 ## Conventional commits
 Use Conventional Commits for automated release notes.

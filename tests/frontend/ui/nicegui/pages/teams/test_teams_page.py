@@ -66,3 +66,30 @@ def test_render_team_detail_view_renders_inbox_without_selected_team(monkeypatch
 
     assert captured["inbox_rows"] == [{"message": "Needs review", "target_type": "course", "target_id": 4}]
     assert "empty" not in captured
+
+
+def test_bind_actions_tolerates_missing_view_tabs_for_empty_workspace() -> None:
+    class _FakeButton:
+        def __init__(self) -> None:
+            self.clicked = None
+
+        def on_click(self, handler):  # noqa: ANN001
+            self.clicked = handler
+            return self
+
+    view = _TeamsPageView(
+        controller=object(),  # type: ignore[arg-type]
+        state=TeamsPageState(),
+        username="alice",
+        role="member",
+        initial_tab="inbox",
+    )
+    view.create_team_btn = _FakeButton()
+    view.refresh_btn = _FakeButton()
+    view.view_tabs = None
+    view.create_team_dialog = SimpleNamespace(open=lambda: None)
+
+    view._bind_actions()
+
+    assert view.create_team_btn.clicked is not None
+    assert view.refresh_btn.clicked is not None

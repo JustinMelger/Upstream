@@ -166,8 +166,16 @@ def _render_course_main_panel(
         _render_course_content_card(course=course, source_url=source_url, view_mode=view_mode)
 
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
+            with ui.row().classes("w-full items-start justify-between gap-3 flex-wrap"):
+                with ui.column().classes("gap-0"):
+                    if review_count > 0:
+                        ui.label(f"{review_count} review{'s' if review_count != 1 else ''} · {avg_rating:.1f} average").classes(
+                            "lp-explore-detail-muted"
+                        )
+                    else:
+                        ui.label("Be the first to review this course.").classes("lp-explore-detail-muted")
             if review_count <= 0:
-                ui.label("Be the first to review this course.").classes("lp-explore-detail-muted")
+                ui.element("div").classes("h-1")
             render_reviews_panel(
                 username=username,
                 is_admin=is_admin,

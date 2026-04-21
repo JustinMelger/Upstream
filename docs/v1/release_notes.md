@@ -3,15 +3,15 @@
 Learning Hub v1 ships a narrow, stable product:
 
 - authenticated users can share courses, articles, videos, and mixed learning paths
-- users can browse Explore, review learning items and paths, and track course/path progress
-- Teams is a basic workspace for membership, inbox, and team activity
+- users can browse a global Explore catalog, review learning items and paths, and track course/path progress
+- Teams is a basic workspace for membership, inbox, and team activity around shared learning
 - admin users can manage user accounts
 
 Not part of the v1 product:
 
 - recommendation flows
 - AI Curator as a core feature
-- broader team collaboration features such as invitations, review requests, discussions, or audience-scoped sharing
+- broader team collaboration features such as invitations, review requests, discussions, team-private catalog visibility, or audience-scoped sharing
 
 Release-specific decisions:
 

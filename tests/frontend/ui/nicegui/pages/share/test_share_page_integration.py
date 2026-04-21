@@ -206,7 +206,7 @@ async def test_share_item_video_route_renders_video_copy(monkeypatch: pytest.Mon
     assert "Video" in fake_ui.buttons
     assert "Course" in fake_ui.buttons
     assert "Article" in fake_ui.buttons
-    assert any(label.text == "Share a video your team should learn from." for label in fake_ui.labels)
+    assert any(label.text == "Share a video others should learn from." for label in fake_ui.labels)
     assert any(inp.label == "Video title" for inp in fake_ui.inputs)
 
 
@@ -244,7 +244,7 @@ async def test_share_item_article_route_renders_article_specific_fields(monkeypa
     share_page.register(store=object(), api=object())  # type: ignore[arg-type]
     await fake_ui.routes["/share/item"]()
 
-    assert any(label.text == "Share a useful article with your team." for label in fake_ui.labels)
+    assert any(label.text == "Share a useful article for others to discover." for label in fake_ui.labels)
     assert any(inp.label == "Article title" for inp in fake_ui.inputs)
     assert any(inp.label == "Tags (comma-separated)" for inp in fake_ui.inputs)
 
@@ -264,7 +264,7 @@ async def test_share_item_course_route_renders_course_specific_fields(monkeypatc
     share_page.register(store=object(), api=object())  # type: ignore[arg-type]
     await fake_ui.routes["/share/item"]()
 
-    assert any(label.text == "Share a course your team should learn from." for label in fake_ui.labels)
+    assert any(label.text == "Share a course others should learn from." for label in fake_ui.labels)
     assert any(inp.label == "Course title" for inp in fake_ui.inputs)
     assert any(inp.label == "Provider" for inp in fake_ui.inputs)
     assert any(inp.label == "Category" for inp in fake_ui.inputs)
