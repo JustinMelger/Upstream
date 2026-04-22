@@ -276,7 +276,7 @@ def _render_course_info_panel(
             "Share",
             icon="share",
             on_click=lambda: copy_text_to_clipboard(
-                text=source_url or share_url,
+                text=share_url,
                 success_message=f"Course link copied: {share_url}",
             ),
         ).props("outline")

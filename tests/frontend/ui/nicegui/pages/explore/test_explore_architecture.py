@@ -95,3 +95,10 @@ def test_explore_article_cards_use_compact_mode() -> None:
     src = (_EXPLORE_DIR / "list_items.py").read_text(encoding="utf-8")
     assert "render_article_card(" in src
     assert "compact_mode=True" in src
+
+
+@pytest.mark.unit
+def test_explore_detail_path_uses_unselect_endpoint_for_untracking() -> None:
+    src = (_EXPLORE_DIR / "detail_path.py").read_text(encoding="utf-8")
+    assert 'api.post(f"/paths/{pid}/unselect", {})' in src
+    assert 'api.delete(f"/paths/{pid}/select")' not in src

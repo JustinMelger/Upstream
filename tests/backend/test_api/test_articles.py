@@ -47,6 +47,10 @@ async def test_article_create_and_list(app_client):
     rows = listing.json()
     assert any(r.get("id") == payload["id"] for r in rows)
 
+    detail = await app_client.get(f"/articles/{int(payload['id'])}", headers={"X-Session-Token": token})
+    assert detail.status_code == 200
+    assert int(detail.json()["id"]) == int(payload["id"])
+
 
 @pytest.mark.integration
 async def test_article_create_duplicate_url_returns_409(app_client):

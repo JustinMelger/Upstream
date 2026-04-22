@@ -41,6 +41,17 @@ async def create_article(
     return await articles.create_article(payload=payload.model_dump(), created_by=current_user)
 
 
+@router.get("/{article_id}", response_model=ArticlePayload)
+async def get_article(
+    article_id: int,
+    current_user: str = Depends(require_session),
+    articles: ArticlesService = Depends(get_articles_service),
+) -> dict[str, Any]:
+    """Get one article by id."""
+    _ = current_user
+    return require_row_exists(await articles.get_article_by_id(article_id=int(article_id)))
+
+
 @router.get("/reviews/summary", response_model=list[ArticleReviewSummaryItem])
 async def article_review_summaries(
     article_ids: list[int] = Query(default_factory=list),

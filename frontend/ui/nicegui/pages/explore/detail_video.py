@@ -138,7 +138,7 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
                     "Share learning item",
                     icon="share",
                     on_click=lambda: copy_text_to_clipboard(
-                        text=source_url or f"/explore/videos/{vid}",
+                        text=f"/explore/videos/{vid}",
                         success_message=f"Video link copied: /explore/videos/{vid}",
                     ),
                 ).props("outline")

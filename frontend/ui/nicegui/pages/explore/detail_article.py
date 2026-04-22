@@ -124,7 +124,7 @@ def _render_article_info_panel(*, aid: int, article: dict[str, Any], tags: list[
             "Share learning item",
             icon="share",
             on_click=lambda: copy_text_to_clipboard(
-                text=source_url or f"/explore/articles/{aid}",
+                text=f"/explore/articles/{aid}",
                 success_message=f"Article link copied: /explore/articles/{aid}",
             ),
         ).props("outline")
@@ -157,13 +157,12 @@ async def render_explore_article_detail_page(*, store: SessionStore, api: ApiCli
 
         controller = ArticlesPageController(api=api)
         try:
-            bundle = await controller.load_list_bundle()
+            article = await controller.load_article(article_id=aid)
         except ApiError as exc:
             ui.label(f"Article unavailable ({exc.status_code})").classes("text-sm")
             return
 
-        article = next((a for a in bundle.articles if int(a.get("id") or 0) == aid), None)
-        if not isinstance(article, dict):
+        if not isinstance(article, dict) or int(article.get("id") or 0) != aid:
             ui.label("Article not found").classes("text-sm")
             return
 

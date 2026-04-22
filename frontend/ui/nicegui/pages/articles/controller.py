@@ -63,6 +63,10 @@ class ArticlesPageController:
         """Load article reviews for details dialog."""
         return list(await self._api.get(f"/articles/{int(article_id)}/reviews") or [])
 
+    async def load_article(self, *, article_id: int) -> dict[str, Any]:
+        """Load one article detail payload."""
+        return dict(await self._api.get(f"/articles/{int(article_id)}") or {})
+
     async def save_article_review(self, *, article_id: int, rating: int, text: str) -> dict[str, Any]:
         """Create/update current user's article review."""
         out = await self._api.post(

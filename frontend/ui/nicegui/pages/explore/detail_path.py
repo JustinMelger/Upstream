@@ -279,7 +279,7 @@ def _render_path_info_panel(
         @guard_ui_action(title="Toggle path tracking failed")
         async def _toggle_path_tracking() -> None:
             if is_selected:
-                await api.delete(f"/paths/{pid}/select")
+                await api.post(f"/paths/{pid}/unselect", {})
                 safe_notify("Path untracked", type="positive")
             else:
                 await api.post(f"/paths/{pid}/select", {})
