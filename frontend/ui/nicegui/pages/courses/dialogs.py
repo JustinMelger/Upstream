@@ -9,7 +9,6 @@ from typing import Any
 from nicegui import app, ui
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
-from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.metadata_fallback import build_course_metadata_fallback

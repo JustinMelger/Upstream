@@ -266,7 +266,7 @@ class _TeamsPageView:
                 member_input.value = ""
                 member_role.value = "member"
                 safe_notify("Member updated.", type="positive")
-                await self.refresh_selected_team()
+                await self.refresh_all()
 
             ui.button("Add member", on_click=_on_add_member).props("dense outline")
 
@@ -344,7 +344,7 @@ class _TeamsPageView:
         self.state.selected_team_id = int(team_id)
         if self._current_tab() == "inbox":
             self.view_tabs.value = "my_teams"
-        await self.refresh_selected_team()
+        await self.refresh_all()
 
     @guard_ui_action(title="Remove member failed")
     async def remove_member(self, user_id: str) -> None:
@@ -353,7 +353,7 @@ class _TeamsPageView:
         removed = await self.controller.remove_member(team_id=int(self.state.selected_team_id), user_id=str(user_id))
         if removed > 0:
             safe_notify("Member removed.", type="positive")
-        await self.refresh_selected_team()
+        await self.refresh_all()
 
     def open_activity_target(self, target: Any) -> None:
         ui.navigate.to(str(target.open_url))

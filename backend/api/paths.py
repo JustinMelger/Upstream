@@ -43,13 +43,13 @@ router = APIRouter(prefix="/paths", tags=["paths"])
 
 @router.get("", response_model=List[PathListItem])
 async def list_paths(
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
 ) -> list[dict[str, Any]]:
     """List all learning paths.
 
     Args:
-        current_user: Authenticated username.
+        _current_user: Authenticated username.
 
     Returns:
         list[dict]: Path list.
@@ -60,7 +60,7 @@ async def list_paths(
 @router.get("/reviews/summary", response_model=list[PathReviewSummaryItem])
 async def path_review_summaries(
     path_ids: List[int] = Query(default=[], description="Path IDs to summarize"),
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     reviews: PathReviewsService = Depends(get_path_reviews_service),
 ) -> list[dict[str, Any]]:
     """Return average rating + count for each path id."""
@@ -170,14 +170,14 @@ async def list_selected_paths(
 @router.get("/{path_id}", response_model=PathDetailResponse)
 async def get_path(
     path_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
 ) -> dict[str, Any]:
     """Get a learning path by ID.
 
     Args:
         path_id: Path ID.
-        current_user: Authenticated username.
+        _current_user: Authenticated username.
 
     Returns:
         dict: Path payload.
@@ -188,7 +188,7 @@ async def get_path(
 @router.get("/{path_id}/reviews", response_model=list[PathReviewPayload])
 async def list_path_reviews(
     path_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
     reviews: PathReviewsService = Depends(get_path_reviews_service),
 ) -> list[dict[str, Any]]:

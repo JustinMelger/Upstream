@@ -11,7 +11,6 @@ from frontend.ui.nicegui.core.path_items import path_course_ids
 from frontend.ui.nicegui.pages.paths.state import PathDetailBundle, PathsPageState
 from frontend.ui.nicegui.services.courses_service import index_tracking_by_course_id
 from frontend.ui.nicegui.services.paths_service import (
-    index_courses_by_int_id,
     index_rows_by_int_id,
     load_paths_page_data,
     select_path_and_seed_tracking,

@@ -97,8 +97,6 @@ class NotificationsService:
             scope=scope,
         )
         sources = await self._load_activity_sources(
-            username=username,
-            safe_limit=safe_limit,
             source_limit=source_limit,
             is_team=is_team,
         )
@@ -135,8 +133,6 @@ class NotificationsService:
     async def _load_activity_sources(
         self,
         *,
-        username: str,
-        safe_limit: int,
         source_limit: int,
         is_team: bool,
     ) -> dict[str, list[dict]]:

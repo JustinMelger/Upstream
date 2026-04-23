@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
+from frontend.ui.nicegui.core.navigation import build_activity_target_link
 from frontend.ui.nicegui.pages.teams.page_ui import _TeamsPageView
 from frontend.ui.nicegui.pages.teams.state import TeamsPageState
 
@@ -93,3 +95,13 @@ def test_bind_actions_tolerates_missing_view_tabs_for_empty_workspace() -> None:
 
     assert view.create_team_btn.clicked is not None
     assert view.refresh_btn.clicked is not None
+
+
+def test_member_mutations_refresh_full_teams_state() -> None:
+    src = Path("frontend/ui/nicegui/pages/teams/page_ui.py").read_text(encoding="utf-8")
+    assert "safe_notify(\"Member updated.\", type=\"positive\")\n                await self.refresh_all()" in src
+    assert "safe_notify(\"Member removed.\", type=\"positive\")\n        await self.refresh_all()" in src
+
+
+def test_activity_target_link_opens_article_detail() -> None:
+    assert build_activity_target_link(target_type="article", target_id=7) == "/explore/articles/7"

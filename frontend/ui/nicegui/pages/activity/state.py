@@ -8,7 +8,7 @@ from typing import Any
 
 @dataclass(slots=True)
 class ActivityPageState:
-    """Mutable UI state for `/activity`."""
+    """Mutable UI state for activity-style feed projections."""
 
     events: list[dict[str, Any]] = field(default_factory=list)
     loading: bool = False

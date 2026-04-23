@@ -185,7 +185,7 @@ class ExplorePageController:
     async def create_course_share(
         self,
         *,
-        state: ExplorePageState,
+        _state: ExplorePageState,
         payload: ExploreSharePayload,
         reload_data: Callable[[], Awaitable[None]],
         refresh_ui: Callable[..., Any],
@@ -199,13 +199,12 @@ class ExplorePageController:
     async def create_path_share(
         self,
         *,
-        state: ExplorePageState,
+        _state: ExplorePageState,
         payload: ExploreSharePayload,
         reload_data: Callable[[], Awaitable[None]],
         refresh_ui: Callable[..., Any],
     ) -> None:
         """Create a path from Explore share dialog and refresh the list view."""
-        _ = state
         await self._gateway.paths.create_path(payload=dict(payload.payload or {}))
         await reload_data()
         refresh_ui()

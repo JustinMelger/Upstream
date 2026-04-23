@@ -8,8 +8,7 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.core.api_client import ApiError
-from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
+from frontend.ui.nicegui.core.errors import safe_notify
 
 
 @dataclass(slots=True)

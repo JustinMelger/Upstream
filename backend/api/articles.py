@@ -24,7 +24,7 @@ router = APIRouter(prefix="/articles", tags=["articles"])
 async def list_articles(
     q: Optional[str] = Query(default=None, description="Search query"),
     tag: Optional[str] = Query(default=None, description="Tag filter"),
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     articles: ArticlesService = Depends(get_articles_service),
 ) -> list[dict[str, Any]]:
     """List articles."""
@@ -55,7 +55,7 @@ async def get_article(
 @router.get("/reviews/summary", response_model=list[ArticleReviewSummaryItem])
 async def article_review_summaries(
     article_ids: list[int] = Query(default_factory=list),
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
 ) -> list[dict[str, Any]]:
     """Get review summaries for a list of article ids."""
@@ -65,7 +65,7 @@ async def article_review_summaries(
 @router.get("/{article_id}/reviews", response_model=list[ArticleReviewPayload])
 async def list_article_reviews(
     article_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     articles: ArticlesService = Depends(get_articles_service),
     reviews: ArticleReviewsService = Depends(get_article_reviews_service),
 ) -> list[dict[str, Any]]:

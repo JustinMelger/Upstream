@@ -7,8 +7,6 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.pages.courses.actions import build_course_card_actions
-from frontend.ui.nicegui.pages.explore.controller import ExplorePageController
-from frontend.ui.nicegui.pages.explore.state import ExplorePageState
 
 
 def build_explore_course_actions(
@@ -16,12 +14,6 @@ def build_explore_course_actions(
     course_row: dict[str, Any],
     course_id: int,
     course_url: str,
-    username: str,
-    is_admin: bool,
-    state: ExplorePageState,
-    controller: ExplorePageController,
-    on_set_tracking: Any,
-    on_clear_tracking: Any,
 ) -> Any:
     """Build course card actions for Explore."""
 

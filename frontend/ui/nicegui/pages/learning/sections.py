@@ -42,7 +42,6 @@ class LearningTabContext:
     on_open_full_stats: Any
     recently_shared_in_teams: list[dict[str, Any]]
     on_open_recently_shared_item: Any
-    on_load_more_tracked: Any
     on_load_more_selected: Any
 
 
@@ -439,9 +438,7 @@ def render_home_hero_panel(
     *,
     next_course: dict[str, Any] | None,
     teammates_progressing: int,
-    new_comments_count: int,
     reviews_count: int,
-    teammate_usernames: list[str],
     on_join_discussion: Any,
     on_open_selected_paths: Any,
 ) -> None:
@@ -679,7 +676,11 @@ def render_shared_tab(
         on_review_learning_item=lambda item: (
             nav_actions.make_article_view_action(int(item.item_id))
             if str(item.item_type or "") == "article"
-            else nav_actions.make_course_review_action(int(item.item_id))
+            else (
+                nav_actions.make_video_review_action(int(item.item_id))
+                if str(item.item_type or "") == "video"
+                else nav_actions.make_course_review_action(int(item.item_id))
+            )
         ),
         on_view_path=nav_actions.make_path_view_action,
         on_review_path=nav_actions.make_path_review_action,
@@ -705,7 +706,6 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
     on_open_full_stats = ctx.on_open_full_stats
     recently_shared_in_teams = ctx.recently_shared_in_teams
     on_open_recently_shared_item = ctx.on_open_recently_shared_item
-    on_load_more_tracked = ctx.on_load_more_tracked
     on_load_more_selected = ctx.on_load_more_selected
 
     teammate_usernames = sorted(
@@ -718,7 +718,6 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
     active_learners = max(1, len(teammate_usernames))
     shares_count = len(recently_shared_in_teams)
     reviews_count = len(learning_vm.pending_course_review_ids) + len(learning_vm.pending_path_review_ids)
-    new_comments_count = max(0, min(8, shares_count * 2))
     tracked_preview_visible = min(int(state.tracked_visible), 2)
 
     with ui.column().classes("w-full gap-4"):
@@ -727,9 +726,7 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                 render_home_hero_panel(
                     next_course=next_course,
                     teammates_progressing=active_learners,
-                    new_comments_count=new_comments_count,
                     reviews_count=reviews_count,
-                    teammate_usernames=teammate_usernames,
                     on_join_discussion=lambda: ui.navigate.to("/teams"),
                     on_open_selected_paths=on_open_selected_paths,
                 )

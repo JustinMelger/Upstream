@@ -641,6 +641,7 @@ def render_courses_empty_state(
     on_refresh: Any,
 ) -> None:
     """Render empty-state variants for courses list."""
+    _ = on_refresh
     if scope_value == "tracked" and not any_filters:
         render_empty_block(
             title="No active learning queue yet.",

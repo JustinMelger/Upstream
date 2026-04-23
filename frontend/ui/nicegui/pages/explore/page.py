@@ -182,7 +182,6 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
                         username=username,
                         is_admin=is_admin,
                         show_all_categories=bool(ui_flags.show_all_categories),
-                        controller=controller,
                         on_set_tracking=mutation_handlers.set_tracking,
                         on_clear_tracking=mutation_handlers.clear_tracking,
                         on_toggle_path_selection=mutation_handlers.toggle_path_selection,

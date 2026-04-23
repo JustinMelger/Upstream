@@ -140,6 +140,7 @@ def render_articles_empty_state(
     on_refresh: Any,
 ) -> None:
     """Render empty states for the articles list."""
+    _ = on_refresh
     if not has_articles and not any_filters:
         render_empty_block(
             title="No reading stream yet.",

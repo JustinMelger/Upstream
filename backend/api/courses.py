@@ -36,7 +36,7 @@ async def list_courses(
     provider: Optional[str] = None,
     category: Optional[str] = None,
     level: Optional[str] = None,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
 ) -> list[dict[str, Any]]:
     """List courses with optional filters.
@@ -46,7 +46,7 @@ async def list_courses(
         provider: Provider filter.
         category: Category filter.
         level: Level filter.
-        current_user: Authenticated username.
+        _current_user: Authenticated username.
 
     Returns:
         list[dict]: Course list.
@@ -57,7 +57,7 @@ async def list_courses(
 @router.get("/reviews/summary", response_model=list[CourseReviewSummaryItem])
 async def course_review_summaries(
     course_ids: List[int] = Query(default=[], description="Course IDs to summarize"),
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
 ) -> list[dict[str, Any]]:
     """Return average rating + count for each course id."""
@@ -67,14 +67,14 @@ async def course_review_summaries(
 @router.get("/{course_id}", response_model=CoursePayload)
 async def get_course(
     course_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
 ) -> dict[str, Any]:
     """Get a single course by ID.
 
     Args:
         course_id: Course ID.
-        current_user: Authenticated username.
+        _current_user: Authenticated username.
 
     Returns:
         dict: Course payload.
@@ -164,7 +164,7 @@ async def remove_course(
 @router.get("/{course_id}/reviews", response_model=list[CourseReviewPayload])
 async def list_course_reviews(
     course_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     courses: CoursesService = Depends(get_courses_service),
     reviews: CourseReviewsService = Depends(get_course_reviews_service),
 ) -> list[dict[str, Any]]:
@@ -200,4 +200,3 @@ async def delete_course_review(
     await require_existing_owner_or_admin(row=review, current_user=current_user, auth=auth)
     deleted = await reviews.delete_review(review_id=int(review_id))
     return {"deleted": bool(deleted)}
-

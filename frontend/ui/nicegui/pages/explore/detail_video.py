@@ -56,7 +56,7 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
         with ui.row().classes("w-full items-center"):
             ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
         ui.element("div").classes("h-2")
-        render_breadcrumb(label="Videos")
+        render_breadcrumb(label="Videos", back_url="/explore?tab=videos")
         if vid <= 0:
             ui.label("Invalid video id").classes("text-sm")
             return
@@ -79,6 +79,8 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
         source_url = str(video.get("url") or "").strip()
         owner = str(video.get("created_by") or "").strip()
         avg_rating, review_count = _avg_rating(reviews=reviews)
+        panel_avg_rating = float(avg_rating)
+        panel_review_count = int(review_count)
         with ui.row().classes("w-full items-start gap-4 lp-refresh-region"):
             with ui.column().classes("lp-explore-detail-main"):
                 with ui.element("header").classes("lp-explore-detail-hero"):
@@ -102,15 +104,24 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
                 with ui.card().classes(
                     "lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"
                 ):
-                    with ui.row().classes("w-full items-center gap-2 flex-wrap"):
-                        if review_count > 0:
-                            ui.label(_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
-                            ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
-                            ui.label(f"{review_count} review{'s' if review_count != 1 else ''}").classes(
-                                "lp-explore-detail-muted"
-                            )
-                        else:
-                            ui.label("No reviews yet").classes("lp-explore-detail-muted")
+                    @ui.refreshable
+                    def _review_summary() -> None:
+                        with ui.row().classes("w-full items-center gap-2 flex-wrap"):
+                            if panel_review_count > 0:
+                                ui.label(_stars(avg=panel_avg_rating)).classes("lp-explore-rating-stars")
+                                ui.label(f"{panel_avg_rating:.1f}").classes("lp-explore-rating-score")
+                                ui.label(f"{panel_review_count} review{'s' if panel_review_count != 1 else ''}").classes(
+                                    "lp-explore-detail-muted"
+                                )
+                            else:
+                                ui.label("No reviews yet").classes("lp-explore-detail-muted")
+
+                    def _handle_reviews_changed(updated_reviews: list[dict[str, Any]]) -> None:
+                        nonlocal panel_avg_rating, panel_review_count
+                        panel_avg_rating, panel_review_count = _avg_rating(reviews=updated_reviews)
+                        _review_summary.refresh()
+
+                    _review_summary()
                     render_reviews_panel(
                         username=username,
                         is_admin=is_admin,
@@ -124,7 +135,7 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
                             video_id=vid,
                             review_id=int(review_id),
                         ),
-                        hooks=ReviewPanelHooks(format_date=format_short_date),
+                        hooks=ReviewPanelHooks(format_date=format_short_date, on_changed=_handle_reviews_changed),
                     )
 
             with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):

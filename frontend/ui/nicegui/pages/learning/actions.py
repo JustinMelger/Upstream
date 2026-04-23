@@ -105,6 +105,14 @@ class LearningNavigationActions:
 
         return _view_video
 
+    def make_video_review_action(self, video_id: int) -> Any:
+        """Build a callback that opens video details for review flow."""
+
+        async def _review_video() -> None:
+            ui.navigate.to(f"/explore/videos/{int(video_id)}")
+
+        return _review_video
+
     def navigate_tab(self, tab: str) -> None:
         """Navigate to a specific learning tab.
 

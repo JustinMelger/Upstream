@@ -29,13 +29,13 @@ app.include_router(telemetry.router)
 
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(_request: Request, exc: HTTPException) -> JSONResponse:
     """Return a standard envelope for non-domain HTTP errors."""
     return JSONResponse(status_code=exc.status_code, content=format_service_error(exc))
 
 
 @app.exception_handler(RequestValidationError)
-async def request_validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def request_validation_exception_handler(_request: Request, _exc: RequestValidationError) -> JSONResponse:
     """Return a standard envelope for request validation errors."""
     return JSONResponse(
         status_code=422,
@@ -44,7 +44,7 @@ async def request_validation_exception_handler(request: Request, exc: RequestVal
 
 
 @app.exception_handler(ServiceError)
-async def service_error_exception_handler(request: Request, exc: ServiceError) -> JSONResponse:
+async def service_error_exception_handler(_request: Request, exc: ServiceError) -> JSONResponse:
     """Return a standard envelope for service-domain errors."""
     return JSONResponse(status_code=exc.status_code, content=format_service_error(exc))
 

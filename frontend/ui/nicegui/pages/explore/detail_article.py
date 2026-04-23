@@ -56,6 +56,8 @@ def _render_article_main_panel(
     tags: list[str],
 ) -> None:
     avg_rating, review_count = _avg_rating(reviews=reviews)
+    panel_avg_rating = float(avg_rating)
+    panel_review_count = int(review_count)
 
     with ui.column().classes("lp-explore-detail-main"):
         with ui.element("header").classes("lp-explore-detail-hero"):
@@ -79,15 +81,24 @@ def _render_article_main_panel(
             ui.label(body or "No content available yet.").classes("lp-explore-detail-muted")
 
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
-            with ui.row().classes("w-full items-center gap-2 flex-wrap"):
-                if review_count > 0:
-                    ui.label(_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
-                    ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
-                    ui.label(f"{review_count} review{'s' if review_count != 1 else ''}").classes(
-                        "lp-explore-detail-muted"
-                    )
-                else:
-                    ui.label("No reviews yet").classes("lp-explore-detail-muted")
+            @ui.refreshable
+            def _review_summary() -> None:
+                with ui.row().classes("w-full items-center gap-2 flex-wrap"):
+                    if panel_review_count > 0:
+                        ui.label(_stars(avg=panel_avg_rating)).classes("lp-explore-rating-stars")
+                        ui.label(f"{panel_avg_rating:.1f}").classes("lp-explore-rating-score")
+                        ui.label(f"{panel_review_count} review{'s' if panel_review_count != 1 else ''}").classes(
+                            "lp-explore-detail-muted"
+                        )
+                    else:
+                        ui.label("No reviews yet").classes("lp-explore-detail-muted")
+
+            def _handle_reviews_changed(updated_reviews: list[dict[str, Any]]) -> None:
+                nonlocal panel_avg_rating, panel_review_count
+                panel_avg_rating, panel_review_count = _avg_rating(reviews=updated_reviews)
+                _review_summary.refresh()
+
+            _review_summary()
             render_reviews_panel(
                 username=username,
                 is_admin=is_admin,
@@ -101,11 +112,11 @@ def _render_article_main_panel(
                     article_id=aid,
                     review_id=int(review_id),
                 ),
-                hooks=ReviewPanelHooks(format_date=format_short_date),
+                hooks=ReviewPanelHooks(format_date=format_short_date, on_changed=_handle_reviews_changed),
             )
 
 
-def _render_article_info_panel(*, aid: int, article: dict[str, Any], tags: list[str], source_url: str) -> None:
+def _render_article_info_panel(*, aid: int, tags: list[str], source_url: str) -> None:
     with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):
         ui.label("Article Actions").classes("text-base font-semibold")
 
@@ -132,7 +143,9 @@ def _render_article_info_panel(*, aid: int, article: dict[str, Any], tags: list[
         ui.separator()
         ui.label("Resources").classes("text-sm font-semibold")
         if source_url:
-            ui.link(learning_item_source_action_label("article"), source_url).classes("lp-explore-detail-muted")
+            ui.link(learning_item_source_action_label("article"), source_url).props("target=_blank").classes(
+                "lp-explore-detail-muted"
+            )
         for tag in tags[:6]:
             ui.label(tag).classes("lp-explore-detail-muted")
 
@@ -150,7 +163,7 @@ async def render_explore_article_detail_page(*, store: SessionStore, api: ApiCli
         with ui.row().classes("w-full items-center"):
             ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
         ui.element("div").classes("h-2")
-        render_breadcrumb(label="Articles")
+        render_breadcrumb(label="Articles", back_url="/explore?tab=articles")
         if aid <= 0:
             ui.label("Invalid article id").classes("text-sm")
             return
@@ -182,7 +195,6 @@ async def render_explore_article_detail_page(*, store: SessionStore, api: ApiCli
             )
             _render_article_info_panel(
                 aid=aid,
-                article=article,
                 tags=tags,
                 source_url=source_url,
             )

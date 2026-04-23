@@ -12,7 +12,7 @@ from frontend.ui.nicegui.components.status_chips import tracking_label
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
 from frontend.ui.nicegui.core.path_items import path_course_ids
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
-from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions, load_more_selected, load_more_tracked
+from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions, load_more_selected
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
 from frontend.ui.nicegui.pages.learning.onboarding import (
     dismiss_home_intro,
@@ -243,11 +243,6 @@ def resolve_learning_tab_context(
         on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
         recently_shared_in_teams=recently_shared_in_teams,
         on_open_recently_shared_item=make_recently_shared_item_opener(),
-        on_load_more_tracked=lambda: load_more_tracked(
-            state=page_ctx.state,
-            total_count=len(learning_vm.tracked_courses),
-            refresh=refresh_content,
-        ),
         on_load_more_selected=lambda: load_more_selected(
             state=page_ctx.state,
             total_count=len(learning_vm.selected_paths),

@@ -153,6 +153,8 @@ def render_paths_empty_state(
     on_reset_all: Any,
 ) -> bool:
     """Render the matching empty-state block and return whether one was rendered."""
+    _ = on_refresh
+    _ = on_browse_courses
     if empty_state == "selected_empty":
         ui.label("No selected path yet.").classes("text-sm").style("color: var(--lp-muted)")
         ui.label("Browse and select a path to start milestone progress.").classes("text-sm").style("color: var(--lp-muted)")

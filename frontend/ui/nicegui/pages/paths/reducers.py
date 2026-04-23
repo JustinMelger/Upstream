@@ -71,6 +71,7 @@ def sort_paths(
     parse_iso_datetime: Callable[[Any], datetime | None],
 ) -> list[dict[str, Any]]:
     """Sort filtered paths by the active sort key."""
+    _ = parse_iso_datetime
     shown = list(paths)
     if not sort_value:
         return shown
