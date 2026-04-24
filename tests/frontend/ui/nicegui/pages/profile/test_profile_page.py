@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.home.state import HomePageState
 from frontend.ui.nicegui.pages.profile import page as profile_page
+from frontend.ui.nicegui.pages.shared_stats.state import SharedStatsState
 
 
 class _FakeElement:
@@ -56,7 +56,7 @@ def test_render_profile_team_sections_empty_state_points_to_next_steps(monkeypat
         avatar_initial="A",
         is_admin=True,
         controller=_DummyController(),  # type: ignore[arg-type]
-        state=HomePageState(team_stats_by_user=[]),
+        state=SharedStatsState(team_stats_by_user=[]),
         mode_value="team",
     )
 

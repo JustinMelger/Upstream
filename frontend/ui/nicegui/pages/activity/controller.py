@@ -1,4 +1,4 @@
-"""Controller orchestration for shared activity feed loading."""
+"""Controller orchestration for shared inbox/team feed loading."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from frontend.ui.nicegui.services.notifications_service import load_activity_fee
 
 
 class ActivityPageController:
-    """Imperative API workflows for shared inbox/activity feeds."""
+    """Imperative API workflows for shared inbox/team feeds."""
 
     def __init__(self, *, api: ApiClient):
         """Initialize the controller.

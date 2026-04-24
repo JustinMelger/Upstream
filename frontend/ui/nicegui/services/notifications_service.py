@@ -1,4 +1,4 @@
-"""Use-cases for notifications/activity feed."""
+"""Use-cases for shared notification feed loading."""
 
 from __future__ import annotations
 

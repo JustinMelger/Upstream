@@ -59,7 +59,7 @@ Phase 4: Roll out by page priority
 Phase 5: Clean up and enforce (complete)
 
 - Compatibility shim cleanup complete: page package exports are now `register`-only.
-- Tests import helper functions from their source modules (for example `pages/*/page.py` or `pages/home/helpers.py`) rather than package re-exports.
+- Tests import helper functions from their source modules (for example `pages/*/page.py` or `pages/shared_stats/helpers.py`) rather than package re-exports.
 - Added enforcement guard in tests to keep package export surface minimal.
 - PR checklist: Page = composition/bindings only; Controller = workflow orchestration; Model = typed state + transition helpers; Components = reusable view sections.
 

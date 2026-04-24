@@ -39,23 +39,23 @@ These items are the first cleanup passes because they reduce confusion without c
 
 ### 2. Legacy Naming Cleanup
 
-- [ ] Remove docstrings/comments that still describe removed routes or old page names
-- [ ] Rename helper functions/files whose names still reflect removed product concepts
+- [x] Remove docstrings/comments that still describe removed routes or old page names
+- [x] Rename helper functions/files whose names still reflect removed product concepts
 - [ ] Standardize activity-related naming so `Teams`, `Inbox`, `activity`, and `Profile` use the same language model
-- [ ] Remove remaining wording/code comments that imply recommendation-first or private-team visibility behavior
+- [x] Remove remaining wording/code comments that imply recommendation-first or private-team visibility behavior
 
 ### 3. Stale Helper Signature Cleanup
 
-- [ ] Review production helpers with broad callback bundles and trim signatures to the inputs they actually use
+- [x] Review production helpers with broad callback bundles and trim signatures to the inputs they actually use
 - [x] Remove page-local wrappers that no longer add behavior beyond forwarding one call
 - [x] Simplify section helper APIs that still accept `on_refresh`, `on_browse_*`, or state parameters only because of older generic contracts
-- [ ] Prefer explicit typed dependency dataclasses where a render helper still needs many real inputs
+- [x] Prefer explicit typed dependency dataclasses where a render helper still needs many real inputs
 
 ### 4. Dead Import / Dead Wrapper Sweep
 
 - [x] Remove unused imports and leftover one-line wrappers in `frontend/ui/nicegui/pages/*`
-- [ ] Remove obsolete formatting/parsing helpers where the logic now lives in `core/*` or `services/*`
-- [ ] Remove stale backend support helpers if they only exist for deleted API surface
+- [x] Remove obsolete formatting/parsing helpers where the logic now lives in `core/*` or `services/*`
+- [x] Remove stale backend support helpers if they only exist for deleted API surface
 
 ## P1: Module-By-Module Cleanup
 

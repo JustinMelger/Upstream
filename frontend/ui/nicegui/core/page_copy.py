@@ -15,7 +15,7 @@ class PrimaryPage(StrEnum):
 PRIMARY_PAGE_SUBTITLES: dict[PrimaryPage, str] = {
     PrimaryPage.HOME: "What should I do next? Continue learning and review team activity.",
     PrimaryPage.EXPLORE: "What can I discover? Search and share learning items and paths.",
-    PrimaryPage.TEAMS: "See what teammates shared and reviewed recently.",
+    PrimaryPage.TEAMS: "Follow shared learning activity and reviews across your teams.",
     PrimaryPage.PROFILE: "Review your personal and team learning stats in one place.",
 }
 

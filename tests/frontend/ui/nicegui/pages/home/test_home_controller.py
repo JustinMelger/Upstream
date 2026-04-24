@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.home.controller import HomePageController
+from frontend.ui.nicegui.pages.shared_stats.controller import SharedStatsController
 
 
 @pytest.mark.unit
@@ -17,7 +17,7 @@ async def test_home_controller_load_overview_for_user_uses_colleague_stats() -> 
                 return {"interested": 99}
             return {"interested": 3, "in_progress": 2, "completed": 1}
 
-    c = HomePageController(api=_Api())  # type: ignore[arg-type]
+    c = SharedStatsController(api=_Api())  # type: ignore[arg-type]
     out = await c.load_overview(username="bob", is_admin=False, mode_value="mine")
     assert out.snapshot_stats == {"interested": 3, "in_progress": 2, "completed": 1}
     assert out.team_stats_by_user == []
@@ -36,7 +36,7 @@ async def test_home_controller_load_overview_for_admin_team_uses_team_endpoints(
                 return [{"colleague_id": "alice", "completed": 2}]
             return {"interested": 10, "in_progress": 4, "completed": 6}
 
-    c = HomePageController(api=_Api())  # type: ignore[arg-type]
+    c = SharedStatsController(api=_Api())  # type: ignore[arg-type]
     out = await c.load_overview(username="admin", is_admin=True, mode_value="team")
     assert out.snapshot_stats == {"interested": 10, "in_progress": 4, "completed": 6}
     assert out.team_stats_by_user == [{"colleague_id": "alice", "completed": 2}]

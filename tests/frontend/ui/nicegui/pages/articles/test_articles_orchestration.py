@@ -5,8 +5,10 @@ import pytest
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.pages.articles.actions import ArticlesFacetControls
 from frontend.ui.nicegui.pages.articles.orchestration import (
+    ArticlesListRefreshDeps,
     clear_articles_filter_values,
     load_articles_page,
+    LoadArticlesPageDeps,
     perform_create_article,
     refresh_articles_list,
 )
@@ -69,14 +71,18 @@ async def test_load_articles_page_success_populates_state_and_refreshes() -> Non
 
     await load_articles_page(
         state=state,
-        controller=controller,
-        refresh_btn=refresh_btn,
-        meta=meta,
-        recompute_facets=lambda: events.append("facets"),
-        refresh_active_filters=lambda: events.append("active"),
-        refresh_articles_list_ui=lambda: events.append("list"),
-        notify_error=lambda _message: events.append("error"),
-        compute_meta_text=lambda count: f"{count} articles",
+        deps=LoadArticlesPageDeps(
+            controller=controller,
+            refresh_btn=refresh_btn,
+            meta=meta,
+            list_refresh=ArticlesListRefreshDeps(
+                recompute_facets=lambda: events.append("facets"),
+                refresh_active_filters=lambda: events.append("active"),
+                refresh_articles_list_ui=lambda: events.append("list"),
+            ),
+            notify_error=lambda _message: events.append("error"),
+            compute_meta_text=lambda count: f"{count} articles",
+        ),
     )
 
     assert state.loaded_once is True
@@ -104,14 +110,18 @@ async def test_load_articles_page_failure_clears_state_and_notifies() -> None:
 
     await load_articles_page(
         state=state,
-        controller=controller,
-        refresh_btn=refresh_btn,
-        meta=meta,
-        recompute_facets=lambda: None,
-        refresh_active_filters=lambda: None,
-        refresh_articles_list_ui=lambda: None,
-        notify_error=lambda message: errors.append(message),
-        compute_meta_text=lambda count: f"{count} articles",
+        deps=LoadArticlesPageDeps(
+            controller=controller,
+            refresh_btn=refresh_btn,
+            meta=meta,
+            list_refresh=ArticlesListRefreshDeps(
+                recompute_facets=lambda: None,
+                refresh_active_filters=lambda: None,
+                refresh_articles_list_ui=lambda: None,
+            ),
+            notify_error=lambda message: errors.append(message),
+            compute_meta_text=lambda count: f"{count} articles",
+        ),
     )
 
     assert state.articles == []
@@ -132,14 +142,18 @@ async def test_load_articles_page_early_return_when_loading() -> None:
 
     await load_articles_page(
         state=state,
-        controller=controller,
-        refresh_btn=refresh_btn,
-        meta=meta,
-        recompute_facets=lambda: events.append("facets"),
-        refresh_active_filters=lambda: events.append("active"),
-        refresh_articles_list_ui=lambda: events.append("list"),
-        notify_error=lambda _message: events.append("error"),
-        compute_meta_text=lambda count: f"{count} articles",
+        deps=LoadArticlesPageDeps(
+            controller=controller,
+            refresh_btn=refresh_btn,
+            meta=meta,
+            list_refresh=ArticlesListRefreshDeps(
+                recompute_facets=lambda: events.append("facets"),
+                refresh_active_filters=lambda: events.append("active"),
+                refresh_articles_list_ui=lambda: events.append("list"),
+            ),
+            notify_error=lambda _message: events.append("error"),
+            compute_meta_text=lambda count: f"{count} articles",
+        ),
     )
 
     assert events == []
@@ -172,9 +186,11 @@ def test_refresh_articles_list_resets_visible_and_refreshes() -> None:
 
     refresh_articles_list(
         state=state,
-        recompute_facets=lambda: events.append("facets"),
-        refresh_active_filters=lambda: events.append("active"),
-        refresh_articles_list_ui=lambda: events.append("list"),
+        deps=ArticlesListRefreshDeps(
+            recompute_facets=lambda: events.append("facets"),
+            refresh_active_filters=lambda: events.append("active"),
+            refresh_articles_list_ui=lambda: events.append("list"),
+        ),
     )
 
     assert state.visible_count == 12
@@ -198,9 +214,11 @@ def test_clear_articles_filter_values_clears_controls_and_refreshes() -> None:
             author_filter=author,
             sort_filter=sort,
         ),
-        recompute_facets=lambda: calls.append("facets"),
-        refresh_active_filters=lambda: calls.append("active"),
-        refresh_articles_list_ui=lambda: calls.append("list"),
+        deps=ArticlesListRefreshDeps(
+            recompute_facets=lambda: calls.append("facets"),
+            refresh_active_filters=lambda: calls.append("active"),
+            refresh_articles_list_ui=lambda: calls.append("list"),
+        ),
     )
 
     assert state.visible_count == 10

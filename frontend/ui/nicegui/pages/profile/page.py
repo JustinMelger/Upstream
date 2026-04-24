@@ -15,10 +15,14 @@ from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.home.controller import HomePageController
-from frontend.ui.nicegui.pages.home.helpers import top_contributors
-from frontend.ui.nicegui.pages.home.state import HomePageState
-from frontend.ui.nicegui.pages.home.transitions import begin_home_load, finalize_home_load, should_render_team_section
+from frontend.ui.nicegui.pages.shared_stats.controller import SharedStatsController
+from frontend.ui.nicegui.pages.shared_stats.helpers import top_contributors
+from frontend.ui.nicegui.pages.shared_stats.state import SharedStatsState
+from frontend.ui.nicegui.pages.shared_stats.transitions import (
+    begin_shared_stats_load,
+    finalize_shared_stats_load,
+    should_render_team_stats,
+)
 
 
 @dataclass(slots=True)
@@ -29,8 +33,8 @@ class ProfileStatsPageContext:
     avatar_url: str
     avatar_initial: str
     is_admin: bool
-    controller: HomePageController
-    state: HomePageState
+    controller: SharedStatsController
+    state: SharedStatsState
     last_loaded_at: datetime | None = None
     mode_value: str = "mine"
     meta_text: str = ""
@@ -109,7 +113,7 @@ async def _load_profile_overview(*, ctx: ProfileStatsPageContext, dashboard: Any
     ctx.state.pending_reload = True
     while ctx.state.pending_reload:
         ctx.state.pending_reload = False
-        load_start = begin_home_load()
+        load_start = begin_shared_stats_load()
         ctx.state.loading = load_start.loading
         ctx.meta_text = load_start.meta_text
         dashboard.refresh()
@@ -130,7 +134,7 @@ async def _load_profile_overview(*, ctx: ProfileStatsPageContext, dashboard: Any
             ctx.state.snapshot_stats = {}
             ctx.state.team_stats_by_user = []
         finally:
-            load_done = finalize_home_load(ok=ok)
+            load_done = finalize_shared_stats_load(ok=ok)
             ctx.state.loading = load_done.loading
             ctx.meta_text = load_done.meta_text
             dashboard.refresh()
@@ -221,7 +225,7 @@ def _build_team_stat_rows(*, team_stats_by_user: list[dict[str, Any]]) -> list[d
 
 def _render_profile_team_sections(*, ctx: ProfileStatsPageContext) -> None:
     """Render team activity chart and stats table when team mode is active."""
-    if not should_render_team_section(is_admin=ctx.is_admin, mode_value=ctx.mode_value):
+    if not should_render_team_stats(is_admin=ctx.is_admin, mode_value=ctx.mode_value):
         return
 
     contributors = top_contributors(ctx.state.team_stats_by_user, limit=6)
@@ -278,8 +282,8 @@ async def _render_profile_stats_page(*, store: SessionStore, api: ApiClient) -> 
         avatar_url=str(user.get("avatar_url") or user.get("profile_image_url") or user.get("image_url") or "").strip(),
         avatar_initial=username[:1].upper() if username else "U",
         is_admin=str(user.get("role") or "user") == "admin",
-        controller=HomePageController(api=api),
-        state=HomePageState(),
+        controller=SharedStatsController(api=api),
+        state=SharedStatsState(),
     )
 
     render_shell(title="Profile", store=store, api=api)

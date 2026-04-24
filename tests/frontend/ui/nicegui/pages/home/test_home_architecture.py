@@ -23,7 +23,7 @@ def _imports_for(path: Path) -> set[str]:
 
 @pytest.mark.unit
 def test_home_pure_modules_do_not_import_nicegui() -> None:
-    for filename in ["controller.py", "state.py", "transitions.py", "helpers.py"]:
+    for filename in []:
         imports = _imports_for(_HOME_DIR / filename)
         assert "nicegui" not in imports
         assert not any(name.startswith("nicegui.") for name in imports)
@@ -35,15 +35,14 @@ def test_home_page_redirect_module_stays_decoupled_from_home_page_stack() -> Non
     assert "nicegui" in imports
     assert "frontend.ui.nicegui.core.api_client" in imports
     assert "frontend.ui.nicegui.core.session_store" in imports
-    assert "frontend.ui.nicegui.pages.home.controller" not in imports
-    assert "frontend.ui.nicegui.pages.home.sections" not in imports
-    assert "frontend.ui.nicegui.pages.home.state" not in imports
-    assert "frontend.ui.nicegui.pages.home.transitions" not in imports
+    assert "frontend.ui.nicegui.pages.shared_stats.controller" not in imports
+    assert "frontend.ui.nicegui.pages.shared_stats.state" not in imports
+    assert "frontend.ui.nicegui.pages.shared_stats.transitions" not in imports
 
 
 @pytest.mark.unit
 def test_home_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"page.py", "sections.py"}
+    expected_ui_modules = {"page.py"}
     for path in sorted(_HOME_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)

@@ -31,32 +31,37 @@ class LoadAllPathsDeps:
     compute_meta_text: Callable[[int], str]
 
 
+@dataclass(frozen=True, slots=True)
+class PathsListRefreshDeps:
+    """Dependencies required to refresh list-level Paths UI blocks."""
+
+    recompute_facet_options: Callable[[], None]
+    refresh_active_filters: Callable[[], None]
+    refresh_paths_list_ui: Callable[[], None]
+
+
 def refresh_paths_list(
     *,
     ui_state: PathsPageUiState,
-    recompute_facet_options: Callable[[], None],
-    refresh_active_filters: Callable[[], None],
-    refresh_paths_list_ui: Callable[[], None],
+    deps: PathsListRefreshDeps,
 ) -> None:
     """Refresh list-level UI after filter updates."""
     ui_state.visible_count = int(ui_state.page_size)
-    recompute_facet_options()
-    refresh_active_filters()
-    refresh_paths_list_ui()
+    deps.recompute_facet_options()
+    deps.refresh_active_filters()
+    deps.refresh_paths_list_ui()
 
 
 def clear_path_filter_values(
     *,
     controls: PathsFilterControls,
-    recompute_facet_options: Callable[[], None],
-    refresh_active_filters: Callable[[], None],
-    refresh_paths_list_ui: Callable[[], None],
+    deps: PathsListRefreshDeps,
 ) -> None:
     """Reset all path filters and refresh related UI."""
     reset_path_filter_controls(controls=controls)
-    recompute_facet_options()
-    refresh_active_filters()
-    refresh_paths_list_ui()
+    deps.recompute_facet_options()
+    deps.refresh_active_filters()
+    deps.refresh_paths_list_ui()
 
 
 async def run_select_path_flow(

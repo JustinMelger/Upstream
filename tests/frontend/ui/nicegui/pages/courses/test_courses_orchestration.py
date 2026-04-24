@@ -4,6 +4,8 @@ import pytest
 
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.pages.courses.orchestration import (
+    CoursesListRefreshDeps,
+    CoursesTrackingRefreshDeps,
     open_delete_course_confirmation,
     perform_clear_tracking,
     perform_create_course,
@@ -57,9 +59,13 @@ async def test_reload_tracking_only_handles_api_error() -> None:
     ok = await reload_tracking_only(
         page_state=state,
         controller=controller,
-        recompute_facet_options=lambda: events.append("recompute"),
-        refresh_courses_list_ui=lambda: events.append("refresh"),
-        notify_error=lambda message: errors.append(message),
+        deps=CoursesTrackingRefreshDeps(
+            list_refresh=CoursesListRefreshDeps(
+                refresh_courses_list_ui=lambda: events.append("refresh"),
+                recompute_facet_options=lambda: events.append("recompute"),
+            ),
+            notify_error=lambda message: errors.append(message),
+        ),
     )
 
     assert ok is False
@@ -80,9 +86,13 @@ async def test_perform_set_tracking_calls_controller_and_reload() -> None:
         status="in_progress",
         controller=controller,
         page_state=state,
-        recompute_facet_options=lambda: events.append("recompute"),
-        refresh_courses_list_ui=lambda: events.append("refresh"),
-        notify_error=lambda _message: events.append("error"),
+        deps=CoursesTrackingRefreshDeps(
+            list_refresh=CoursesListRefreshDeps(
+                refresh_courses_list_ui=lambda: events.append("refresh"),
+                recompute_facet_options=lambda: events.append("recompute"),
+            ),
+            notify_error=lambda _message: events.append("error"),
+        ),
     )
 
     assert ok is True
@@ -102,9 +112,13 @@ async def test_perform_clear_tracking_calls_controller_and_reload() -> None:
         course_id=7,
         controller=controller,
         page_state=state,
-        recompute_facet_options=lambda: events.append("recompute"),
-        refresh_courses_list_ui=lambda: events.append("refresh"),
-        notify_error=lambda _message: events.append("error"),
+        deps=CoursesTrackingRefreshDeps(
+            list_refresh=CoursesListRefreshDeps(
+                refresh_courses_list_ui=lambda: events.append("refresh"),
+                recompute_facet_options=lambda: events.append("recompute"),
+            ),
+            notify_error=lambda _message: events.append("error"),
+        ),
     )
 
     assert ok is True

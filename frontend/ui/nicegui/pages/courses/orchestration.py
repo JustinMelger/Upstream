@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiError
@@ -17,47 +18,70 @@ from frontend.ui.nicegui.pages.courses.transitions import (
 from frontend.ui.nicegui.pages.courses.ui_glue import default_courses_filter_reset_state
 
 
+@dataclass(frozen=True, slots=True)
+class CoursesListRefreshDeps:
+    """Dependencies required to refresh list-level Courses UI blocks."""
+
+    refresh_courses_list_ui: Callable[[], None]
+    refresh_active_filters: Callable[[], None] | None = None
+    recompute_facet_options: Callable[[], None] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LoadCoursesDeps:
+    """Dependencies required to load and refresh the Courses page."""
+
+    controller: Any
+    controls: CoursesFilterControls
+    refresh_btn: Any
+    meta: Any
+    list_refresh: CoursesListRefreshDeps
+    notify_error: Callable[[str], None]
+    compute_meta_text: Callable[[int], str]
+
+
+@dataclass(frozen=True, slots=True)
+class CoursesTrackingRefreshDeps:
+    """Dependencies required to refresh tracking-only Courses state."""
+
+    list_refresh: CoursesListRefreshDeps
+    notify_error: Callable[[str], None]
+
+
 def refresh_courses_list(
     *,
     ui_state: CoursesPageUiState,
-    recompute_facet_options: Callable[[], None],
-    refresh_active_filters: Callable[[], None],
-    refresh_courses_list_ui: Callable[[], None],
+    deps: CoursesListRefreshDeps,
 ) -> None:
     """Refresh list-level UI after filter updates."""
     ui_state.visible_count = int(ui_state.page_size)
-    recompute_facet_options()
-    refresh_active_filters()
-    refresh_courses_list_ui()
+    if deps.recompute_facet_options is not None:
+        deps.recompute_facet_options()
+    if deps.refresh_active_filters is not None:
+        deps.refresh_active_filters()
+    deps.refresh_courses_list_ui()
 
 
 def clear_course_filter_values(
     *,
     controls: CoursesFilterControls,
-    refresh_active_filters: Callable[[], None],
-    refresh_courses_list_ui: Callable[[], None],
+    deps: CoursesListRefreshDeps,
 ) -> None:
     """Reset all filter controls to their default values."""
     reset_course_filter_controls(
         controls=controls,
         reset_state=default_courses_filter_reset_state(),
     )
-    refresh_active_filters()
-    refresh_courses_list_ui()
+    if deps.refresh_active_filters is not None:
+        deps.refresh_active_filters()
+    deps.refresh_courses_list_ui()
 
 
 async def load_courses(
     *,
     ui_state: CoursesPageUiState,
     page_state: CoursesPageState,
-    controller: Any,
-    controls: CoursesFilterControls,
-    refresh_btn: Any,
-    meta: Any,
-    recompute_facet_options: Callable[[], None],
-    refresh_courses_list_ui: Callable[[], None],
-    notify_error: Callable[[str], None],
-    compute_meta_text: Callable[[int], str],
+    deps: LoadCoursesDeps,
 ) -> None:
     """Load the courses list plus related summary maps."""
     if ui_state.loading:
@@ -66,56 +90,57 @@ async def load_courses(
     load_start = begin_courses_load(page_size=ui_state.page_size)
     ui_state.loading = load_start.loading
     ui_state.visible_count = load_start.visible_count
-    refresh_btn.disable()
-    meta.text = load_start.meta_text
-    refresh_courses_list_ui()
+    deps.refresh_btn.disable()
+    deps.meta.text = load_start.meta_text
+    deps.list_refresh.refresh_courses_list_ui()
     try:
         params = build_list_query_params(
-            search_value=str(controls.search_input.value or ""),
-            provider_value=str(controls.provider_filter.value or ""),
-            category_value=str(controls.category_filter.value or ""),
-            level_value=str(controls.level_filter.value or ""),
+            search_value=str(deps.controls.search_input.value or ""),
+            provider_value=str(deps.controls.provider_filter.value or ""),
+            category_value=str(deps.controls.category_filter.value or ""),
+            level_value=str(deps.controls.level_filter.value or ""),
         )
 
-        bundle = await controller.load_list_bundle(params=params or None)
+        bundle = await deps.controller.load_list_bundle(params=params or None)
         page_state.courses = list(bundle.courses or [])
         page_state.tracking_by_course_id = dict(bundle.tracking_by_course_id or {})
         page_state.review_summary_by_course_id = dict(bundle.review_summary_by_course_id or {})
-        recompute_facet_options()
-        refresh_courses_list_ui()
+        if deps.list_refresh.recompute_facet_options is not None:
+            deps.list_refresh.recompute_facet_options()
+        deps.list_refresh.refresh_courses_list_ui()
         ok = True
     except ApiError as exc:
-        notify_error(str(exc))
+        deps.notify_error(str(exc))
         clear_courses_state_on_load_error(state=page_state)
-        recompute_facet_options()
-        refresh_courses_list_ui()
+        if deps.list_refresh.recompute_facet_options is not None:
+            deps.list_refresh.recompute_facet_options()
+        deps.list_refresh.refresh_courses_list_ui()
     finally:
         load_done = finalize_courses_load(ok=ok, course_count=len(page_state.courses))
-        meta.text = compute_meta_text(len(page_state.courses))
+        deps.meta.text = deps.compute_meta_text(len(page_state.courses))
         ui_state.loading = load_done.loading
         ui_state.loaded_once = load_done.loaded_once
-        refresh_btn.enable()
-        refresh_courses_list_ui()
+        deps.refresh_btn.enable()
+        deps.list_refresh.refresh_courses_list_ui()
 
 
 async def reload_tracking_only(
     *,
     page_state: CoursesPageState,
     controller: Any,
-    recompute_facet_options: Callable[[], None],
-    refresh_courses_list_ui: Callable[[], None],
-    notify_error: Callable[[str], None],
+    deps: CoursesTrackingRefreshDeps,
 ) -> bool:
     """Reload tracking rows only."""
     try:
         page_state.tracking_by_course_id = await controller.reload_tracking()
     except ApiError as exc:
-        notify_error(str(exc))
+        deps.notify_error(str(exc))
         page_state.tracking_by_course_id = {}
-        refresh_courses_list_ui()
+        deps.list_refresh.refresh_courses_list_ui()
         return False
-    recompute_facet_options()
-    refresh_courses_list_ui()
+    if deps.list_refresh.recompute_facet_options is not None:
+        deps.list_refresh.recompute_facet_options()
+    deps.list_refresh.refresh_courses_list_ui()
     return True
 
 
@@ -125,18 +150,14 @@ async def perform_set_tracking(
     status: str,
     controller: Any,
     page_state: CoursesPageState,
-    recompute_facet_options: Callable[[], None],
-    refresh_courses_list_ui: Callable[[], None],
-    notify_error: Callable[[str], None],
+    deps: CoursesTrackingRefreshDeps,
 ) -> bool:
     """Persist tracking status and refresh tracking-only page state."""
     await controller.set_tracking_status(course_id=int(course_id), status=str(status))
     return await reload_tracking_only(
         page_state=page_state,
         controller=controller,
-        recompute_facet_options=recompute_facet_options,
-        refresh_courses_list_ui=refresh_courses_list_ui,
-        notify_error=notify_error,
+        deps=deps,
     )
 
 
@@ -145,18 +166,14 @@ async def perform_clear_tracking(
     course_id: int,
     controller: Any,
     page_state: CoursesPageState,
-    recompute_facet_options: Callable[[], None],
-    refresh_courses_list_ui: Callable[[], None],
-    notify_error: Callable[[str], None],
+    deps: CoursesTrackingRefreshDeps,
 ) -> bool:
     """Clear tracking status and refresh tracking-only page state."""
     await controller.clear_tracking_status(course_id=int(course_id))
     return await reload_tracking_only(
         page_state=page_state,
         controller=controller,
-        recompute_facet_options=recompute_facet_options,
-        refresh_courses_list_ui=refresh_courses_list_ui,
-        notify_error=notify_error,
+        deps=deps,
     )
 
 async def perform_create_course(

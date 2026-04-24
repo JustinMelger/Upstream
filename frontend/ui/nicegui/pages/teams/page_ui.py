@@ -75,7 +75,7 @@ class _TeamsPageView:
             with ui.element("div").classes("lp-teams-empty-workspace"):
                 with ui.column().classes("w-full gap-2 lp-teams-empty-main"):
                     ui.label("Start one team workspace").classes("lp-teams-empty-title")
-                    ui.label("Create a team first. Once teammates join, Inbox and Team activity become your shared follow-up space.").classes(
+                    ui.label("Create a team first. Once members join, Inbox and Team activity become your team follow-up space.").classes(
                         "text-sm lp-teams-empty-copy"
                     ).style("color: var(--lp-muted)")
                     with ui.row().classes("items-center gap-2 flex-wrap"):
@@ -93,7 +93,7 @@ class _TeamsPageView:
                         ui.label("2").classes("lp-chip lp-chip--sky")
                         with ui.column().classes("gap-0"):
                             ui.label("Invite teammates").classes("text-sm font-semibold")
-                            ui.label("Add members so activity and reviews have an audience.").classes("text-xs").style(
+                            ui.label("Add members so reviews and updates have people to follow them.").classes("text-xs").style(
                                 "color: var(--lp-muted)"
                             )
                     with ui.element("div").classes("lp-teams-empty-hint"):

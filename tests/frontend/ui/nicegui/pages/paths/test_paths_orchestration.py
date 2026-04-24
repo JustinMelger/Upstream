@@ -4,14 +4,18 @@ from dataclasses import dataclass
 
 import pytest
 
+from frontend.ui.nicegui.pages.paths.actions import PathsFilterControls
 from frontend.ui.nicegui.pages.paths.orchestration import (
+    clear_path_filter_values,
+    PathsListRefreshDeps,
     perform_create_path,
     perform_delete_path,
     perform_update_path,
+    refresh_paths_list,
     run_select_path_flow,
     run_unselect_path_flow,
 )
-from frontend.ui.nicegui.pages.paths.state import PathsPageState
+from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
 
 
 @dataclass(slots=True)
@@ -33,6 +37,15 @@ class _Controller:
 
     async def delete_path(self, *, path_id: int) -> bool:
         return True
+
+
+@dataclass(slots=True)
+class _Control:
+    value: str = ""
+    updated: int = 0
+
+    def update(self) -> None:
+        self.updated += 1
 
 
 @pytest.mark.unit
@@ -187,3 +200,50 @@ async def test_perform_create_update_delete_path_reload_page() -> None:
     )
 
     assert events == ["reload", "reload", "refresh", "reload"]
+
+
+@pytest.mark.unit
+def test_refresh_paths_list_resets_visible_and_refreshes() -> None:
+    ui_state = PathsPageUiState(page_size=12, visible_count=3)
+    events: list[str] = []
+
+    refresh_paths_list(
+        ui_state=ui_state,
+        deps=PathsListRefreshDeps(
+            recompute_facet_options=lambda: events.append("facets"),
+            refresh_active_filters=lambda: events.append("active"),
+            refresh_paths_list_ui=lambda: events.append("list"),
+        ),
+    )
+
+    assert ui_state.visible_count == 12
+    assert events == ["facets", "active", "list"]
+
+
+@pytest.mark.unit
+def test_clear_path_filter_values_clears_controls_and_refreshes() -> None:
+    search = _Control("needle")
+    status = _Control("in_progress")
+    sort = _Control("newest")
+    scope = _Control("selected")
+    calls: list[str] = []
+
+    clear_path_filter_values(
+        controls=PathsFilterControls(
+            search_input=search,
+            scope_filter=scope,
+            status_filter=status,
+            sort_filter=sort,
+        ),
+        deps=PathsListRefreshDeps(
+            recompute_facet_options=lambda: calls.append("facets"),
+            refresh_active_filters=lambda: calls.append("active"),
+            refresh_paths_list_ui=lambda: calls.append("list"),
+        ),
+    )
+
+    assert search.value == ""
+    assert scope.value == "all"
+    assert status.value == ""
+    assert sort.value == ""
+    assert calls == ["facets", "active", "list"]

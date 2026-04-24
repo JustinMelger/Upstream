@@ -1,4 +1,4 @@
-"""Pure helper functions for Home/Profile stats surfaces."""
+"""Pure helper functions for shared Home/Profile stats surfaces."""
 
 from __future__ import annotations
 
@@ -6,17 +6,6 @@ from datetime import datetime
 from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.services.dashboard_service import _tracking_map as _tracking_map_service
-
-
-def parse_iso_ts(value: Any) -> datetime | None:
-    """Parse an ISO timestamp value, accepting `Z` suffixes."""
-    return parse_iso_datetime(value)
-
-
-def tracking_map(tracking_rows: list[dict[str, Any]]) -> dict[int, str]:
-    """Build a mapping of course_id to status."""
-    return _tracking_map_service(tracking_rows)
 
 
 def ids_by_status(tracking: dict[int, str]) -> tuple[list[int], list[int], list[int]]:
@@ -31,7 +20,7 @@ def recent_tracking(rows: list[dict[str, Any]], *, limit: int = 5) -> list[dict[
     """Sort tracking rows by updated_at descending, skipping invalid timestamps."""
     parsed: list[tuple[datetime, dict[str, Any]]] = []
     for row in list(rows or []):
-        dt = parse_iso_ts(row.get("updated_at"))
+        dt = parse_iso_datetime(row.get("updated_at"))
         if not dt:
             continue
         parsed.append((dt, row))
@@ -43,7 +32,7 @@ def recent_courses(courses: list[dict[str, Any]], *, limit: int = 5) -> list[dic
     """Sort courses by created_at descending, skipping invalid timestamps."""
     parsed: list[tuple[datetime, dict[str, Any]]] = []
     for course in list(courses or []):
-        dt = parse_iso_ts(course.get("created_at"))
+        dt = parse_iso_datetime(course.get("created_at"))
         if not dt:
             continue
         parsed.append((dt, course))

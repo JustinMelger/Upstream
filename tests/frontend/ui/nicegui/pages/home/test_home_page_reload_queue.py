@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.home.state import HomePageState
+from frontend.ui.nicegui.pages.shared_stats.state import SharedStatsState
 
 
-async def _trigger_load(*, state: HomePageState, run_once) -> None:  # noqa: ANN001
+async def _trigger_load(*, state: SharedStatsState, run_once) -> None:  # noqa: ANN001
     if state.loading:
         state.pending_reload = True
         return
@@ -22,7 +22,7 @@ async def _trigger_load(*, state: HomePageState, run_once) -> None:  # noqa: ANN
 
 @pytest.mark.anyio
 async def test_home_load_queue_runs_one_followup_when_requested_mid_load() -> None:
-    state = HomePageState()
+    state = SharedStatsState()
     runs = 0
 
     async def _run_once() -> None:

@@ -6,7 +6,11 @@ from typing import Any
 
 from frontend.ui.nicegui.pages.paths.actions import PathsFilterControls, recompute_path_status_filter
 from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values
-from frontend.ui.nicegui.pages.paths.orchestration import clear_path_filter_values, refresh_paths_list
+from frontend.ui.nicegui.pages.paths.orchestration import (
+    clear_path_filter_values,
+    PathsListRefreshDeps,
+    refresh_paths_list,
+)
 from frontend.ui.nicegui.pages.paths.reducers import build_status_options, compute_status_counts
 from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
 
@@ -43,9 +47,11 @@ def refresh_paths_filter_list(
     """Refresh list-level UI after any filter update."""
     refresh_paths_list(
         ui_state=ui_state,
-        recompute_facet_options=recompute_facet_options,
-        refresh_active_filters=refresh_active_filters,
-        refresh_paths_list_ui=refresh_paths_list_ui,
+        deps=PathsListRefreshDeps(
+            recompute_facet_options=recompute_facet_options,
+            refresh_active_filters=refresh_active_filters,
+            refresh_paths_list_ui=refresh_paths_list_ui,
+        ),
     )
 
 
@@ -59,7 +65,9 @@ def clear_paths_filters_and_refresh(
     """Reset filters and refresh all list-level UI blocks."""
     clear_path_filter_values(
         controls=controls,
-        recompute_facet_options=recompute_facet_options,
-        refresh_active_filters=refresh_active_filters,
-        refresh_paths_list_ui=refresh_paths_list_ui,
+        deps=PathsListRefreshDeps(
+            recompute_facet_options=recompute_facet_options,
+            refresh_active_filters=refresh_active_filters,
+            refresh_paths_list_ui=refresh_paths_list_ui,
+        ),
     )

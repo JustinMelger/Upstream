@@ -23,7 +23,7 @@ def render_teams_list(
     if not teams:
         render_empty_block(
             title="No teams yet.",
-            description="Create your first team to start sharing and reviewing together.",
+            description="Create your first team to start following shared learning together.",
             primary_label="Create team",
             on_primary=on_create_team,
             compact=True,

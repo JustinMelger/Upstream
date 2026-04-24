@@ -13,14 +13,14 @@ import pytest
 
 from frontend.ui.nicegui.components.filters import filter_selected_paths
 from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, tracking_chip_class, tracking_label
+from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.pages.courses.ui_glue import parse_duration_hours
-from frontend.ui.nicegui.pages.home.helpers import (
+from frontend.ui.nicegui.pages.shared_stats.helpers import (
     ids_by_status,
-    parse_iso_ts,
     recent_courses,
     recent_tracking,
-    tracking_map,
 )
+from frontend.ui.nicegui.services.dashboard_service import tracking_map
 
 
 @pytest.mark.unit
@@ -90,8 +90,8 @@ def test_home_recent_courses_sorts_by_created_at_desc() -> None:
 
 
 @pytest.mark.unit
-def test_home_parse_iso_ts_accepts_z() -> None:
-    dt = parse_iso_ts("2026-02-01T12:30:00Z")
+def test_parse_iso_datetime_accepts_z() -> None:
+    dt = parse_iso_datetime("2026-02-01T12:30:00Z")
     assert isinstance(dt, datetime)
     assert dt.tzinfo is not None
     assert dt.astimezone(timezone.utc).isoformat().startswith("2026-02-01T12:30:00")

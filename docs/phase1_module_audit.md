@@ -33,10 +33,10 @@ Classification:
 
 - `move later`
   - `activity/controller.py`
-    - still framed as an `/activity` controller even though the canonical surface is Teams
-    - should eventually move to a shared activity support area or become Teams-owned
+    - still named after the old `activity` package even though it now serves shared inbox/team feed loading
+    - should eventually move to a shared feed support area or become Teams-owned
   - `activity/state.py`
-    - still describes an old activity-page state concept rather than a shared feed projection layer
+    - still named after the old `activity` package rather than a neutral feed projection layer
 
 - `remove now`
   - none identified in this pass
@@ -53,27 +53,27 @@ Packages:
 
 Current role:
 - `learning/*` owns the canonical `/home` route and the actual Home page implementation
-- `home/*` is now mostly a legacy support package for shared stats/profile behavior plus the root redirect binder
+- `home/*` is now the root redirect binder only
+- `shared_stats/*` owns the shared stats/profile support helpers
 
 Classification:
 
 - `keep`
   - `home/page.py`
     - canonical root redirect to `/home`
-  - `home/controller.py`
-    - still used by Profile controller aliasing
-  - `home/state.py`
-    - still used by Profile
-  - `home/transitions.py`
-    - still used by Profile loading state
-  - `home/helpers.py`
-    - still used by Profile stats helpers
+  - `shared_stats/controller.py`
+    - shared stats orchestration used by Profile/tests
+  - `shared_stats/state.py`
+    - shared stats UI state used by Profile/tests
+  - `shared_stats/transitions.py`
+    - shared stats loading state helpers used by Profile/tests
+  - `shared_stats/helpers.py`
+    - shared stats helper functions used by Profile/tests
   - all of `learning/*`
     - canonical Home route implementation
 
 - `move later`
-  - `home/controller.py`, `home/state.py`, `home/transitions.py`, `home/helpers.py`
-    - these should eventually become Profile/shared-stats-owned modules instead of remaining under `pages/home`
+  - none identified in this pass
 
 - `remove now`
   - `home/sections.py`
@@ -82,8 +82,8 @@ Classification:
     - not part of the canonical `/home` implementation anymore
 
 Notes:
-- this is the clearest example of a package that is not dead but is legacy-shaped
-- future cleanup should either move these helpers to Profile or to a neutral stats/support package
+- this was the clearest example of a package that was legacy-shaped
+- the shared support has now been moved to a neutral stats/support package
 
 ## Courses Package
 
