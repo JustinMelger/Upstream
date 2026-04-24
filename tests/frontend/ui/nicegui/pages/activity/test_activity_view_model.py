@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views, build_activity_target_view
+from frontend.ui.nicegui.pages.shared_activity.view_model import build_activity_event_views, build_activity_target_view
 
 
 def test_build_activity_target_view_maps_learning_items_and_paths() -> None:

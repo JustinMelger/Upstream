@@ -29,3 +29,4 @@ def coerce_target_id(value: Any) -> int | None:
     except (TypeError, ValueError):
         return None
     return out if out > 0 else None
+

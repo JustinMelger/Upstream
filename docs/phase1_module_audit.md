@@ -12,38 +12,41 @@ The goal is to remove ambiguity before deeper cleanup work starts.
 
 ## Activity Package
 
-Package:
+Packages:
 - `frontend/ui/nicegui/pages/activity/*`
+- `frontend/ui/nicegui/pages/shared_activity/*`
 
 Current role:
-- shared activity/feed support layer used by the canonical Teams page
-- not a standalone shipped route anymore
+- shared feed support now lives in `frontend/ui/nicegui/pages/shared_activity/*`
+- the old `activity/*` package has been fully retired
 
 Classification:
 
 - `keep`
-  - `activity/view_model.py`
-    - used by Teams activity/inbox rendering
-  - `activity/ui_glue.py`
-    - used by Teams and activity tests
-  - `activity/sections.py`
-    - still provides shared feed rendering
-  - `activity/route_init.py`
+  - `shared_activity/controller.py`
+    - canonical feed loader used by shared activity tests/support flows
+  - `shared_activity/state.py`
+    - canonical feed state model used by shared activity tests/support flows
+  - `shared_activity/route_init.py`
     - canonical query-tab parsing for Teams initial tab
+  - `shared_activity/view_model.py`
+    - canonical typed activity-feed projections used by Teams/tests
+  - `shared_activity/ui_glue.py`
+    - canonical pure feed-formatting helpers used by Teams/tests
+  - `shared_activity/transitions.py`
+    - canonical feed-loading transition helpers used by tests
+  - `shared_activity/sections.py`
+    - canonical shared feed renderer used by activity/teams tests
 
 - `move later`
-  - `activity/controller.py`
-    - still named after the old `activity` package even though it now serves shared inbox/team feed loading
-    - should eventually move to a shared feed support area or become Teams-owned
-  - `activity/state.py`
-    - still named after the old `activity` package rather than a neutral feed projection layer
-
-- `remove now`
   - none identified in this pass
 
+- `remove now`
+  - `activity/*`
+    - fully replaced by `shared_activity/*`
+
 Notes:
-- the package is not dead, but the package name still reflects pre-refactor history
-- this is a good candidate for later consolidation into a shared activity support package
+- the shared feed subsystem now has one canonical home under `shared_activity/*`
 
 ## Home vs Learning
 

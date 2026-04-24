@@ -9,7 +9,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.core.feed_copy import team_activity_empty_description
-from frontend.ui.nicegui.pages.activity.ui_glue import format_when
+from frontend.ui.nicegui.pages.shared_activity.ui_glue import format_when
 
 
 def render_teams_list(

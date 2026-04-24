@@ -14,3 +14,4 @@ class ActivityPageState:
     loading: bool = False
     pending_reload: bool = False
     error_message: str | None = None
+

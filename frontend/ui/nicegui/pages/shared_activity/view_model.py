@@ -8,7 +8,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.learning_items import learning_item_capabilities, learning_item_type_label
 from frontend.ui.nicegui.core.navigation import build_activity_target_link
-from frontend.ui.nicegui.pages.activity.ui_glue import coerce_target_id
+from frontend.ui.nicegui.pages.shared_activity.ui_glue import coerce_target_id
 
 
 logger = logging.getLogger(__name__)
@@ -102,3 +102,4 @@ def build_activity_event_views(*, events: list[dict[str, Any]]) -> list[Activity
             )
         )
     return out
+

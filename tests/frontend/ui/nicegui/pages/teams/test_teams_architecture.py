@@ -32,7 +32,7 @@ def test_teams_pure_modules_do_not_import_nicegui() -> None:
 @pytest.mark.unit
 def test_teams_page_imports_activity_view_model_for_typed_targets() -> None:
     imports = _imports_for(_TEAMS_DIR / "page_ui.py")
-    assert "frontend.ui.nicegui.pages.activity.view_model" in imports
+    assert "frontend.ui.nicegui.pages.shared_activity.view_model" in imports
 
 
 @pytest.mark.unit

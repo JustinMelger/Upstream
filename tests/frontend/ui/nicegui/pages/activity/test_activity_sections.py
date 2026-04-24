@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from frontend.ui.nicegui.pages.activity import sections as activity_sections
-from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views
+from frontend.ui.nicegui.pages.shared_activity import sections as activity_sections
+from frontend.ui.nicegui.pages.shared_activity.view_model import build_activity_event_views
 
 
 class _FakeElement:

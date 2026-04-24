@@ -24,3 +24,4 @@ class ActivityPageController:
         """Load shared activity feed rows for the requested scope."""
         rows = await load_activity_feed(api=self._api, limit=int(limit), scope=str(scope or "inbox"))
         return [row for row in list(rows or []) if isinstance(row, dict)]
+

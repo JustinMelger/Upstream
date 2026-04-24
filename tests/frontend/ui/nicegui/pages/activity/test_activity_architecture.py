@@ -7,6 +7,7 @@ import pytest
 
 
 _ACTIVITY_DIR = Path("frontend/ui/nicegui/pages/activity")
+_SHARED_ACTIVITY_DIR = Path("frontend/ui/nicegui/pages/shared_activity")
 
 
 def _imports_for(path: Path) -> set[str]:
@@ -24,7 +25,7 @@ def _imports_for(path: Path) -> set[str]:
 @pytest.mark.unit
 def test_activity_pure_modules_do_not_import_nicegui() -> None:
     for filename in ["controller.py", "state.py", "route_init.py", "transitions.py", "ui_glue.py", "view_model.py"]:
-        imports = _imports_for(_ACTIVITY_DIR / filename)
+        imports = _imports_for(_SHARED_ACTIVITY_DIR / filename)
         assert "nicegui" not in imports
         assert not any(name.startswith("nicegui.") for name in imports)
 

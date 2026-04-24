@@ -9,7 +9,7 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.feedback import render_empty_block, render_error_block
 from frontend.ui.nicegui.core.feed_copy import activity_empty_description
-from frontend.ui.nicegui.pages.activity.ui_glue import format_when
+from frontend.ui.nicegui.pages.shared_activity.ui_glue import format_when
 
 
 def render_empty_activity(*, current_tab: str, on_primary: Callable[[], None]) -> None:

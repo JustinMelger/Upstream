@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.activity.ui_glue import coerce_target_id, format_when, target_url
+from frontend.ui.nicegui.pages.shared_activity.ui_glue import coerce_target_id, format_when, target_url
 
 
 def test_activity_target_url_mapping() -> None:

@@ -79,11 +79,10 @@ The current implementation now standardizes several frontend patterns across pag
 
 - Performance/caching:
   - `frontend/ui/nicegui/services/courses_service.py`
-    - Short-TTL cache for course detail dialog payloads (`/courses/{id}`, reviews, recommendations).
+    - Short-TTL cache for course detail payloads (`/courses/{id}` and reviews).
     - Cache key is scoped (`cache_scope`, `course_id`) to avoid cross-user leakage.
   - Cache invalidation points:
-    - Review save/delete in `frontend/ui/nicegui/pages/courses/detail_flow.py`.
-    - Recommendation save flow in `frontend/ui/nicegui/pages/courses/page.py`.
+    - Review save/delete in Explore course detail flows.
 
 - Import-cycle guard:
   - `frontend/ui/nicegui/pages/__init__.py` no longer eagerly imports all pages.
@@ -193,7 +192,7 @@ Notes:
 - Admin routes additionally check `role == "admin"`.
 - Some routes may be feature-flagged via environment variables (see Feature Flags below).
 - Canonical product model: a learning item is the primary shareable unit (`video`, `course`, `article` in the current phase), while a path is a separate object composed of learning items.
-- Subtype capability model: keep one shared learning-item contract, but do not force feature symmetry. In the current phase, `course` supports tracking + reviews + recommendations, `article` supports reviews, and `video` supports reviews without tracking/recommendation flows.
+- Subtype capability model: keep one shared learning-item contract, but do not force feature symmetry. In the released v1 product, `course` supports tracking + reviews, while `article` and `video` support reviews without tracking flows.
 
 ## Feature Flags
 

@@ -9,7 +9,7 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.activity.route_init import resolve_activity_tab
+from frontend.ui.nicegui.pages.shared_activity.route_init import resolve_activity_tab
 from frontend.ui.nicegui.pages.teams.controller import TeamsPageController
 from frontend.ui.nicegui.pages.teams.page_ui import _TeamsPageView
 from frontend.ui.nicegui.pages.teams.state import TeamsPageState

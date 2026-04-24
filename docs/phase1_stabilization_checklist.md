@@ -98,7 +98,7 @@ These are still Phase 1 items, but they should happen after the low-risk cleanup
 ### Share
 
 - [ ] Audit `frontend/ui/nicegui/pages/share/*` for draft/publish helpers that still assume broader product scope than v1 supports
-- [ ] Remove stale wording helpers or fallback code for removed recommendation concepts
+- [x] Remove stale wording helpers or fallback code for removed recommendation concepts
 - [ ] Confirm one canonical publish path for:
   - learning items
   - paths
@@ -106,7 +106,7 @@ These are still Phase 1 items, but they should happen after the low-risk cleanup
 ### Backend API Surface
 
 - [ ] Review router docstrings and comments for wording drift from the shipped v1 model
-- [ ] Remove obsolete router/service helpers left behind by removed recommendation endpoints
+- [x] Remove obsolete router/service helpers left behind by removed recommendation endpoints
 - [ ] Standardize intentionally unused auth-gating parameters and handler naming patterns
 - [ ] Audit policy/dependency helpers for duplicates introduced during v1 stabilization
 

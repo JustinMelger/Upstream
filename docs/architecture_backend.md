@@ -247,7 +247,7 @@ erDiagram
 ### Videos service
 - Allow colleagues to share video links as first-class learning items (`title`, `description`, `provider`, `category`, `url`).
 - Browse/search colleague-submitted videos with preview metadata enrichment.
-- Authenticated users can create videos; the current phase keeps videos lightweight and does not add tracking/recommendation/review write models.
+- Authenticated users can create videos; the current phase keeps videos lightweight and does not add tracking write models.
 
 ### Notifications service
 - Aggregates share/recommend/review events into activity feed payloads.
@@ -302,8 +302,6 @@ This matrix is the enforceable contract for service-boundary input parsing.
 | `backend/services/course_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/path_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/article_reviews_service.py` | `create_review` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
-| `backend/services/course_recommendations_service.py` | `create_recommendation` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
-| `backend/services/path_recommendations_service.py` | `create_recommendation` | `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/tracking_service.py` | `list_tracking`, `list_recent_activity`, `upsert_tracking`, `remove_tracking` | `_parse_list_payload`, `_parse_recent_activity_payload`, `_parse_mutation_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/user_paths_service.py` | `add_user_path`, `list_user_paths`, `remove_user_path`, `update_user_path_status` | `_parse_mutation_payload`, `_parse_list_payload` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
 | `backend/services/notifications_service.py` | `list_activity` | `_parse_activity_query` | `tests/backend/test_architecture_service_payload_contracts.py::test_service_entrypoints_use_typed_parse_helpers` + `tests/backend/test_architecture_service_payload_contracts.py::test_parse_helpers_map_validation_error_to_invalid_payload_domain_error` |
@@ -340,7 +338,6 @@ classDiagram
   class CoursesRouter {
     +GET /courses
     +GET /courses/reviews/summary
-    +GET /courses/recommendations/summary
     +GET /courses/:course_id
     +POST /courses
     +PUT /courses/:course_id
@@ -348,9 +345,6 @@ classDiagram
     +GET /courses/:course_id/reviews
     +POST /courses/:course_id/reviews
     +DELETE /courses/:course_id/reviews/:review_id
-    +GET /courses/:course_id/recommendations
-    +POST /courses/:course_id/recommendations
-    +DELETE /courses/:course_id/recommendations/:recommendation_id
   }
 
   class CoursesService {
@@ -379,14 +373,6 @@ classDiagram
     +summaries(course_ids): list[dict]
   }
 
-  class CourseRecommendationsService {
-    +list_recommendations(course_id): list[dict]
-    +create_recommendation(course_id, payload, created_by): dict (upsert per user)
-    +get_recommendation_by_id(recommendation_id): dict|None
-    +delete_recommendation(recommendation_id): bool
-    +summaries(course_ids): list[dict]
-  }
-
   class SQLCoursesRepository {
   }
 
@@ -398,7 +384,6 @@ classDiagram
   CoursesRouter --> AuthService : require_session + admin checks
   CoursesRouter --> CoursesService : CRUD
   CoursesRouter --> CourseReviewsService : reviews
-  CoursesRouter --> CourseRecommendationsService : recommendations
   CoursesService --> CoursesRepository : persistence
   SQLCoursesRepository ..|> CoursesRepository
 ```
@@ -430,20 +415,13 @@ erDiagram
     STRING created_by
     TIMESTAMP created_at
   }
-  COURSE_RECOMMENDATIONS {
-    INTEGER id
-    INTEGER course_id
-    STRING note
-    STRING created_by
-    TIMESTAMP created_at
-  }
 ```
 
 `search_document` is computed in `CoursesService` and returned in API payloads; it is not persisted as a physical database column.
 
-Course review/recommendation write model details:
-- `POST /courses/{course_id}/reviews` and `POST /courses/{course_id}/recommendations` are idempotent per user/course pair (create-or-update semantics).
-- DB uniqueness is enforced on `(course_id, created_by)` in both `course_reviews` and `course_recommendations`.
+Course review write model details:
+- `POST /courses/{course_id}/reviews` is idempotent per user/course pair (create-or-update semantics).
+- DB uniqueness is enforced on `(course_id, created_by)` in `course_reviews`.
 - Mutation writes update `created_at` as the latest write timestamp (there is no separate `updated_at` column for these tables).
 
 ## Paths Architecture
@@ -486,7 +464,6 @@ classDiagram
   class PathsRouter {
     +GET /paths
     +GET /paths/reviews/summary
-    +GET /paths/recommendations/summary
     +GET /paths/:path_id
     +POST /paths
     +PUT /paths/:path_id
@@ -498,9 +475,6 @@ classDiagram
     +GET /paths/:path_id/reviews
     +POST /paths/:path_id/reviews
     +DELETE /paths/:path_id/reviews/:review_id
-    +GET /paths/:path_id/recommendations
-    +POST /paths/:path_id/recommendations
-    +DELETE /paths/:path_id/recommendations/:recommendation_id
   }
 
   class PathsService {
@@ -522,13 +496,6 @@ classDiagram
     +list_reviews(path_id): list[dict]
     +create_review(path_id, payload, created_by): dict
     +delete_review(review_id): bool
-    +summaries(path_ids): list[dict]
-  }
-
-  class PathRecommendationsService {
-    +list_recommendations(path_id): list[dict]
-    +create_recommendation(path_id, payload, created_by): dict
-    +delete_recommendation(recommendation_id): bool
     +summaries(path_ids): list[dict]
   }
 
@@ -565,7 +532,6 @@ classDiagram
   PathsRouter --> PathsService : CRUD
   PathsRouter --> UserPathsService : selection + status
   PathsRouter --> PathReviewsService : reviews
-  PathsRouter --> PathRecommendationsService : recommendations
   PathsService --> PathsRepository : persistence
   SQLPathsRepository ..|> PathsRepository
   UserPathsService --> UserPathsRepository : persistence
@@ -831,8 +797,7 @@ erDiagram
 - Payloads are enriched with best-effort `preview_image_url` resolution through `UrlPreviewService`.
 - Videos are first-class learning items, but the current phase intentionally keeps them lighter than courses:
   - no `/tracking` integration
-  - no recommendation write model
-  - no dedicated reviews API
+  - reviews are supported without tracking
 
 ### Videos Data Model
 
@@ -863,10 +828,9 @@ erDiagram
 - Service composes activity from repository reads of:
   - course shares
   - video shares
-  - course recommendations
-  - path recommendations
   - course reviews
   - path reviews
   - article reviews
+  - video reviews
 - `scope=inbox`: mailbox-style feed for the current user (excludes own events).
 - `scope=team`: team-wide timeline feed.

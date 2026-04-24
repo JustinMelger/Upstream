@@ -11,7 +11,7 @@ from frontend.ui.nicegui.components.feedback import render_empty_block, render_e
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.errors import FrontendError, guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.navigation import build_activity_tab_link
-from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views
+from frontend.ui.nicegui.pages.shared_activity.view_model import build_activity_event_views
 from frontend.ui.nicegui.pages.teams.controller import TeamsPageController
 from frontend.ui.nicegui.pages.teams.sections import (
     render_inbox_activity,
