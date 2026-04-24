@@ -55,3 +55,22 @@ def render_activity_items(*, events: list[Any], on_open: Callable[[Any], Any]) -
                     ui.button("Open", on_click=lambda target=event.target: on_open(target)).props("dense outline").classes(
                         "lp-teams-open-btn"
                     )
+
+
+def render_activity_feed(
+    *,
+    events: list[Any],
+    on_open: Callable[[Any], Any],
+    empty_title: str,
+    empty_description: str,
+    compact: bool = True,
+) -> None:
+    """Render a shared activity feed with a caller-provided empty state."""
+    if not events:
+        render_empty_block(
+            title=str(empty_title or "No activity yet."),
+            description=str(empty_description or ""),
+            compact=compact,
+        )
+        return
+    render_activity_items(events=events, on_open=on_open)

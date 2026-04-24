@@ -434,7 +434,7 @@ def render_shared_content(
                     )
 
 
-def render_home_hero_panel(
+def render_next_focus_section(
     *,
     next_course: dict[str, Any] | None,
     teammates_progressing: int,
@@ -442,7 +442,7 @@ def render_home_hero_panel(
     on_join_discussion: Any,
     on_open_selected_paths: Any,
 ) -> None:
-    """Render the redesigned Home hero with dominant next action."""
+    """Render the Home page next-focus section."""
     with ui.card().classes("lp-card w-full lp-home-hero-panel lp-home-focus-shell"):
         with ui.column().classes("w-full gap-2"):
             ui.label("Next focus").classes("lp-home-hero-eyebrow")
@@ -476,7 +476,7 @@ def render_home_hero_panel(
                 ui.button("Continue path", on_click=on_open_selected_paths).props("unelevated").classes("lp-home-hero-primary")
 
 
-def render_home_focus_queue_panel(
+def render_next_actions_section(
     *,
     pending_course_review_ids: list[int],
     pending_path_review_ids: list[int],
@@ -488,7 +488,7 @@ def render_home_focus_queue_panel(
     on_open_tracked_courses: Any,
     on_browse_courses: Any,
 ) -> None:
-    """Render compact next-step queue next to the home hero."""
+    """Render the compact next-actions summary beside the primary focus section."""
     pending_reviews = len(pending_course_review_ids) + len(pending_path_review_ids)
     with ui.card().classes("lp-card w-full lp-home-focus-queue-panel lp-home-focus-shell"):
         with ui.column().classes("w-full gap-2"):
@@ -531,7 +531,7 @@ def render_home_focus_queue_panel(
                 )
 
 
-def render_team_snapshot_section(
+def render_team_activity_section(
     *,
     tracking_by_course_id: dict[int, dict[str, Any]],
     active_learners: int,
@@ -539,7 +539,7 @@ def render_team_snapshot_section(
     reviews_count: int,
     on_open_full_stats: Any,
 ) -> None:
-    """Render compact team snapshot with minimal metrics and tiny sparkline."""
+    """Render compact team-activity summary with minimal metrics and sparkline."""
     interested, in_progress, completed = _tracking_status_counts(tracking_by_course_id=tracking_by_course_id)
 
     with ui.column().classes("w-full gap-2 lp-home-snapshot-panel lp-home-snapshot-shell"):
@@ -723,7 +723,7 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
     with ui.column().classes("w-full gap-4"):
         with ui.element("section").classes("lp-home-grid-12 lp-home-grid-top"):
             with ui.element("div").classes("lp-home-span-8"):
-                render_home_hero_panel(
+                render_next_focus_section(
                     next_course=next_course,
                     teammates_progressing=active_learners,
                     reviews_count=reviews_count,
@@ -731,7 +731,7 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                     on_open_selected_paths=on_open_selected_paths,
                 )
             with ui.element("div").classes("lp-home-span-4"):
-                render_home_focus_queue_panel(
+                render_next_actions_section(
                     pending_course_review_ids=learning_vm.pending_course_review_ids,
                     pending_path_review_ids=learning_vm.pending_path_review_ids,
                     selected_paths_count=len(learning_vm.selected_paths),
@@ -781,7 +781,7 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                         on_click=on_load_more_selected,
                     ).props("outline dense")
             with ui.element("div").classes("lp-home-span-3"):
-                render_team_snapshot_section(
+                render_team_activity_section(
                     tracking_by_course_id=learning_vm.tracking_by_course_id,
                     active_learners=active_learners,
                     shares_count=shares_count,

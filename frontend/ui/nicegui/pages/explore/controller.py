@@ -147,7 +147,7 @@ class ExplorePageController:
         refresh_ui()
 
     async def load_course_detail_bundle(self, *, course_id: int, cache_scope: str) -> CourseDetailBundle:
-        """Load course detail payload for the Explore details dialog."""
+        """Load course detail payload for the Explore detail route."""
         return await self._gateway.courses.load_course_detail_bundle(
             course_id=int(course_id), cache_scope=str(cache_scope or "")
         )
@@ -160,7 +160,7 @@ class ExplorePageController:
         text: str,
         cache_scope: str,
     ) -> dict[str, Any]:
-        """Save course review from Explore details dialog."""
+        """Save course review from the Explore detail route."""
         return await self._gateway.courses.save_course_review(
             course_id=int(course_id),
             rating=int(rating),
@@ -175,7 +175,7 @@ class ExplorePageController:
         review_id: int,
         cache_scope: str,
     ) -> bool:
-        """Delete course review from Explore details dialog."""
+        """Delete course review from the Explore detail route."""
         return await self._gateway.courses.delete_course_review(
             course_id=int(course_id),
             review_id=int(review_id),
@@ -190,7 +190,7 @@ class ExplorePageController:
         reload_data: Callable[[], Awaitable[None]],
         refresh_ui: Callable[..., Any],
     ) -> dict[str, Any]:
-        """Create a course from Explore share dialog and refresh the list view."""
+        """Create a course from the Explore share flow and refresh the list view."""
         created = await self._gateway.courses.create_course(payload=dict(payload.payload or {}))
         await reload_data()
         refresh_ui()
@@ -204,7 +204,7 @@ class ExplorePageController:
         reload_data: Callable[[], Awaitable[None]],
         refresh_ui: Callable[..., Any],
     ) -> None:
-        """Create a path from Explore share dialog and refresh the list view."""
+        """Create a path from the Explore share flow and refresh the list view."""
         await self._gateway.paths.create_path(payload=dict(payload.payload or {}))
         await reload_data()
         refresh_ui()
@@ -217,7 +217,7 @@ class ExplorePageController:
         reload_data: Callable[[], Awaitable[None]],
         refresh_ui: Callable[..., Any],
     ) -> dict[str, Any]:
-        """Create an article from Explore share dialog and refresh the list view."""
+        """Create an article from the Explore share flow and refresh the list view."""
         _ = state
         created = await self._gateway.articles.create_article(payload=dict(payload.payload or {}))
         await reload_data()
@@ -240,11 +240,11 @@ class ExplorePageController:
         return created
 
     async def suggest_course_from_url(self, *, url_value: ExploreUrlValue) -> dict[str, Any]:
-        """Suggest course metadata from URL for Explore share dialog."""
+        """Suggest course metadata from URL for the Explore share flow."""
         return await self._gateway.courses.suggest_course_from_url(url=str(url_value.url or ""))
 
     async def suggest_article_from_url(self, *, url_value: ExploreUrlValue) -> dict[str, Any]:
-        """Suggest article metadata from URL for Explore share dialog."""
+        """Suggest article metadata from URL for the Explore share flow."""
         return await self._gateway.articles.suggest_article_from_url(url=str(url_value.url or ""))
 
     async def suggest_video_from_url(self, *, url_value: ExploreUrlValue) -> dict[str, Any]:
@@ -282,7 +282,7 @@ class ExplorePageController:
         return False
 
     def build_path_share_course_options(self, *, state: ExplorePageState) -> dict[int, str]:
-        """Build course options map used by Explore path-share dialog."""
+        """Build course options map used by the Explore path-share flow."""
         options: dict[int, str] = {}
         for row in list(state.courses or []):
             try:

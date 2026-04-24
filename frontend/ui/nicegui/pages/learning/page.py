@@ -17,8 +17,8 @@ from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
 from frontend.ui.nicegui.pages.learning.page_ui import (
     build_learning_page_context,
-    render_intro_panel,
     render_learning_content,
+    render_learning_intro_panel,
 )
 from frontend.ui.nicegui.pages.learning.route_init import resolve_learning_initial_view
 from frontend.ui.nicegui.pages.learning.ui_glue import compute_next_visibility
@@ -86,7 +86,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     "color: var(--lp-muted)"
                 )
 
-            render_intro_panel()
+            render_learning_intro_panel()
 
             with ui.column().classes("lp-topbar lp-sticky-controls lp-home-topbar w-full gap-2"):
                 with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-home-topbar-row"):

@@ -63,43 +63,43 @@ These are still Phase 1 items, but they should happen after the low-risk cleanup
 
 ### Teams / Activity
 
-- [ ] Audit `frontend/ui/nicegui/pages/teams/*` for render/orchestration helpers that can be simplified without changing behavior
-- [ ] Audit shared activity helpers used by Teams, Home, and Profile
-- [ ] Remove residual “old activity page” concepts from module names or comments where the code is now Teams-owned
-- [ ] Confirm there is one clear canonical flow for:
+- [x] Audit `frontend/ui/nicegui/pages/teams/*` for render/orchestration helpers that can be simplified without changing behavior
+- [x] Audit shared activity helpers used by Teams, Home, and Profile
+- [x] Remove residual “old activity page” concepts from module names or comments where the code is now Teams-owned
+- [x] Confirm there is one clear canonical flow for:
   - inbox rendering
   - team activity rendering
   - team member mutation refresh
 
 ### Home / Learning
 
-- [ ] Audit `frontend/ui/nicegui/pages/learning/*` for redesign residue:
+- [x] Audit `frontend/ui/nicegui/pages/learning/*` for redesign residue:
   - unused context fields
   - overly generic section contracts
   - duplicate empty-state helpers
-- [ ] Remove helpers that still reflect earlier dashboard layouts if they are no longer needed
-- [ ] Normalize section naming around `next focus`, `next actions`, `tracked courses`, `selected path`, `team activity`
+ - [x] Remove helpers that still reflect earlier dashboard layouts if they are no longer needed
+- [x] Normalize section naming around `next focus`, `next actions`, `tracked courses`, `selected path`, `team activity`
 
 ### Profile
 
-- [ ] Audit `frontend/ui/nicegui/pages/profile/*` for stale summary/overview helpers left behind by the recent page cleanup
-- [ ] Remove any chart/table wrappers that no longer carry meaningful behavior
-- [ ] Align stats-related naming with the Home/Teams/Profile activity model
+- [x] Audit `frontend/ui/nicegui/pages/profile/*` for stale summary/overview helpers left behind by the recent page cleanup
+- [x] Remove any chart/table wrappers that no longer carry meaningful behavior
+- [x] Align stats-related naming with the Home/Teams/Profile activity model
 
 ### Explore / Detail Surfaces
 
-- [ ] Audit `frontend/ui/nicegui/pages/explore/*` for leftover route-era residue:
+- [x] Audit `frontend/ui/nicegui/pages/explore/*` for leftover route-era residue:
   - stale helper names
   - duplicated detail-page support logic
   - obsolete list-flow wrappers
-- [ ] Remove helpers that only survive because of earlier dialog/detail transitions
-- [ ] Confirm detail-page common helpers are the canonical place for breadcrumb/back-link behavior
+- [x] Remove helpers that only survive because of earlier dialog/detail transitions
+ - [x] Confirm detail-page common helpers are the canonical place for breadcrumb/back-link behavior
 
 ### Share
 
-- [ ] Audit `frontend/ui/nicegui/pages/share/*` for draft/publish helpers that still assume broader product scope than v1 supports
+- [x] Audit `frontend/ui/nicegui/pages/share/*` for draft/publish helpers that still assume broader product scope than v1 supports
 - [x] Remove stale wording helpers or fallback code for removed recommendation concepts
-- [ ] Confirm one canonical publish path for:
+- [x] Confirm one canonical publish path for:
   - learning items
   - paths
 

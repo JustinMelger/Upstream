@@ -46,7 +46,7 @@ class _DummyController:
         raise AssertionError("not used in this test")
 
 
-def test_render_profile_team_sections_empty_state_points_to_next_steps(monkeypatch) -> None:  # noqa: ANN001
+def test_render_team_stats_section_empty_state_points_to_next_steps(monkeypatch) -> None:  # noqa: ANN001
     fake_ui = _FakeUi()
     monkeypatch.setattr(profile_page, "ui", fake_ui)
 
@@ -60,7 +60,7 @@ def test_render_profile_team_sections_empty_state_points_to_next_steps(monkeypat
         mode_value="team",
     )
 
-    profile_page._render_profile_team_sections(ctx=ctx)
+    profile_page._render_team_stats_section(ctx=ctx)
 
     assert (
         "No team contributor data yet. Open Teams to invite teammates or switch to My stats to review your own progress."

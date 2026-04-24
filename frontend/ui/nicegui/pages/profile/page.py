@@ -105,8 +105,8 @@ def _contributors_chart_option(*, contributors: list[dict[str, Any]]) -> dict[st
     }
 
 
-async def _load_profile_overview(*, ctx: ProfileStatsPageContext, dashboard: Any) -> None:
-    """Load or reload profile overview data and refresh the dashboard."""
+async def _load_profile_stats(*, ctx: ProfileStatsPageContext, dashboard: Any) -> None:
+    """Load or reload profile stats data and refresh the dashboard."""
     if ctx.state.loading:
         ctx.state.pending_reload = True
         return
@@ -140,7 +140,7 @@ async def _load_profile_overview(*, ctx: ProfileStatsPageContext, dashboard: Any
             dashboard.refresh()
 
 
-def _render_profile_summary_section(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
+def _render_profile_summary_rail(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
     """Render the compact profile summary rail."""
     interested = _safe_int(ctx.state.snapshot_stats.get("interested"))
     in_progress = _safe_int(ctx.state.snapshot_stats.get("in_progress"))
@@ -183,7 +183,7 @@ def _render_mode_toggle(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> Non
     mode_control.on("update:model-value", _on_mode_change)
 
 
-def _render_profile_progress_snapshot(*, ctx: ProfileStatsPageContext) -> None:
+def _render_profile_snapshot_section(*, ctx: ProfileStatsPageContext) -> None:
     """Render the profile progress snapshot cards."""
     interested = _safe_int(ctx.state.snapshot_stats.get("interested"))
     in_progress = _safe_int(ctx.state.snapshot_stats.get("in_progress"))
@@ -205,7 +205,7 @@ def _render_profile_progress_snapshot(*, ctx: ProfileStatsPageContext) -> None:
                     ui.label(summary).classes("lp-profile-muted")
 
 
-def _build_team_stat_rows(*, team_stats_by_user: list[dict[str, Any]]) -> list[dict[str, object]]:
+def _build_team_totals_rows(*, team_stats_by_user: list[dict[str, Any]]) -> list[dict[str, object]]:
     """Normalize team stats rows for the profile table."""
     rows: list[dict[str, object]] = []
     for row in list(team_stats_by_user or []):
@@ -223,13 +223,13 @@ def _build_team_stat_rows(*, team_stats_by_user: list[dict[str, Any]]) -> list[d
     return rows
 
 
-def _render_profile_team_sections(*, ctx: ProfileStatsPageContext) -> None:
-    """Render team activity chart and stats table when team mode is active."""
+def _render_team_stats_section(*, ctx: ProfileStatsPageContext) -> None:
+    """Render team stats chart and totals table when team mode is active."""
     if not should_render_team_stats(is_admin=ctx.is_admin, mode_value=ctx.mode_value):
         return
 
     contributors = top_contributors(ctx.state.team_stats_by_user, limit=6)
-    ui.label("Team Activity").classes("lp-profile-section-title mt-1")
+    ui.label("Team stats").classes("lp-profile-section-title mt-1")
     ui.label("See how your team is progressing across contributors and totals.").classes("lp-profile-muted mb-1")
     with ui.element("section").classes("lp-home-grid-12"):
         with ui.element("div").classes("lp-home-span-12"):
@@ -248,7 +248,7 @@ def _render_profile_team_sections(*, ctx: ProfileStatsPageContext) -> None:
             with ui.card().classes("lp-card w-full lp-profile-table-card"):
                 ui.label("Team learning totals").classes("lp-profile-card-title")
                 ui.label("Progress distribution across team members.").classes("lp-profile-card-subtitle")
-                rows = _build_team_stat_rows(team_stats_by_user=ctx.state.team_stats_by_user)
+                rows = _build_team_totals_rows(team_stats_by_user=ctx.state.team_stats_by_user)
                 if not rows:
                     ui.label(
                         "No team stats available yet. Open Teams to build your workspace or switch to My stats to review your own activity."
@@ -301,18 +301,18 @@ async def _render_profile_stats_page(*, store: SessionStore, api: ApiClient) -> 
 
             _render_mode_toggle(
                 ctx=ctx,
-                on_refresh=lambda: _load_profile_overview(ctx=ctx, dashboard=dashboard),
+                on_refresh=lambda: _load_profile_stats(ctx=ctx, dashboard=dashboard),
             )
             ui.element("div").classes("h-3")
-            _render_profile_summary_section(
+            _render_profile_summary_rail(
                 ctx=ctx,
-                on_refresh=lambda: _load_profile_overview(ctx=ctx, dashboard=dashboard),
+                on_refresh=lambda: _load_profile_stats(ctx=ctx, dashboard=dashboard),
             )
             ui.element("div").classes("h-2")
-            _render_profile_progress_snapshot(ctx=ctx)
-            _render_profile_team_sections(ctx=ctx)
+            _render_profile_snapshot_section(ctx=ctx)
+            _render_team_stats_section(ctx=ctx)
 
-        await _load_profile_overview(ctx=ctx, dashboard=dashboard)
+        await _load_profile_stats(ctx=ctx, dashboard=dashboard)
         dashboard()
 
 

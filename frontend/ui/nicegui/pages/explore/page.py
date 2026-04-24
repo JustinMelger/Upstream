@@ -15,12 +15,10 @@ from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
 from frontend.ui.nicegui.pages.explore.controller import ExplorePageController
-from frontend.ui.nicegui.pages.explore.detail_page import (
-    render_explore_article_detail_page,
-    render_explore_course_detail_page,
-    render_explore_path_detail_page,
-    render_explore_video_detail_page,
-)
+from frontend.ui.nicegui.pages.explore.detail_article import render_explore_article_detail_page
+from frontend.ui.nicegui.pages.explore.detail_course import render_explore_course_detail_page
+from frontend.ui.nicegui.pages.explore.detail_path import render_explore_path_detail_page
+from frontend.ui.nicegui.pages.explore.detail_video import render_explore_video_detail_page
 from frontend.ui.nicegui.pages.explore.event_bindings import bind_refresh_events
 from frontend.ui.nicegui.pages.explore.list_flow import build_sections_deps, ExploreSectionsUiControls
 from frontend.ui.nicegui.pages.explore.list_sections import (

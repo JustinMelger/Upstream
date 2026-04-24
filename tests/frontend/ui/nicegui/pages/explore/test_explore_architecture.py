@@ -42,7 +42,10 @@ def test_explore_pure_modules_do_not_import_nicegui() -> None:
 def test_explore_page_imports_page_package_modules() -> None:
     imports = _imports_for(_EXPLORE_DIR / "page.py")
     assert "frontend.ui.nicegui.pages.explore.controller" in imports
-    assert "frontend.ui.nicegui.pages.explore.detail_page" in imports
+    assert "frontend.ui.nicegui.pages.explore.detail_article" in imports
+    assert "frontend.ui.nicegui.pages.explore.detail_course" in imports
+    assert "frontend.ui.nicegui.pages.explore.detail_path" in imports
+    assert "frontend.ui.nicegui.pages.explore.detail_video" in imports
     assert "frontend.ui.nicegui.pages.explore.event_bindings" in imports
     assert "frontend.ui.nicegui.pages.explore.list_flow" in imports
     assert "frontend.ui.nicegui.pages.explore.list_sections" in imports

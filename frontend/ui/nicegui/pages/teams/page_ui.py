@@ -10,12 +10,12 @@ from nicegui import ui
 from frontend.ui.nicegui.components.feedback import render_empty_block, render_error_block
 from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.core.errors import FrontendError, guard_ui_action, safe_notify
+from frontend.ui.nicegui.core.feed_copy import team_activity_empty_description
 from frontend.ui.nicegui.core.navigation import build_activity_tab_link
+from frontend.ui.nicegui.pages.shared_activity.sections import render_activity_feed
 from frontend.ui.nicegui.pages.shared_activity.view_model import build_activity_event_views
 from frontend.ui.nicegui.pages.teams.controller import TeamsPageController
 from frontend.ui.nicegui.pages.teams.sections import (
-    render_inbox_activity,
-    render_team_activity,
     render_team_members,
     render_teams_list,
 )
@@ -105,9 +105,11 @@ class _TeamsPageView:
                             )
             with ui.column().classes("w-full gap-2 lp-teams-empty-inbox"):
                 ui.label("Inbox").classes("text-sm font-semibold")
-                render_inbox_activity(
-                    inbox_rows=build_activity_event_views(events=self.state.inbox_rows),
-                    on_open_target=self.open_activity_target,
+                render_activity_feed(
+                    events=build_activity_event_views(events=self.state.inbox_rows),
+                    on_open=self.open_activity_target,
+                    empty_title="No conversations pending.",
+                    empty_description="Review requests and replies from teammates will appear here.",
                 )
             return
 
@@ -170,9 +172,11 @@ class _TeamsPageView:
                     )
                     return
                 ui.label("Inbox").classes("text-sm font-semibold")
-                render_inbox_activity(
-                    inbox_rows=build_activity_event_views(events=self.state.inbox_rows),
-                    on_open_target=self.open_activity_target,
+                render_activity_feed(
+                    events=build_activity_event_views(events=self.state.inbox_rows),
+                    on_open=self.open_activity_target,
+                    empty_title="No conversations pending.",
+                    empty_description="Review requests and replies from teammates will appear here.",
                 )
                 return
 
@@ -222,9 +226,11 @@ class _TeamsPageView:
             current_tab = self._current_tab()
             if current_tab == "team":
                 ui.label("Team activity").classes("text-sm font-semibold")
-                render_team_activity(
-                    activity_rows=build_activity_event_views(events=self.state.activity_rows),
-                    on_open_target=self.open_activity_target,
+                render_activity_feed(
+                    events=build_activity_event_views(events=self.state.activity_rows),
+                    on_open=self.open_activity_target,
+                    empty_title="No team activity yet.",
+                    empty_description=team_activity_empty_description(),
                 )
                 return
 

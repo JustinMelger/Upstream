@@ -132,7 +132,7 @@ def make_recently_shared_item_opener() -> Any:
     return _open_recently_shared_item
 
 
-def render_intro_panel() -> None:
+def render_learning_intro_panel() -> None:
     """Render dismissible onboarding intro when applicable."""
 
     @ui.refreshable
@@ -166,25 +166,14 @@ def render_intro_panel() -> None:
     intro_panel()
 
 
-def render_empty_home_state(*, on_refresh: Any) -> None:
-    """Render fallback UI when home data is unavailable."""
+def render_empty_learning_state(*, on_refresh: Any) -> None:
+    """Render fallback UI when Home data is unavailable."""
     with ui.element("div").classes("w-full lp-refresh-region"):
         ui.label("Home data is unavailable right now.").classes("text-sm").style("color: var(--lp-muted)")
         ui.label("Refresh to reload your next actions and learning progress.").classes("text-sm").style(
             "color: var(--lp-muted)"
         )
         ui.button("Refresh home", on_click=on_refresh).props("dense outline")
-
-
-def render_shared_view(*, state: LearningPageState, nav_actions: LearningNavigationActions) -> None:
-    """Render the shared tab content."""
-    shared_vm = build_shared_tab_view(data=state.data)
-    with ui.element("div").classes("w-full lp-refresh-region"):
-        render_shared_tab(
-            shared_vm=shared_vm,
-            review_summary_label=lambda row: format_review_summary(row, style="star"),
-            nav_actions=nav_actions,
-        )
 
 
 def resolve_learning_tab_context(
@@ -251,25 +240,6 @@ def resolve_learning_tab_context(
     )
 
 
-def render_learning_view(
-    *,
-    page_ctx: LearningPageContext,
-    refresh_content: Any,
-    on_set_tracking_status: Any,
-    on_clear_tracking_status: Any,
-) -> None:
-    """Render the learning tab content."""
-    with ui.element("div").classes("w-full lp-refresh-region"):
-        render_learning_tab(
-            ctx=resolve_learning_tab_context(
-                page_ctx=page_ctx,
-                refresh_content=refresh_content,
-                on_set_tracking_status=on_set_tracking_status,
-                on_clear_tracking_status=on_clear_tracking_status,
-            )
-        )
-
-
 def render_learning_content(
     *,
     page_ctx: LearningPageContext,
@@ -283,14 +253,23 @@ def render_learning_content(
         render_card_skeletons(count=4)
         return
     if not page_ctx.state.data:
-        render_empty_home_state(on_refresh=on_refresh)
+        render_empty_learning_state(on_refresh=on_refresh)
         return
     if current_view == "shared":
-        render_shared_view(state=page_ctx.state, nav_actions=page_ctx.nav_actions)
+        shared_vm = build_shared_tab_view(data=page_ctx.state.data)
+        with ui.element("div").classes("w-full lp-refresh-region"):
+            render_shared_tab(
+                shared_vm=shared_vm,
+                review_summary_label=lambda row: format_review_summary(row, style="star"),
+                nav_actions=page_ctx.nav_actions,
+            )
         return
-    render_learning_view(
-        page_ctx=page_ctx,
-        refresh_content=on_refresh,
-        on_set_tracking_status=on_set_tracking_status,
-        on_clear_tracking_status=on_clear_tracking_status,
-    )
+    with ui.element("div").classes("w-full lp-refresh-region"):
+        render_learning_tab(
+            ctx=resolve_learning_tab_context(
+                page_ctx=page_ctx,
+                refresh_content=on_refresh,
+                on_set_tracking_status=on_set_tracking_status,
+                on_clear_tracking_status=on_clear_tracking_status,
+            )
+        )

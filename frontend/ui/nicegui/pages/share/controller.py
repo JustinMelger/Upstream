@@ -11,7 +11,7 @@ from frontend.ui.nicegui.pages.videos.controller import VideosPageController
 
 
 class SharePageController:
-    """Imperative API workflows for `/share/item` and compatibility redirects."""
+    """Imperative API workflows for the dedicated share routes."""
 
     def __init__(self, *, api: ApiClient):
         """Initialize the share-page controller."""
