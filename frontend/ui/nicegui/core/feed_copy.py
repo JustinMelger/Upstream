@@ -42,8 +42,8 @@ def format_explore_scope_text(
 def activity_empty_description(*, current_tab: str) -> str:
     """Return empty-state copy for the activity feed."""
     if str(current_tab or "").strip().lower() == "team":
-        return "When teammates share, recommend, or rate learning items and paths, updates will appear here."
-    return "When teammates review or recommend your shared learning items and paths, updates will appear here."
+        return "When teammates share or rate learning items and paths, updates will appear here."
+    return "When teammates rate your shared learning items and paths, updates will appear here."
 
 
 def team_activity_empty_description() -> str:

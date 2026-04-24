@@ -65,7 +65,6 @@ def clear_paths_state_on_load_error(*, state: PathsPageState) -> None:
     state.course_by_id = {}
     state.learning_item_options = {}
     state.path_review_summary_by_id = {}
-    state.path_recommendation_summary_by_id = {}
 
 
 def apply_optimistic_select(*, state: PathsPageState, path_id: int) -> SelectionSnapshot:

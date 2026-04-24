@@ -85,6 +85,9 @@ class ArticlesService:
 
         created_at = datetime.now(timezone.utc).isoformat()
         async with session_scope(self._repo.session):
+            duplicate = await self._repo.find_article_by_url(url=url)
+            if duplicate:
+                raise ArticlesServiceError(detail="duplicate_url", status_code=409)
             article_id = await self._repo.create_article(
                 title=title,
                 url=url,
@@ -102,6 +105,16 @@ class ArticlesService:
             created,
             preview_image_url=preview_map.get(int(created.id), ""),
         )
+
+    @articles_error_handler()
+    async def get_article_by_id(self, *, article_id: int) -> dict | None:
+        """Fetch one article payload."""
+        async with session_scope(self._repo.session):
+            article = await self._repo.get_article_by_id(int(article_id))
+        if not article:
+            return None
+        preview_map = await self._resolve_preview_images([article])
+        return self._to_payload(article, preview_image_url=preview_map.get(int(article.id), ""))
 
     @staticmethod
     def _parse_create_payload(payload: dict) -> ArticleCreatePayload:

@@ -42,7 +42,6 @@ class LearningTabContext:
     on_open_full_stats: Any
     recently_shared_in_teams: list[dict[str, Any]]
     on_open_recently_shared_item: Any
-    on_load_more_tracked: Any
     on_load_more_selected: Any
 
 
@@ -301,16 +300,17 @@ def render_selected_paths_section(
     on_browse_paths: Any,
 ) -> None:
     """Render selected-paths card and rows."""
-    card_classes = "lp-card w-full lp-home-path-shell"
     if not selected_paths:
-        card_classes += " lp-home-passive-empty"
-    with ui.card().classes(card_classes):
-        ui.label("Selected Path").classes("lp-home-section-title")
-        if not selected_paths:
-            ui.label("Select a path to track progress.").classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
+        with ui.element("div").classes("w-full lp-home-path-empty-shell"):
+            ui.label("Selected Path").classes("lp-home-section-title")
+            ui.label("No path selected yet. Pick one path to track progress here.").classes("text-sm lp-home-empty-copy").style(
+                "color: var(--lp-muted)"
+            )
             ui.button("Browse paths", on_click=on_browse_paths).props("dense outline").classes("lp-home-empty-btn")
-            return
+        return
 
+    with ui.card().classes("lp-card w-full lp-home-path-shell"):
+        ui.label("Selected Path").classes("lp-home-section-title")
         ui.separator().classes("lp-home-path-separator")
         for idx, row in enumerate(selected_paths[:selected_visible]):
             pid = int(row.get("id") or 0)
@@ -363,9 +363,7 @@ def render_shared_content(
     shared_learning_items: list[Any],
     shared_paths: list[dict[str, Any]],
     shared_path_review_summary_by_id: dict[int, dict[str, Any]],
-    shared_path_recommendation_summary_by_id: dict[int, dict[str, Any]],
     review_summary_label: Any,
-    recommendation_summary_label: Any,
     on_open_learning_item: Any,
     on_review_learning_item: Any,
     on_view_path: Any,
@@ -373,7 +371,7 @@ def render_shared_content(
 ) -> None:
     """Render shared tab content."""
     ui.label("You shared").classes("text-lg font-semibold mt-2")
-    ui.label("Content you shared with teammates.").classes("text-sm").style("color: var(--lp-muted)")
+    ui.label("Content you shared for others to discover.").classes("text-sm").style("color: var(--lp-muted)")
 
     with ui.card().classes("lp-card w-full lp-shared-shell"):
         ui.label("Learning items").classes("lp-home-section-title")
@@ -402,10 +400,7 @@ def render_shared_content(
                                 learning_item_review_action_label(item_type),
                                 on_click=on_review_learning_item(item),
                             ).props("dense outline").classes("lp-track-continue-btn")
-                parts = [
-                    review_summary_label(item.review_summary_row),
-                    recommendation_summary_label(item.recommendation_summary_row),
-                ]
+                parts = [review_summary_label(item.review_summary_row)]
                 parts = [part for part in parts if part]
                 if parts:
                     ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
@@ -431,10 +426,7 @@ def render_shared_content(
                         ui.button("Review", on_click=on_review_path(pid)).props("dense outline").classes(
                             "lp-track-continue-btn"
                         )
-                parts = [
-                    review_summary_label(shared_path_review_summary_by_id.get(pid)),
-                    recommendation_summary_label(shared_path_recommendation_summary_by_id.get(pid)),
-                ]
+                parts = [review_summary_label(shared_path_review_summary_by_id.get(pid))]
                 parts = [part for part in parts if part]
                 if parts:
                     ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
@@ -446,9 +438,7 @@ def render_home_hero_panel(
     *,
     next_course: dict[str, Any] | None,
     teammates_progressing: int,
-    new_comments_count: int,
     reviews_count: int,
-    teammate_usernames: list[str],
     on_join_discussion: Any,
     on_open_selected_paths: Any,
 ) -> None:
@@ -505,7 +495,7 @@ def render_home_focus_queue_panel(
             ui.label("Your next actions").classes("lp-home-queue-title")
             with ui.column().classes("w-full gap-1 lp-home-action-stats"):
                 with ui.row().classes("w-full items-center justify-between gap-2"):
-                    ui.label("Reviews pending").classes("lp-home-action-stat-label")
+                    ui.label("Course/path reviews pending").classes("lp-home-action-stat-label")
                     ui.label(str(max(0, pending_reviews))).classes("lp-home-action-stat-value")
                 with ui.row().classes("w-full items-center justify-between gap-2"):
                     ui.label("Tracked courses").classes("lp-home-action-stat-label")
@@ -566,32 +556,33 @@ def render_team_snapshot_section(
                     with ui.element("div").classes("lp-home-stat-card"):
                         ui.label(str(value)).classes("lp-home-stat-value")
                         ui.label(label).classes("lp-home-stat-label")
-            ui.echart(
-                {
-                    "grid": {"left": 0, "right": 0, "top": 4, "bottom": 0},
-                    "xAxis": {"type": "category", "show": False, "data": ["M", "T", "W", "T", "F", "S", "S"]},
-                    "yAxis": {"type": "value", "show": False},
-                    "series": [
-                        {
-                            "type": "line",
-                            "data": [
-                                max(0, interested),
-                                max(1, in_progress),
-                                max(0, completed),
-                                max(1, shares_count),
-                                max(0, reviews_count),
-                                max(0, in_progress),
-                                max(0, interested),
-                            ],
-                            "smooth": True,
-                            "symbol": "none",
-                            "lineStyle": {"width": 2, "color": "#69b3f2"},
-                            "areaStyle": {"color": "rgba(105,179,242,0.12)"},
-                        }
-                    ],
-                }
-            ).classes("w-full h-16")
-        with ui.row().classes("w-full justify-end"):
+            with ui.element("div").classes("w-full lp-home-team-chart-wrap"):
+                ui.echart(
+                    {
+                        "grid": {"left": 0, "right": 0, "top": 4, "bottom": 0},
+                        "xAxis": {"type": "category", "show": False, "data": ["M", "T", "W", "T", "F", "S", "S"]},
+                        "yAxis": {"type": "value", "show": False},
+                        "series": [
+                            {
+                                "type": "line",
+                                "data": [
+                                    max(0, interested),
+                                    max(1, in_progress),
+                                    max(0, completed),
+                                    max(1, shares_count),
+                                    max(0, reviews_count),
+                                    max(0, in_progress),
+                                    max(0, interested),
+                                ],
+                                "smooth": True,
+                                "symbol": "none",
+                                "lineStyle": {"width": 2, "color": "#69b3f2"},
+                                "areaStyle": {"color": "rgba(105,179,242,0.12)"},
+                            }
+                        ],
+                    }
+                ).classes("w-full h-16 lp-home-team-chart")
+        with ui.row().classes("w-full justify-end lp-home-team-chart-footer"):
             ui.button("Open stats", on_click=on_open_full_stats).props("dense flat")
 
 
@@ -618,7 +609,9 @@ def render_conversations_section(
         with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-home-convo-summary"):
             with ui.row().classes("items-center gap-2 flex-wrap"):
                 pending_label = (
-                    f"{total_pending_reviews} reviews waiting" if total_pending_reviews > 0 else "No pending reviews"
+                    f"{total_pending_reviews} course/path reviews waiting"
+                    if total_pending_reviews > 0
+                    else "No pending course/path reviews"
                 )
                 ui.label(pending_label).classes("text-xs lp-home-track-meta").style("color: var(--lp-muted)")
             if total_pending_reviews > 0:
@@ -629,7 +622,7 @@ def render_conversations_section(
 
         if not items:
             empty_copy = (
-                "No conversations are waiting right now. Start with your pending reviews."
+                "No conversations are waiting right now. Start with your pending course or path reviews."
                 if total_pending_reviews > 0
                 else "No conversations are waiting right now. Share a learning item or path to start team activity."
             )
@@ -663,7 +656,6 @@ def render_shared_tab(
     *,
     shared_vm: Any,
     review_summary_label: Any,
-    recommendation_summary_label: Any,
     nav_actions: Any,
 ) -> None:
     """Compose shared-tab UI from the shared view-model."""
@@ -671,9 +663,7 @@ def render_shared_tab(
         shared_learning_items=shared_vm.shared_learning_items,
         shared_paths=shared_vm.shared_paths,
         shared_path_review_summary_by_id=shared_vm.shared_path_review_summary_by_id,
-        shared_path_recommendation_summary_by_id=shared_vm.shared_path_recommendation_summary_by_id,
         review_summary_label=review_summary_label,
-        recommendation_summary_label=recommendation_summary_label,
         on_open_learning_item=lambda item: (
             nav_actions.make_article_view_action(int(item.item_id))
             if str(item.item_type or "") == "article"
@@ -686,7 +676,11 @@ def render_shared_tab(
         on_review_learning_item=lambda item: (
             nav_actions.make_article_view_action(int(item.item_id))
             if str(item.item_type or "") == "article"
-            else nav_actions.make_course_review_action(int(item.item_id))
+            else (
+                nav_actions.make_video_review_action(int(item.item_id))
+                if str(item.item_type or "") == "video"
+                else nav_actions.make_course_review_action(int(item.item_id))
+            )
         ),
         on_view_path=nav_actions.make_path_view_action,
         on_review_path=nav_actions.make_path_review_action,
@@ -712,7 +706,6 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
     on_open_full_stats = ctx.on_open_full_stats
     recently_shared_in_teams = ctx.recently_shared_in_teams
     on_open_recently_shared_item = ctx.on_open_recently_shared_item
-    on_load_more_tracked = ctx.on_load_more_tracked
     on_load_more_selected = ctx.on_load_more_selected
 
     teammate_usernames = sorted(
@@ -725,7 +718,6 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
     active_learners = max(1, len(teammate_usernames))
     shares_count = len(recently_shared_in_teams)
     reviews_count = len(learning_vm.pending_course_review_ids) + len(learning_vm.pending_path_review_ids)
-    new_comments_count = max(0, min(8, shares_count * 2))
     tracked_preview_visible = min(int(state.tracked_visible), 2)
 
     with ui.column().classes("w-full gap-4"):
@@ -734,9 +726,7 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                 render_home_hero_panel(
                     next_course=next_course,
                     teammates_progressing=active_learners,
-                    new_comments_count=new_comments_count,
                     reviews_count=reviews_count,
-                    teammate_usernames=teammate_usernames,
                     on_join_discussion=lambda: ui.navigate.to("/teams"),
                     on_open_selected_paths=on_open_selected_paths,
                 )
@@ -754,15 +744,6 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                 )
 
         with ui.element("section").classes("lp-home-grid-12 lp-home-grid-middle"):
-            with ui.element("div").classes("lp-home-span-3"):
-                render_conversations_section(
-                    items=recently_shared_in_teams,
-                    pending_course_review_ids=learning_vm.pending_course_review_ids,
-                    pending_path_review_ids=learning_vm.pending_path_review_ids,
-                    on_open_item=on_open_recently_shared_item,
-                    on_open_first_course_review=first_course_review_action,
-                    on_open_first_path_review=first_path_review_action,
-                )
             with ui.element("div").classes("lp-home-span-5 lp-home-col-stack"):
                 render_tracked_courses_section(
                     tracked_courses=learning_vm.tracked_courses,
@@ -781,17 +762,7 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                         f"View all tracked courses ({len(learning_vm.tracked_courses)})",
                         on_click=on_browse_courses,
                     ).props("outline dense")
-            with ui.element("div").classes("lp-home-span-4"):
-                render_team_snapshot_section(
-                    tracking_by_course_id=learning_vm.tracking_by_course_id,
-                    active_learners=active_learners,
-                    shares_count=shares_count,
-                    reviews_count=reviews_count,
-                    on_open_full_stats=on_open_full_stats,
-                )
-
-        with ui.element("section").classes("lp-home-grid-12 lp-home-grid-footer"):
-            with ui.element("div").classes("lp-home-span-12 lp-home-col-stack"):
+            with ui.element("div").classes("lp-home-span-4 lp-home-col-stack"):
                 render_selected_paths_section(
                     selected_paths=learning_vm.selected_paths,
                     selected_visible=state.selected_visible,
@@ -809,3 +780,22 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                         f"Load more ({state.selected_visible}/{len(learning_vm.selected_paths)})",
                         on_click=on_load_more_selected,
                     ).props("outline dense")
+            with ui.element("div").classes("lp-home-span-3"):
+                render_team_snapshot_section(
+                    tracking_by_course_id=learning_vm.tracking_by_course_id,
+                    active_learners=active_learners,
+                    shares_count=shares_count,
+                    reviews_count=reviews_count,
+                    on_open_full_stats=on_open_full_stats,
+                )
+
+        with ui.element("section").classes("lp-home-grid-12 lp-home-grid-footer"):
+            with ui.element("div").classes("lp-home-span-12 lp-home-col-stack"):
+                render_conversations_section(
+                    items=recently_shared_in_teams,
+                    pending_course_review_ids=learning_vm.pending_course_review_ids,
+                    pending_path_review_ids=learning_vm.pending_path_review_ids,
+                    on_open_item=on_open_recently_shared_item,
+                    on_open_first_course_review=first_course_review_action,
+                    on_open_first_path_review=first_path_review_action,
+                )

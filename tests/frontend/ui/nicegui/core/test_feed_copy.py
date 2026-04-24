@@ -42,9 +42,9 @@ def test_format_explore_scope_text_uses_learning_item_umbrella_for_all_tab() -> 
 
 def test_activity_and_team_empty_copy_use_learning_item_language() -> None:
     assert activity_empty_description(current_tab="team") == (
-        "When teammates share, recommend, or rate learning items and paths, updates will appear here."
+        "When teammates share or rate learning items and paths, updates will appear here."
     )
     assert activity_empty_description(current_tab="inbox") == (
-        "When teammates review or recommend your shared learning items and paths, updates will appear here."
+        "When teammates rate your shared learning items and paths, updates will appear here."
     )
     assert team_activity_empty_description() == "Share a learning item or path to start activity in this feed."

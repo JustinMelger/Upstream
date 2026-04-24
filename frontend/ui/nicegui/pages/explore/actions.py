@@ -7,8 +7,6 @@ from typing import Any
 from nicegui import ui
 
 from frontend.ui.nicegui.pages.courses.actions import build_course_card_actions
-from frontend.ui.nicegui.pages.explore.controller import ExplorePageController
-from frontend.ui.nicegui.pages.explore.state import ExplorePageState
 
 
 def build_explore_course_actions(
@@ -16,12 +14,6 @@ def build_explore_course_actions(
     course_row: dict[str, Any],
     course_id: int,
     course_url: str,
-    username: str,
-    is_admin: bool,
-    state: ExplorePageState,
-    controller: ExplorePageController,
-    on_set_tracking: Any,
-    on_clear_tracking: Any,
 ) -> Any:
     """Build course card actions for Explore."""
 
@@ -34,9 +26,6 @@ def build_explore_course_actions(
         _ = course_row
         await _open_explore_course_details(int(cid), bool(focus))
 
-    async def _open_course_recommend(cid: int) -> None:
-        ui.navigate.to(f"/explore/courses/{int(cid)}?view=reviews")
-
     async def _open_course_delete(cid: int) -> None:
         ui.navigate.to(f"/explore/courses/{int(cid)}")
 
@@ -45,7 +34,6 @@ def build_explore_course_actions(
         course_url=course_url,
         course_row=course_row,
         on_open_details=_open_course_details,
-        on_open_recommend=_open_course_recommend,
         on_open_edit=lambda row: ui.navigate.to(f"/explore/courses/{int(row.get('id') or 0)}"),
         on_confirm_delete=_open_course_delete,
     )

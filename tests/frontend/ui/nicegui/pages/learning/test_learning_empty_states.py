@@ -67,3 +67,20 @@ def test_render_conversations_section_empty_state_uses_learning_item_language(mo
     )
 
     assert "No conversations are waiting right now. Share a learning item or path to start team activity." in fake_ui.labels
+
+
+def test_render_conversations_section_scopes_pending_review_copy_to_course_and_path(monkeypatch) -> None:  # noqa: ANN001
+    fake_ui = _FakeUi()
+    monkeypatch.setattr(learning_sections, "ui", fake_ui)
+
+    learning_sections.render_conversations_section(
+        items=[],
+        pending_course_review_ids=[7],
+        pending_path_review_ids=[11],
+        on_open_item=lambda _row: None,
+        on_open_first_course_review=lambda: None,
+        on_open_first_path_review=lambda: None,
+    )
+
+    assert "2 course/path reviews waiting" in fake_ui.labels
+    assert "No conversations are waiting right now. Start with your pending course or path reviews." in fake_ui.labels

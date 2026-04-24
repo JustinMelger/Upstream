@@ -77,7 +77,7 @@ def notifications_error_handler(
 
 
 class NotificationsService:
-    """Activity feed service for shared/recommended notifications."""
+    """Activity feed service for shared and reviewed content."""
 
     def __init__(self, repo: NotificationsRepository):
         """Initialize the service.
@@ -97,8 +97,6 @@ class NotificationsService:
             scope=scope,
         )
         sources = await self._load_activity_sources(
-            username=username,
-            safe_limit=safe_limit,
             source_limit=source_limit,
             is_team=is_team,
         )
@@ -135,8 +133,6 @@ class NotificationsService:
     async def _load_activity_sources(
         self,
         *,
-        username: str,
-        safe_limit: int,
         source_limit: int,
         is_team: bool,
     ) -> dict[str, list[dict]]:
@@ -145,22 +141,10 @@ class NotificationsService:
             return {
                 "course_shares": await self._repo.list_recent_course_share_events(limit=source_limit) if is_team else [],
                 "video_shares": await self._repo.list_recent_video_share_events(limit=source_limit) if is_team else [],
-                "course_recommendations": await self._repo.list_recent_course_recommendation_events(limit=source_limit),
-                "path_recommendations": await self._repo.list_recent_path_recommendation_events(limit=source_limit),
                 "course_reviews": await self._repo.list_recent_course_review_events(limit=source_limit),
                 "path_reviews": await self._repo.list_recent_path_review_events(limit=source_limit),
                 "article_reviews": await self._repo.list_recent_article_review_events(limit=source_limit),
                 "video_reviews": await self._repo.list_recent_video_review_events(limit=source_limit),
-                "own_course_recommendations": (
-                    await self._repo.list_recent_course_recommendation_events_by_user(created_by=username, limit=safe_limit)
-                    if is_team
-                    else []
-                ),
-                "own_path_recommendations": (
-                    await self._repo.list_recent_path_recommendation_events_by_user(created_by=username, limit=safe_limit)
-                    if is_team
-                    else []
-                ),
             }
 
     def _build_activity_events(
@@ -174,22 +158,6 @@ class NotificationsService:
         events: list[ActivityEvent] = []
         events.extend(self._build_course_share_events(rows=sources["course_shares"], username=username))
         events.extend(self._build_video_share_events(rows=sources["video_shares"], username=username))
-        events.extend(
-            self._build_recommendation_events(
-                rows=list(sources["course_recommendations"]) + list(sources["own_course_recommendations"]),
-                username=username,
-                is_team=is_team,
-                kind="course",
-            )
-        )
-        events.extend(
-            self._build_recommendation_events(
-                rows=list(sources["path_recommendations"]) + list(sources["own_path_recommendations"]),
-                username=username,
-                is_team=is_team,
-                kind="path",
-            )
-        )
         events.extend(
             self._build_rating_events(rows=sources["course_reviews"], username=username, is_team=is_team, kind="course")
         )
@@ -262,67 +230,6 @@ class NotificationsService:
                     target_type="video",
                     target_id=int(row.get("video_id") or 0),
                     target_label=title,
-                )
-            )
-        return out
-
-    @staticmethod
-    def _recommendation_event_copy(
-        *,
-        actor: str,
-        owner: str,
-        label: str,
-        username: str,
-        is_team: bool,
-        kind: Literal["course", "path"],
-    ) -> tuple[str, str] | None:
-        if is_team:
-            if actor == username:
-                return f"you_recommended_{kind}", f'You recommended "{label}"'
-            if owner and owner == username:
-                return f"your_{kind}_recommended", f'{actor} recommended your shared {kind} "{label}"'
-            return f"{kind}_recommended", f'{actor} recommended "{label}"'
-        if actor == username or owner != username:
-            return None
-        return f"your_{kind}_recommended", f'{actor} recommended your shared {kind} "{label}"'
-
-    @staticmethod
-    def _build_recommendation_events(
-        *, rows: list[dict], username: str, is_team: bool, kind: Literal["course", "path"]
-    ) -> list[ActivityEvent]:
-        """Build course/path recommendation events."""
-        key = kind
-        owner_key = "course_owner" if key == "course" else "path_owner"
-        id_key = "course_id" if key == "course" else "path_id"
-        label_key = "title" if key == "course" else "name"
-        out: list[ActivityEvent] = []
-        for row in rows:
-            actor = str(row.get("created_by") or "").strip()
-            owner = str(row.get(owner_key) or "").strip()
-            if not actor:
-                continue
-            label = str(row.get(label_key) or "").strip() or f"Untitled {key}"
-            copy = NotificationsService._recommendation_event_copy(
-                actor=actor,
-                owner=owner,
-                label=label,
-                username=username,
-                is_team=is_team,
-                kind=key,
-            )
-            if copy is None:
-                continue
-            event_type, message = copy
-            out.append(
-                ActivityEvent(
-                    event_id=f"{key}_recommended:{int(row.get('recommendation_id') or 0)}",
-                    event_type=event_type,
-                    created_at=str(row.get("created_at") or ""),
-                    actor=actor,
-                    message=message,
-                    target_type=key,
-                    target_id=int(row.get(id_key) or 0),
-                    target_label=label,
                 )
             )
         return out

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import html
 from typing import Any
+from collections.abc import Awaitable, Callable
 
 from nicegui import ui
 
@@ -72,6 +73,8 @@ class CourseCardContext:
     show_compact_progress: bool = False
     show_context_meta: bool = True
     item_type_label: str | None = None
+    primary_action_label_override: str | None = None
+    primary_action_override: Callable[[], Awaitable[None]] | None = None
 
 
 @dataclass
@@ -113,12 +116,12 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any, on_open_filters:
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             ui.label("Sort").classes("lp-topbar-group-label")
             sort_filter = (
-                ui.select(
-                    {
-                        "": "Recommended",
-                        "top_rated": "Top rated",
-                        "most_reviewed": "Most reviewed",
-                        "newest": "Recently added",
+                    ui.select(
+                        {
+                            "": "Best match",
+                            "top_rated": "Top rated",
+                            "most_reviewed": "Most reviewed",
+                            "newest": "Recently added",
                         "title_az": "Title A–Z",
                     },
                     value="",
@@ -332,7 +335,6 @@ def _render_course_card_menu(ctx: CourseCardContext) -> None:
         with card_menu:
             ui.menu_item("Open details", ctx.actions.on_view)
             ui.menu_item("Review", ctx.actions.on_review)
-            ui.menu_item("Recommend", ctx.actions.on_recommend)
             if ctx.has_video_preview:
                 ui.menu_item("Preview", ctx.on_toggle_preview)
             if ctx.has_url:
@@ -353,8 +355,6 @@ def _render_course_card_header(ctx: CourseCardContext) -> None:
             ui.label(f"Shared by {shared_by}").classes("text-xs lp-card-subtitle").style("color: var(--lp-muted)")
         if ctx.card_vm.rating_badge:
             ui.label(ctx.card_vm.rating_badge).classes("lp-meta-chip lp-meta-chip--rating")
-        if ctx.card_vm.recommendation_badge:
-            ui.label(ctx.card_vm.recommendation_badge).classes("lp-meta-chip")
 
 
 def _render_course_card_context_meta(ctx: CourseCardContext) -> None:
@@ -381,6 +381,14 @@ def _render_course_card_status_and_taxonomy(ctx: CourseCardContext) -> None:
             ui.label(ctx.card_vm.tracking_label_text).classes(f"{ctx.card_vm.tracking_chip_cls} lp-course-status-chip")
 
 
+def _render_course_card_review_line(ctx: CourseCardContext) -> None:
+    review_text = str(ctx.card_vm.rating_badge or "").strip() or "No reviews yet"
+    review_classes = "lp-card-review-line"
+    if not str(ctx.card_vm.rating_badge or "").strip():
+        review_classes += " lp-card-review-line--empty"
+    ui.label(review_text).classes(review_classes)
+
+
 def _render_course_card_compact_progress(ctx: CourseCardContext) -> None:
     if not ctx.show_compact_progress:
         return
@@ -393,7 +401,7 @@ def _render_course_card_compact_progress(ctx: CourseCardContext) -> None:
 
 def _render_course_card_actions(ctx: CourseCardContext, *, on_primary_action: Any) -> None:
     current_status = _course_status(ctx)
-    primary_label = primary_course_cta_label_for_status(current_status)
+    primary_label = str(ctx.primary_action_label_override or "").strip() or primary_course_cta_label_for_status(current_status)
     cta_class = "lp-course-cta-primary" if current_status == "in_progress" else "lp-course-cta-secondary"
     ui.button(primary_label, on_click=on_primary_action).props("dense no-caps").classes(cta_class)
     options_map = {"": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}}
@@ -458,6 +466,9 @@ def render_course_card(*, ctx: CourseCardContext) -> None:
     """Render one course card including action menu and status control."""
 
     async def _on_primary_action() -> None:
+        if ctx.primary_action_override is not None:
+            await ctx.primary_action_override()
+            return
         cid = int(ctx.course_row.get("id") or 0)
         current_status = _course_status(ctx)
         if current_status == "completed":
@@ -480,6 +491,7 @@ def render_course_card(*, ctx: CourseCardContext) -> None:
                         "text-sm text-gray-600 lp-card-body lp-course-summary"
                     )
                 _render_course_card_status_and_taxonomy(ctx)
+                _render_course_card_review_line(ctx)
                 _render_course_card_compact_progress(ctx)
                 render_card_actions_row(
                     render_actions=lambda: _render_course_card_actions(ctx, on_primary_action=_on_primary_action)
@@ -629,6 +641,7 @@ def render_courses_empty_state(
     on_refresh: Any,
 ) -> None:
     """Render empty-state variants for courses list."""
+    _ = on_refresh
     if scope_value == "tracked" and not any_filters:
         render_empty_block(
             title="No active learning queue yet.",

@@ -11,8 +11,8 @@ from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.components.status_chips import tracking_label
 from frontend.ui.nicegui.core.navigation import build_courses_deep_link, build_paths_deep_link
 from frontend.ui.nicegui.core.path_items import path_course_ids
-from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary
-from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions, load_more_selected, load_more_tracked
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary
+from frontend.ui.nicegui.pages.learning.actions import LearningNavigationActions, load_more_selected
 from frontend.ui.nicegui.pages.learning.controller import LearningPageController
 from frontend.ui.nicegui.pages.learning.onboarding import (
     dismiss_home_intro,
@@ -139,22 +139,29 @@ def render_intro_panel() -> None:
     def intro_panel() -> None:
         if not should_show_home_intro(storage_user=app.storage.user):
             return
-        with ui.card().classes("lp-card w-full"):
-            ui.label("Welcome to Home").classes("text-md font-semibold")
-            ui.label("Start here in three quick steps.").classes("text-sm").style("color: var(--lp-muted)")
-            for idx, step in enumerate(INTRO_STEPS, start=1):
-                with ui.row().classes("items-start gap-2 w-full"):
-                    ui.label(str(idx)).classes("lp-chip lp-chip--sky")
-                    with ui.column().classes("gap-0"):
-                        ui.label(step.title).classes("text-sm font-semibold")
-                        ui.label(step.body).classes("text-xs").style("color: var(--lp-muted)")
+        with ui.card().classes("lp-card w-full lp-home-intro-card"):
+            with ui.row().classes("w-full items-start justify-between gap-3 flex-wrap"):
+                with ui.column().classes("gap-1 lp-home-intro-copy"):
+                    ui.label("Get started on Home").classes("text-md font-semibold lp-home-intro-title")
+                    ui.label("Use this page to keep one course, one path, and team activity in view.").classes("text-sm").style(
+                        "color: var(--lp-muted)"
+                    )
 
-            def _dismiss_intro() -> None:
-                dismiss_home_intro(storage_user=app.storage.user)
-                intro_panel.refresh()
+                def _dismiss_intro() -> None:
+                    dismiss_home_intro(storage_user=app.storage.user)
+                    intro_panel.refresh()
 
-            with ui.row().classes("justify-end w-full"):
-                ui.button("Dismiss", on_click=_dismiss_intro).props("dense outline")
+                ui.button("Dismiss", on_click=_dismiss_intro).props("dense flat").classes("lp-home-intro-dismiss")
+
+            with ui.element("div").classes("lp-home-intro-steps"):
+                for idx, step in enumerate(INTRO_STEPS, start=1):
+                    with ui.element("div").classes("lp-home-intro-step"):
+                        ui.label(str(idx)).classes("lp-chip lp-chip--sky")
+                        with ui.column().classes("gap-0"):
+                            ui.label(step.title).classes("text-sm font-semibold")
+                            ui.label(step.body).classes("text-xs").style(
+                                "color: var(--lp-muted)"
+                            )
 
     intro_panel()
 
@@ -176,7 +183,6 @@ def render_shared_view(*, state: LearningPageState, nav_actions: LearningNavigat
         render_shared_tab(
             shared_vm=shared_vm,
             review_summary_label=lambda row: format_review_summary(row, style="star"),
-            recommendation_summary_label=format_recommendation_summary,
             nav_actions=nav_actions,
         )
 
@@ -191,8 +197,6 @@ def resolve_learning_tab_context(
     """Build the bundled learning-tab context from page state."""
     learning_vm = build_learning_tab_view(
         data=page_ctx.state.data,
-        dismissed_recommended_course_ids=page_ctx.state.dismissed_recommended_course_ids,
-        dismissed_recommended_path_ids=page_ctx.state.dismissed_recommended_path_ids,
     )
     recently_shared_in_teams = build_recently_shared_in_teams(
         data=page_ctx.state.data,
@@ -239,11 +243,6 @@ def resolve_learning_tab_context(
         on_open_full_stats=lambda: ui.navigate.to("/profile/stats"),
         recently_shared_in_teams=recently_shared_in_teams,
         on_open_recently_shared_item=make_recently_shared_item_opener(),
-        on_load_more_tracked=lambda: load_more_tracked(
-            state=page_ctx.state,
-            total_count=len(learning_vm.tracked_courses),
-            refresh=refresh_content,
-        ),
         on_load_more_selected=lambda: load_more_selected(
             state=page_ctx.state,
             total_count=len(learning_vm.selected_paths),

@@ -5,9 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.learning_items import normalize_learning_item_type
-from frontend.ui.nicegui.core.summary_formatters import format_recommendation_summary, format_review_summary as _format_review
+from frontend.ui.nicegui.core.summary_formatters import format_review_summary as _format_review
 
 
 @dataclass(slots=True)
@@ -17,7 +16,6 @@ class PathCardView:
     is_new: bool
     is_updated: bool
     rating_badge: str
-    recommendation_badge: str
     shared_by: str
     tracking_label_text: str
     tracking_chip_cls: str
@@ -39,11 +37,6 @@ def format_review_summary(row: dict[str, Any] | None) -> str:
 def format_rating_badge(row: dict[str, Any] | None) -> str:
     """Format a compact rating badge for path cards (e.g., '4.2/5 (12)')."""
     return format_review_summary(row)
-
-
-def format_recommendation_badge(row: dict[str, Any] | None) -> str:
-    """Format a compact recommendation badge for path cards."""
-    return format_recommendation_summary(row)
 
 
 def path_tracking_label(is_tracked: bool) -> str:
@@ -150,27 +143,6 @@ def _has_learning_items(*, detail: dict[str, Any]) -> bool:
     return bool(items)
 
 
-def recommendation_authors(rows: list[dict[str, Any]] | None) -> list[str]:
-    """Return sorted unique recommendation authors."""
-    return sorted(
-        {
-            str(r.get("created_by") or "").strip()
-            for r in list(rows or [])
-            if isinstance(r, dict) and str(r.get("created_by") or "").strip()
-        }
-    )
-
-
-def latest_activity_day(*, reviews: list[dict[str, Any]] | None, recommendations: list[dict[str, Any]] | None) -> str:
-    """Return latest activity date (YYYY-MM-DD) across review/recommendation rows."""
-    timestamps: list[str] = []
-    for row in list(reviews or []) + list(recommendations or []):
-        created_at = str(row.get("created_at") or "").strip()
-        if created_at:
-            timestamps.append(created_at)
-    return max(timestamps)[:10] if timestamps else ""
-
-
 def enrich_path_courses(
     *,
     courses: list[dict[str, Any]] | None,
@@ -220,7 +192,6 @@ def map_path_card_view(
     detail: dict[str, Any] | None,
     tracking_by_course_id: dict[int, dict[str, Any]],
     review_summary_row: dict[str, Any] | None,
-    recommendation_summary_row: dict[str, Any] | None,
 ) -> PathCardView:
     """Map path + state payloads to card display values."""
     outcomes: dict[str, Any] = {}
@@ -233,19 +204,13 @@ def map_path_card_view(
         total_courses = int(outcomes.get("total") or 0)
         progress = float(outcomes.get("ratio") or 0.0)
 
-    created_at = parse_iso_datetime(path_row.get("created_at"))
-    updated_at = parse_iso_datetime(path_row.get("updated_at"))
-    is_updated = is_recent(updated_at) and created_at is not None and updated_at is not None and updated_at > created_at
-    is_new = (not is_updated) and is_recent(created_at)
-
     next_course = outcomes.get("next_course") if isinstance(outcomes, dict) else None
     next_title = str(next_course.get("title") or "").strip() if isinstance(next_course, dict) else ""
 
     return PathCardView(
-        is_new=is_new,
-        is_updated=is_updated,
+        is_new=False,
+        is_updated=False,
         rating_badge=format_rating_badge(review_summary_row),
-        recommendation_badge=format_recommendation_badge(recommendation_summary_row),
         shared_by=str(path_row.get("created_by") or "").strip(),
         tracking_label_text=path_tracking_label(is_tracked),
         tracking_chip_cls=path_tracking_chip_class(is_tracked),

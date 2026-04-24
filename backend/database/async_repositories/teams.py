@@ -8,13 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import TeamMemberRecord, TeamRecord
 from backend.database.orm_models import (
+    Article as ArticleModel,
     ArticleReview as ArticleReviewModel,
-    CourseRecommendation as CourseRecommendationModel,
+    Course as CourseModel,
     CourseReview as CourseReviewModel,
-    PathRecommendation as PathRecommendationModel,
     PathReview as PathReviewModel,
     Team as TeamModel,
     TeamMember as TeamMemberModel,
+    Video as VideoModel,
+    VideoReview as VideoReviewModel,
 )
 
 
@@ -173,6 +175,54 @@ class TeamsRepository(RepositoryDateTimeCodec):
         """Return recent team-scoped social activity events."""
         members_select = select(TeamMemberModel.user_id).where(TeamMemberModel.team_id == int(team_id))
 
+        course_share_rows = await self.session.execute(
+            select(
+                CourseModel.id.label("event_id"),
+                CourseModel.created_by.label("actor"),
+                CourseModel.created_at.label("created_at"),
+                CourseModel.id.label("target_id"),
+                CourseModel.title.label("target_label"),
+                literal("course").label("target_type"),
+                literal("course_shared").label("event_type"),
+            )
+            .where(CourseModel.created_by.in_(members_select))
+            .where(CourseModel.created_at.is_not(None))
+            .order_by(CourseModel.created_at.desc(), CourseModel.id.desc())
+            .limit(int(limit))
+        )
+
+        article_share_rows = await self.session.execute(
+            select(
+                ArticleModel.id.label("event_id"),
+                ArticleModel.created_by.label("actor"),
+                ArticleModel.created_at.label("created_at"),
+                ArticleModel.id.label("target_id"),
+                ArticleModel.title.label("target_label"),
+                literal("article").label("target_type"),
+                literal("article_shared").label("event_type"),
+            )
+            .where(ArticleModel.created_by.in_(members_select))
+            .where(ArticleModel.created_at.is_not(None))
+            .order_by(ArticleModel.created_at.desc(), ArticleModel.id.desc())
+            .limit(int(limit))
+        )
+
+        video_share_rows = await self.session.execute(
+            select(
+                VideoModel.id.label("event_id"),
+                VideoModel.created_by.label("actor"),
+                VideoModel.created_at.label("created_at"),
+                VideoModel.id.label("target_id"),
+                VideoModel.title.label("target_label"),
+                literal("video").label("target_type"),
+                literal("video_shared").label("event_type"),
+            )
+            .where(VideoModel.created_by.in_(members_select))
+            .where(VideoModel.created_at.is_not(None))
+            .order_by(VideoModel.created_at.desc(), VideoModel.id.desc())
+            .limit(int(limit))
+        )
+
         course_review_rows = await self.session.execute(
             select(
                 CourseReviewModel.id.label("event_id"),
@@ -218,42 +268,29 @@ class TeamsRepository(RepositoryDateTimeCodec):
             .limit(int(limit))
         )
 
-        recommendation_rows = await self.session.execute(
+        video_review_rows = await self.session.execute(
             select(
-                CourseRecommendationModel.id.label("event_id"),
-                CourseRecommendationModel.created_by.label("actor"),
-                CourseRecommendationModel.created_at.label("created_at"),
-                CourseRecommendationModel.course_id.label("target_id"),
-                literal("course").label("target_type"),
-                literal("course_recommendation").label("event_type"),
+                VideoReviewModel.id.label("event_id"),
+                VideoReviewModel.created_by.label("actor"),
+                VideoReviewModel.created_at.label("created_at"),
+                VideoReviewModel.video_id.label("target_id"),
+                literal("video").label("target_type"),
+                literal("video_review").label("event_type"),
             )
-            .where(CourseRecommendationModel.created_by.in_(members_select))
-            .where(CourseRecommendationModel.created_at.is_not(None))
-            .order_by(CourseRecommendationModel.created_at.desc(), CourseRecommendationModel.id.desc())
-            .limit(int(limit))
-        )
-
-        path_recommendation_rows = await self.session.execute(
-            select(
-                PathRecommendationModel.id.label("event_id"),
-                PathRecommendationModel.created_by.label("actor"),
-                PathRecommendationModel.created_at.label("created_at"),
-                PathRecommendationModel.path_id.label("target_id"),
-                literal("path").label("target_type"),
-                literal("path_recommendation").label("event_type"),
-            )
-            .where(PathRecommendationModel.created_by.in_(members_select))
-            .where(PathRecommendationModel.created_at.is_not(None))
-            .order_by(PathRecommendationModel.created_at.desc(), PathRecommendationModel.id.desc())
+            .where(VideoReviewModel.created_by.in_(members_select))
+            .where(VideoReviewModel.created_at.is_not(None))
+            .order_by(VideoReviewModel.created_at.desc(), VideoReviewModel.id.desc())
             .limit(int(limit))
         )
 
         all_rows = [
+            *course_share_rows.mappings().all(),
+            *article_share_rows.mappings().all(),
+            *video_share_rows.mappings().all(),
             *course_review_rows.mappings().all(),
             *path_review_rows.mappings().all(),
             *article_review_rows.mappings().all(),
-            *recommendation_rows.mappings().all(),
-            *path_recommendation_rows.mappings().all(),
+            *video_review_rows.mappings().all(),
         ]
         payload_rows = [
             {
@@ -263,6 +300,7 @@ class TeamsRepository(RepositoryDateTimeCodec):
                 "created_at": self._as_iso_or_empty(row.get("created_at")),
                 "target_type": str(row.get("target_type") or ""),
                 "target_id": int(row.get("target_id") or 0),
+                "target_label": str(row.get("target_label") or "").strip(),
             }
             for row in all_rows
             if str(row.get("actor") or "").strip() and int(row.get("target_id") or 0) > 0

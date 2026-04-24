@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from frontend.ui.nicegui.core.errors import guard_ui_action
-from frontend.ui.nicegui.core.path_items import build_path_item_payloads, encode_path_item_ref
+from frontend.ui.nicegui.core.path_items import build_path_item_payloads
 from frontend.ui.nicegui.pages.share.controller import SharePageController
 from frontend.ui.nicegui.pages.share.page_path_form import PathShareControls
 
@@ -66,7 +66,7 @@ def wire_path_actions(
         if not items:
             notify("Select at least one learning item", type="negative")
             return
-        created = await controller.create_path(
+        await controller.create_path(
             payload={
                 "name": name,
                 "description": description,
@@ -75,8 +75,6 @@ def wire_path_actions(
         )
         app_module.storage.user.pop(draft_key, None)
         notify("Path published", type="positive")
-        created_raw_id = created.get("id")
-        created_id = created_raw_id if isinstance(created_raw_id, int) else 0
-        ui_module.navigate.to(f"/explore/paths/{created_id}" if created_id > 0 else "/explore?tab=paths")
+        ui_module.navigate.to("/explore?tab=paths")
 
     controls.publish_btn.on("click", lambda *_: _publish())

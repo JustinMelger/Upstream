@@ -13,7 +13,6 @@ class CoursesPageState:
     courses: list[dict[str, Any]] = field(default_factory=list)
     tracking_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     review_summary_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
-    recommendation_summary_by_course_id: dict[int, dict[str, Any]] = field(default_factory=dict)
 
 
 @dataclass(slots=True)

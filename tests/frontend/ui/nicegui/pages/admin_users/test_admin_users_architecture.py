@@ -23,7 +23,7 @@ def _imports_for(path: Path) -> set[str]:
 
 @pytest.mark.unit
 def test_admin_users_pure_modules_do_not_import_nicegui() -> None:
-    for filename in ["controller.py", "state.py", "transitions.py", "ui_glue.py"]:
+    for filename in ["actions.py", "controller.py", "state.py", "transitions.py", "ui_glue.py"]:
         imports = _imports_for(_ADMIN_USERS_DIR / filename)
         assert "nicegui" not in imports
         assert not any(name.startswith("nicegui.") for name in imports)
@@ -32,16 +32,15 @@ def test_admin_users_pure_modules_do_not_import_nicegui() -> None:
 @pytest.mark.unit
 def test_admin_users_page_imports_admin_users_domain_modules() -> None:
     imports = _imports_for(_ADMIN_USERS_DIR / "page.py")
+    assert "frontend.ui.nicegui.pages.admin_users.actions" in imports
     assert "frontend.ui.nicegui.pages.admin_users.controller" in imports
     assert "frontend.ui.nicegui.pages.admin_users.sections" in imports
     assert "frontend.ui.nicegui.pages.admin_users.state" in imports
-    assert "frontend.ui.nicegui.pages.admin_users.transitions" in imports
-    assert "frontend.ui.nicegui.pages.admin_users.ui_glue" in imports
 
 
 @pytest.mark.unit
 def test_admin_users_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"page.py"}
+    expected_ui_modules = {"page.py", "sections.py"}
     for path in sorted(_ADMIN_USERS_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)

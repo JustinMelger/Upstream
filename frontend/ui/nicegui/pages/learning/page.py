@@ -6,7 +6,6 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.components.catalog_hero import render_catalog_hero
 from frontend.ui.nicegui.components.layout import render_catalog_scope, render_shell
 from frontend.ui.nicegui.core.action_feedback import tracking_cleared_message, tracking_set_message
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
@@ -80,14 +79,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await _load(reset_visibility=False)
 
         with render_catalog_scope(variant="explore").classes("lp-container lp-home-scope"):
-            with ui.column().classes("w-full gap-1"):
-                ui.label(subtitle_for(PrimaryPage.HOME)).classes("text-sm text-gray-600")
+            with ui.column().classes("w-full gap-1 lp-home-header"):
+                ui.label(subtitle_for(PrimaryPage.HOME)).classes("text-sm text-gray-600 lp-home-header-kicker")
                 ui.label("Learning dashboard").classes("lp-home-title")
-            render_catalog_hero(
-                eyebrow="",
-                title="Ship one meaningful learning step today",
-                subtitle="Continue your next course or respond to team feedback.",
-            )
+                ui.label("Pick up the next useful learning action quickly.").classes("text-sm lp-home-header-subtitle").style(
+                    "color: var(--lp-muted)"
+                )
 
             render_intro_panel()
 

@@ -698,12 +698,13 @@ def apply_theme() -> None:
 
         .lp-catalog--explore .lp-explore-course-grid,
         .lp-catalog--explore .lp-explore-path-grid {
-          grid-template-columns: repeat(auto-fill, minmax(212px, 212px));
+          grid-template-columns: repeat(auto-fit, minmax(212px, 212px));
           grid-auto-flow: row;
           overflow: visible;
           scroll-snap-type: none;
           scrollbar-width: auto;
           padding: 4px 0 10px;
+          justify-content: start;
         }
 
         .lp-catalog--explore .lp-explore-course-grid::-webkit-scrollbar,
@@ -727,6 +728,19 @@ def apply_theme() -> None:
           grid-template-columns: repeat(3, 212px);
         }
 
+        .lp-catalog--explore .lp-explore-course-grid--single,
+        .lp-catalog--explore .lp-explore-path-grid--single {
+          grid-template-columns: minmax(248px, 320px);
+        }
+
+        .lp-catalog--explore .lp-explore-course-grid--pair {
+          grid-template-columns: repeat(2, minmax(212px, 248px));
+        }
+
+        .lp-catalog--explore .lp-explore-path-grid--pair {
+          grid-template-columns: repeat(2, minmax(232px, 280px));
+        }
+
         .lp-catalog--explore .lp-explore-article-grid {
           grid-template-columns: repeat(4, 212px);
           grid-auto-flow: row;
@@ -745,6 +759,25 @@ def apply_theme() -> None:
 
         .lp-catalog--explore .lp-explore-path-grid .lp-path-card {
           min-height: 236px;
+        }
+
+        .lp-catalog--explore .lp-explore-course-grid--single .lp-courses-grid-item,
+        .lp-catalog--explore .lp-explore-path-grid--single .lp-courses-grid-item {
+          width: 100%;
+          min-width: 248px;
+          max-width: 320px;
+        }
+
+        .lp-catalog--explore .lp-explore-course-grid--pair .lp-courses-grid-item {
+          width: 100%;
+          min-width: 212px;
+          max-width: 248px;
+        }
+
+        .lp-catalog--explore .lp-explore-path-grid--pair .lp-courses-grid-item {
+          width: 100%;
+          min-width: 232px;
+          max-width: 280px;
         }
 
         .lp-explore-category-btn {
@@ -798,12 +831,14 @@ def apply_theme() -> None:
         .lp-catalog--explore .lp-path-card,
         .lp-catalog--explore .lp-article-card {
           width: 212px;
-          min-height: 258px;
+          min-height: 272px;
           border-radius: 12px;
           overflow: hidden;
           border: none !important;
           box-shadow: 0 7px 20px rgba(0, 0, 0, 0.34);
           transition: transform 160ms ease, box-shadow 180ms ease;
+          display: flex;
+          flex-direction: column;
         }
 
         .lp-catalog--explore .lp-course-card--surface,
@@ -866,6 +901,7 @@ def apply_theme() -> None:
           flex-direction: column;
           align-items: stretch;
           gap: 10px;
+          flex: 1 1 auto;
         }
 
         .lp-catalog--explore .lp-course-card-content,
@@ -875,14 +911,16 @@ def apply_theme() -> None:
           padding-right: 0;
           display: flex;
           flex-direction: column;
-          min-height: 120px;
+          min-height: 132px;
+          flex: 1 1 auto;
         }
 
         .lp-catalog--explore .lp-path-card .lp-card-content {
           padding-top: 22px;
           display: flex;
           flex-direction: column;
-          min-height: 120px;
+          min-height: 132px;
+          flex: 1 1 auto;
         }
 
         .lp-catalog--explore .lp-course-media-slot,
@@ -991,6 +1029,14 @@ def apply_theme() -> None:
           align-items: center;
         }
 
+        .lp-catalog--explore .lp-article-card .lp-article-meta-row,
+        .lp-catalog--explore .lp-article-card .lp-article-context-line,
+        .lp-catalog--explore .lp-article-card .lp-article-tag-row {
+          display: none;
+          min-height: 0;
+          margin: 0;
+        }
+
         .lp-catalog--explore .lp-path-card .lp-path-context-line {
           white-space: nowrap;
           overflow: hidden;
@@ -1088,6 +1134,27 @@ def apply_theme() -> None:
           min-height: 24px;
         }
 
+        .lp-catalog--explore .lp-card-review-line {
+          min-height: 18px;
+          margin-top: 1px;
+          font-size: 0.74rem;
+          line-height: 1.25;
+          color: rgba(223, 232, 243, 0.8);
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+          overflow: hidden;
+        }
+
+        .lp-catalog--explore .lp-card-review-line--empty {
+          color: rgba(193, 206, 221, 0.46);
+        }
+
+        .lp-catalog--explore .lp-card-meta-spacer {
+          min-height: 28px;
+          width: 100%;
+        }
+
         .lp-catalog--explore .lp-card-actions .lp-status-select,
         .lp-catalog--explore .lp-path-card .lp-card-actions .q-btn:nth-child(2) {
           display: none !important;
@@ -1129,7 +1196,7 @@ def apply_theme() -> None:
 
         .lp-catalog--explore .lp-explore-spotlight-strip {
           width: 100%;
-          margin: 2px 0 6px;
+          margin: 0 0 4px;
           padding: 8px 10px;
           border-radius: 12px;
           border: 1px solid rgba(116, 176, 228, 0.24);
@@ -1177,11 +1244,11 @@ def apply_theme() -> None:
         }
 
         .lp-catalog--explore .lp-sticky-controls {
-          margin: 0 0 8px;
+          margin: 0 0 6px;
           padding: 8px 10px;
-          background: linear-gradient(180deg, rgba(12, 21, 35, 0.68), rgba(11, 20, 33, 0.52));
-          border-color: rgba(186, 204, 227, 0.08);
-          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.26);
+          background: linear-gradient(180deg, rgba(12, 21, 35, 0.58), rgba(11, 20, 33, 0.44));
+          border-color: rgba(186, 204, 227, 0.06);
+          box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
         }
 
         .lp-catalog--explore .lp-topbar-group--secondary {
@@ -1199,7 +1266,7 @@ def apply_theme() -> None:
 
         .lp-explore-section-block {
           border-top: 1px solid rgba(186, 204, 227, 0.09);
-          padding-top: 8px;
+          padding-top: 6px;
           margin-top: 2px;
         }
 
@@ -1289,7 +1356,7 @@ def apply_theme() -> None:
           background:
             radial-gradient(120% 140% at 10% 0%, rgba(116, 176, 228, 0.1), transparent 62%),
             linear-gradient(145deg, rgba(16, 27, 44, 0.66), rgba(13, 22, 35, 0.62));
-          margin: 8px 0 12px;
+          margin: 4px 0 8px;
           padding: 10px 12px;
         }
 
@@ -1368,8 +1435,26 @@ def apply_theme() -> None:
 
         .lp-explore-section-block {
           border-top: 1px solid rgba(255, 255, 255, 0.06);
-          margin-top: 18px;
-          padding-top: 20px;
+          margin-top: 14px;
+          padding-top: 16px;
+        }
+
+        .lp-explore-header {
+          padding-top: 6px;
+          padding-bottom: 4px;
+        }
+
+        .lp-explore-header-kicker {
+          opacity: 0.74;
+        }
+
+        .lp-explore-header-subtitle {
+          max-width: 46rem;
+          opacity: 0.84;
+        }
+
+        .lp-explore-toolbar {
+          border-radius: 18px;
         }
 
         .lp-courses-toolbar-controls {
@@ -2224,20 +2309,23 @@ def apply_theme() -> None:
           line-height: 1.18;
         }
 
+        .lp-home-header {
+          padding-top: 6px;
+          padding-bottom: 2px;
+        }
+
+        .lp-home-header-kicker {
+          opacity: 0.74;
+        }
+
+        .lp-home-header-subtitle {
+          max-width: 44rem;
+          opacity: 0.84;
+        }
+
         .lp-home-topbar {
-          margin-top: 8px;
+          margin-top: 2px;
           margin-bottom: 4px;
-        }
-
-        .lp-home-scope .lp-catalog-hero-title {
-          font-size: clamp(1.02rem, 1.25vw, 1.16rem);
-          font-weight: 600;
-          line-height: 1.2;
-        }
-
-        .lp-home-scope .lp-catalog-hero-subtitle {
-          font-size: 0.86rem;
-          opacity: 0.72;
         }
 
         .lp-home-topbar-prompt {
@@ -2343,12 +2431,11 @@ def apply_theme() -> None:
         .lp-home-hero-panel {
           position: relative;
           overflow: hidden;
-          border-color: rgba(186, 204, 227, 0.14);
-          border-left: 2px solid rgba(116, 176, 228, 0.58);
+          border-color: rgba(186, 204, 227, 0.11);
           background:
-            radial-gradient(120% 160% at 8% 0%, rgba(116, 176, 228, 0.18), transparent 58%),
-            linear-gradient(160deg, rgba(18, 30, 50, 0.8), rgba(12, 22, 38, 0.72));
-          box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
+            radial-gradient(120% 160% at 8% 0%, rgba(116, 176, 228, 0.14), transparent 58%),
+            linear-gradient(160deg, rgba(18, 30, 50, 0.72), rgba(12, 22, 38, 0.64));
+          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
           padding: 20px 22px 18px !important;
         }
 
@@ -2384,13 +2471,49 @@ def apply_theme() -> None:
         }
 
         .lp-home-focus-queue-panel {
-          border-color: rgba(186, 204, 227, 0.1);
-          border-left: 2px solid rgba(116, 176, 228, 0.44);
+          border-color: rgba(186, 204, 227, 0.09);
           background:
-            radial-gradient(120% 120% at 84% 8%, rgba(75, 192, 178, 0.12), transparent 54%),
-            linear-gradient(160deg, rgba(15, 28, 45, 0.78), rgba(10, 22, 36, 0.68));
-          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+            radial-gradient(120% 120% at 84% 8%, rgba(75, 192, 178, 0.09), transparent 54%),
+            linear-gradient(160deg, rgba(15, 28, 45, 0.72), rgba(10, 22, 36, 0.62));
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
           padding: 18px 18px 16px !important;
+        }
+
+        .lp-home-intro-card {
+          border-color: rgba(186, 204, 227, 0.1);
+          background:
+            radial-gradient(120% 120% at 100% 0%, rgba(88, 166, 232, 0.08), transparent 48%),
+            linear-gradient(160deg, rgba(18, 30, 48, 0.72), rgba(11, 22, 36, 0.64));
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+          padding: 14px 16px !important;
+        }
+
+        .lp-home-intro-title {
+          line-height: 1.15;
+        }
+
+        .lp-home-intro-dismiss {
+          align-self: flex-start;
+          color: rgba(186, 213, 237, 0.84) !important;
+        }
+
+        .lp-home-intro-steps {
+          width: 100%;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+          margin-top: 4px;
+        }
+
+        .lp-home-intro-step {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          min-width: 0;
+          padding: 10px 11px;
+          border: 1px solid rgba(186, 204, 227, 0.08);
+          border-radius: 16px;
+          background: rgba(9, 18, 31, 0.22);
         }
 
         .lp-home-queue-title {
@@ -2514,11 +2637,30 @@ def apply_theme() -> None:
         }
 
         .lp-home-stat-card {
-          border: 1px solid rgba(186, 204, 227, 0.14) !important;
-          border-radius: 10px;
-          background: rgba(8, 16, 30, 0.64);
+          border: 1px solid rgba(186, 204, 227, 0.1) !important;
+          border-radius: 16px;
+          background: rgba(8, 16, 30, 0.48);
           padding: 10px 10px 9px;
           min-height: 62px;
+        }
+
+        .lp-home-team-chart-wrap {
+          display: flex;
+          justify-content: center;
+          padding-top: 6px;
+        }
+
+        .lp-home-team-chart {
+          width: min(100%, 376px) !important;
+        }
+
+        .lp-home-team-chart-footer {
+          padding-top: 1px;
+        }
+
+        .lp-home-team-chart-footer .q-btn {
+          min-width: 0 !important;
+          padding-right: 2px !important;
         }
 
         .lp-home-stat-value {
@@ -2558,7 +2700,7 @@ def apply_theme() -> None:
 
         .lp-home-scope .lp-card {
           border-color: rgba(186, 204, 227, 0.08);
-          border-radius: var(--lp-radius-md);
+          border-radius: 20px;
         }
 
         .lp-home-scope .lp-card + .lp-card {
@@ -2578,6 +2720,11 @@ def apply_theme() -> None:
           border-color: rgba(186, 204, 227, 0.08);
           padding-top: 10px !important;
           padding-bottom: 10px !important;
+        }
+
+        .lp-home-path-empty {
+          min-height: 160px;
+          justify-content: center;
         }
 
         .lp-home-scope .q-btn {
@@ -2657,9 +2804,9 @@ def apply_theme() -> None:
 
         .lp-home-convo-row {
           padding: 8px 10px;
-          border: 1px solid rgba(186, 204, 227, 0.1);
-          border-radius: 10px;
-          background: rgba(10, 20, 33, 0.36);
+          border: 1px solid rgba(186, 204, 227, 0.08);
+          border-radius: 16px;
+          background: rgba(10, 20, 33, 0.24);
           margin-bottom: 8px;
           transition: border-color 140ms ease, background-color 140ms ease;
         }
@@ -2807,10 +2954,10 @@ def apply_theme() -> None:
           align-self: auto;
           box-sizing: border-box;
           padding: 13px 14px 11px;
-          border-radius: 12px;
+          border-radius: 18px;
           border: 1px solid rgba(186, 204, 227, 0.08);
-          background: linear-gradient(160deg, rgba(32, 45, 67, 0.6), rgba(19, 30, 48, 0.52));
-          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+          background: linear-gradient(160deg, rgba(32, 45, 67, 0.52), rgba(19, 30, 48, 0.44));
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           margin-bottom: 0;
           transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
         }
@@ -2969,10 +3116,21 @@ def apply_theme() -> None:
           border-color: rgba(186, 204, 227, 0.13) !important;
           background:
             radial-gradient(120% 140% at 10% 0%, rgba(88, 166, 232, 0.08), transparent 58%),
-            linear-gradient(160deg, rgba(18, 31, 50, 0.74), rgba(12, 23, 38, 0.68)) !important;
-          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2) !important;
+            linear-gradient(160deg, rgba(18, 31, 50, 0.66), rgba(12, 23, 38, 0.58)) !important;
+          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12) !important;
           padding: 16px 18px 14px !important;
           margin-top: 0 !important;
+        }
+
+        .lp-home-path-empty-shell {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          padding-top: 4px;
+        }
+
+        .lp-home-grid-footer .lp-home-recent-shell {
+          padding-top: 4px !important;
         }
 
         .lp-home-path-separator {
@@ -2982,6 +3140,9 @@ def apply_theme() -> None:
 
         @media (max-width: 1080px) {
           .lp-tracked-grid {
+            grid-template-columns: 1fr;
+          }
+          .lp-home-intro-steps {
             grid-template-columns: 1fr;
           }
           .lp-home-grid-12 {
@@ -3161,6 +3322,13 @@ def apply_theme() -> None:
           color: rgba(236, 242, 249, 0.95);
         }
 
+        .lp-profile-card-subtitle {
+          font-size: 0.8rem;
+          color: rgba(204, 216, 231, 0.68);
+          margin-top: 2px;
+          margin-bottom: 10px;
+        }
+
         .lp-profile-user-name {
           font-size: 1.18rem;
           font-weight: 700;
@@ -3179,8 +3347,7 @@ def apply_theme() -> None:
           line-height: 1.35;
         }
 
-        .lp-profile-overview-card,
-        .lp-profile-controls-card,
+        .lp-profile-summary-card,
         .lp-profile-chart-card,
         .lp-profile-table-card {
           position: relative;
@@ -3191,8 +3358,12 @@ def apply_theme() -> None:
           padding: 14px 16px 12px !important;
         }
 
-        .lp-profile-overview-card::before,
-        .lp-profile-controls-card::before,
+        .lp-profile-chart-card,
+        .lp-profile-table-card {
+          padding: 16px 18px 14px !important;
+        }
+
+        .lp-profile-summary-card::before,
         .lp-profile-chart-card::before,
         .lp-profile-table-card::before {
           content: "";
@@ -3209,6 +3380,18 @@ def apply_theme() -> None:
         .lp-profile-head {
           margin-top: 2px;
           margin-bottom: 2px;
+        }
+
+        .lp-profile-summary-card {
+          padding: 14px 16px !important;
+        }
+
+        .lp-profile-summary-rail {
+          flex-wrap: wrap;
+        }
+
+        .lp-profile-summary-meta {
+          min-width: 170px;
         }
 
         .lp-profile-avatar-img,
@@ -3327,6 +3510,16 @@ def apply_theme() -> None:
           opacity: 0.8;
         }
 
+        .lp-teams-header {
+          padding-top: 6px;
+          padding-bottom: 4px;
+        }
+
+        .lp-teams-header-subtitle {
+          max-width: 46rem;
+          opacity: 0.84;
+        }
+
         .lp-teams-topbar {
           margin-top: 0;
           margin-bottom: 2px;
@@ -3334,12 +3527,12 @@ def apply_theme() -> None:
         }
 
         .lp-teams-overview-strip {
-          border-color: rgba(186, 204, 227, 0.13);
+          border-color: rgba(186, 204, 227, 0.1);
           background:
-            radial-gradient(120% 120% at 10% 6%, rgba(88, 166, 232, 0.14), transparent 58%),
-            linear-gradient(160deg, rgba(17, 30, 48, 0.76), rgba(11, 23, 38, 0.68));
-          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
-          padding: 14px 16px 12px !important;
+            radial-gradient(120% 120% at 10% 6%, rgba(88, 166, 232, 0.1), transparent 58%),
+            linear-gradient(160deg, rgba(17, 30, 48, 0.68), rgba(11, 23, 38, 0.6));
+          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+          padding: 10px 12px !important;
         }
 
         .lp-teams-overview-title {
@@ -3355,7 +3548,7 @@ def apply_theme() -> None:
         }
 
         .lp-teams-overview-actions {
-          margin-top: 2px;
+          min-height: 0;
         }
 
         .lp-teams-tabs .q-radio__label {
@@ -3419,9 +3612,10 @@ def apply_theme() -> None:
         }
 
         .lp-teams-shell {
-          border-color: rgba(186, 204, 227, 0.12);
-          background: linear-gradient(160deg, rgba(29, 41, 61, 0.5), rgba(18, 29, 46, 0.46));
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+          border-color: rgba(186, 204, 227, 0.1);
+          background: linear-gradient(160deg, rgba(29, 41, 61, 0.44), rgba(18, 29, 46, 0.38));
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+          border-radius: 20px;
         }
 
         .lp-teams-list-shell {
@@ -3430,6 +3624,53 @@ def apply_theme() -> None:
 
         .lp-teams-workspace-shell {
           padding: 14px 18px 12px !important;
+        }
+
+        .lp-teams-empty-workspace {
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+          gap: 18px;
+          align-items: start;
+          width: 100%;
+          margin-top: 4px;
+          margin-bottom: 10px;
+        }
+
+        .lp-teams-empty-main {
+          min-height: 0;
+          padding: 6px 0;
+        }
+
+        .lp-teams-empty-title {
+          font-family: var(--lp-font-display);
+          font-size: 1.12rem;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+        }
+
+        .lp-teams-empty-copy {
+          max-width: 36rem;
+        }
+
+        .lp-teams-empty-hints {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .lp-teams-empty-hint {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          padding: 12px 13px;
+          border: 1px solid rgba(186, 204, 227, 0.08);
+          border-radius: 16px;
+          background: rgba(10, 19, 33, 0.22);
+        }
+
+        .lp-teams-empty-inbox {
+          width: 100%;
+          margin-top: 4px;
         }
 
         .lp-teams-list-title {
@@ -3617,6 +3858,10 @@ def apply_theme() -> None:
           }
 
           .lp-teams-workspace-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .lp-teams-empty-workspace {
             grid-template-columns: 1fr;
           }
 
@@ -3848,13 +4093,15 @@ def apply_theme() -> None:
         }
 
         .lp-explore-reviews-panel {
-          min-height: 164px;
+          min-height: 0;
+          padding-top: 14px;
+          padding-bottom: 14px;
         }
 
         .lp-explore-info-card {
           border-color: rgba(186, 204, 227, 0.15);
           background: linear-gradient(165deg, rgba(11, 24, 40, 0.78), rgba(8, 19, 31, 0.7));
-          box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+          box-shadow: 0 7px 18px rgba(0, 0, 0, 0.18);
         }
 
         .lp-explore-info-card .text-base.font-semibold {
@@ -3871,8 +4118,8 @@ def apply_theme() -> None:
           width: 100%;
           min-height: 36px !important;
           border-radius: 10px !important;
-          justify-content: flex-start;
-          text-align: left;
+          justify-content: center;
+          text-align: center;
           padding-left: 12px !important;
           padding-right: 12px !important;
           font-size: 0.8rem !important;
@@ -3897,12 +4144,12 @@ def apply_theme() -> None:
         }
 
         .lp-explore-detail-side {
-          flex: 0 0 300px;
+          flex: 0 0 288px;
           gap: 10px;
           padding: 14px;
           border-radius: var(--lp-radius-md);
           border: 1px solid var(--lp-border-soft);
-          background: rgba(9, 18, 32, 0.72);
+          background: rgba(9, 18, 32, 0.64);
           box-shadow: var(--lp-shadow-sm);
         }
 
@@ -3948,6 +4195,60 @@ def apply_theme() -> None:
         .lp-explore-main-surface .q-separator {
           margin: 4px 0;
           opacity: 0.3;
+        }
+
+        .lp-explore-reviews-panel .lp-review-panel-title {
+          margin-top: 2px;
+          margin-bottom: 2px;
+          letter-spacing: 0.01em;
+        }
+
+        .lp-explore-reviews-panel .lp-review-entry {
+          border-radius: 16px;
+          border-color: rgba(186, 204, 227, 0.11);
+          background: linear-gradient(160deg, rgba(26, 38, 58, 0.58), rgba(17, 29, 47, 0.5));
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          padding: 12px 14px 10px !important;
+        }
+
+        .lp-explore-reviews-panel .lp-review-entry-title {
+          letter-spacing: 0.01em;
+        }
+
+        .lp-explore-reviews-panel .lp-review-entry-date {
+          margin-top: 1px;
+          margin-bottom: 3px;
+        }
+
+        .lp-explore-reviews-panel .lp-review-entry-body {
+          line-height: 1.5;
+        }
+
+        .lp-explore-reviews-panel .lp-review-form-title {
+          margin-top: 8px;
+          margin-bottom: 2px;
+        }
+
+        .lp-explore-reviews-panel .lp-review-rating {
+          max-width: 132px;
+        }
+
+        .lp-explore-reviews-panel .lp-review-rating .q-field__control,
+        .lp-explore-reviews-panel .lp-review-text .q-field__control {
+          background: rgba(10, 18, 31, 0.34);
+          border-radius: 10px;
+        }
+
+        .lp-explore-reviews-panel .lp-review-text {
+          margin-top: 4px;
+        }
+
+        .lp-explore-reviews-panel .lp-review-actions {
+          margin-top: 4px;
+        }
+
+        .lp-explore-reviews-panel .lp-review-save {
+          min-width: 136px;
         }
 
         .lp-path-sequence-card .lp-path-sequence-item {

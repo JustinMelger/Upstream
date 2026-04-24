@@ -105,6 +105,12 @@ class _FakeUi:
         self.inputs.append(el)
         return el
 
+    def select(self, _options=None, *, label: str = "", multiple: bool = False, **_kwargs) -> _FakeElement:  # noqa: ANN001
+        value = [] if multiple else ""
+        el = _FakeElement(value=value, label=label)
+        self.inputs.append(el)
+        return el
+
     def button(self, label: str, on_click=None, **_kwargs) -> _FakeElement:  # noqa: ANN001
         el = _FakeElement(text=label)
         self.buttons.append(label)
@@ -143,6 +149,7 @@ class _FakeController:
         self.created_videos: list[dict[str, object]] = []
         self.created_courses: list[dict[str, object]] = []
         self.created_articles: list[dict[str, object]] = []
+        self.created_paths: list[dict[str, object]] = []
 
     async def suggest_course_from_url(self, *, url: str) -> dict[str, object]:
         return {
@@ -172,6 +179,13 @@ class _FakeController:
         self.created_articles.append(dict(payload))
         return dict(payload)
 
+    async def load_path_learning_item_options(self) -> dict[str, str]:
+        return {"course:7": "Course: FastAPI"}
+
+    async def create_path(self, *, payload: dict[str, object]) -> dict[str, object]:
+        self.created_paths.append(dict(payload))
+        return {"id": 44, **dict(payload)}
+
 
 @pytest.mark.anyio
 async def test_share_item_video_route_renders_video_copy(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -188,11 +202,31 @@ async def test_share_item_video_route_renders_video_copy(monkeypatch: pytest.Mon
     share_page.register(store=object(), api=object())  # type: ignore[arg-type]
     await fake_ui.routes["/share/item"]()
 
+    assert "Back to Explore" in fake_ui.buttons
     assert "Video" in fake_ui.buttons
     assert "Course" in fake_ui.buttons
     assert "Article" in fake_ui.buttons
-    assert any(label.text == "Share a video your team should learn from." for label in fake_ui.labels)
+    assert any(label.text == "Share a video others should learn from." for label in fake_ui.labels)
     assert any(inp.label == "Video title" for inp in fake_ui.inputs)
+
+
+@pytest.mark.anyio
+async def test_share_item_back_to_explore_button_navigates_to_explore(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_ui = _FakeUi()
+    controller = _FakeController()
+    fake_ui.context.client.request.query_params = {"type": "course"}
+    monkeypatch.setattr(share_page, "ui", fake_ui)
+    monkeypatch.setattr(share_page, "app", SimpleNamespace(storage=SimpleNamespace(user={})))
+    monkeypatch.setattr(share_page, "render_shell", lambda **_kwargs: None)
+    monkeypatch.setattr(share_page, "render_catalog_scope", lambda **_kwargs: _FakeContainer())
+    monkeypatch.setattr(share_page, "require_user", _fake_require_user)
+    monkeypatch.setattr(share_page, "SharePageController", lambda **_kwargs: controller)
+
+    share_page.register(store=object(), api=object())  # type: ignore[arg-type]
+    await fake_ui.routes["/share/item"]()
+    await fake_ui.button_map["Back to Explore"].emit("click")
+
+    assert fake_ui.navigations[-1] == ("/explore", False)
 
 
 @pytest.mark.anyio
@@ -210,7 +244,7 @@ async def test_share_item_article_route_renders_article_specific_fields(monkeypa
     share_page.register(store=object(), api=object())  # type: ignore[arg-type]
     await fake_ui.routes["/share/item"]()
 
-    assert any(label.text == "Share a useful article with your team." for label in fake_ui.labels)
+    assert any(label.text == "Share a useful article for others to discover." for label in fake_ui.labels)
     assert any(inp.label == "Article title" for inp in fake_ui.inputs)
     assert any(inp.label == "Tags (comma-separated)" for inp in fake_ui.inputs)
 
@@ -230,7 +264,7 @@ async def test_share_item_course_route_renders_course_specific_fields(monkeypatc
     share_page.register(store=object(), api=object())  # type: ignore[arg-type]
     await fake_ui.routes["/share/item"]()
 
-    assert any(label.text == "Share a course your team should learn from." for label in fake_ui.labels)
+    assert any(label.text == "Share a course others should learn from." for label in fake_ui.labels)
     assert any(inp.label == "Course title" for inp in fake_ui.inputs)
     assert any(inp.label == "Provider" for inp in fake_ui.inputs)
     assert any(inp.label == "Category" for inp in fake_ui.inputs)
@@ -370,7 +404,7 @@ async def test_share_item_article_publish_success_navigates_to_articles_tab(monk
 
 
 @pytest.mark.anyio
-async def test_share_item_video_publish_success_navigates_and_persists_provider_default(
+async def test_share_item_video_publish_success_navigates_to_videos_tab_and_persists_provider_default(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fake_ui = _FakeUi()
@@ -406,4 +440,39 @@ async def test_share_item_video_publish_success_navigates_and_persists_provider_
     ]
     assert "share_video_page_draft::alice" not in storage
     assert notifications[-1] == ("Learning item published", "positive")
-    assert fake_ui.navigations[-1] == ("/explore/videos/12", False)
+    assert fake_ui.navigations[-1] == ("/explore?tab=videos", False)
+
+
+@pytest.mark.anyio
+async def test_share_path_publish_success_navigates_to_paths_tab(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_ui = _FakeUi()
+    controller = _FakeController()
+    notifications: list[tuple[str, str]] = []
+    storage = {"share_path_page_draft::alice": {"name": "stale"}}
+    monkeypatch.setattr(share_page, "ui", fake_ui)
+    monkeypatch.setattr(share_page, "app", SimpleNamespace(storage=SimpleNamespace(user=storage)))
+    monkeypatch.setattr(share_page, "render_shell", lambda **_kwargs: None)
+    monkeypatch.setattr(share_page, "render_catalog_scope", lambda **_kwargs: _FakeContainer())
+    monkeypatch.setattr(share_page, "require_user", _fake_require_user)
+    monkeypatch.setattr(share_page, "SharePageController", lambda **_kwargs: controller)
+    monkeypatch.setattr(share_page, "safe_notify", lambda message, type="info": notifications.append((str(message), str(type))))
+
+    share_page.register(store=object(), api=object())  # type: ignore[arg-type]
+    await fake_ui.routes["/share/path"]()
+
+    input_by_label = {element.label: element for element in fake_ui.inputs}
+    input_by_label["Path name"].value = "Backend foundations"
+    input_by_label["Description"].value = "Start here"
+    input_by_label["Learning items in order"].value = ["course:7"]
+    await fake_ui.button_map["Publish Path"].emit("click")
+
+    assert controller.created_paths == [
+        {
+            "name": "Backend foundations",
+            "description": "Start here",
+            "items": [{"type": "course", "id": 7, "position": 0}],
+        }
+    ]
+    assert "share_path_page_draft::alice" not in storage
+    assert notifications[-1] == ("Path published", "positive")
+    assert fake_ui.navigations[-1] == ("/explore?tab=paths", False)

@@ -18,7 +18,6 @@ class PathsPageState:
     course_by_id: dict[int, dict[str, Any]] = field(default_factory=dict)
     learning_item_options: dict[str, str] = field(default_factory=dict)
     path_review_summary_by_id: dict[int, dict[str, Any]] = field(default_factory=dict)
-    path_recommendation_summary_by_id: dict[int, dict[str, Any]] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -37,5 +36,4 @@ class PathDetailBundle:
 
     detail: dict[str, Any]
     path_reviews: list[dict[str, Any]]
-    path_recommendations: list[dict[str, Any]]
     course_review_summary_by_course_id: dict[int, dict[str, Any]]

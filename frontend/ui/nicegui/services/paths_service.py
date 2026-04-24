@@ -85,9 +85,10 @@ async def select_path_and_seed_tracking(
         return_exceptions=True,
     )
     seeded = 0
-    for row in results:
+    for cid, row in zip(course_ids, results, strict=False):
         if not isinstance(row, Exception):
             seeded += 1
+            tracking_by_course_id[int(cid)] = {"course_id": int(cid), "status": "interested"}
     return seeded, detail
 
 
@@ -144,25 +145,6 @@ async def load_paths_page_data(
 async def load_selected_paths(*, api: ApiClient) -> list[dict[str, Any]]:
     """Load the current user's selected paths."""
     return list(await api.get("/paths/selected/list") or [])
-
-
-async def load_path_recommendation_summaries(*, api: ApiClient, path_ids: list[int]) -> dict[int, dict[str, Any]]:
-    """Load recommendation summary items for the given path ids and index them by path id."""
-    if not path_ids:
-        return {}
-    rows = await api.get("/paths/recommendations/summary", params={"path_ids": [int(i) for i in path_ids if int(i) > 0]})
-    out: dict[int, dict[str, Any]] = {}
-    for row in list(rows or []):
-        if not isinstance(row, dict):
-            continue
-        try:
-            pid = int(row.get("path_id") or 0)
-        except (TypeError, ValueError):
-            continue
-        if pid <= 0:
-            continue
-        out[pid] = row
-    return out
 
 
 def _selected_path_ids(selected_rows: list[dict[str, Any]]) -> list[int]:

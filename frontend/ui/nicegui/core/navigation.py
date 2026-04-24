@@ -37,5 +37,5 @@ def build_activity_target_link(*, target_type: str, target_id: int) -> str:
     if kind == "path":
         return f"/explore/paths/{int(target_id)}"
     if kind == "article":
-        return "/explore?tab=articles"
+        return f"/explore/articles/{int(target_id)}"
     return "/home"

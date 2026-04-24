@@ -8,13 +8,12 @@ from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 
 from backend.core.errors import courses_error_handler, CoursesServiceError
-from backend.database.async_repositories.course_recommendations import CourseRecommendationsRepository
 from backend.database.async_repositories.courses import (
     CoursesRepository,
     CreateCoursePayload,
     UpdateCoursePayload,
 )
-from backend.database.models import CourseRecommendationRecord, CourseRecord
+from backend.database.models import CourseRecord
 from backend.database.tx import session_scope
 from backend.services.course_search_document import build_course_search_document
 from backend.services.url_preview_service import UrlPreviewService
@@ -43,7 +42,6 @@ class CoursesService:
     def __init__(
         self,
         repo: CoursesRepository,
-        recommendations_repo: CourseRecommendationsRepository | None = None,
         url_preview_service: UrlPreviewService | None = None,
     ):
         """Initialize the service.
@@ -52,7 +50,6 @@ class CoursesService:
             repo: Persistence repository for courses.
         """
         self._repo = repo
-        self._recommendations_repo = recommendations_repo
         self._url_preview_service = url_preview_service or UrlPreviewService()
 
     @courses_error_handler()
@@ -75,16 +72,12 @@ class CoursesService:
         Returns:
             Course list payloads.
         """
-        recommendation_map: dict[int, list[CourseRecommendationRecord]] = {}
         async with session_scope(self._repo.session):
             rows = await self._repo.list_courses(query=query, provider=provider, category=category, level=level)
-            if self._recommendations_repo and rows:
-                recommendation_map = await self._recommendations_repo.list_for_courses(course_ids=[int(r.id) for r in rows])
         preview_map = await self._resolve_preview_images(rows)
         return [
             self._to_payload(
                 row,
-                recommendations=recommendation_map.get(int(row.id), []),
                 preview_image_url=preview_map.get(int(row.id), ""),
             )
             for row in rows
@@ -100,18 +93,13 @@ class CoursesService:
         Returns:
             Course payload or None if missing.
         """
-        recommendation_rows: list[CourseRecommendationRecord] = []
         async with session_scope(self._repo.session):
             course = await self._repo.get_course_by_id(course_id)
-            if self._recommendations_repo and course:
-                recommendation_map = await self._recommendations_repo.list_for_courses(course_ids=[int(course_id)])
-                recommendation_rows = recommendation_map.get(int(course_id), [])
         if not course:
             return None
         preview_map = await self._resolve_preview_images([course])
         return self._to_payload(
             course,
-            recommendations=recommendation_rows,
             preview_image_url=preview_map.get(int(course.id), ""),
         )
 
@@ -265,13 +253,9 @@ class CoursesService:
     def _to_payload(
         course: CourseRecord,
         *,
-        recommendations: list[CourseRecommendationRecord] | None = None,
         preview_image_url: str = "",
     ) -> dict:
         """Convert a course record to an API payload."""
-        rec_rows = list(recommendations or [])
-        rec_notes = [str(r.note or "") for r in rec_rows if str(r.note or "").strip()]
-        rec_by = [str(r.created_by or "") for r in rec_rows if str(r.created_by or "").strip()]
         return {
             "id": course.id,
             "title": course.title or "",
@@ -287,12 +271,7 @@ class CoursesService:
             "preview_image_url": str(preview_image_url or ""),
             "created_at": course.created_at,
             "created_by": course.created_by,
-            "search_document": build_course_search_document(
-                course=course,
-                recommendation_count=len(rec_rows),
-                recommendation_notes=rec_notes,
-                recommended_by=rec_by,
-            ),
+            "search_document": build_course_search_document(course=course),
         }
 
     async def _resolve_preview_images(self, courses: list[CourseRecord]) -> dict[int, str]:

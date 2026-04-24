@@ -54,7 +54,6 @@ class LearningItemCapabilities:
     item_type: str
     supports_tracking: bool
     supports_reviews: bool
-    supports_recommendations: bool
 
 
 _TYPE_CAPABILITIES = {
@@ -62,19 +61,16 @@ _TYPE_CAPABILITIES = {
         item_type="video",
         supports_tracking=False,
         supports_reviews=True,
-        supports_recommendations=False,
     ),
     "course": LearningItemCapabilities(
         item_type="course",
         supports_tracking=True,
         supports_reviews=True,
-        supports_recommendations=True,
     ),
     "article": LearningItemCapabilities(
         item_type="article",
         supports_tracking=False,
         supports_reviews=True,
-        supports_recommendations=False,
     ),
 }
 

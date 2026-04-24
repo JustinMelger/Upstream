@@ -27,8 +27,12 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
         render_shell(title="Teams", store=store, api=api)
         with render_container():
             request = getattr(ui.context.client, "request", None)
-            ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600 lp-teams-subtitle")
-            ui.label("Team workspace").classes("lp-home-title")
+            with ui.column().classes("w-full gap-1 lp-teams-header"):
+                ui.label(subtitle_for(PrimaryPage.TEAMS)).classes("text-sm text-gray-600 lp-teams-subtitle")
+                ui.label("Teams and activity").classes("lp-home-title")
+                ui.label("Create a team, follow shared activity, and keep reviews moving from one workspace.").classes(
+                    "text-sm lp-teams-header-subtitle"
+                ).style("color: var(--lp-muted)")
             view = _TeamsPageView(
                 controller=TeamsPageController(api=api),
                 state=TeamsPageState(),

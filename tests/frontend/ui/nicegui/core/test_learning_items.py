@@ -64,10 +64,7 @@ def test_learning_item_capabilities_match_current_product_model() -> None:
 
     assert course.supports_tracking is True
     assert course.supports_reviews is True
-    assert course.supports_recommendations is True
     assert article.supports_tracking is False
     assert article.supports_reviews is True
-    assert article.supports_recommendations is False
     assert video.supports_tracking is False
     assert video.supports_reviews is True
-    assert video.supports_recommendations is False

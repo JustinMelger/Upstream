@@ -4,6 +4,7 @@ import asyncio
 import html
 import ipaddress
 import re
+import socket
 import time
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
@@ -86,6 +87,19 @@ def _extract_vimeo_video_id(url: str) -> str | None:
     return candidate
 
 
+def _is_safe_public_ip(value: str) -> bool:
+    """Return whether an IP literal is public and routable."""
+    try:
+        ip = ipaddress.ip_address(str(value or "").strip())
+    except ValueError:
+        return False
+    if ip.is_private or ip.is_loopback or ip.is_link_local:
+        return False
+    if ip.is_multicast or ip.is_reserved or ip.is_unspecified:
+        return False
+    return True
+
+
 def _is_safe_public_host(host: str) -> bool:
     value = str(host or "").strip().lower()
     if not value:
@@ -93,14 +107,10 @@ def _is_safe_public_host(host: str) -> bool:
     if value in _LOCAL_HOSTS:
         return False
     try:
-        ip = ipaddress.ip_address(value)
+        ipaddress.ip_address(value)
     except ValueError:
         return True
-    if ip.is_private or ip.is_loopback or ip.is_link_local:
-        return False
-    if ip.is_multicast or ip.is_reserved or ip.is_unspecified:
-        return False
-    return True
+    return _is_safe_public_ip(value)
 
 
 class UrlPreviewService:
@@ -128,8 +138,7 @@ class UrlPreviewService:
         self._metadata_cache: dict[str, tuple[float, dict[str, object]]] = {}
         self._lock = asyncio.Lock()
 
-    @staticmethod
-    def _validate_resolvable_url(*, source_url: str) -> tuple[str, bool]:
+    async def _validate_resolvable_url(self, *, source_url: str) -> tuple[str, bool]:
         url = str(source_url or "").strip()
         if not url:
             return "", False
@@ -138,7 +147,44 @@ class UrlPreviewService:
             return url, False
         if not _is_safe_public_host(parsed.hostname or ""):
             return url, False
+        if not await self._host_resolves_publicly(parsed.hostname or ""):
+            return url, False
         return url, True
+
+    async def _host_resolves_publicly(self, host: str) -> bool:
+        """Return whether a hostname resolves only to safe public IPs."""
+        hostname = str(host or "").strip()
+        if not hostname:
+            return False
+        if not _is_safe_public_host(hostname):
+            return False
+        try:
+            ipaddress.ip_address(hostname)
+        except ValueError:
+            pass
+        else:
+            return _is_safe_public_ip(hostname)
+
+        try:
+            infos = await asyncio.get_running_loop().getaddrinfo(
+                hostname,
+                None,
+                type=socket.SOCK_STREAM,
+                proto=socket.IPPROTO_TCP,
+            )
+        except OSError:
+            return False
+
+        addresses: set[str] = set()
+        for _family, _socktype, _proto, _canonname, sockaddr in infos:
+            if not sockaddr:
+                continue
+            candidate = str(sockaddr[0] or "").strip()
+            if candidate:
+                addresses.add(candidate)
+        if not addresses:
+            return False
+        return all(_is_safe_public_ip(address) for address in addresses)
 
     async def resolve_image_url(self, *, source_url: str) -> str:
         """Resolve a preview image URL for a source link.
@@ -150,7 +196,7 @@ class UrlPreviewService:
             Preview image URL or empty string when unavailable.
 
         """
-        url, is_valid = self._validate_resolvable_url(source_url=source_url)
+        url, is_valid = await self._validate_resolvable_url(source_url=source_url)
         if not is_valid:
             return ""
 
@@ -171,7 +217,7 @@ class UrlPreviewService:
 
     async def resolve_metadata(self, *, source_url: str) -> dict[str, object]:
         """Resolve URL metadata used for form autofill suggestions."""
-        url, is_valid = self._validate_resolvable_url(source_url=source_url)
+        url, is_valid = await self._validate_resolvable_url(source_url=source_url)
         if not is_valid:
             return self._empty_metadata(url=url)
 
@@ -409,20 +455,39 @@ class UrlPreviewService:
         return len(body_bytes) <= self._max_response_bytes
 
     async def _safe_get(self, url: str) -> httpx.Response | None:
-        parsed = urlparse(url)
-        if parsed.scheme not in {"http", "https"}:
-            return None
-        if not _is_safe_public_host(parsed.hostname or ""):
-            return None
+        current_url = str(url or "").strip()
+        response: httpx.Response | None = None
         try:
             async with httpx.AsyncClient(
-                follow_redirects=True,
+                follow_redirects=False,
                 timeout=self._timeout_seconds,
+                trust_env=False,
                 headers={"User-Agent": "LearningHubBot/1.0 (+https://learning-hub.local)"},
             ) as client:
-                response = await client.get(url)
+                for _ in range(4):
+                    parsed = urlparse(current_url)
+                    is_safe_request = (
+                        parsed.scheme in {"http", "https"}
+                        and _is_safe_public_host(parsed.hostname or "")
+                        and await self._host_resolves_publicly(parsed.hostname or "")
+                    )
+                    if not is_safe_request:
+                        break
+
+                    response = await client.get(current_url)
+                    if bool(getattr(response, "is_redirect", False)):
+                        location = str(response.headers.get("location") or "").strip()
+                        if not location:
+                            response = None
+                            break
+                        current_url = urljoin(current_url, location)
+                        response = None
+                        continue
+
+                    if self._response_within_limit(response):
+                        return response
+                    response = None
+                    break
         except httpx.HTTPError:
-            return None
-        if not self._response_within_limit(response):
-            return None
+            response = None
         return response

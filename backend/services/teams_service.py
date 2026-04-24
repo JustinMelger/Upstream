@@ -327,18 +327,23 @@ class TeamsService:
             "message": message,
             "target_type": target_type,
             "target_id": target_id,
-            "target_label": f"{target_type}:{target_id}" if target_type and target_id > 0 else "",
+            "target_label": str(row.get("target_label") or "").strip() or (
+                f"{target_type}:{target_id}" if target_type and target_id > 0 else ""
+            ),
         }
 
     @staticmethod
     def _activity_message(*, event_type: str, actor: str, target_type: str) -> str:
         """Build concise activity feed copy."""
         action_map = {
+            "course_shared": "shared a course",
+            "path_shared": "shared a path",
+            "article_shared": "shared an article",
+            "video_shared": "shared a video",
             "course_review": "reviewed a course",
             "path_review": "reviewed a path",
             "article_review": "reviewed an article",
-            "course_recommendation": "recommended a course",
-            "path_recommendation": "recommended a path",
+            "video_review": "reviewed a video",
         }
         action = action_map.get(str(event_type), f"updated {target_type}")
         return f"{actor} {action}".strip()

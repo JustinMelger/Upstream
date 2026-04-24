@@ -5,7 +5,6 @@ from typing import Any
 
 import pytest
 
-from frontend.ui.nicegui.pages.activity import page as activity_page
 from frontend.ui.nicegui.pages.explore import page as explore_page
 from frontend.ui.nicegui.pages.home import page as home_page
 from frontend.ui.nicegui.pages.learning import page as learning_page
@@ -28,13 +27,13 @@ class _FakeUi:
 @pytest.mark.unit
 def test_legacy_routes_are_not_registered(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
-    for module in [home_page, learning_page, activity_page, explore_page]:
+    for module in [home_page, learning_page, explore_page]:
         monkeypatch.setattr(module, "ui", fake_ui)
 
     async def _require_user(_store: object, _api: object) -> dict[str, str]:
         return {"username": "tester", "role": "admin"}
 
-    for module in [home_page, learning_page, activity_page, explore_page]:
+    for module in [home_page, learning_page, explore_page]:
         if hasattr(module, "require_user"):
             monkeypatch.setattr(module, "require_user", _require_user)
         module.register(store=object(), api=object())  # type: ignore[arg-type]

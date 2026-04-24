@@ -48,6 +48,6 @@ def test_render_admin_team_section_empty_state_explains_how_data_will_appear(mon
 
     assert "No team stats yet. Invite teammates and start sharing learning items to see progress here." in fake_ui.labels
     assert (
-        "No contributor activity yet. Shares, reviews, and recommendations will appear here once your team is active."
+        "No contributor activity yet. Shares and reviews will appear here once your team is active."
         in fake_ui.labels
     )

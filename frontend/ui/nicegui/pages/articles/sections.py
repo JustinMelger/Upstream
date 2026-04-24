@@ -58,7 +58,7 @@ def render_articles_topbar(*, on_share: Any) -> ArticlesTopbarControls:
                     sort_filter = (
                         ui.select(
                             {
-                                "": "Recommended",
+                                "": "Best match",
                                 "newest": "Newest",
                                 "title_az": "Title A–Z",
                                 "author_az": "Author A–Z",
@@ -140,6 +140,7 @@ def render_articles_empty_state(
     on_refresh: Any,
 ) -> None:
     """Render empty states for the articles list."""
+    _ = on_refresh
     if not has_articles and not any_filters:
         render_empty_block(
             title="No reading stream yet.",
@@ -213,17 +214,21 @@ def render_article_card(
                             ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
                     else:
                         ui.label("").classes("lp-article-tag-placeholder")
-                if summary_text:
-                    ui.label(summary_text).classes("lp-meta-chip lp-article-summary-chip")
+                if compact_mode:
+                    ui.element("div").classes("lp-card-meta-spacer")
+                review_classes = "lp-card-review-line lp-article-summary-chip"
+                if not str(summary_text or "").strip():
+                    review_classes += " lp-card-review-line--empty"
+                ui.label(str(summary_text or "").strip() or "No reviews yet").classes(review_classes)
 
                 def _render_actions() -> None:
                     ui.button("Open details", on_click=view_action).props("dense")
 
                 render_card_actions_row(render_actions=_render_actions)
 
-            safe_src = html.escape(str(thumbnail_url or "").strip(), quote=True)
-            if safe_src:
-                with ui.element("div").classes("lp-article-media-slot"):
+            with ui.element("div").classes("lp-article-media-slot"):
+                safe_src = html.escape(str(thumbnail_url or "").strip(), quote=True)
+                if safe_src:
                     ui.html(
                         (
                             '<img class="lp-course-thumb lp-course-thumb--side lp-article-thumb" '
@@ -232,6 +237,9 @@ def render_article_card(
                         ),
                         sanitize=False,
                     )
+                else:
+                    with ui.element("div").classes("lp-course-thumb lp-course-thumb--side lp-course-thumb--placeholder-block"):
+                        ui.icon("article").classes("lp-course-thumb-placeholder-block-icon")
 
 
 def render_articles_catalog(

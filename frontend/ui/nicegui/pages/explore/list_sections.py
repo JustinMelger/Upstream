@@ -85,17 +85,17 @@ def render_explore_sections(
     """Render the mixed Explore sections for courses/paths/articles."""
     course_cap = 16 if deps.show_all_categories else _DEFAULT_COURSE_CAP
     path_cap = 12 if deps.show_all_categories else _DEFAULT_PATH_CAP
-    learning_item_cap = 16 if deps.show_all_categories else _DEFAULT_LEARNING_ITEM_CAP
-
     visible_courses = shown_courses[:course_cap]
     visible_paths = shown_paths[:path_cap]
-    visible_learning_items = shown_learning_items[:learning_item_cap]
+    visible_learning_items = list(shown_learning_items or [])
 
     if visible_courses:
         with ui.element("section").classes("w-full lp-explore-section-block"):
             with ui.column().classes("w-full gap-2 lp-courses-section"):
-                ui.label("Recommended for you").classes("lp-courses-section-title")
-                ui.label("Start here based on your activity and selected scope.").classes("lp-courses-section-subtitle")
+                ui.label("Courses to start with").classes("lp-courses-section-title")
+                ui.label("Highlighted courses from the current scope, ready to track or open.").classes(
+                    "lp-courses-section-subtitle"
+                )
             render_explore_course_spotlight(
                 shown_courses=visible_courses,
                 tracking_by_course_id=deps.state.tracking_by_course_id,
@@ -113,7 +113,12 @@ def render_explore_sections(
                     ui.label("Learning paths").classes("lp-courses-section-title")
                     ui.label("Structured tracks to guide your next steps.").classes("lp-courses-section-subtitle")
                 ui.link("View all paths", "/explore?tab=paths").classes("text-sm")
-            with ui.element("div").classes("lp-courses-grid lp-explore-path-grid"):
+            path_grid_class = "lp-courses-grid lp-explore-path-grid"
+            if len(shown_paths_rows) == 1:
+                path_grid_class += " lp-explore-path-grid--single"
+            elif len(shown_paths_rows) == 2:
+                path_grid_class += " lp-explore-path-grid--pair"
+            with ui.element("div").classes(path_grid_class):
                 for row in shown_paths_rows:
                     render_path_item(
                         path=row,
@@ -133,8 +138,15 @@ def render_explore_sections(
             with ui.row().classes("items-center justify-between w-full"):
                 with ui.column().classes("gap-1"):
                     ui.label("Learning items").classes("lp-courses-section-title")
-                    ui.label("Browse all learning items.").classes("lp-courses-section-subtitle")
-            with ui.element("div").classes("lp-courses-grid lp-explore-course-grid"):
+                    ui.label("Courses, videos, and articles across the current scope.").classes(
+                        "lp-courses-section-subtitle"
+                    )
+            item_grid_class = "lp-courses-grid lp-explore-course-grid"
+            if len(shown_learning_item_rows) == 1:
+                item_grid_class += " lp-explore-course-grid--single"
+            elif len(shown_learning_item_rows) == 2:
+                item_grid_class += " lp-explore-course-grid--pair"
+            with ui.element("div").classes(item_grid_class):
                 for item in shown_learning_item_rows:
                     row = dict(item.row or {})
                     item_type = str(item.learning_item_type or "").strip().lower()
@@ -178,10 +190,10 @@ def render_explore_empty_state(
     """Render the Explore empty/error state block."""
     with ui.column().classes("w-full gap-2 lp-courses-section"):
         if not loaded_once:
-            ui.label("Discovery feed unavailable").classes("lp-courses-section-title")
-            ui.label("Explore could not load right now. Refresh to retry.").classes("lp-courses-section-subtitle")
+            ui.label("Explore is unavailable right now").classes("lp-courses-section-title")
+            ui.label("Refresh to reload courses, paths, videos, and articles.").classes("lp-courses-section-subtitle")
             ui.button("Refresh explore", on_click=on_refresh).props("outline")
             return
-        ui.label("No matches in Explore").classes("lp-courses-section-title")
-        ui.label("Reset filters to widen your discovery results.").classes("lp-courses-section-subtitle")
+        ui.label("No matching results").classes("lp-courses-section-title")
+        ui.label("Reset filters to widen the current explore view.").classes("lp-courses-section-subtitle")
         ui.button("Reset filters", on_click=on_reset_filters).props("outline")

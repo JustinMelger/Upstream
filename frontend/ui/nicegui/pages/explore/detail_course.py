@@ -37,13 +37,12 @@ async def _load_course_detail_payload(
     controller: CoursesPageController,
     course_id: int,
     username: str,
-) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], dict[int, dict[str, Any]]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[int, dict[str, Any]]]:
     bundle = await controller.load_course_detail_bundle(course_id=course_id, cache_scope=username)
     tracking_by_course_id = await controller.reload_tracking()
     return (
         dict(bundle.course or {}),
         list(bundle.reviews or []),
-        list(bundle.recommendations or []),
         tracking_by_course_id,
     )
 
@@ -109,6 +108,7 @@ def _bind_course_status_select(
     controller: CoursesPageController,
     course_id: int,
     current_status: str,
+    refresh_url: str,
 ) -> None:
     status_select = ui.select(
         {"": "Not tracked", **{k: v for k, v in TRACKING_STATUS_OPTIONS}},
@@ -122,9 +122,11 @@ def _bind_course_status_select(
         if not selected:
             await controller.clear_tracking_status(course_id=course_id)
             safe_notify(tracking_cleared_message(), type="positive")
+            ui.navigate.to(refresh_url)
             return
         await controller.set_tracking_status(course_id=course_id, status=selected)
         safe_notify(tracking_set_message(status=selected), type="positive")
+        ui.navigate.to(refresh_url)
 
     status_select.on("update:model-value", _on_status_change)
 
@@ -147,6 +149,8 @@ def _render_course_main_panel(
         provider=str(course.get("provider") or ""),
         fallback="course",
     )
+    panel_avg_rating = float(avg_rating)
+    panel_review_count = int(review_count)
     with ui.column().classes("lp-explore-detail-main"):
         with ui.element("header").classes("lp-explore-detail-hero"):
             owner = str(course.get("created_by") or "").strip()
@@ -154,11 +158,16 @@ def _render_course_main_panel(
                 ui.label("Learning item").classes("lp-explore-detail-eyebrow")
                 ui.label(learning_item_type_label(item_type)).classes("lp-meta-chip lp-meta-chip--quiet")
             ui.label(str(course.get("title") or "Course")).classes("lp-explore-detail-title")
-            if review_count > 0:
+            @ui.refreshable
+            def _hero_rating() -> None:
+                if panel_review_count <= 0:
+                    return
                 with ui.row().classes("items-center gap-2 flex-wrap"):
-                    ui.label(_rating_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
-                    ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
-                    ui.label(f"{review_count} reviews").classes("lp-explore-detail-muted")
+                    ui.label(_rating_stars(avg=panel_avg_rating)).classes("lp-explore-rating-stars")
+                    ui.label(f"{panel_avg_rating:.1f}").classes("lp-explore-rating-score")
+                    ui.label(f"{panel_review_count} reviews").classes("lp-explore-detail-muted")
+
+            _hero_rating()
             if owner:
                 ui.label(f"by {owner}").classes("lp-explore-detail-muted")
             if str(course.get("description") or "").strip():
@@ -167,8 +176,26 @@ def _render_course_main_panel(
         _render_course_content_card(course=course, source_url=source_url, view_mode=view_mode)
 
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
-            if review_count <= 0:
-                ui.label("Be the first to review this course.").classes("lp-explore-detail-muted")
+            @ui.refreshable
+            def _panel_summary() -> None:
+                with ui.row().classes("w-full items-start justify-between gap-3 flex-wrap"):
+                    with ui.column().classes("gap-0"):
+                        if panel_review_count > 0:
+                            ui.label(
+                                f"{panel_review_count} review{'s' if panel_review_count != 1 else ''} · {panel_avg_rating:.1f} average"
+                            ).classes("lp-explore-detail-muted")
+                        else:
+                            ui.label("Be the first to review this course.").classes("lp-explore-detail-muted")
+                if panel_review_count <= 0:
+                    ui.element("div").classes("h-1")
+
+            def _handle_reviews_changed(updated_reviews: list[dict[str, Any]]) -> None:
+                nonlocal panel_avg_rating, panel_review_count
+                panel_avg_rating, panel_review_count = _rating_metrics(reviews=updated_reviews)
+                _hero_rating.refresh()
+                _panel_summary.refresh()
+
+            _panel_summary()
             render_reviews_panel(
                 username=username,
                 is_admin=is_admin,
@@ -184,7 +211,7 @@ def _render_course_main_panel(
                     review_id=int(review_id),
                     cache_scope=username,
                 ),
-                hooks=ReviewPanelHooks(format_date=format_short_date),
+                hooks=ReviewPanelHooks(format_date=format_short_date, on_changed=_handle_reviews_changed),
             )
 
 
@@ -196,8 +223,8 @@ def _render_course_info_panel(
     current_status: str,
     source_url: str,
     can_edit: bool,
-    recommendations: list[dict[str, Any]],
 ) -> None:
+    refresh_url = f"/explore/courses/{cid}"
     with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):
         ui.label("Course Info").classes("text-base font-semibold")
         with ui.row().classes("items-center gap-2"):
@@ -211,6 +238,7 @@ def _render_course_info_panel(
             controller=controller,
             course_id=cid,
             current_status=current_status,
+            refresh_url=refresh_url,
         )
 
         @guard_ui_action(title="Primary action failed")
@@ -219,12 +247,14 @@ def _render_course_info_panel(
             if normalized_status == "":
                 await controller.set_tracking_status(course_id=cid, status="interested")
                 safe_notify(tracking_set_message(status="interested"), type="positive")
+                ui.navigate.to(refresh_url)
                 return
             if normalized_status == "interested":
                 await controller.set_tracking_status(course_id=cid, status="in_progress")
                 safe_notify(tracking_set_message(status="in_progress"), type="positive")
                 if source_url:
                     ui.navigate.to(source_url, new_tab=True)
+                ui.navigate.to(refresh_url)
                 return
             if normalized_status == "in_progress":
                 if source_url:
@@ -270,7 +300,7 @@ def _render_course_info_panel(
             "Share",
             icon="share",
             on_click=lambda: copy_text_to_clipboard(
-                text=source_url or share_url,
+                text=share_url,
                 success_message=f"Course link copied: {share_url}",
             ),
         ).props("outline")
@@ -282,15 +312,6 @@ def _render_course_info_panel(
                 learning_item_source_action_label("course"),
                 on_click=lambda: ui.navigate.to(source_url, new_tab=True),
             ).props("flat")
-        if recommendations:
-            ui.separator()
-            ui.label("Recent recommendations").classes("text-sm font-semibold")
-            for row in recommendations[:3]:
-                by = str(row.get("created_by") or "").strip()
-                note = str(row.get("note") or "").strip()
-                text = f"{by}: {note}" if by and note else by or note
-                if text:
-                    ui.label(text).classes("lp-explore-detail-muted")
 
 
 async def render_explore_course_detail_page(*, store: SessionStore, api: ApiClient, course_id: str) -> None:
@@ -307,14 +328,14 @@ async def render_explore_course_detail_page(*, store: SessionStore, api: ApiClie
         with ui.row().classes("w-full items-center"):
             ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
         ui.element("div").classes("h-2")
-        render_breadcrumb(label="Courses")
+        render_breadcrumb(label="Courses", back_url="/explore?tab=courses")
         if cid <= 0:
             ui.label("Invalid course id").classes("text-sm")
             return
 
         controller = CoursesPageController(api=api)
         try:
-            course, reviews, recommendations, tracking_by_course_id = await _load_course_detail_payload(
+            course, reviews, tracking_by_course_id = await _load_course_detail_payload(
                 controller=controller,
                 course_id=cid,
                 username=username,
@@ -348,5 +369,4 @@ async def render_explore_course_detail_page(*, store: SessionStore, api: ApiClie
                 current_status=current_status,
                 source_url=source_url,
                 can_edit=can_edit,
-                recommendations=recommendations,
             )

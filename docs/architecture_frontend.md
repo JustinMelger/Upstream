@@ -199,7 +199,7 @@ Notes:
 
 The UI supports a small set of runtime feature flags (read from environment variables):
 
-- `FEATURE_AI_CURATOR=0|1`: Enables the AI Curator route (`/ai`) and shows/hides it in navigation.
+- `FEATURE_AI_CURATOR=0|1`: Enables the AI Curator route (`/ai`) and shows/hides it in navigation. Default is `0` for the v1 release.
 - `FEATURE_ARTICLES=0|1`: Enables article data in Explore/Home surfaces.
 
 ## Page Responsibilities

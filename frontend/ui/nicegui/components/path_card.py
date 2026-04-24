@@ -24,7 +24,6 @@ class PathCardDisplay:
     is_new: bool
     is_updated: bool
     rating_badge: str
-    recommendation_badge: str
     can_edit: bool
     is_tracked: bool
     shared_by: str
@@ -45,7 +44,6 @@ class PathCardCallbacks:
     """Action callbacks required for one path card."""
 
     on_review: Callable[[], Any]
-    on_recommend: Callable[[], Any]
     on_copy_link: Callable[[], Any]
     on_edit: Callable[[], Any]
     on_delete: Callable[[], Any]
@@ -64,7 +62,6 @@ def _render_path_menu(*, display: PathCardDisplay, actions: PathCardCallbacks) -
     )
     with path_menu:
         ui.menu_item("Review", actions.on_review)
-        ui.menu_item("Recommend", actions.on_recommend)
         ui.menu_item("Copy link", actions.on_copy_link)
         if display.can_edit:
             ui.menu_item("Edit", actions.on_edit)
@@ -118,6 +115,14 @@ def _render_progress_block(*, display: PathCardDisplay, compact_mode: bool) -> N
         ui.label("Select to track milestones").classes("text-xs lp-card-subtitle lp-path-context-line")
 
 
+def _render_review_line(*, display: PathCardDisplay) -> None:
+    review_text = str(display.rating_badge or "").strip() or "No reviews yet"
+    review_classes = "lp-card-review-line"
+    if not str(display.rating_badge or "").strip():
+        review_classes += " lp-card-review-line--empty"
+    ui.label(review_text).classes(review_classes)
+
+
 def _render_action_row(*, actions: PathCardCallbacks) -> None:
     def _render_actions() -> None:
         if actions.on_primary is not None and str(actions.primary_label or "").strip():
@@ -149,8 +154,6 @@ def render_path_card(
                 ui.label("Updated").classes("lp-chip lp-chip--teal")
             if display.rating_badge and not display.compact_calm:
                 ui.label(f"★ {display.rating_badge}").classes("lp-meta-chip lp-meta-chip--rating")
-            if display.recommendation_badge and not display.compact_calm:
-                ui.label(display.recommendation_badge).classes("lp-meta-chip")
             _render_path_menu(display=display, actions=actions)
 
         with render_card_content_column(classes="lp-path-card-content lp-course-card-stack"):
@@ -168,4 +171,5 @@ def render_path_card(
                 ui.label(display.path_row.get("description") or "").classes(
                     "text-sm text-gray-600 lp-card-body lp-path-description"
                 )
+            _render_review_line(display=display)
             _render_action_row(actions=actions)

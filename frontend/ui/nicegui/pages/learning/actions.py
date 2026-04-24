@@ -105,6 +105,14 @@ class LearningNavigationActions:
 
         return _view_video
 
+    def make_video_review_action(self, video_id: int) -> Any:
+        """Build a callback that opens video details for review flow."""
+
+        async def _review_video() -> None:
+            ui.navigate.to(f"/explore/videos/{int(video_id)}")
+
+        return _review_video
+
     def navigate_tab(self, tab: str) -> None:
         """Navigate to a specific learning tab.
 
@@ -113,18 +121,6 @@ class LearningNavigationActions:
 
         """
         ui.navigate.to(build_learning_tab_link(tab=str(tab)))
-
-
-def dismiss_recommended_course(*, state: LearningPageState, course_id: int, refresh: Callable[[], None]) -> None:
-    """Dismiss a recommended course and refresh content."""
-    state.dismissed_recommended_course_ids.add(int(course_id))
-    refresh()
-
-
-def dismiss_recommended_path(*, state: LearningPageState, path_id: int, refresh: Callable[[], None]) -> None:
-    """Dismiss a recommended path and refresh content."""
-    state.dismissed_recommended_path_ids.add(int(path_id))
-    refresh()
 
 
 def load_more_tracked(*, state: LearningPageState, total_count: int, refresh: Callable[[], None]) -> None:

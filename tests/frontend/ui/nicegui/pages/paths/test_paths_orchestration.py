@@ -8,7 +8,6 @@ from frontend.ui.nicegui.pages.paths.orchestration import (
     perform_create_path,
     perform_delete_path,
     perform_update_path,
-    refresh_path_recommendation_summary,
     run_select_path_flow,
     run_unselect_path_flow,
 )
@@ -19,16 +18,12 @@ from frontend.ui.nicegui.pages.paths.state import PathsPageState
 class _Controller:
     seeded: int = 0
     detail: dict | None = None
-    summary_row: dict | None = None
 
     async def select_path(self, *, path_id: int, state: PathsPageState) -> tuple[int, dict | None]:
         return self.seeded, self.detail
 
     async def unselect_path(self, *, path_id: int) -> bool:
         return True
-
-    async def load_recommendation_summary_for_path(self, *, path_id: int) -> dict | None:
-        return self.summary_row
 
     async def create_path(self, *, payload: dict) -> dict:
         return payload
@@ -161,24 +156,6 @@ async def test_run_unselect_path_flow_removes_detail_and_warns_when_reload_fails
     assert ok is True
     assert 5 not in state.selected_detail_by_path_id
     assert ("Path untracked, but selected list failed to refresh", "warning") in notifications
-    assert refreshed == ["refresh"]
-
-
-@pytest.mark.unit
-@pytest.mark.anyio
-async def test_refresh_path_recommendation_summary_updates_state() -> None:
-    state = PathsPageState()
-    controller = _Controller(summary_row={"path_id": 7, "recommendation_count": 3})
-    refreshed: list[str] = []
-
-    await refresh_path_recommendation_summary(
-        path_id=7,
-        controller=controller,  # type: ignore[arg-type]
-        state=state,
-        refresh_paths_list_ui=lambda: refreshed.append("refresh"),
-    )
-
-    assert state.path_recommendation_summary_by_id[7]["recommendation_count"] == 3
     assert refreshed == ["refresh"]
 
 

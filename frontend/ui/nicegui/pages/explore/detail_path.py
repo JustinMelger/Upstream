@@ -13,7 +13,7 @@ from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
-from frontend.ui.nicegui.core.path_items import count_course_items, encode_path_item_ref, learning_item_option_label
+from frontend.ui.nicegui.core.path_items import encode_path_item_ref, learning_item_option_label
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.pages.courses.ui_glue import format_short_date
 from frontend.ui.nicegui.pages.explore.detail_common import (
@@ -23,6 +23,7 @@ from frontend.ui.nicegui.pages.explore.detail_common import (
 )
 from frontend.ui.nicegui.pages.paths.controller import PathsPageController
 from frontend.ui.nicegui.pages.paths.dialogs import open_edit_path_dialog
+from frontend.ui.nicegui.services.paths_service import select_path_and_seed_tracking
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,11 +119,11 @@ def _stars(*, avg: float) -> str:
 def _render_path_sequence_card(
     *,
     items: list[dict[str, Any]],
-    courses: list[dict[str, Any]],
     tracking_by_course_id: dict[int, dict[str, Any]],
 ) -> None:
     with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-path-sequence-card"):
         ui.label("Path Sequence").classes("text-base font-semibold")
+        ui.label("Follow the steps to complete the path.").classes("lp-explore-detail-muted")
         if not items:
             ui.label("No learning items in this path yet.").classes("lp-explore-detail-muted")
             return
@@ -206,6 +207,8 @@ def _render_path_main_panel(
     completed, total, progress = _path_progress(courses=panel.courses, tracking_by_course_id=panel.tracking_by_course_id)
     duration_range = _path_duration_range(courses=panel.courses)
     avg_rating, review_count = _avg_rating(reviews=panel.path_reviews)
+    panel_avg_rating = float(avg_rating)
+    panel_review_count = int(review_count)
 
     with ui.column().classes("lp-explore-detail-main"):
         with ui.element("header").classes("lp-explore-detail-hero"):
@@ -237,19 +240,27 @@ def _render_path_main_panel(
                     on_click=lambda: ui.navigate.to(f"/explore/paths/{panel.pid}"),
                 ).props("dense")
 
-        ui.label("Path Sequence").classes("text-lg font-semibold mt-2")
-        ui.label("Follow the steps to complete the path.").classes("lp-explore-detail-muted")
-        _render_path_sequence_card(items=panel.items, courses=panel.courses, tracking_by_course_id=panel.tracking_by_course_id)
+        _render_path_sequence_card(items=panel.items, tracking_by_course_id=panel.tracking_by_course_id)
 
-        ui.label("Reviews").classes("text-lg font-semibold mt-2")
-        with ui.row().classes("items-center gap-2"):
-            if review_count > 0:
-                ui.label(_stars(avg=avg_rating)).classes("lp-explore-rating-stars")
-                ui.label(f"{avg_rating:.1f}").classes("lp-explore-rating-score")
-                ui.label(f"{review_count} reviews").classes("lp-explore-detail-muted")
-            else:
-                ui.label("No reviews yet").classes("lp-explore-detail-muted")
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
+            @ui.refreshable
+            def _review_summary() -> None:
+                with ui.row().classes("w-full items-center gap-2 flex-wrap"):
+                    if panel_review_count > 0:
+                        ui.label(_stars(avg=panel_avg_rating)).classes("lp-explore-rating-stars")
+                        ui.label(f"{panel_avg_rating:.1f}").classes("lp-explore-rating-score")
+                        ui.label(f"{panel_review_count} review{'s' if panel_review_count != 1 else ''}").classes(
+                            "lp-explore-detail-muted"
+                        )
+                    else:
+                        ui.label("No reviews yet").classes("lp-explore-detail-muted")
+
+            def _handle_reviews_changed(updated_reviews: list[dict[str, Any]]) -> None:
+                nonlocal panel_avg_rating, panel_review_count
+                panel_avg_rating, panel_review_count = _avg_rating(reviews=updated_reviews)
+                _review_summary.refresh()
+
+            _review_summary()
             render_reviews_panel(
                 username=panel.username,
                 is_admin=panel.is_admin,
@@ -258,7 +269,7 @@ def _render_path_main_panel(
                     path_id=panel.pid, rating=int(rating), text=str(text or "")
                 ),
                 on_delete=lambda review_id: panel.controller.delete_path_review(path_id=panel.pid, review_id=int(review_id)),
-                hooks=ReviewPanelHooks(format_date=format_short_date),
+                hooks=ReviewPanelHooks(format_date=format_short_date, on_changed=_handle_reviews_changed),
             )
 
 
@@ -268,10 +279,10 @@ def _render_path_info_panel(
     api: ApiClient,
     pid: int,
     detail: dict[str, Any],
-    courses: list[dict[str, Any]],
     items: list[dict[str, Any]],
     can_edit: bool,
     is_selected: bool,
+    tracking_by_course_id: dict[int, dict[str, Any]],
 ) -> None:
     with ui.column().classes("lp-explore-detail-side lp-explore-info-card"):
         ui.label("Path Actions").classes("text-base font-semibold")
@@ -279,10 +290,15 @@ def _render_path_info_panel(
         @guard_ui_action(title="Toggle path tracking failed")
         async def _toggle_path_tracking() -> None:
             if is_selected:
-                await api.delete(f"/paths/{pid}/select")
+                await api.post(f"/paths/{pid}/unselect", {})
                 safe_notify("Path untracked", type="positive")
             else:
-                await api.post(f"/paths/{pid}/select", {})
+                await select_path_and_seed_tracking(
+                    api=api,
+                    path_id=int(pid),
+                    tracking_by_course_id=tracking_by_course_id,
+                    cached_detail=detail,
+                )
                 safe_notify("Path tracked", type="positive")
             ui.navigate.to(f"/explore/paths/{pid}")
 
@@ -369,7 +385,7 @@ async def render_explore_path_detail_page(*, store: SessionStore, api: ApiClient
         with ui.row().classes("w-full items-center"):
             ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600")
         ui.element("div").classes("h-2")
-        render_breadcrumb(label="Learning Path")
+        render_breadcrumb(label="Learning Path", back_url="/explore?tab=paths")
         if pid <= 0:
             ui.label("Invalid path id").classes("text-sm")
             return
@@ -418,8 +434,8 @@ async def render_explore_path_detail_page(*, store: SessionStore, api: ApiClient
                 api=api,
                 pid=pid,
                 detail=detail,
-                courses=courses,
                 items=items or courses,
                 can_edit=can_edit,
                 is_selected=is_selected,
+                tracking_by_course_id=tracking_by_course_id,
             )

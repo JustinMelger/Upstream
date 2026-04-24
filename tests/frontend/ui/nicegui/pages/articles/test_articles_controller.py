@@ -32,3 +32,18 @@ async def test_articles_controller_load_list_bundle(monkeypatch: pytest.MonkeyPa
     assert [int(a.get("id") or 0) for a in bundle.articles] == [1, 2]
     assert int((bundle.review_summary_by_article_id.get(1) or {}).get("review_count") or 0) == 2
     assert int((bundle.review_summary_by_article_id.get(2) or {}).get("review_count") or 0) == 1
+
+
+@pytest.mark.unit
+@pytest.mark.anyio
+async def test_articles_controller_load_article() -> None:
+    class _Api:
+        async def get(self, path: str, params: dict | None = None):  # noqa: ANN001
+            assert params is None
+            assert path == "/articles/7"
+            return {"id": 7, "title": "Article 7"}
+
+    c = ArticlesPageController(api=_Api())  # type: ignore[arg-type]
+    article = await c.load_article(article_id=7)
+
+    assert int(article["id"]) == 7

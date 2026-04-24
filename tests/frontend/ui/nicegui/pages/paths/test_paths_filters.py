@@ -8,12 +8,12 @@ def test_normalize_paths_filter_values_normalizes_search_and_fields() -> None:
         scope_value="",
         search_value="  API Fundamentals ",
         status_value="tracked",
-        sort_value="newest",
+        sort_value="name_az",
     )
     assert values.scope == "all"
     assert values.search == "api fundamentals"
     assert values.status == "tracked"
-    assert values.sort == "newest"
+    assert values.sort == "name_az"
 
 
 def test_build_paths_list_query_params_only_includes_non_empty_search() -> None:

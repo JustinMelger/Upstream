@@ -161,6 +161,26 @@ async def test_create_path_with_mixed_learning_items_returns_items_only(app_clie
 
 
 @pytest.mark.integration
+async def test_create_path_rejects_duplicate_learning_item_refs(app_client):
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Duplicate Ref Course")
+
+    create = await app_client.post(
+        "/paths",
+        json={
+            "name": "Duplicate Ref Path",
+            "items": [
+                {"type": "course", "id": course_id, "position": 0},
+                {"type": "course", "id": course_id, "position": 1},
+            ],
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert create.status_code == 400
+    assert create.json().get("message") == "duplicate_item_refs"
+
+
+@pytest.mark.integration
 async def test_select_path_is_idempotent_and_keeps_interested_status(app_client):
     """Selecting the same path multiple times keeps one selected row with interested status."""
     token = await _login_admin(app_client)
@@ -275,6 +295,33 @@ async def test_path_update_requires_owner_or_admin(app_client):
 
 
 @pytest.mark.integration
+async def test_update_path_rejects_duplicate_learning_item_refs(app_client):
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Duplicate Update Course")
+    created = await app_client.post(
+        "/paths",
+        json={"name": "Duplicate Update Path", "items": [{"type": "course", "id": course_id, "position": 0}]},
+        headers={"X-Session-Token": token},
+    )
+    assert created.status_code == 200
+    path_id = int(created.json()["id"])
+
+    update = await app_client.put(
+        f"/paths/{path_id}",
+        json={
+            "name": "Duplicate Update Path",
+            "items": [
+                {"type": "course", "id": course_id, "position": 0},
+                {"type": "course", "id": course_id, "position": 1},
+            ],
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert update.status_code == 400
+    assert update.json().get("message") == "duplicate_item_refs"
+
+
+@pytest.mark.integration
 async def test_get_path_not_found_returns_404(app_client):
     """Missing paths return 404."""
     token = await _login_admin(app_client)
@@ -348,75 +395,6 @@ async def test_path_review_lifecycle_and_moderation(app_client):
 
     deleted = await app_client.delete(
         f"/paths/{path_id}/reviews/{review_id}",
-        headers={"X-Session-Token": admin_token},
-    )
-    assert deleted.status_code == 200
-    assert deleted.json()["deleted"] is True
-
-
-@pytest.mark.integration
-async def test_path_recommendation_lifecycle_and_moderation(app_client):
-    """Users can recommend paths; owners/admin can moderate deletes."""
-    admin_token = await _login_admin(app_client)
-    await _create_user(app_client, admin_token, "alice", role="user")
-    await _create_user(app_client, admin_token, "bob", role="user")
-
-    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
-    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
-    alice_token = alice_login.json()["token"]
-    bob_token = bob_login.json()["token"]
-
-    course_id = await _create_course(app_client, admin_token, "Path Recommendation Course")
-    create_path = await app_client.post(
-        "/paths",
-        json={"name": "Recommended Path", "description": "desc", "items": [{"type": "course", "id": course_id, "position": 0}]},
-        headers={"X-Session-Token": alice_token},
-    )
-    assert create_path.status_code == 200
-    path_id = int(create_path.json()["id"])
-
-    rec1 = await app_client.post(
-        f"/paths/{path_id}/recommendations",
-        json={"note": "Great learning sequence"},
-        headers={"X-Session-Token": alice_token},
-    )
-    assert rec1.status_code == 200
-    rec_id = int(rec1.json()["id"])
-    assert rec1.json()["created_by"] == "alice"
-
-    # Upsert same user recommendation.
-    rec2 = await app_client.post(
-        f"/paths/{path_id}/recommendations",
-        json={"note": "Updated recommendation"},
-        headers={"X-Session-Token": alice_token},
-    )
-    assert rec2.status_code == 200
-    assert int(rec2.json()["id"]) == rec_id
-    assert rec2.json()["note"] == "Updated recommendation"
-
-    listing = await app_client.get(f"/paths/{path_id}/recommendations", headers={"X-Session-Token": bob_token})
-    assert listing.status_code == 200
-    rows = listing.json()
-    assert rows and int(rows[0]["id"]) == rec_id
-
-    summary = await app_client.get(
-        "/paths/recommendations/summary",
-        params={"path_ids": [path_id]},
-        headers={"X-Session-Token": bob_token},
-    )
-    assert summary.status_code == 200
-    srows = summary.json()
-    assert srows and int(srows[0]["path_id"]) == path_id
-    assert int(srows[0]["recommendation_count"]) == 1
-
-    forbidden = await app_client.delete(
-        f"/paths/{path_id}/recommendations/{rec_id}",
-        headers={"X-Session-Token": bob_token},
-    )
-    assert forbidden.status_code == 403
-
-    deleted = await app_client.delete(
-        f"/paths/{path_id}/recommendations/{rec_id}",
         headers={"X-Session-Token": admin_token},
     )
     assert deleted.status_code == 200

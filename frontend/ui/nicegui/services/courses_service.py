@@ -29,7 +29,6 @@ class CourseDetailBundle:
 
     course: dict[str, Any]
     reviews: list[dict[str, Any]]
-    recommendations: list[dict[str, Any]]
 
 
 _COURSE_DETAIL_CACHE: dict[tuple[str, int], tuple[float, CourseDetailBundle]] = {}
@@ -69,15 +68,13 @@ async def load_course_detail_bundle(
         if float(expiry) > now:
             return payload
 
-    course, reviews_payload, recommendations_payload = await asyncio.gather(
+    course, reviews_payload = await asyncio.gather(
         api.get(f"/courses/{cid}"),
         api.get(f"/courses/{cid}/reviews"),
-        api.get(f"/courses/{cid}/recommendations"),
     )
     bundle = CourseDetailBundle(
         course=dict(course or {}),
         reviews=list(reviews_payload or []),
-        recommendations=list(recommendations_payload or []),
     )
     _COURSE_DETAIL_CACHE[cache_key] = (now + float(ttl_seconds), bundle)
     return bundle
@@ -120,22 +117,3 @@ async def load_review_summaries(*, api: ApiClient, course_ids: list[int]) -> dic
         out[cid] = row
     return out
 
-
-async def load_recommendation_summaries(*, api: ApiClient, course_ids: list[int]) -> dict[int, dict[str, Any]]:
-    """Load recommendation summary items for the given course ids and index them by course id."""
-    if not course_ids:
-        return {}
-    result = await api.get(
-        "/courses/recommendations/summary",
-        params={"course_ids": [int(i) for i in course_ids if int(i) > 0]},
-    )
-    out: dict[int, dict[str, Any]] = {}
-    for row in list(result or []):
-        try:
-            cid = int(row.get("course_id") or 0)
-        except (TypeError, ValueError):
-            continue
-        if cid <= 0:
-            continue
-        out[cid] = row
-    return out

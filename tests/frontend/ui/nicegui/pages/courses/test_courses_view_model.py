@@ -11,8 +11,6 @@ from frontend.ui.nicegui.pages.courses import view_model
 def test_course_badge_formatters() -> None:
     assert view_model.format_rating_badge({"avg_rating": 4.5, "review_count": 2}) == "★ 4.5 (2)"
     assert view_model.format_rating_badge({"avg_rating": 4.5, "review_count": 0}) == ""
-    assert view_model.format_recommendation_badge({"recommendation_count": 3}) == "↗ 3 rec"
-    assert view_model.format_recommendation_badge({"recommendation_count": 0}) == ""
 
 
 @pytest.mark.unit
@@ -30,14 +28,12 @@ def test_map_course_card_view_for_tracked_updated_course() -> None:
         course_row=row,
         tracked_row=tracked,
         review_summary_row={"avg_rating": 4.7, "review_count": 3},
-        recommendation_summary_row={"recommendation_count": 2},
     )
     assert vm.is_updated is True
     assert vm.is_new is False
     assert vm.card_class_suffix == " lp-course-card--in_progress"
     assert vm.shared_by == "admin"
     assert vm.rating_badge == "★ 4.7 (3)"
-    assert vm.recommendation_badge == "↗ 2 rec"
     assert vm.tracking_label_text == "In Progress"
     assert vm.tracking_chip_cls.startswith("lp-chip")
     assert vm.has_video_preview is True
@@ -60,11 +56,9 @@ def test_map_course_card_view_for_untracked_course() -> None:
         course_row=row,
         tracked_row=None,
         review_summary_row=None,
-        recommendation_summary_row=None,
     )
     assert vm.card_class_suffix == ""
     assert vm.rating_badge == ""
-    assert vm.recommendation_badge == ""
     assert vm.tracking_label_text == "Not tracked"
     assert vm.has_video_preview is False
     assert vm.video_embed_url == ""
@@ -86,7 +80,6 @@ def test_map_course_card_view_uses_favicon_fallback_for_non_youtube_without_prev
         course_row=row,
         tracked_row=None,
         review_summary_row=None,
-        recommendation_summary_row=None,
     )
     assert vm.has_video_preview is False
     assert vm.thumbnail_url == "https://www.google.com/s2/favicons?domain=fastapi.tiangolo.com&sz=256"

@@ -62,7 +62,7 @@ async def login(payload: LoginRequest, auth: AuthService = Depends(get_auth_serv
     if not authenticated_user:
         raise HTTPException(status_code=401, detail="invalid_credentials")
 
-    session = await auth.create_session(username)
+    session = await auth.create_session(str(authenticated_user["username"] or ""))
     return {
         "token": session["token"],
         "expires_at": session["expires_at"],

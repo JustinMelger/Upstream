@@ -139,20 +139,6 @@ async def test_build_track_toggle_does_not_run_after_hook_when_unselect_returns_
 async def test_build_path_card_actions_wires_callbacks(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
 
-    async def _fake_open_recommend_dialog(**kwargs):
-        calls.append(f"recommend:{int(kwargs['path_id'])}:{kwargs['username']}")
-
-    monkeypatch.setattr(paths_actions, "open_recommend_dialog", _fake_open_recommend_dialog)
-
-    async def _get_user_note(path_id: int, username: str) -> str:
-        return ""
-
-    async def _save_recommendation(path_id: int, note: str):
-        return {"ok": True}
-
-    async def _on_saved() -> None:
-        calls.append("saved")
-
     async def _get_path_detail(path_id: int) -> dict:
         calls.append(f"detail:{path_id}")
         return {"id": path_id}
@@ -181,10 +167,6 @@ async def test_build_path_card_actions_wires_callbacks(monkeypatch: pytest.Monke
         path_id=5,
         is_tracked=False,
         deps=PathCardActionDeps(
-            username="alice",
-            get_user_note=_get_user_note,
-            save_recommendation=_save_recommendation,
-            on_saved=_on_saved,
             get_path_detail=_get_path_detail,
             on_open_edit=_on_open_edit,
             on_delete=_on_delete,
@@ -196,14 +178,12 @@ async def test_build_path_card_actions_wires_callbacks(monkeypatch: pytest.Monke
     )
 
     assert cb.track_toggle_label == "Select"
-    await cb.on_recommend()
     await cb.on_review()
     await cb.on_edit()
     await cb.on_delete()
     await cb.on_view()
     await cb.on_track_toggle()
 
-    assert "recommend:5:alice" in calls
     assert "open:5:reviews" in calls
     assert "detail:5" in calls
     assert "edit:5:5" in calls

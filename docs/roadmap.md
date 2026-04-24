@@ -8,9 +8,9 @@
   - track courses and path progress
   - see content other people shared
 - Current subtype capability model:
-  - `course`: tracking + reviews + recommendations
+  - `course`: tracking + reviews
   - `article`: reviews
-  - `video`: reviews without tracking/recommendations
+  - `video`: reviews
 
 ## Release Focus
 - Finish broader regression validation across backend, frontend, and smoke flows.
@@ -19,6 +19,7 @@
 
 ## Deferred Focus
 - Auth enhancements (`Phase 3b`).
+- AI Curator expansion beyond the current draft-only feature flag.
 - Visual-system modernization and motion polish (`Phase 11A` open items).
 - Media pipeline durability and thumbnail quality work (`Phase 11A.3` open items).
 - Activity feed v2 (`Phase 11B`).
@@ -448,14 +449,14 @@ Implementation map (routes + files, ordered):
   - Validation/testing harness: add/update integration tests under `tests/frontend/ui/nicegui/pages/home/` and `tests/frontend/ui/nicegui/pages/explore/` for one-clear-next-action empty states and intro dismiss behavior.
 - [ ] Sprint-level execution plan: track active sprint tasks in `docs/sprint.md`.
 
-### Phase 11F — Social Learning Hub v1 (Teams + Scoped Sharing)
+### Phase 11F — Social Learning Hub v1 (Teams + Team Relevance Layer)
 
-Goal: ship a clear collaboration model where discovery stays broad, but social context is team-relevant and privacy-explicit.
+Goal: ship a clear collaboration model where discovery stays broad and global, while social context is team-relevant and follow-up-oriented.
 
 Product model (v1):
 - [ ] Discovery model: keep `Explore` global for all authenticated users.
-- [ ] Sharing audience model: each share supports audience scope (`public`, `my_teams`, `selected_teams`).
-- [ ] Visibility contract: every shared item shows an audience badge (who can see this).
+- [ ] Team relevance model: shared items can carry team context without changing global visibility.
+- [ ] Visibility contract: team badges/filters indicate relevance, not access control.
 - [ ] Home contract: prioritize “what needs my attention” and team-social actions above passive content.
 - [ ] Teams contract: team page is the collaboration workspace (members + activity + share context), not only an activity feed.
 
@@ -474,21 +475,21 @@ Backend/API execution (v1+):
 - [x] Team domain baseline:
   - [x] `teams`, `team_members` schema + migration.
   - [x] Core endpoints: `POST /teams`, `GET /teams/mine`, `GET /teams/{id}`, member add/remove, team activity.
-- [ ] Share audience scoping:
-  - [ ] Add team targeting to share persistence (`team_id` or share-target join table).
-  - [ ] Add share visibility filtering by audience scope.
+- [ ] Team relevance metadata:
+  - [ ] Add team targeting metadata to share persistence (`team_id` or share-target join table) for relevance/filtering.
+  - [ ] Keep Explore globally visible unless a later explicit private-audience feature is approved.
   - [ ] Keep backwards compatibility for legacy global shares.
 - [ ] Team activity correctness:
-  - [ ] Drive activity primarily from team-scoped share/review/recommendation events.
-  - [ ] Ensure non-members cannot infer private team activity/content.
+  - [ ] Drive activity primarily from team-relevant share/review events.
+  - [ ] Ensure non-members cannot infer member-only team workspace activity/content.
 
 Frontend/UI execution (v1+):
 - [x] Teams page foundation:
   - [x] My Teams list, create team dialog, team detail, member add/remove, team activity view.
-- [ ] Explore share dialog:
-  - [ ] Add audience selector (`Public`, `My teams`, `Selected teams`).
-  - [ ] Add team multi-select when `Selected teams` is chosen.
-  - [ ] Show privacy explanation copy before submit.
+- [ ] Explore team lens:
+  - [ ] Add team badges and/or "relevant in this team" metadata where useful.
+  - [ ] Add optional team filter in Explore without implying access control.
+  - [ ] Show team-context explanation copy where needed.
 - [ ] Home social alignment:
   - [ ] If user has no teams, collapse social panels into low-noise activation placeholders.
   - [ ] If user has teams, show scoped team-social actions (reviews/recommendations/shares needing attention).

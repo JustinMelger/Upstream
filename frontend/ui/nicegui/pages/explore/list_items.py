@@ -16,7 +16,7 @@ from frontend.ui.nicegui.components.card_frame import (
 )
 from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
-from frontend.ui.nicegui.core.learning_items import learning_item_primary_action_label, learning_item_type_label
+from frontend.ui.nicegui.core.learning_items import learning_item_type_label
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.pages.articles.sections import render_article_card
@@ -46,11 +46,11 @@ def render_course_item(
         tracked = state.tracking_by_course_id.get(course_id)
         url = str(course.get("url") or "").strip()
         can_edit = bool(is_admin or (str(course.get("created_by") or "") == username))
+        actions = course_actions_builder(course, course_id, url)
         card_vm = map_course_card_view(
             course_row=course,
             tracked_row=tracked if isinstance(tracked, dict) else None,
             review_summary_row=state.course_review_summary_by_course_id.get(course_id),
-            recommendation_summary_row=state.course_recommendation_summary_by_course_id.get(course_id),
         )
         render_course_card(
             ctx=CourseCardContext(
@@ -59,7 +59,7 @@ def render_course_item(
                 card_vm=card_vm,
                 can_edit=can_edit,
                 has_url=bool(url),
-                actions=course_actions_builder(course, course_id, url),
+                actions=actions,
                 is_tracked_course=lambda cid: int(cid) in state.tracking_by_course_id,
                 resolve_status_value=resolve_tracking_status_value,
                 on_set_status=on_set_tracking,
@@ -73,6 +73,8 @@ def render_course_item(
                 show_compact_progress=True,
                 show_context_meta=False,
                 item_type_label=learning_item_type_label(item_type),
+                primary_action_label_override="Open details",
+                primary_action_override=actions.on_view,
             )
         )
 
@@ -98,7 +100,6 @@ def render_path_item(
             detail=state.selected_detail_by_path_id.get(path_id),
             tracking_by_course_id=dict(state.tracking_by_course_id or {}),
             review_summary_row=state.path_review_summary_by_id.get(path_id),
-            recommendation_summary_row=state.path_recommendation_summary_by_id.get(path_id),
         )
         detail = state.selected_detail_by_path_id.get(path_id) or {}
         raw_course_ids = path.get("course_ids")
@@ -120,15 +121,6 @@ def render_path_item(
                 ]
             )
 
-        if not is_tracked:
-            primary_label = "Track path"
-        elif int(card_vm.completed or 0) <= 0:
-            primary_label = "Start path"
-        elif float(card_vm.progress or 0.0) >= 1.0:
-            primary_label = "Open path"
-        else:
-            primary_label = "Continue path"
-
         async def _on_track_toggle() -> None:
             await on_toggle_path_selection(path_id)
 
@@ -136,9 +128,6 @@ def render_path_item(
             open_path(path_id)
 
         def _open_path_reviews() -> None:
-            ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
-
-        def _open_path_recommend() -> None:
             ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
 
         def _copy_path_link() -> None:
@@ -151,9 +140,6 @@ def render_path_item(
             ui.navigate.to(f"/explore/paths/{path_id}")
 
         async def _on_primary_action() -> None:
-            if not is_tracked:
-                await _on_track_toggle()
-                return
             await _open_path()
 
         render_path_card(
@@ -163,7 +149,6 @@ def render_path_item(
                 is_new=False,
                 is_updated=False,
                 rating_badge="",
-                recommendation_badge="",
                 can_edit=can_edit,
                 is_tracked=is_tracked,
                 shared_by="",
@@ -180,7 +165,6 @@ def render_path_item(
             ),
             actions=PathCardCallbacks(
                 on_review=_open_path_reviews,
-                on_recommend=_open_path_recommend,
                 on_copy_link=_copy_path_link,
                 on_edit=_open_path_edit,
                 on_delete=_open_path_delete,
@@ -188,7 +172,7 @@ def render_path_item(
                 on_track_toggle=_on_track_toggle,
                 track_toggle_label="",
                 on_primary=_on_primary_action,
-                primary_label=primary_label,
+                primary_label="Open details",
             ),
         )
 
@@ -274,16 +258,17 @@ def render_video_item(
                             ui.label("").classes("lp-article-tag-placeholder")
 
                     if review_summary:
-                        ui.label(review_summary).classes("text-xs lp-card-subtitle lp-article-date")
+                        ui.label(review_summary).classes("lp-card-review-line")
+                    else:
+                        ui.label("No reviews yet").classes("lp-card-review-line lp-card-review-line--empty")
 
                     if description:
                         ui.label(description).classes("text-sm text-gray-600 lp-card-body lp-course-summary")
 
                     def _render_actions() -> None:
-                        ui.button(
-                            learning_item_primary_action_label("video"),
-                            on_click=lambda: ui.navigate.to(f"/explore/videos/{video_id}"),
-                        ).props("dense")
+                        ui.button("Open details", on_click=lambda: ui.navigate.to(f"/explore/videos/{video_id}")).props(
+                            "dense"
+                        )
 
                     render_card_actions_row(render_actions=_render_actions)
 

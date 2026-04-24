@@ -72,10 +72,12 @@ async def create_video(
 async def list_video_reviews(
     video_id: int,
     current_user: str = Depends(require_session),
+    videos: VideosService = Depends(get_videos_service),
     reviews: VideoReviewsService = Depends(get_video_reviews_service),
 ) -> list[dict[str, Any]]:
     """List reviews for a video."""
     _ = current_user
+    require_row_exists(await videos.get_video_by_id(video_id=int(video_id)))
     return await reviews.list_reviews(video_id=video_id)
 
 
@@ -84,9 +86,11 @@ async def create_video_review(
     video_id: int,
     payload: VideoReviewCreateRequest,
     current_user: str = Depends(require_session),
+    videos: VideosService = Depends(get_videos_service),
     reviews: VideoReviewsService = Depends(get_video_reviews_service),
 ) -> dict[str, Any]:
     """Create/update current user's review for a video."""
+    require_row_exists(await videos.get_video_by_id(video_id=int(video_id)))
     return await reviews.create_review(video_id=video_id, payload=payload.model_dump(), created_by=current_user)
 
 

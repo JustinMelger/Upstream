@@ -7,10 +7,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.core.learning_items import (
-    infer_learning_item_type,
-    interleave_learning_item_entries,
-)
+from frontend.ui.nicegui.core.learning_items import interleave_learning_item_entries
 from frontend.ui.nicegui.pages.articles.reducers import derive_shown_articles
 from frontend.ui.nicegui.pages.courses.reducers import filter_courses, sort_courses
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
@@ -66,11 +63,7 @@ def _build_learning_item_entries(
     for row in list(courses or []):
         entries.append(
             ExploreLearningItemEntry(
-                learning_item_type=infer_learning_item_type(
-                    url=str(row.get("url") or ""),
-                    provider=str(row.get("provider") or ""),
-                    fallback="course",
-                ),
+                learning_item_type="course",
                 id=int(row.get("id") or 0),
                 row=row,
             )
@@ -102,6 +95,7 @@ def _filter_and_sort_videos(
     category: str,
     sort: str,
 ) -> list[dict[str, Any]]:
+    """Filter videos and preserve recency unless an explicit sort is chosen."""
     normalized_needle = str(needle or "").strip().lower()
     normalized_provider = str(provider or "").strip().lower()
     normalized_category = str(category or "").strip().lower()
@@ -129,7 +123,7 @@ def _filter_and_sort_videos(
         return sorted(rows, key=lambda row: str(row.get("title") or "").lower())
     if sort_value == "newest":
         return sorted(rows, key=lambda row: str(row.get("created_at") or ""), reverse=True)
-    return sorted(rows, key=lambda row: str(row.get("title") or "").lower())
+    return rows
 
 
 def build_explore_visible_results(*, state: ExplorePageState, filters: ExploreListFilters) -> ExploreVisibleResults:

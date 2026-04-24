@@ -17,12 +17,6 @@ class _FakeApi:
 
     async def get(self, path: str, params: dict | None = None):
         self.calls.append(("GET", path, params))
-        if path == "/paths/recommendations/summary":
-            return [
-                {"path_id": 1, "recommendation_count": 2},
-                {"path_id": "2", "recommendation_count": 1},
-                {"path_id": "bad", "recommendation_count": 9},
-            ]
         if path == "/paths/7":
             return {
                 "id": 7,
@@ -40,35 +34,18 @@ class _FakeApi:
 
 @pytest.mark.unit
 @pytest.mark.anyio
-async def test_load_path_recommendation_summaries_filters_invalid_rows_and_ids() -> None:
-    api = _FakeApi()
-    out = await paths_service.load_path_recommendation_summaries(api=api, path_ids=[1, 2, 0, -1])
-    assert set(out.keys()) == {1, 2}
-    assert out[1]["recommendation_count"] == 2
-    assert ("GET", "/paths/recommendations/summary", {"path_ids": [1, 2]}) in api.calls
-
-
-@pytest.mark.unit
-@pytest.mark.anyio
-async def test_load_path_recommendation_summaries_short_circuit_on_empty_ids() -> None:
-    api = _FakeApi()
-    out = await paths_service.load_path_recommendation_summaries(api=api, path_ids=[])
-    assert out == {}
-    assert api.calls == []
-
-
-@pytest.mark.unit
-@pytest.mark.anyio
 async def test_select_path_and_seed_tracking_counts_only_successful_seed_posts() -> None:
     api = _FakeApi()
+    tracking_by_course_id: dict[int, dict[str, object]] = {}
     seeded, detail = await paths_service.select_path_and_seed_tracking(
         api=api,
         path_id=7,
-        tracking_by_course_id={},
+        tracking_by_course_id=tracking_by_course_id,
     )
     # 101 succeeds, 102 raises and is ignored by gather(return_exceptions=True)
     assert seeded == 1
     assert isinstance(detail, dict) and int(detail.get("id") or 0) == 7
+    assert tracking_by_course_id == {101: {"course_id": 101, "status": "interested"}}
     assert ("POST", "/paths/7/select", {}) in api.calls
     assert ("GET", "/paths/7", None) in api.calls
 

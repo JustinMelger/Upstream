@@ -28,14 +28,14 @@ def parse_view_mode() -> str:
     return "reviews" if view == "reviews" else "full"
 
 
-def render_breadcrumb(*, label: str) -> None:
+def render_breadcrumb(*, label: str, back_url: str = "/explore") -> None:
     """Render standard Explore detail breadcrumb with close action."""
     with ui.row().classes("w-full items-center justify-between gap-2 text-xs lp-explore-detail-breadcrumb"):
         with ui.row().classes("items-center gap-2"):
-            ui.link("Explore", "/explore")
+            ui.link("Explore", str(back_url or "/explore"))
             ui.label("›")
             ui.label(str(label or "Details"))
-        ui.button("Close", icon="close", on_click=lambda: ui.navigate.to("/explore")).props("outline dense")
+        ui.button("Close", icon="close", on_click=lambda: ui.navigate.to(str(back_url or "/explore"))).props("outline dense")
 
 
 def render_detail_scope(*, store: SessionStore, api: ApiClient) -> Any:

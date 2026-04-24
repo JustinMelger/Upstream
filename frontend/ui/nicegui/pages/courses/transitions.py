@@ -53,7 +53,6 @@ def clear_courses_state_on_load_error(*, state: CoursesPageState) -> None:
     state.courses = []
     state.tracking_by_course_id = {}
     state.review_summary_by_course_id = {}
-    state.recommendation_summary_by_course_id = {}
 
 
 def apply_optimistic_tracking_set(*, state: CoursesPageState, course_id: int, status: str) -> TrackingSnapshot:

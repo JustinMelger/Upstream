@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.api.deps import (
     get_auth_service,
-    get_path_recommendations_service,
     get_path_reviews_service,
     get_paths_service,
     get_user_paths_service,
@@ -14,12 +13,6 @@ from backend.api.policies import (
     require_existing_owner_or_admin,
     require_row_exists,
     require_row_parent_match,
-)
-from backend.api.schemas.path_recommendations import (
-    DeletePathRecommendationResponse,
-    PathRecommendationCreateRequest,
-    PathRecommendationPayload,
-    PathRecommendationSummaryItem,
 )
 from backend.api.schemas.path_reviews import (
     DeletePathReviewResponse,
@@ -40,7 +33,6 @@ from backend.api.schemas.paths import (
     UnselectPathResponse,
 )
 from backend.services.auth_service import AuthService
-from backend.services.path_recommendations_service import PathRecommendationsService
 from backend.services.path_reviews_service import PathReviewsService
 from backend.services.paths_service import PathsService
 from backend.services.user_paths_service import UserPathsService
@@ -51,13 +43,13 @@ router = APIRouter(prefix="/paths", tags=["paths"])
 
 @router.get("", response_model=List[PathListItem])
 async def list_paths(
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
 ) -> list[dict[str, Any]]:
     """List all learning paths.
 
     Args:
-        current_user: Authenticated username.
+        _current_user: Authenticated username.
 
     Returns:
         list[dict]: Path list.
@@ -68,21 +60,11 @@ async def list_paths(
 @router.get("/reviews/summary", response_model=list[PathReviewSummaryItem])
 async def path_review_summaries(
     path_ids: List[int] = Query(default=[], description="Path IDs to summarize"),
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     reviews: PathReviewsService = Depends(get_path_reviews_service),
 ) -> list[dict[str, Any]]:
     """Return average rating + count for each path id."""
     return await reviews.summaries(path_ids=list(path_ids or []))
-
-
-@router.get("/recommendations/summary", response_model=list[PathRecommendationSummaryItem])
-async def path_recommendation_summaries(
-    path_ids: List[int] = Query(default=[], description="Path IDs to summarize"),
-    current_user: str = Depends(require_session),
-    recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
-) -> list[dict[str, Any]]:
-    """Return recommendation counts for each path id."""
-    return await recommendations.summaries(path_ids=list(path_ids or []))
 
 
 @router.post("", response_model=PathDetailResponse)
@@ -188,14 +170,14 @@ async def list_selected_paths(
 @router.get("/{path_id}", response_model=PathDetailResponse)
 async def get_path(
     path_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
 ) -> dict[str, Any]:
     """Get a learning path by ID.
 
     Args:
         path_id: Path ID.
-        current_user: Authenticated username.
+        _current_user: Authenticated username.
 
     Returns:
         dict: Path payload.
@@ -206,7 +188,7 @@ async def get_path(
 @router.get("/{path_id}/reviews", response_model=list[PathReviewPayload])
 async def list_path_reviews(
     path_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     paths: PathsService = Depends(get_paths_service),
     reviews: PathReviewsService = Depends(get_path_reviews_service),
 ) -> list[dict[str, Any]]:
@@ -244,47 +226,6 @@ async def delete_path_review(
     return {"deleted": bool(deleted)}
 
 
-@router.get("/{path_id}/recommendations", response_model=list[PathRecommendationPayload])
-async def list_path_recommendations(
-    path_id: int,
-    current_user: str = Depends(require_session),
-    paths: PathsService = Depends(get_paths_service),
-    recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
-) -> list[dict[str, Any]]:
-    """List recommendations for a path."""
-    require_row_exists(await paths.get_path(path_id))
-    return await recommendations.list_recommendations(path_id=path_id)
-
-
-@router.post("/{path_id}/recommendations", response_model=PathRecommendationPayload)
-async def create_path_recommendation(
-    path_id: int,
-    payload: PathRecommendationCreateRequest,
-    current_user: str = Depends(require_session),
-    paths: PathsService = Depends(get_paths_service),
-    recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
-) -> dict[str, Any]:
-    """Create/update current user's recommendation for a path."""
-    require_row_exists(await paths.get_path(path_id))
-    return await recommendations.create_recommendation(path_id=path_id, payload=payload.model_dump(), created_by=current_user)
-
-
-@router.delete("/{path_id}/recommendations/{recommendation_id}", response_model=DeletePathRecommendationResponse)
-async def delete_path_recommendation(
-    path_id: int,
-    recommendation_id: int,
-    current_user: str = Depends(require_session),
-    auth: AuthService = Depends(get_auth_service),
-    recommendations: PathRecommendationsService = Depends(get_path_recommendations_service),
-) -> dict[str, bool]:
-    """Delete a path recommendation (owner/admin only)."""
-    recommendation = require_row_exists(
-        await recommendations.get_recommendation_by_id(recommendation_id=int(recommendation_id))
-    )
-    require_row_parent_match(row=recommendation, parent_field="path_id", parent_id=int(path_id))
-    await require_existing_owner_or_admin(row=recommendation, current_user=current_user, auth=auth)
-    deleted = await recommendations.delete_recommendation(recommendation_id=int(recommendation_id))
-    return {"deleted": bool(deleted)}
 
 
 @router.delete("/{path_id}", response_model=DeletePathResponse)

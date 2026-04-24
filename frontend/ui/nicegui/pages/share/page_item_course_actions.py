@@ -99,12 +99,10 @@ def wire_course_actions(
         if normalize_requested_share_type(item_type) == "video" and not str(payload["provider"] or "").strip():
             payload["provider"] = "YouTube"
         if normalize_requested_share_type(item_type) == "video":
-            created = await controller.create_video(payload=payload)
-            created_raw_id = created.get("id")
-            created_id = created_raw_id if isinstance(created_raw_id, int) else 0
+            await controller.create_video(payload=payload)
             app_module.storage.user.pop(draft_key, None)
             notify("Learning item published", type="positive")
-            ui_module.navigate.to(f"/explore/videos/{created_id}" if created_id > 0 else "/explore")
+            ui_module.navigate.to("/explore?tab=videos")
             return
         await controller.create_course(payload=payload)
         app_module.storage.user.pop(draft_key, None)

@@ -22,9 +22,6 @@ def test_build_course_search_document_includes_course_fields_and_reviews():
     out = build_course_search_document(
         course=course,
         review_texts=[" Great practical guide ", "", "Covers testing well"],
-        recommendation_count=2,
-        recommendation_notes=["Must read before joining API squad"],
-        recommended_by=["alice", "bob"],
     )
 
     assert "FastAPI tutorial" in out
@@ -34,9 +31,6 @@ def test_build_course_search_document_includes_course_fields_and_reviews():
     assert "English" in out
     assert "Great practical guide" in out
     assert "Covers testing well" in out
-    assert "recommended 2 times" in out
-    assert "recommended_by alice bob" in out
-    assert "Must read before joining API squad" in out
 
 
 def test_build_course_search_document_skips_empty_values():

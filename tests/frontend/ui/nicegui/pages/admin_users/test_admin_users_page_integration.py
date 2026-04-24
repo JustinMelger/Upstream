@@ -8,6 +8,7 @@ import pytest
 
 from frontend.ui.nicegui.core import errors as core_errors
 from frontend.ui.nicegui.pages.admin_users import page as admin_users_page
+from frontend.ui.nicegui.pages.admin_users import sections as admin_users_sections
 
 
 class _FakeElement:
@@ -110,6 +111,7 @@ class _FakeUi:
 async def test_admin_users_create_user_flow_calls_create_and_reload(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     monkeypatch.setattr(admin_users_page, "ui", fake_ui)
+    monkeypatch.setattr(admin_users_sections, "ui", fake_ui)
     monkeypatch.setattr(core_errors, "ui", fake_ui)
 
     @contextmanager

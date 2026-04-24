@@ -13,7 +13,7 @@ router = APIRouter(prefix="/url-preview", tags=["url-preview"])
 @router.post("/metadata", response_model=UrlPreviewMetadataResponse)
 async def resolve_url_metadata(
     payload: UrlPreviewMetadataRequest,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     previews: UrlPreviewService = Depends(get_url_preview_service),
 ) -> dict[str, Any]:
     """Resolve URL metadata and autofill suggestions for share dialogs."""

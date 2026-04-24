@@ -18,7 +18,6 @@ class CourseCardActions:
 
     on_view: Callable[[], Awaitable[None]]
     on_review: Callable[[], Awaitable[None]]
-    on_recommend: Callable[[], Awaitable[None]]
     on_copy_link: Callable[[], None]
     on_edit: Callable[[], None]
     on_delete: Callable[[], Awaitable[None]]
@@ -102,7 +101,6 @@ def build_course_card_actions(
     course_url: str,
     course_row: dict,
     on_open_details: Callable[[int, bool], Awaitable[None]],
-    on_open_recommend: Callable[[int], Awaitable[None]],
     on_open_edit: Callable[[dict], None],
     on_confirm_delete: Callable[[int], Awaitable[None]],
 ) -> CourseCardActions:
@@ -113,9 +111,6 @@ def build_course_card_actions(
 
     async def _review() -> None:
         await on_open_details(int(course_id), True)
-
-    async def _recommend() -> None:
-        await on_open_recommend(int(course_id))
 
     def _copy_link() -> None:
         copy_course_link(url=course_url)
@@ -129,7 +124,6 @@ def build_course_card_actions(
     return CourseCardActions(
         on_view=_view,
         on_review=_review,
-        on_recommend=_recommend,
         on_copy_link=_copy_link,
         on_edit=_edit,
         on_delete=_delete,

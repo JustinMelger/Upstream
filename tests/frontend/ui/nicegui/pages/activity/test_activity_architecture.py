@@ -30,19 +30,8 @@ def test_activity_pure_modules_do_not_import_nicegui() -> None:
 
 
 @pytest.mark.unit
-def test_activity_page_imports_activity_domain_modules() -> None:
-    imports = _imports_for(_ACTIVITY_DIR / "page.py")
-    assert "frontend.ui.nicegui.pages.activity.controller" in imports
-    assert "frontend.ui.nicegui.pages.activity.route_init" in imports
-    assert "frontend.ui.nicegui.pages.activity.sections" in imports
-    assert "frontend.ui.nicegui.pages.activity.state" in imports
-    assert "frontend.ui.nicegui.pages.activity.transitions" in imports
-    assert "frontend.ui.nicegui.pages.activity.view_model" in imports
-
-
-@pytest.mark.unit
 def test_activity_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"page.py", "sections.py"}
+    expected_ui_modules = {"sections.py"}
     for path in sorted(_ACTIVITY_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)

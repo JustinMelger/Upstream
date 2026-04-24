@@ -20,7 +20,6 @@ class ExploreCourseDetailsDeps:
 
     state_tracking_by_course_id: dict[int, dict[str, Any]]
     review_summary_by_course_id: dict[int, dict[str, Any]]
-    recommendation_summary_by_course_id: dict[int, dict[str, Any]]
     load_detail_bundle: Callable[[int, str], Awaitable[Any]]
     save_review: Callable[[int, int, str, str], Awaitable[dict[str, Any]]]
     delete_review: Callable[[int, int, str], Awaitable[bool]]
@@ -76,7 +75,6 @@ async def open_explore_course_details_dialog(
     bridge_state = CoursesPageState(
         tracking_by_course_id=deps.state_tracking_by_course_id,
         review_summary_by_course_id=deps.review_summary_by_course_id,
-        recommendation_summary_by_course_id=deps.recommendation_summary_by_course_id,
     )
     await open_course_details_dialog(
         course_id=int(course_id),

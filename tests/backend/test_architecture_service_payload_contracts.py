@@ -137,8 +137,6 @@ def test_service_entrypoints_use_typed_parse_helpers() -> None:
         Path("backend/services/course_reviews_service.py"): {"create_review"},
         Path("backend/services/path_reviews_service.py"): {"create_review"},
         Path("backend/services/article_reviews_service.py"): {"create_review"},
-        Path("backend/services/course_recommendations_service.py"): {"create_recommendation"},
-        Path("backend/services/path_recommendations_service.py"): {"create_recommendation"},
         Path("backend/services/tracking_service.py"): {
             "list_tracking",
             "list_recent_activity",

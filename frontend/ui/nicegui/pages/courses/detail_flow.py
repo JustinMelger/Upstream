@@ -33,19 +33,9 @@ class CourseDetailsDialogDeps:
     on_tracking_changed: Callable[[str], None] | None = None
 
 
-def _recommendation_authors(recommendations: list[dict[str, Any]]) -> list[str]:
-    return sorted(
-        {
-            str(r.get("created_by") or "").strip()
-            for r in recommendations
-            if isinstance(r, dict) and str(r.get("created_by") or "").strip()
-        }
-    )
-
-
-def _latest_activity_timestamp(*, reviews: list[dict[str, Any]], recommendations: list[dict[str, Any]]) -> str | None:
+def _latest_activity_timestamp(*, reviews: list[dict[str, Any]]) -> str | None:
     timestamps: list[str] = []
-    for row in list(reviews) + list(recommendations):
+    for row in list(reviews):
         created_at = str(row.get("created_at") or "").strip()
         if created_at:
             timestamps.append(created_at)
@@ -102,7 +92,6 @@ def _render_details_overview(
     state: CoursesPageState,
     deps: CourseDetailsDialogDeps,
     reviews: list[dict[str, Any]],
-    recommendations: list[dict[str, Any]],
 ) -> None:
     summary_label = deps.format_review_summary(state.review_summary_by_course_id.get(int(course_id)))
     provider = str(course.get("provider") or "").strip()
@@ -124,10 +113,6 @@ def _render_details_overview(
                 ui.label(f"Shared by {shared_by}").classes("text-xs").style("color: var(--lp-muted)")
             if summary_label:
                 ui.label(f"★ {summary_label}").classes("lp-meta-chip")
-            rec_row = state.recommendation_summary_by_course_id.get(int(course_id)) or {}
-            rec_count = int(rec_row.get("recommendation_count") or 0) if isinstance(rec_row, dict) else 0
-            if rec_count > 0:
-                ui.label(f"↗ {rec_count} rec").classes("lp-meta-chip")
         if source_url:
             ui.button(
                 "Open source",
@@ -143,13 +128,9 @@ def _render_details_overview(
         with ui.element("div").classes("lp-video-wrap"):
             ui.html(render_youtube_embed(youtube_embed_url(video_id)), sanitize=False)
 
-    rec_by = _recommendation_authors(recommendations)
-    if rec_by:
-        ui.label(f"Recommended by {', '.join(rec_by[:3])}").classes("text-xs").style("color: var(--lp-muted)")
-
     _render_learning_meta(course)
 
-    latest_activity = _latest_activity_timestamp(reviews=reviews, recommendations=recommendations)
+    latest_activity = _latest_activity_timestamp(reviews=reviews)
     if latest_activity:
         ui.label(f"Latest activity: {deps.format_short_date(latest_activity)}").classes("text-xs").style(
             "color: var(--lp-muted)"
@@ -165,11 +146,10 @@ async def open_course_details_dialog(
     state: CoursesPageState,
     deps: CourseDetailsDialogDeps,
 ) -> None:
-    """Open course details dialog with reviews and recommendation metadata."""
+    """Open course details dialog with reviews metadata."""
     bundle = await deps.load_detail_bundle(int(course_id), str(username or ""))
     course = dict(bundle.course or {})
     reviews = list(bundle.reviews or [])
-    recommendations = list(bundle.recommendations or [])
     view_mode = deps.normalize_course_view_mode(focus_reviews)
 
     with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(800px,95vw)]"):
@@ -183,7 +163,6 @@ async def open_course_details_dialog(
                 state=state,
                 deps=deps,
                 reviews=reviews,
-                recommendations=recommendations,
             )
 
         def _sync_summary_from_reviews(current_reviews: list[dict[str, Any]]) -> None:

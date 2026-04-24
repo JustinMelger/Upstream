@@ -27,8 +27,8 @@ INTRO_STEPS: tuple[IntroStep, IntroStep, IntroStep] = (
         body="Choose one path in Explore to unlock milestone progress and your next step.",
     ),
     IntroStep(
-        title="Review team recommendations",
-        body="Open Teams and respond to one shared recommendation to keep momentum.",
+        title="Review one shared item",
+        body="Open Teams and leave a review on one shared learning item or path to keep momentum.",
     ),
 )
 

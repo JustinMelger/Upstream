@@ -8,8 +8,7 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.core.api_client import ApiError
-from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
+from frontend.ui.nicegui.core.errors import safe_notify
 
 
 @dataclass(slots=True)
@@ -17,7 +16,6 @@ class PathCardActions:
     """Callback bundle for a single path card."""
 
     on_review: Callable[[], Awaitable[None]]
-    on_recommend: Callable[[], Awaitable[None]]
     on_copy_link: Callable[[], None]
     on_edit: Callable[[], Awaitable[None]]
     on_delete: Callable[[], Awaitable[None]]
@@ -30,10 +28,6 @@ class PathCardActions:
 class PathCardActionDeps:
     """Dependencies needed to build one path-card action bundle."""
 
-    username: str
-    get_user_note: Callable[[int, str], Awaitable[str]]
-    save_recommendation: Callable[[int, str], Awaitable[dict[str, Any]]]
-    on_saved: Callable[[], Awaitable[None]]
     get_path_detail: Callable[[int], Awaitable[dict[str, Any]]]
     on_open_edit: Callable[[int, dict[str, Any]], Awaitable[None]]
     on_delete: Callable[[int], Awaitable[None]]
@@ -131,39 +125,6 @@ def build_track_toggle(
     return _do_select, "Select"
 
 
-async def open_recommend_dialog(
-    *,
-    path_id: int,
-    username: str,
-    get_user_note: Callable[[int, str], Awaitable[str]],
-    save_recommendation: Callable[[int, str], Awaitable[dict[str, Any]]],
-    on_saved: Callable[[], Awaitable[None]],
-) -> None:
-    """Open recommend dialog for a path and persist recommendation."""
-    existing_note = ""
-    try:
-        existing_note = await get_user_note(int(path_id), username)
-    except ApiError:
-        existing_note = ""
-
-    with ui.dialog() as dialog, ui.card().classes("lp-card lp-dialog w-[min(600px,95vw)]"):
-        ui.label("Recommend path").classes("text-lg font-semibold")
-        note = ui.textarea("Why this helps (optional)", value=existing_note).props("autogrow").classes("w-full")
-        with ui.row().classes("justify-end mt-4"):
-
-            @guard_ui_action(title="Recommend failed")
-            async def _save() -> None:
-                await save_recommendation(int(path_id), str(note.value or ""))
-                safe_notify("Recommendation saved", type="positive")
-                dialog.close()
-                await on_saved()
-
-            ui.button("Recommend", on_click=_save)
-            ui.button("Cancel", on_click=dialog.close).props("outline")
-
-    dialog.open()
-
-
 def build_path_card_actions(
     *,
     path_id: int,
@@ -172,15 +133,6 @@ def build_path_card_actions(
     on_after_toggle: Callable[[], None] | None = None,
 ) -> PathCardActions:
     """Build per-card callbacks to keep page view logic minimal."""
-
-    async def _recommend() -> None:
-        await open_recommend_dialog(
-            path_id=int(path_id),
-            username=deps.username,
-            get_user_note=deps.get_user_note,
-            save_recommendation=deps.save_recommendation,
-            on_saved=deps.on_saved,
-        )
 
     def _copy_link() -> None:
         copy_path_link(path_id=int(path_id))
@@ -208,7 +160,6 @@ def build_path_card_actions(
 
     return PathCardActions(
         on_review=_review,
-        on_recommend=_recommend,
         on_copy_link=_copy_link,
         on_edit=_edit,
         on_delete=_delete,

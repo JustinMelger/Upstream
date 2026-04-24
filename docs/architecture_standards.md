@@ -96,6 +96,7 @@ Use it as the default guide before adding or refactoring code.
 ## 7) Source of Truth Docs
 
 - High-level architecture: `docs/architecture.md`
+- V1 product spec: `docs/v1/README.md`
 - Backend architecture: `docs/architecture_backend.md`
 - Frontend architecture: `docs/architecture_frontend.md`
 - Frontend MVC migration status: `docs/frontend_mvc_migration.md`
