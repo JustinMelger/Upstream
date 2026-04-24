@@ -14,7 +14,6 @@ from frontend.ui.nicegui.components.card_frame import (
     render_card_main_row,
     render_card_topright,
 )
-from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.pages.articles.ui_glue import ActiveFilterChip
@@ -129,35 +128,6 @@ def render_active_filter_chips(
                 on_clear_key(_key)
 
             _chip(chip.label, _clear)
-
-
-def render_articles_empty_state(
-    *,
-    has_articles: bool,
-    any_filters: bool,
-    on_share: Any,
-    on_reset: Any,
-    on_refresh: Any,
-) -> None:
-    """Render empty states for the articles list."""
-    _ = on_refresh
-    if not has_articles and not any_filters:
-        render_empty_block(
-            title="No reading stream yet.",
-            description="Share the first article and start the editorial feed.",
-            primary_label="Share an article",
-            on_primary=on_share,
-            compact=True,
-        )
-        return
-
-    render_empty_block(
-        title="No reads match this filter set.",
-        primary_label="Reset all",
-        on_primary=on_reset,
-        compact=True,
-    )
-
 
 def render_article_card(
     *,

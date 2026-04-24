@@ -1,4 +1,4 @@
-"""State transition helpers for the Insights page."""
+"""State transition helpers for shared Home/Profile stats surfaces."""
 
 from __future__ import annotations
 

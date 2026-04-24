@@ -1,4 +1,4 @@
-"""State model for the Activity page."""
+"""State model for shared activity feed projections."""
 
 from __future__ import annotations
 

@@ -305,6 +305,25 @@ While stabilizing v1:
 
 ## 17. Practical V1 Rule
 
+## 17. Source Of Truth Docs
+
+Use these docs as the primary architecture and planning references:
+
+- `docs/v1/README.md`
+  - shipped v1 product scope and release contract
+- `docs/architecture_standards.md`
+  - repository-wide architecture and coding standards
+- `docs/architecture_improvement_plan.md`
+  - staged post-v1 architecture improvement plan
+- `docs/frontend_target_shape.md`
+  - preferred target structure for NiceGUI page packages
+- `docs/technical_debt_register.md`
+  - explicit post-v1 technical debt register
+
+When the codebase changes materially, keep these docs aligned with the implementation.
+
+## 18. Practical V1 Rule
+
 Before keeping or expanding a feature, ask:
 
 - Is it part of `docs/v1/`?

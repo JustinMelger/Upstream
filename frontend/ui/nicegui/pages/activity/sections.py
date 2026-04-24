@@ -1,4 +1,4 @@
-"""UI sections for the Activity page."""
+"""Shared UI sections for activity-style feed rendering."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from frontend.ui.nicegui.pages.activity.ui_glue import format_when
 
 
 def render_empty_activity(*, current_tab: str, on_primary: Callable[[], None]) -> None:
-    """Render empty-state card for activity list."""
+    """Render empty-state card for a shared activity feed."""
     render_empty_block(
         title="No activity yet.",
         description=activity_empty_description(current_tab=str(current_tab or "inbox")),
@@ -23,7 +23,7 @@ def render_empty_activity(*, current_tab: str, on_primary: Callable[[], None]) -
 
 
 def render_activity_error(*, message: str, on_retry: Callable[[], Any]) -> None:
-    """Render load-error state card for activity list."""
+    """Render load-error state card for a shared activity feed."""
     render_error_block(
         title="Could not load activity.",
         message=str(message or "Unexpected error"),
@@ -33,7 +33,7 @@ def render_activity_error(*, message: str, on_retry: Callable[[], Any]) -> None:
 
 
 def render_activity_items(*, events: list[Any], on_open: Callable[[Any], Any]) -> None:
-    """Render activity cards."""
+    """Render shared activity cards."""
     with ui.column().classes("w-full gap-3 lp-teams-feed"):
         for event in list(events or []):
             with ui.card().classes("lp-card w-full lp-teams-item"):

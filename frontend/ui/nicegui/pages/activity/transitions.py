@@ -1,4 +1,4 @@
-"""State transition helpers for Activity page loads."""
+"""State transition helpers for shared activity feed loads."""
 
 from __future__ import annotations
 

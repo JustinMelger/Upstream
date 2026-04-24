@@ -1,4 +1,4 @@
-"""Route/query initialization for the Activity page."""
+"""Route/query initialization for Teams activity-style tabs."""
 
 from __future__ import annotations
 

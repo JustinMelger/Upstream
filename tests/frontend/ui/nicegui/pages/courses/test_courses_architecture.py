@@ -28,7 +28,6 @@ def test_courses_pure_modules_do_not_import_nicegui() -> None:
         "filters.py",
         "orchestration.py",
         "reducers.py",
-        "route_init.py",
         "state.py",
         "transitions.py",
         "ui_glue.py",
@@ -43,14 +42,12 @@ def test_courses_pure_modules_do_not_import_nicegui() -> None:
 @pytest.mark.unit
 def test_courses_ui_modules_use_page_package_modules_for_logic() -> None:
     sections_imports = _imports_for(_COURSES_DIR / "sections.py")
-    detail_flow_imports = _imports_for(_COURSES_DIR / "detail_flow.py")
     assert "frontend.ui.nicegui.pages.courses.ui_glue" in sections_imports
-    assert "frontend.ui.nicegui.pages.courses.state" in detail_flow_imports
 
 
 @pytest.mark.unit
 def test_courses_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> None:
-    expected_ui_modules = {"actions.py", "detail_flow.py", "dialogs.py", "sections.py"}
+    expected_ui_modules = {"actions.py", "dialogs.py", "sections.py"}
     for path in sorted(_COURSES_DIR.glob("*.py")):
         imports = _imports_for(path)
         imports_nicegui = ("nicegui" in imports) or any(name.startswith("nicegui.") for name in imports)

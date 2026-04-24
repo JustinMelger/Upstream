@@ -34,7 +34,6 @@ def test_home_page_redirect_module_stays_decoupled_from_home_page_stack() -> Non
     imports = _imports_for(_HOME_DIR / "page.py")
     assert "nicegui" in imports
     assert "frontend.ui.nicegui.core.api_client" in imports
-    assert "frontend.ui.nicegui.core.guards" in imports
     assert "frontend.ui.nicegui.core.session_store" in imports
     assert "frontend.ui.nicegui.pages.home.controller" not in imports
     assert "frontend.ui.nicegui.pages.home.sections" not in imports

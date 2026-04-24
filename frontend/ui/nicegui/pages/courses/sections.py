@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 import html
 from typing import Any
-from collections.abc import Awaitable, Callable
 
 from nicegui import ui
 
@@ -15,7 +15,6 @@ from frontend.ui.nicegui.components.card_frame import (
     render_card_main_row,
     render_card_topright,
 )
-from frontend.ui.nicegui.components.feedback import render_empty_block
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
@@ -628,45 +627,6 @@ def _bind_rail_arrow_visibility(*, rail_id: str, left_btn_id: str, right_btn_id:
             "})();"
         )
     )
-
-
-def render_courses_empty_state(
-    *,
-    scope_value: str,
-    any_filters: bool,
-    has_any_courses: bool,
-    on_browse_all: Any,
-    on_share: Any,
-    on_reset_all: Any,
-    on_refresh: Any,
-) -> None:
-    """Render empty-state variants for courses list."""
-    _ = on_refresh
-    if scope_value == "tracked" and not any_filters:
-        render_empty_block(
-            title="No active learning queue yet.",
-            description="Browse courses and mark one as Interested or In progress to start momentum.",
-            primary_label="Browse all courses",
-            on_primary=on_browse_all,
-        )
-        return
-
-    if (not has_any_courses) and (not any_filters):
-        render_empty_block(
-            title="No course library yet.",
-            description="Share the first course and seed the learning catalog.",
-            primary_label="Share a course",
-            on_primary=on_share,
-        )
-        return
-
-    render_empty_block(
-        title="No learning matches this filter set.",
-        description="Reset filters to widen the course pipeline." if any_filters else "",
-        primary_label="Reset all",
-        on_primary=on_reset_all,
-    )
-
 
 def render_load_more_control(
     *,

@@ -1,4 +1,4 @@
-"""Pure UI helpers for Activity page rendering."""
+"""Pure UI helpers for shared activity feed rendering."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ def format_when(value: Any) -> str:
 
 
 def target_url(*, target_type: str, target_id: int) -> str:
-    """Resolve Activity Open-button route for target entity."""
+    """Resolve the open-target route for an activity feed entity."""
     return build_activity_target_link(target_type=str(target_type), target_id=int(target_id))
 
 

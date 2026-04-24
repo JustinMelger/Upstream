@@ -142,43 +142,6 @@ def render_paths_active_filter_chips(*, chips: list[Any], on_clear_key: Any) -> 
                     ui.label(str(chip.label or ""))
                     ui.button("×", on_click=lambda _key=chip.key: on_clear_key(str(_key))).props("dense flat")
 
-
-def render_paths_empty_state(
-    *,
-    empty_state: str,
-    on_browse_all: Any,
-    on_refresh: Any,
-    on_share: Any,
-    on_browse_courses: Any,
-    on_reset_all: Any,
-) -> bool:
-    """Render the matching empty-state block and return whether one was rendered."""
-    _ = on_refresh
-    _ = on_browse_courses
-    if empty_state == "selected_empty":
-        ui.label("No selected path yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Browse and select a path to start milestone progress.").classes("text-sm").style("color: var(--lp-muted)")
-        with ui.row().classes("items-center gap-2"):
-            ui.button("Browse all paths", on_click=on_browse_all).props("outline")
-        return True
-
-    if empty_state == "catalog_empty":
-        ui.label("No path library yet.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Share a path to create your team learning roadmap.").classes("text-sm").style("color: var(--lp-muted)")
-        with ui.row().classes("items-center gap-2"):
-            ui.button("Share a path", on_click=on_share).props("outline")
-        return True
-
-    if empty_state == "filters_empty":
-        ui.label("No paths match this filter set.").classes("text-sm").style("color: var(--lp-muted)")
-        ui.label("Reset filters to see more path options.").classes("text-sm").style("color: var(--lp-muted)")
-        with ui.row().classes("items-center gap-2"):
-            ui.button("Reset all", on_click=on_reset_all).props("outline")
-        return True
-
-    return False
-
-
 def render_paths_collection_intro() -> None:
     """Render section heading above the paths result list."""
     with ui.column().classes("w-full gap-1 lp-courses-section"):

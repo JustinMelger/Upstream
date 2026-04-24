@@ -32,6 +32,12 @@ The goal is to describe the product that will be supported in production, not ev
 - [Release Notes](./release_notes.md)
 - [Dead Code And Hidden Features](./dead_code_and_hidden_features.md)
 
+## Post-V1 Engineering Follow-Up
+
+- [Architecture Improvement Plan](../architecture_improvement_plan.md)
+- [Frontend Target Shape](../frontend_target_shape.md)
+- [Technical Debt Register](../technical_debt_register.md)
+
 ## Focused Technical Notes
 
 - [Technical Design: Auth And Sessions](./technical_auth.md)

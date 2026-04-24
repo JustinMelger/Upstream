@@ -1,4 +1,4 @@
-"""Controller/orchestration for the Insights page."""
+"""Controller/orchestration for shared Home/Profile stats loading."""
 
 from __future__ import annotations
 
@@ -11,14 +11,14 @@ from frontend.ui.nicegui.core.api_client import ApiClient
 
 @dataclass(slots=True)
 class HomeOverviewBundle:
-    """Loaded payload used by insights dashboard."""
+    """Loaded payload used by shared Home/Profile stats surfaces."""
 
     snapshot_stats: dict[str, int]
     team_stats_by_user: list[dict[str, Any]]
 
 
 class HomePageController:
-    """Imperative API workflows for `/insights`."""
+    """Imperative API workflows for shared Home/Profile stats surfaces."""
 
     def __init__(self, *, api: ApiClient):
         """Initialize the controller.

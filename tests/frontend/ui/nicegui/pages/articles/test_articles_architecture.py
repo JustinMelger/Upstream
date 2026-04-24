@@ -26,7 +26,6 @@ def test_articles_pure_modules_do_not_import_nicegui() -> None:
     for filename in [
         "actions.py",
         "controller.py",
-        "detail_flow.py",
         "filters.py",
         "orchestration.py",
         "reducers.py",

@@ -15,10 +15,10 @@ from frontend.ui.nicegui.core.errors import safe_notify
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
+from frontend.ui.nicegui.pages.home.controller import HomePageController
 from frontend.ui.nicegui.pages.home.helpers import top_contributors
 from frontend.ui.nicegui.pages.home.state import HomePageState
 from frontend.ui.nicegui.pages.home.transitions import begin_home_load, finalize_home_load, should_render_team_section
-from frontend.ui.nicegui.pages.profile.controller import ProfilePageController
 
 
 @dataclass(slots=True)
@@ -29,7 +29,7 @@ class ProfileStatsPageContext:
     avatar_url: str
     avatar_initial: str
     is_admin: bool
-    controller: ProfilePageController
+    controller: HomePageController
     state: HomePageState
     last_loaded_at: datetime | None = None
     mode_value: str = "mine"
@@ -278,7 +278,7 @@ async def _render_profile_stats_page(*, store: SessionStore, api: ApiClient) -> 
         avatar_url=str(user.get("avatar_url") or user.get("profile_image_url") or user.get("image_url") or "").strip(),
         avatar_initial=username[:1].upper() if username else "U",
         is_admin=str(user.get("role") or "user") == "admin",
-        controller=ProfilePageController(api=api),
+        controller=HomePageController(api=api),
         state=HomePageState(),
     )
 
