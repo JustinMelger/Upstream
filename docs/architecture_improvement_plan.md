@@ -158,6 +158,9 @@ Rules:
 - no major product-model changes without docs updates
 - preserve the v1 rule that Explore visibility is global and Teams provide context/activity
 
+Reference:
+- [Activity Domain Restructuring](./activity_domain_restructuring.md)
+
 ### Phase 4: Optional Deeper Refactor
 
 Focus:
@@ -188,3 +191,5 @@ Rules:
 
 - [Phase 1 Stabilization Checklist](./phase1_stabilization_checklist.md)
 - [Phase 1 Canonical Module Audit](./phase1_module_audit.md)
+- [Post-Phase-1 Backlog](./post_phase1_backlog.md)
+- [Activity Domain Restructuring](./activity_domain_restructuring.md)

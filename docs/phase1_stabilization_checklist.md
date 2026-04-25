@@ -41,7 +41,7 @@ These items are the first cleanup passes because they reduce confusion without c
 
 - [x] Remove docstrings/comments that still describe removed routes or old page names
 - [x] Rename helper functions/files whose names still reflect removed product concepts
-- [ ] Standardize activity-related naming so `Teams`, `Inbox`, `activity`, and `Profile` use the same language model
+- [x] Standardize activity-related naming so `Teams`, `Inbox`, `activity`, and `Profile` use the same language model
 - [x] Remove remaining wording/code comments that imply recommendation-first or private-team visibility behavior
 
 ### 3. Stale Helper Signature Cleanup
@@ -105,20 +105,18 @@ These are still Phase 1 items, but they should happen after the low-risk cleanup
 
 ### Backend API Surface
 
-- [ ] Review router docstrings and comments for wording drift from the shipped v1 model
+- [x] Review router docstrings and comments for wording drift from the shipped v1 model
 - [x] Remove obsolete router/service helpers left behind by removed recommendation endpoints
-- [ ] Standardize intentionally unused auth-gating parameters and handler naming patterns
-- [ ] Audit policy/dependency helpers for duplicates introduced during v1 stabilization
+- [x] Standardize intentionally unused auth-gating parameters and handler naming patterns
+- [x] Audit policy/dependency helpers for duplicates introduced during v1 stabilization
 
-## P2: Cleanup Backlog For After Phase 1
+## After Phase 1
 
-These should stay out of Phase 1 unless they become trivial while touching the area.
+Phase 1 is now complete.
 
-- [ ] deeper controller/service reshapes
-- [ ] shared detail-page architecture extraction
-- [ ] major activity-domain restructuring
-- [ ] typed model expansion across older `dict[str, Any]` boundaries
-- [ ] large test refactors purely for style
+The deferred cleanup and refactor backlog lives in:
+
+- [Post-Phase-1 Backlog](./post_phase1_backlog.md)
 
 ## Working Rules
 

@@ -25,33 +25,30 @@ async def list_videos(
     q: Optional[str] = Query(default=None, description="Search query"),
     provider: Optional[str] = Query(default=None, description="Provider filter"),
     category: Optional[str] = Query(default=None, description="Category filter"),
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     videos: VideosService = Depends(get_videos_service),
 ) -> list[dict[str, Any]]:
     """List videos."""
-    _ = current_user
     return await videos.list_videos(query=q, provider=provider, category=category)
 
 
 @router.get("/reviews/summary", response_model=list[VideoReviewSummaryItem])
 async def video_review_summaries(
     video_ids: list[int] = Query(default_factory=list),
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     reviews: VideoReviewsService = Depends(get_video_reviews_service),
 ) -> list[dict[str, Any]]:
     """Get review summaries for a list of video ids."""
-    _ = current_user
     return await reviews.summaries(video_ids=list(video_ids or []))
 
 
 @router.get("/{video_id}", response_model=VideoPayload)
 async def get_video(
     video_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     videos: VideosService = Depends(get_videos_service),
 ) -> dict[str, Any]:
     """Get one video by id."""
-    _ = current_user
     video = await videos.get_video_by_id(video_id=int(video_id))
     if not video:
         raise HTTPException(status_code=404, detail="not_found")
@@ -71,12 +68,11 @@ async def create_video(
 @router.get("/{video_id}/reviews", response_model=list[VideoReviewPayload])
 async def list_video_reviews(
     video_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     videos: VideosService = Depends(get_videos_service),
     reviews: VideoReviewsService = Depends(get_video_reviews_service),
 ) -> list[dict[str, Any]]:
     """List reviews for a video."""
-    _ = current_user
     require_row_exists(await videos.get_video_by_id(video_id=int(video_id)))
     return await reviews.list_reviews(video_id=video_id)
 

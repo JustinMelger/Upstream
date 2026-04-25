@@ -34,9 +34,14 @@ from backend.services.videos_service import VideosService
 _URL_PREVIEW_SERVICE = UrlPreviewService()
 
 
+def _build_auth_service(session: AsyncSession) -> AuthService:
+    """Construct an AuthService bound to one database session."""
+    return AuthService(SQLAuthRepository(session))
+
+
 async def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthService:
     """Provide a request-scoped AuthService dependency."""
-    return AuthService(SQLAuthRepository(session))
+    return _build_auth_service(session)
 
 
 async def get_courses_service(session: AsyncSession = Depends(get_session)) -> CoursesService:
@@ -114,7 +119,7 @@ async def get_teams_service(session: AsyncSession = Depends(get_session)) -> Tea
     """Provide a request-scoped TeamsService dependency."""
     return TeamsService(
         SQLTeamsRepository(session),
-        auth=AuthService(SQLAuthRepository(session)),
+        auth=_build_auth_service(session),
     )
 
 

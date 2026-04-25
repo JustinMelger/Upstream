@@ -48,6 +48,7 @@ Impact:
 Planned action:
 - move repeated mutation flows into controllers/actions/services
 - keep render functions more declarative
+- see `docs/post_phase1_backlog.md`
 
 ## P2: Naming Drift From Feature Creep
 
@@ -61,6 +62,7 @@ Impact:
 
 Planned action:
 - tighten naming and signatures during routine refactors
+- see `docs/post_phase1_backlog.md`
 
 ## P2: Activity Subsystem Cohesion
 
@@ -74,6 +76,8 @@ Impact:
 
 Planned action:
 - run an activity-domain pass after stabilization cleanup
+- see `docs/activity_domain_restructuring.md`
+- see `docs/post_phase1_backlog.md`
 
 ## P3: Shared Detail-Page Patterns
 
@@ -86,6 +90,21 @@ Impact:
 
 Planned action:
 - only extract stronger shared patterns if repeated maintenance pain remains after v1
+- see `docs/post_phase1_backlog.md`
+
+## P3: Older Untyped Payload Boundaries
+
+Problem:
+- some older areas still pass `dict[str, Any]` payloads across controller/service/view-model boundaries
+
+Impact:
+- weaker contracts
+- more defensive parsing at callsites
+- harder future refactors in activity, detail bundles, and stats projections
+
+Planned action:
+- expand typed boundary models incrementally
+- see `docs/post_phase1_backlog.md`
 
 ## Not Planned As Immediate Work
 

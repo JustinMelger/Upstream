@@ -315,6 +315,8 @@ Use these docs as the primary architecture and planning references:
   - repository-wide architecture and coding standards
 - `docs/architecture_improvement_plan.md`
   - staged post-v1 architecture improvement plan
+- `docs/post_phase1_backlog.md`
+  - deferred cleanup and refactor backlog after completed Phase 1 work
 - `docs/frontend_target_shape.md`
   - preferred target structure for NiceGUI page packages
 - `docs/technical_debt_register.md`

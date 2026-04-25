@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import cast
+
 from frontend.ui.nicegui.core.learning_items import (
     infer_learning_item_type,
     learning_item_type_label,
@@ -44,8 +47,9 @@ def complete_share_publish(
     """Clear the draft, notify success, and navigate to the canonical Explore tab."""
     normalized = str(item_type or "").strip().lower()
     storage = getattr(getattr(app_module, "storage", None), "user", None)
-    if hasattr(storage, "pop"):
-        storage.pop(draft_key, None)
+    pop = getattr(storage, "pop", None)
+    if callable(pop):
+        cast(Callable[[str, object | None], object | None], pop)(draft_key, None)
     success_message = "Path published" if normalized == "path" else "Learning item published"
     getattr(notify, "__call__")(success_message, type="positive")
     getattr(getattr(ui_module, "navigate", None), "to")(share_explore_tab_route(item_type=item_type))

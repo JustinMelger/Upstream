@@ -16,5 +16,5 @@ async def resolve_url_metadata(
     _current_user: str = Depends(require_session),
     previews: UrlPreviewService = Depends(get_url_preview_service),
 ) -> dict[str, Any]:
-    """Resolve URL metadata and autofill suggestions for share dialogs."""
+    """Resolve URL metadata and autofill suggestions for share flows."""
     return await previews.resolve_metadata(source_url=str(payload.url or ""))
