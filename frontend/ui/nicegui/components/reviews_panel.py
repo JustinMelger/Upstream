@@ -151,14 +151,16 @@ def render_reviews_panel(
         "text-md font-semibold mt-2 lp-review-form-title"
     )
     default_rating, default_text = _review_input_defaults(my_review=my_review)
-    rating_in = ui.select(
-        {1: "1", 2: "2", 3: "3", 4: "4", 5: "5"},
-        value=default_rating,
-        label="Rating",
-    ).props("dense outlined").classes("lp-review-rating")
-    text_in = ui.textarea("Comment (optional)", value=default_text).props("autogrow outlined").classes(
-        "w-full lp-review-text"
+    rating_in = (
+        ui.select(
+            {1: "1", 2: "2", 3: "3", 4: "4", 5: "5"},
+            value=default_rating,
+            label="Rating",
+        )
+        .props("dense outlined")
+        .classes("lp-review-rating")
     )
+    text_in = ui.textarea("Comment (optional)", value=default_text).props("autogrow outlined").classes("w-full lp-review-text")
 
     @guard_ui_action(title=resolved_text.save_error_title)
     async def _submit_review() -> None:

@@ -80,10 +80,7 @@ def test_render_empty_activity_exposes_primary_explore_action(monkeypatch) -> No
 
     assert captured.get("primary_label") == "Explore"
     assert callable(captured.get("on_primary"))
-    assert (
-        captured.get("description")
-        == "When teammates share or rate learning items and paths, updates will appear here."
-    )
+    assert captured.get("description") == "When teammates share or rate learning items and paths, updates will appear here."
 
 
 def test_render_activity_error_exposes_retry_action(monkeypatch) -> None:  # noqa: ANN001

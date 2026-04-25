@@ -104,8 +104,8 @@ def test_bind_actions_tolerates_missing_view_tabs_for_empty_workspace() -> None:
 
 def test_member_mutations_refresh_full_teams_state() -> None:
     src = Path("frontend/ui/nicegui/pages/teams/page_ui.py").read_text(encoding="utf-8")
-    assert "safe_notify(\"Member updated.\", type=\"positive\")\n                await self.refresh_all()" in src
-    assert "safe_notify(\"Member removed.\", type=\"positive\")\n        await self.refresh_all()" in src
+    assert 'safe_notify("Member updated.", type="positive")\n                await self.refresh_all()' in src
+    assert 'safe_notify("Member removed.", type="positive")\n        await self.refresh_all()' in src
 
 
 def test_activity_target_link_opens_article_detail() -> None:

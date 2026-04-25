@@ -159,9 +159,7 @@ def render_learning_intro_panel() -> None:
                         ui.label(str(idx)).classes("lp-chip lp-chip--sky")
                         with ui.column().classes("gap-0"):
                             ui.label(step.title).classes("text-sm font-semibold")
-                            ui.label(step.body).classes("text-xs").style(
-                                "color: var(--lp-muted)"
-                            )
+                            ui.label(step.body).classes("text-xs").style("color: var(--lp-muted)")
 
     intro_panel()
 

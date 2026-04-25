@@ -158,6 +158,7 @@ def _render_course_main_panel(
                 ui.label("Learning item").classes("lp-explore-detail-eyebrow")
                 ui.label(learning_item_type_label(item_type)).classes("lp-meta-chip lp-meta-chip--quiet")
             ui.label(str(course.get("title") or "Course")).classes("lp-explore-detail-title")
+
             @ui.refreshable
             def _hero_rating() -> None:
                 if panel_review_count <= 0:
@@ -176,6 +177,7 @@ def _render_course_main_panel(
         _render_course_content_card(course=course, source_url=source_url, view_mode=view_mode)
 
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
+
             @ui.refreshable
             def _panel_summary() -> None:
                 with ui.row().classes("w-full items-start justify-between gap-3 flex-wrap"):

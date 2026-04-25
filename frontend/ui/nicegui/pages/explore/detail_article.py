@@ -81,6 +81,7 @@ def _render_article_main_panel(
             ui.label(body or "No content available yet.").classes("lp-explore-detail-muted")
 
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
+
             @ui.refreshable
             def _review_summary() -> None:
                 with ui.row().classes("w-full items-center gap-2 flex-wrap"):

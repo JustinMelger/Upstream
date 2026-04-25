@@ -32,4 +32,3 @@ def finalize_shared_stats_load(*, ok: bool) -> SharedStatsLoadDone:
 def should_render_team_stats(*, is_admin: bool, mode_value: str) -> bool:
     """Whether the team widgets should be shown."""
     return bool(is_admin) and str(mode_value or "mine") == "team"
-

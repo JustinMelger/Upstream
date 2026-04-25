@@ -266,9 +266,7 @@ def render_video_item(
                         ui.label(description).classes("text-sm text-gray-600 lp-card-body lp-course-summary")
 
                     def _render_actions() -> None:
-                        ui.button("Open details", on_click=lambda: ui.navigate.to(f"/explore/videos/{video_id}")).props(
-                            "dense"
-                        )
+                        ui.button("Open details", on_click=lambda: ui.navigate.to(f"/explore/videos/{video_id}")).props("dense")
 
                     render_card_actions_row(render_actions=_render_actions)
 

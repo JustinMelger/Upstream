@@ -138,9 +138,7 @@ def render_explore_sections(
             with ui.row().classes("items-center justify-between w-full"):
                 with ui.column().classes("gap-1"):
                     ui.label("Learning items").classes("lp-courses-section-title")
-                    ui.label("Courses, videos, and articles across the current scope.").classes(
-                        "lp-courses-section-subtitle"
-                    )
+                    ui.label("Courses, videos, and articles across the current scope.").classes("lp-courses-section-subtitle")
             item_grid_class = "lp-courses-grid lp-explore-course-grid"
             if len(shown_learning_item_rows) == 1:
                 item_grid_class += " lp-explore-course-grid--single"

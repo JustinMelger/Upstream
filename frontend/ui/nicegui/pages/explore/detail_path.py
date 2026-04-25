@@ -243,6 +243,7 @@ def _render_path_main_panel(
         _render_path_sequence_card(items=panel.items, tracking_by_course_id=panel.tracking_by_course_id)
 
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
+
             @ui.refreshable
             def _review_summary() -> None:
                 with ui.row().classes("w-full items-center gap-2 flex-wrap"):

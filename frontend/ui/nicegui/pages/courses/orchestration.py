@@ -176,6 +176,7 @@ async def perform_clear_tracking(
         deps=deps,
     )
 
+
 async def perform_create_course(
     *,
     payload: dict[str, Any],

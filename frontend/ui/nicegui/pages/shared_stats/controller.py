@@ -53,4 +53,3 @@ class SharedStatsController:
             snapshot_stats=dict(stats_payload or {}),
             team_stats_by_user=team_payload,
         )
-

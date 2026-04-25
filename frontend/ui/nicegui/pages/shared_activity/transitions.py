@@ -25,4 +25,3 @@ def begin_activity_load() -> ActivityLoadStart:
 def finalize_activity_load(*, rows: list[dict[str, Any]] | None) -> ActivityLoadDone:
     """Return state values used when activity load completes."""
     return ActivityLoadDone(loading=False, events=[r for r in list(rows or []) if isinstance(r, dict)])
-

@@ -130,7 +130,7 @@ def test_explore_detail_review_summaries_refresh_after_review_mutations() -> Non
 @pytest.mark.unit
 def test_explore_detail_close_actions_return_to_matching_tab() -> None:
     common_src = (_EXPLORE_DIR / "detail_common.py").read_text(encoding="utf-8")
-    assert "back_url: str = \"/explore\"" in common_src
+    assert 'back_url: str = "/explore"' in common_src
     assert 'ui.link("Explore", str(back_url or "/explore"))' in common_src
 
     assert 'render_breadcrumb(label="Courses", back_url="/explore?tab=courses")' in (
@@ -139,9 +139,9 @@ def test_explore_detail_close_actions_return_to_matching_tab() -> None:
     assert 'render_breadcrumb(label="Articles", back_url="/explore?tab=articles")' in (
         _EXPLORE_DIR / "detail_article.py"
     ).read_text(encoding="utf-8")
-    assert 'render_breadcrumb(label="Videos", back_url="/explore?tab=videos")' in (
-        _EXPLORE_DIR / "detail_video.py"
-    ).read_text(encoding="utf-8")
+    assert 'render_breadcrumb(label="Videos", back_url="/explore?tab=videos")' in (_EXPLORE_DIR / "detail_video.py").read_text(
+        encoding="utf-8"
+    )
     assert 'render_breadcrumb(label="Learning Path", back_url="/explore?tab=paths")' in (
         _EXPLORE_DIR / "detail_path.py"
     ).read_text(encoding="utf-8")

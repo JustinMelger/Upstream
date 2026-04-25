@@ -102,4 +102,3 @@ def build_activity_event_views(*, events: list[dict[str, Any]]) -> list[Activity
             )
         )
     return out
-

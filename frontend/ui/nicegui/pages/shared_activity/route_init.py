@@ -14,4 +14,3 @@ def resolve_activity_tab(*, request: Any) -> str:
     if tab not in {"inbox", "my_teams", "team"}:
         return "inbox"
     return tab
-

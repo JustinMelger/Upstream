@@ -57,9 +57,7 @@ def build_admin_users_controls() -> AdminUsersControls:
 
         with ui.card().classes("lp-card grow min-w-[300px]"):
             ui.label("Delete user").classes("text-lg font-semibold")
-            ui.label("Permanent action. Use only when an account should be removed entirely.").classes(
-                "text-xs text-gray-600"
-            )
+            ui.label("Permanent action. Use only when an account should be removed entirely.").classes("text-xs text-gray-600")
             delete_username = ui.input("Username").props("clearable").classes("w-full")
             confirm_delete = ui.checkbox("Confirm delete")
             delete_btn = ui.button("Delete user").props("color=negative outline")

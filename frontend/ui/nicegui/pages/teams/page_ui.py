@@ -75,9 +75,9 @@ class _TeamsPageView:
             with ui.element("div").classes("lp-teams-empty-workspace"):
                 with ui.column().classes("w-full gap-2 lp-teams-empty-main"):
                     ui.label("Start one team workspace").classes("lp-teams-empty-title")
-                    ui.label("Create a team first. Once members join, Inbox and Team activity become your team follow-up space.").classes(
-                        "text-sm lp-teams-empty-copy"
-                    ).style("color: var(--lp-muted)")
+                    ui.label(
+                        "Create a team first. Once members join, Inbox and Team activity become your team follow-up space."
+                    ).classes("text-sm lp-teams-empty-copy").style("color: var(--lp-muted)")
                     with ui.row().classes("items-center gap-2 flex-wrap"):
                         ui.button("Create team", on_click=self.create_team_dialog.open).props("dense")
                         ui.button("Refresh", on_click=self.refresh_all).props("dense outline").classes("lp-teams-refresh")

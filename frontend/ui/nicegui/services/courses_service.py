@@ -116,4 +116,3 @@ async def load_review_summaries(*, api: ApiClient, course_ids: list[int]) -> dic
             continue
         out[cid] = row
     return out
-

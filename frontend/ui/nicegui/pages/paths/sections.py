@@ -142,6 +142,7 @@ def render_paths_active_filter_chips(*, chips: list[Any], on_clear_key: Any) -> 
                     ui.label(str(chip.label or ""))
                     ui.button("×", on_click=lambda _key=chip.key: on_clear_key(str(_key))).props("dense flat")
 
+
 def render_paths_collection_intro() -> None:
     """Render section heading above the paths result list."""
     with ui.column().classes("w-full gap-1 lp-courses-section"):

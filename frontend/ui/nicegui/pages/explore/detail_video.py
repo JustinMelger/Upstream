@@ -104,6 +104,7 @@ async def render_explore_video_detail_page(*, store: SessionStore, api: ApiClien
                 with ui.card().classes(
                     "lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"
                 ):
+
                     @ui.refreshable
                     def _review_summary() -> None:
                         with ui.row().classes("w-full items-center gap-2 flex-wrap"):

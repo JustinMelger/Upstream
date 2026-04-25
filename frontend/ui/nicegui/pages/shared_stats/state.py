@@ -14,4 +14,3 @@ class SharedStatsState:
     team_stats_by_user: list[dict[str, Any]] = field(default_factory=list)
     loading: bool = False
     pending_reload: bool = False
-

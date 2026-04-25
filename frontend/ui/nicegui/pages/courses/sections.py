@@ -115,12 +115,12 @@ def render_courses_topbar(*, initial_scope: str, on_share: Any, on_open_filters:
         with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
             ui.label("Sort").classes("lp-topbar-group-label")
             sort_filter = (
-                    ui.select(
-                        {
-                            "": "Best match",
-                            "top_rated": "Top rated",
-                            "most_reviewed": "Most reviewed",
-                            "newest": "Recently added",
+                ui.select(
+                    {
+                        "": "Best match",
+                        "top_rated": "Top rated",
+                        "most_reviewed": "Most reviewed",
+                        "newest": "Recently added",
                         "title_az": "Title A–Z",
                     },
                     value="",
@@ -627,6 +627,7 @@ def _bind_rail_arrow_visibility(*, rail_id: str, left_btn_id: str, right_btn_id:
             "})();"
         )
     )
+
 
 def render_load_more_control(
     *,

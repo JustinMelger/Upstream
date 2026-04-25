@@ -129,6 +129,7 @@ def render_active_filter_chips(
 
             _chip(chip.label, _clear)
 
+
 def render_article_card(
     *,
     article_row: dict[str, Any],

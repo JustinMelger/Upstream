@@ -156,9 +156,9 @@ def _render_profile_summary_rail(*, ctx: ProfileStatsPageContext, on_refresh: An
                 with ui.column().classes("gap-0"):
                     ui.label(ctx.username).classes("lp-profile-user-name")
                     ui.label("Personal and team learning totals").classes("lp-profile-muted")
-                    ui.label(
-                        f"{in_progress} in progress  ·  {completed} completed  ·  {interested} interested"
-                    ).classes("lp-profile-stat-line")
+                    ui.label(f"{in_progress} in progress  ·  {completed} completed  ·  {interested} interested").classes(
+                        "lp-profile-stat-line"
+                    )
             with ui.column().classes("items-end gap-2 lp-profile-summary-meta"):
                 ui.label(_last_updated_copy(last_loaded_at=ctx.last_loaded_at)).classes("lp-profile-muted")
                 if ctx.meta_text:

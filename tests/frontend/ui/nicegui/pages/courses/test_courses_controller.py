@@ -42,4 +42,3 @@ async def test_courses_controller_reload_tracking() -> None:
 
     tracking = await controller.reload_tracking()
     assert tracking == {7: {"course_id": 7, "status": "in_progress"}}
-

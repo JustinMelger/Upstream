@@ -92,7 +92,9 @@ def test_render_explore_sections_show_more_uses_full_learning_item_list(monkeypa
     rendered_ids: list[int] = []
     monkeypatch.setattr(list_sections, "ui", fake_ui)
     monkeypatch.setattr(list_sections, "render_explore_course_spotlight", lambda **_: None)
-    monkeypatch.setattr(list_sections, "render_article_item", lambda **kwargs: rendered_ids.append(int(kwargs["article"]["id"])))
+    monkeypatch.setattr(
+        list_sections, "render_article_item", lambda **kwargs: rendered_ids.append(int(kwargs["article"]["id"]))
+    )
     monkeypatch.setattr(list_sections, "render_video_item", lambda **kwargs: rendered_ids.append(int(kwargs["video"]["id"])))
     monkeypatch.setattr(list_sections, "render_course_item", lambda **kwargs: rendered_ids.append(int(kwargs["course"]["id"])))
     monkeypatch.setattr(list_sections, "render_path_item", lambda **kwargs: None)

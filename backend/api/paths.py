@@ -226,8 +226,6 @@ async def delete_path_review(
     return {"deleted": bool(deleted)}
 
 
-
-
 @router.delete("/{path_id}", response_model=DeletePathResponse)
 async def remove_path(
     path_id: int,
