@@ -110,3 +110,37 @@ def test_member_mutations_refresh_full_teams_state() -> None:
 
 def test_activity_target_link_opens_article_detail() -> None:
     assert build_activity_target_link(target_type="article", target_id=7) == "/explore/articles/7"
+
+
+def test_on_tab_change_does_not_navigate_for_current_route_tab(monkeypatch) -> None:  # noqa: ANN001
+    navigated: list[str] = []
+    fake_ui = SimpleNamespace(navigate=SimpleNamespace(to=lambda path: navigated.append(str(path))))
+    monkeypatch.setattr("frontend.ui.nicegui.pages.teams.page_ui.ui", fake_ui)
+
+    class _Refreshable:
+        def refresh(self) -> None:
+            return None
+
+    class _Tabs:
+        value = "inbox"
+
+    class _Controller:
+        async def list_inbox(self, *, limit: int) -> list[dict[str, object]]:  # noqa: ARG002
+            return []
+
+    view = _TeamsPageView(
+        controller=_Controller(),  # type: ignore[arg-type]
+        state=TeamsPageState(),
+        username="alice",
+        role="member",
+        initial_tab="inbox",
+    )
+    view.current_route_tab = "inbox"
+    view.view_tabs = _Tabs()
+    view.team_detail_view = _Refreshable()
+
+    import asyncio
+
+    asyncio.run(view.on_tab_change())
+
+    assert navigated == []

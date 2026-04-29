@@ -40,9 +40,11 @@ class _TeamsPageView:
     team_description_input: Any = None
     teams_list_view: Any = None
     team_detail_view: Any = None
+    current_route_tab: str | None = None
 
     def build(self) -> None:
         """Build static page shell and bind event hooks."""
+        self.current_route_tab = str(self.initial_tab or "inbox")
         self._render_topbar()
         self._render_create_dialog()
         self._register_refreshables()
@@ -367,7 +369,9 @@ class _TeamsPageView:
     @guard_ui_action(title="Switch tab failed")
     async def on_tab_change(self, *_args: Any) -> None:
         current = self._current_tab()
-        ui.navigate.to(build_activity_tab_link(tab=current))
+        if current != str(self.current_route_tab or "inbox"):
+            self.current_route_tab = current
+            ui.navigate.to(build_activity_tab_link(tab=current))
         if current == "inbox":
             self.state.inbox_rows = await self.controller.list_inbox(limit=40)
         if current == "team" and self.state.selected_team_id is not None:

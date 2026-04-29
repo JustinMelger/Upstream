@@ -71,6 +71,32 @@ async def test_list_paths_empty(app_client):
 
 
 @pytest.mark.integration
+async def test_list_paths_includes_course_count(app_client):
+    """Path list payloads expose course_count for browse surfaces."""
+    token = await _login_admin(app_client)
+    course_id = await _create_course(app_client, token, "Counted Path Course")
+    article_id = await _create_article(app_client, token, "Counted Path Article")
+
+    create = await app_client.post(
+        "/paths",
+        json={
+            "name": "Counted Path",
+            "items": [
+                {"type": "course", "id": course_id, "position": 0},
+                {"type": "article", "id": article_id, "position": 1},
+            ],
+        },
+        headers={"X-Session-Token": token},
+    )
+    assert create.status_code == 200
+
+    response = await app_client.get("/paths", headers={"X-Session-Token": token})
+    assert response.status_code == 200
+    row = next(item for item in response.json() if str(item.get("name") or "") == "Counted Path")
+    assert row["course_count"] == 1
+
+
+@pytest.mark.integration
 async def test_create_path_missing_name(app_client):
     """Creating a path without a name returns 400."""
     token = await _login_admin(app_client)

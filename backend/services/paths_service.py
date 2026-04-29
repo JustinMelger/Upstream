@@ -155,7 +155,13 @@ class PathsService:
     @staticmethod
     def _path_payload(path: PathRecord) -> dict:
         """Convert a path record into an API payload."""
-        return {"id": path.id, "name": path.name, "description": path.description or "", "created_by": path.created_by}
+        return {
+            "id": path.id,
+            "name": path.name,
+            "description": path.description or "",
+            "created_by": path.created_by,
+            "course_count": int(path.course_count or 0),
+        }
 
     @staticmethod
     def _item_payload(item: PathLearningItemRecord) -> dict:

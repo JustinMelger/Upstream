@@ -98,6 +98,9 @@ Use it as the default guide before adding or refactoring code.
 - High-level architecture: `docs/architecture.md`
 - Post-v1 architecture improvement plan: `docs/architecture_improvement_plan.md`
 - Phase 1 stabilization checklist: `docs/phase1_stabilization_checklist.md`
+- Stable NiceGUI design baseline: `docs/nicegui_design_baseline.md`
+- NiceGUI design implementation plan: `docs/nicegui_design_implementation_plan.md`
+- App redesign brief: `docs/app_redesign_brief.md`
 - V1 product spec: `docs/v1/README.md`
 - Backend architecture: `docs/architecture_backend.md`
 - Frontend architecture: `docs/architecture_frontend.md`

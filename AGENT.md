@@ -317,6 +317,12 @@ Use these docs as the primary architecture and planning references:
   - staged post-v1 architecture improvement plan
 - `docs/post_phase1_backlog.md`
   - deferred cleanup and refactor backlog after completed Phase 1 work
+- `docs/nicegui_design_baseline.md`
+  - stable layout and page-design baseline for the NiceGUI frontend
+- `docs/nicegui_design_implementation_plan.md`
+  - phased rollout plan for the stable NiceGUI design baseline
+- `docs/app_redesign_brief.md`
+  - app-wide redesign direction based on the current product model
 - `docs/frontend_target_shape.md`
   - preferred target structure for NiceGUI page packages
 - `docs/technical_debt_register.md`

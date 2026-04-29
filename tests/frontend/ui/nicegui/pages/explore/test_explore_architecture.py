@@ -93,10 +93,10 @@ def test_explore_ui_modules_are_the_only_modules_allowed_to_import_nicegui() -> 
 
 
 @pytest.mark.unit
-def test_explore_article_cards_use_compact_mode() -> None:
+def test_explore_learning_item_rows_use_shared_browse_row_renderer() -> None:
     src = (_EXPLORE_DIR / "list_items.py").read_text(encoding="utf-8")
-    assert "render_article_card(" in src
-    assert "compact_mode=True" in src
+    assert "def _render_browse_row(" in src
+    assert "render_article_card(" not in src
 
 
 @pytest.mark.unit

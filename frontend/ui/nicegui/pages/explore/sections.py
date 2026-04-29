@@ -66,24 +66,25 @@ def render_explore_share_dialog(*, on_share_learning_item: Any, on_share_path: A
 
 def render_explore_topbar(*, initial_tab: str, on_open_share: Any) -> ExploreTopbarControls:
     """Render Explore topbar and return control handles."""
-    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar lp-explore-toolbar w-full gap-2"):
+    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar lp-explore-toolbar lp-explore-control-card w-full gap-3"):
         with ui.row().classes("w-full items-center gap-2 flex-wrap"):
             search_input = (
-                ui.input("Search courses, videos, paths, and articles")
+                ui.input("Search learning content")
                 .props("clearable debounce=300 dense")
                 .classes("lp-topbar-search lp-courses-search lp-transition-field")
                 .style("flex: 1")
             )
             meta = ui.label("").classes("lp-topbar-meta lp-topbar-count lp-topbar-meta--quiet")
-            share_btn = ui.button("Share", on_click=on_open_share).props("dense")
-        with ui.row().classes("w-full items-center justify-end gap-2 flex-wrap"):
+            share_btn = ui.button("Share", on_click=on_open_share).props("unelevated color=primary")
+        with ui.row().classes("w-full items-center gap-2 flex-wrap"):
             with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
-                ui.label("View").classes("lp-topbar-group-label")
+                ui.label("Filters").classes("lp-topbar-group-label")
                 tab_filter = (
                     ui.radio(TAB_OPTIONS, value=initial_tab)
                     .props("inline dense")
                     .classes("text-sm lp-topbar-secondary-control")
                 )
+            ui.space()
             with ui.row().classes("items-center gap-2 lp-topbar-group lp-topbar-group--secondary lp-courses-toolbar-controls"):
                 ui.label("Sort").classes("lp-topbar-group-label")
                 sort_filter = (

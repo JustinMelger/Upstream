@@ -3,29 +3,48 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-import html
 from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.components.card_frame import (
-    render_card_actions_row,
-    render_card_content_column,
-    render_card_main_row,
-    render_card_topright,
-)
-from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
-from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.learning_items import learning_item_type_label
+from frontend.ui.nicegui.core.path_items import count_course_items
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
-from frontend.ui.nicegui.pages.articles.sections import render_article_card
-from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
-from frontend.ui.nicegui.pages.courses.sections import CourseCardContext, render_course_card
-from frontend.ui.nicegui.pages.courses.ui_glue import resolve_tracking_status_value
-from frontend.ui.nicegui.pages.courses.view_model import map_course_card_view
-from frontend.ui.nicegui.pages.paths.actions import copy_path_link
-from frontend.ui.nicegui.pages.paths.view_model import map_path_card_view
+from frontend.ui.nicegui.pages.courses.ui_glue import normalize_course_tracking_status
+
+
+def _render_browse_row(
+    *,
+    icon: str,
+    title: str,
+    subtitle: str,
+    meta: str,
+    image_url: str = "",
+    primary_label: str,
+    on_primary: Callable[[], Any],
+    secondary_label: str | None = None,
+    on_secondary: Callable[[], Any] | None = None,
+) -> None:
+    """Render one simplified Explore browse row."""
+    with ui.card().classes("w-full lp-card lp-explore-row-card"):
+        with ui.row().classes("w-full items-center gap-4 no-wrap"):
+            if str(image_url or "").strip():
+                with ui.element("div").classes("lp-explore-row-thumb"):
+                    ui.image(str(image_url)).classes("lp-explore-row-thumb-img")
+            else:
+                with ui.element("div").classes("lp-explore-row-icon"):
+                    ui.icon(icon).classes("text-lg")
+            with ui.column().classes("gap-1 min-w-0 flex-1"):
+                ui.label(str(title or "Untitled")).classes("lp-explore-row-title")
+                if str(subtitle or "").strip():
+                    ui.label(str(subtitle)).classes("lp-explore-row-subtitle")
+                if str(meta or "").strip():
+                    ui.label(str(meta)).classes("lp-explore-row-meta")
+            with ui.row().classes("items-center justify-end gap-2 lp-explore-row-actions"):
+                if secondary_label and on_secondary is not None:
+                    ui.button(str(secondary_label), on_click=on_secondary).props("outline color=primary")
+                ui.button(str(primary_label), on_click=on_primary).props("unelevated color=primary")
 
 
 def render_course_item(
@@ -40,42 +59,43 @@ def render_course_item(
     on_set_tracking: Callable[[int, str], Awaitable[None]],
     on_clear_tracking: Callable[[int], Awaitable[None]],
 ) -> None:
-    """Render one course card item for Explore."""
+    """Render one course row item for Explore."""
     with ui.element("div").classes(item_classes):
+        _ = username
+        _ = is_admin
+        _ = on_set_tracking
+        _ = on_clear_tracking
         course_id = int(course.get("id") or 0)
         tracked = state.tracking_by_course_id.get(course_id)
         url = str(course.get("url") or "").strip()
-        can_edit = bool(is_admin or (str(course.get("created_by") or "") == username))
         actions = course_actions_builder(course, course_id, url)
-        card_vm = map_course_card_view(
-            course_row=course,
-            tracked_row=tracked if isinstance(tracked, dict) else None,
-            review_summary_row=state.course_review_summary_by_course_id.get(course_id),
+        tracked_row = tracked if isinstance(tracked, dict) else None
+        status_text = (
+            normalize_course_tracking_status(tracked_row.get("status")).replace("_", " ").title()
+            if tracked_row
+            else ""
         )
-        render_course_card(
-            ctx=CourseCardContext(
-                course_row=course,
-                tracked_row=tracked if isinstance(tracked, dict) else None,
-                card_vm=card_vm,
-                can_edit=can_edit,
-                has_url=bool(url),
-                actions=actions,
-                is_tracked_course=lambda cid: int(cid) in state.tracking_by_course_id,
-                resolve_status_value=resolve_tracking_status_value,
-                on_set_status=on_set_tracking,
-                on_clear_status=on_clear_tracking,
-                has_video_preview=False,
-                is_preview_open=False,
-                preview_embed_url="",
-                on_toggle_preview=lambda: None,
-                force_media_slot=True,
-                show_status_chip=False,
-                show_compact_progress=True,
-                show_context_meta=False,
-                item_type_label=learning_item_type_label(item_type),
-                primary_action_label_override="Open details",
-                primary_action_override=actions.on_view,
-            )
+        provider = str(course.get("provider") or "").strip()
+        review_summary = format_review_summary(
+            state.course_review_summary_by_course_id.get(course_id),
+            style="star",
+        )
+        subtitle_parts = [part for part in [provider, status_text] if part]
+        subtitle = " · ".join(subtitle_parts) if subtitle_parts else learning_item_type_label(item_type)
+        meta_parts = [review_summary] if review_summary else ["No reviews yet"]
+        created_by = str(course.get("created_by") or "").strip()
+        if created_by:
+            meta_parts.append(f"Shared by {created_by}")
+        _render_browse_row(
+            icon="school",
+            title=str(course.get("title") or ""),
+            subtitle=subtitle,
+            meta=" · ".join(meta_parts),
+            image_url=str(course.get("preview_image_url") or "").strip(),
+            primary_label="Open details",
+            on_primary=actions.on_view,
+            secondary_label="Review",
+            on_secondary=actions.on_review,
         )
 
 
@@ -89,18 +109,13 @@ def render_path_item(
     on_toggle_path_selection: Callable[[int], Awaitable[None]],
     open_path: Callable[[int], None],
 ) -> None:
-    """Render one path card item for Explore."""
+    """Render one compact path card item for Explore."""
     with ui.element("div").classes(item_classes):
+        _ = on_toggle_path_selection
         path_id = int(path.get("id") or 0)
         is_tracked = path_id in state.selected_by_path_id
-        can_edit = bool(is_admin or (str(path.get("created_by") or "") == username))
-        card_vm = map_path_card_view(
-            path_row=path,
-            is_tracked=is_tracked,
-            detail=state.selected_detail_by_path_id.get(path_id),
-            tracking_by_course_id=dict(state.tracking_by_course_id or {}),
-            review_summary_row=state.path_review_summary_by_id.get(path_id),
-        )
+        _ = username
+        _ = is_admin
         detail = state.selected_detail_by_path_id.get(path_id) or {}
         raw_course_ids = path.get("course_ids")
         inferred_total = 0
@@ -111,70 +126,34 @@ def render_path_item(
                 inferred_total = int(path.get("course_count") or 0)
             except (TypeError, ValueError):
                 inferred_total = 0
-        total_courses = int(card_vm.total_courses or 0) if is_tracked else max(0, inferred_total)
+        tracked_total = count_course_items(detail=detail) if is_tracked else 0
+        total_courses = tracked_total if is_tracked else max(0, inferred_total)
         if total_courses <= 0 and isinstance(detail, dict):
-            total_courses = len(
-                [
-                    row
-                    for row in list(detail.get("items") or [])
-                    if isinstance(row, dict) and str(row.get("type") or "") == "course"
-                ]
-            )
-
-        async def _on_track_toggle() -> None:
-            await on_toggle_path_selection(path_id)
-
-        async def _open_path() -> None:
-            open_path(path_id)
+            total_courses = count_course_items(detail=detail)
 
         def _open_path_reviews() -> None:
             ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
 
-        def _copy_path_link() -> None:
-            copy_path_link(path_id=path_id)
-
-        def _open_path_edit() -> None:
-            ui.navigate.to(f"/explore/paths/{path_id}")
-
-        def _open_path_delete() -> None:
-            ui.navigate.to(f"/explore/paths/{path_id}")
-
-        async def _on_primary_action() -> None:
-            await _open_path()
-
-        render_path_card(
-            display=PathCardDisplay(
-                path_row=path,
-                card_class_suffix=f"{card_vm.card_class_suffix} lp-path-card--compact lp-path-card--calm",
-                is_new=False,
-                is_updated=False,
-                rating_badge="",
-                can_edit=can_edit,
-                is_tracked=is_tracked,
-                shared_by="",
-                tracking_label_text=card_vm.tracking_label_text,
-                tracking_chip_cls=card_vm.tracking_chip_cls,
-                completed=card_vm.completed,
-                total_courses=total_courses,
-                progress=card_vm.progress,
-                milestone=card_vm.milestone,
-                milestone_class=card_vm.milestone_class,
-                impact=card_vm.impact,
-                next_title=card_vm.next_title,
-                compact_calm=True,
-            ),
-            actions=PathCardCallbacks(
-                on_review=_open_path_reviews,
-                on_copy_link=_copy_path_link,
-                on_edit=_open_path_edit,
-                on_delete=_open_path_delete,
-                on_view=_open_path,
-                on_track_toggle=_on_track_toggle,
-                track_toggle_label="",
-                on_primary=_on_primary_action,
-                primary_label="Open details",
-            ),
-        )
+        review_summary = format_review_summary(state.path_review_summary_by_id.get(path_id), style="star")
+        subtitle = f"{0 if not is_tracked else max(0, int(detail.get('completed_count') or 0))} / {max(0, total_courses)} courses"
+        meta_parts = []
+        if is_tracked:
+            meta_parts.append("Selected")
+        if review_summary:
+            meta_parts.append(review_summary)
+        with ui.card().classes("w-full lp-card lp-explore-path-compact"):
+            with ui.column().classes("w-full gap-3"):
+                with ui.row().classes("w-full items-center gap-3 no-wrap"):
+                    with ui.element("div").classes("lp-explore-row-icon"):
+                        ui.icon("route").classes("text-lg")
+                    with ui.column().classes("gap-1 min-w-0 flex-1"):
+                        ui.label(str(path.get("title") or "")).classes("lp-explore-row-title")
+                        ui.label(subtitle).classes("lp-explore-row-subtitle")
+                    ui.button("Open details", on_click=lambda: open_path(path_id)).props("unelevated color=primary")
+                if meta_parts:
+                    ui.label(" · ".join(meta_parts)).classes("lp-explore-row-meta")
+                with ui.row().classes("items-center justify-end gap-2 w-full"):
+                    ui.button("Review", on_click=_open_path_reviews).props("outline color=primary")
 
 
 def render_article_item(
@@ -184,27 +163,29 @@ def render_article_item(
     state: Any,
     open_article_details: Callable[[dict[str, Any], bool], Awaitable[None]],
 ) -> None:
-    """Render one article card item for Explore."""
+    """Render one article row item for Explore."""
     with ui.element("div").classes(item_classes):
         article_id = int(article.get("id") or 0)
-        vm = map_article_card_view(
-            article_row=article,
-            review_summary_row=state.article_review_summary_by_article_id.get(article_id),
-        )
         actions = build_article_card_actions(
             article_row=article,
             on_open_details=open_article_details,
         )
-        render_article_card(
-            article_row=article,
-            is_new=vm.is_new,
-            tags=vm.tags[:4],
-            summary_text=vm.summary_text,
-            subtitle_text=vm.subtitle_text,
-            thumbnail_url=vm.thumbnail_url,
-            view_action=actions.on_view,
-            review_action=actions.on_review,
-            compact_mode=True,
+        review_summary = format_review_summary(state.article_review_summary_by_article_id.get(article_id), style="star")
+        author = str(article.get("created_by") or "").strip()
+        tags = str(article.get("tags") or "").strip()
+        subtitle_parts = ["Article"]
+        if author:
+            subtitle_parts.append(f"Shared by {author}")
+        _render_browse_row(
+            icon="article",
+            title=str(article.get("title") or ""),
+            subtitle=" · ".join(subtitle_parts),
+            meta=review_summary or tags,
+            image_url=str(article.get("preview_image_url") or "").strip(),
+            primary_label="Open details",
+            on_primary=actions.on_view,
+            secondary_label="Review",
+            on_secondary=actions.on_review,
         )
 
 
@@ -214,70 +195,25 @@ def render_video_item(
     item_classes: str,
     state: Any,
 ) -> None:
-    """Render one video card item for Explore."""
+    """Render one video row item for Explore."""
     with ui.element("div").classes(item_classes):
         video_id = int(video.get("id") or 0)
-        title = str(video.get("title") or "").strip()
-        description = str(video.get("description") or "").strip()
         provider = str(video.get("provider") or "").strip()
-        category = str(video.get("category") or "").strip()
         created_by = str(video.get("created_by") or "").strip()
-        thumbnail_url = str(video.get("preview_image_url") or "").strip()
-        source_url = str(video.get("url") or "").strip()
         review_summary = format_review_summary(state.video_review_summary_by_video_id.get(video_id), style="star")
-
-        with ui.card().classes("w-full lp-card lp-card--hover lp-article-card"):
-            with render_card_topright():
-                card_menu = apply_icon_button_a11y(
-                    ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
-                    label="Open video actions",
-                    tooltip="Video actions",
-                )
-                with card_menu:
-                    ui.menu_item("Open details", lambda: ui.navigate.to(f"/explore/videos/{video_id}"))
-                    if source_url:
-                        ui.menu_item("Open source", lambda: ui.navigate.to(source_url, new_tab=True))
-
-            with render_card_main_row(classes="lp-article-card-main"):
-                with render_card_content_column(classes="lp-article-card-content"):
-                    ui.label(title).classes("text-lg font-semibold lp-card-title")
-
-                    with ui.row().classes("items-center gap-2 flex-wrap lp-article-meta-row"):
-                        ui.label("Video").classes("lp-meta-chip lp-meta-chip--quiet")
-                        if provider:
-                            ui.label(provider).classes("text-xs lp-card-subtitle lp-article-byline")
-                        if created_by:
-                            ui.label(f"Shared by {created_by}").classes("text-xs lp-card-subtitle lp-article-date")
-
-                    with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
-                        chips = [value for value in [provider, category] if value]
-                        if chips:
-                            for chip in chips[:4]:
-                                ui.label(chip).classes("lp-meta-chip")
-                        else:
-                            ui.label("").classes("lp-article-tag-placeholder")
-
-                    if review_summary:
-                        ui.label(review_summary).classes("lp-card-review-line")
-                    else:
-                        ui.label("No reviews yet").classes("lp-card-review-line lp-card-review-line--empty")
-
-                    if description:
-                        ui.label(description).classes("text-sm text-gray-600 lp-card-body lp-course-summary")
-
-                    def _render_actions() -> None:
-                        ui.button("Open details", on_click=lambda: ui.navigate.to(f"/explore/videos/{video_id}")).props("dense")
-
-                    render_card_actions_row(render_actions=_render_actions)
-
-                if thumbnail_url:
-                    safe_src = html.escape(thumbnail_url, quote=True)
-                    with ui.element("div").classes("lp-article-media-slot"):
-                        ui.html(
-                            (
-                                '<img class="lp-course-thumb lp-course-thumb--side lp-article-thumb" '
-                                f'src="{safe_src}" '
-                                'alt="Video thumbnail" loading="lazy" referrerpolicy="no-referrer">'
-                            ),
-                            sanitize=False,
-                        )
+        subtitle_parts = ["Video"]
+        if provider:
+            subtitle_parts.append(provider)
+        if created_by:
+            subtitle_parts.append(f"Shared by {created_by}")
+        _render_browse_row(
+            icon="smart_display",
+            title=str(video.get("title") or ""),
+            subtitle=" · ".join(subtitle_parts),
+            meta=review_summary or "No reviews yet",
+            image_url=str(video.get("preview_image_url") or "").strip(),
+            primary_label="Open details",
+            on_primary=lambda: ui.navigate.to(f"/explore/videos/{video_id}"),
+            secondary_label="Review",
+            on_secondary=lambda: ui.navigate.to(f"/explore/videos/{video_id}?view=reviews"),
+        )

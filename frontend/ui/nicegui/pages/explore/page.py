@@ -11,7 +11,6 @@ from frontend.ui.nicegui.components.loading import render_card_skeletons
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.guards import require_user
-from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
 from frontend.ui.nicegui.core.telemetry import track_ui_event_nowait
 from frontend.ui.nicegui.pages.explore.controller import ExplorePageController
@@ -63,10 +62,9 @@ async def _render_explore_page(*, store: SessionStore, api: ApiClient) -> None:
     ui_flags = ExploreUiFlags()
 
     with render_catalog_scope(variant="explore").classes("lp-container"):
-        with ui.column().classes("w-full gap-1 lp-explore-header"):
-            ui.label(subtitle_for(PrimaryPage.EXPLORE)).classes("text-sm text-gray-600 lp-explore-header-kicker")
-            ui.label("Find the next course, video, path, or article worth sharing").classes("lp-home-title")
-            ui.label("Search broadly, then narrow by type to move from browse to action quickly.").classes(
+        with ui.column().classes("w-full gap-2 lp-explore-header"):
+            ui.label("Explore learning").classes("lp-home-title")
+            ui.label("Find courses, videos, paths, and articles worth sharing.").classes(
                 "text-sm lp-explore-header-subtitle"
             ).style("color: var(--lp-muted)")
 

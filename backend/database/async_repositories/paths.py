@@ -33,9 +33,32 @@ class PathsRepository(RepositoryDateTimeCodec):
         Returns:
             List of path records.
         """
-        result = await self.session.execute(select(PathModel).order_by(PathModel.name.asc()))
-        rows = result.scalars().all()
-        return [PathRecord(id=row.id, name=row.name, description=row.description, created_by=row.created_by) for row in rows]
+        result = await self.session.execute(
+            select(
+                PathModel.id,
+                PathModel.name,
+                PathModel.description,
+                PathModel.created_by,
+                func.count(PathItemModel.id).label("course_count"),
+            )
+            .outerjoin(
+                PathItemModel,
+                (PathItemModel.path_id == PathModel.id) & (PathItemModel.item_type == "course"),
+            )
+            .group_by(PathModel.id, PathModel.name, PathModel.description, PathModel.created_by)
+            .order_by(PathModel.name.asc())
+        )
+        rows = result.all()
+        return [
+            PathRecord(
+                id=int(row.id),
+                name=str(row.name or ""),
+                description=row.description,
+                created_by=row.created_by,
+                course_count=int(row.course_count or 0),
+            )
+            for row in rows
+        ]
 
     async def get_path(self, path_id: int) -> tuple[PathRecord, list[PathLearningItemRecord]] | None:
         """Fetch a path and its ordered learning items.
