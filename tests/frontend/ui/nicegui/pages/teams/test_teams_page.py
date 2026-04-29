@@ -144,3 +144,8 @@ def test_on_tab_change_does_not_navigate_for_current_route_tab(monkeypatch) -> N
     asyncio.run(view.on_tab_change())
 
     assert navigated == []
+
+
+def test_teams_route_preloads_teams_before_view_build() -> None:
+    src = Path("frontend/ui/nicegui/pages/teams/page.py").read_text(encoding="utf-8")
+    assert "initial_state.teams = await controller.list_my_teams()" in src
