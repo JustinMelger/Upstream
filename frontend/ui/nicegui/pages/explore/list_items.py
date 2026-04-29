@@ -11,6 +11,11 @@ from frontend.ui.nicegui.core.learning_items import learning_item_type_label
 from frontend.ui.nicegui.core.path_items import count_course_items
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
+from frontend.ui.nicegui.pages.courses.media import (
+    extract_youtube_video_id,
+    website_favicon_url,
+    youtube_thumbnail_url,
+)
 from frontend.ui.nicegui.pages.courses.ui_glue import normalize_course_tracking_status
 
 
@@ -45,6 +50,23 @@ def _render_browse_row(
                 if secondary_label and on_secondary is not None:
                     ui.button(str(secondary_label), on_click=on_secondary).props("outline color=primary")
                 ui.button(str(primary_label), on_click=on_primary).props("unelevated color=primary")
+
+
+def _resolve_row_image_url(*, row: dict[str, Any], kind: str) -> str:
+    """Resolve a compact preview image URL for Explore rows."""
+    payload_image = str(row.get("preview_image_url") or "").strip()
+    if payload_image:
+        return payload_image
+
+    source_url = str(row.get("url") or "").strip()
+    if not source_url:
+        return ""
+
+    if kind in {"course", "video"}:
+        video_id = extract_youtube_video_id(source_url)
+        if video_id:
+            return youtube_thumbnail_url(video_id)
+    return website_favicon_url(source_url)
 
 
 def render_course_item(
@@ -91,7 +113,7 @@ def render_course_item(
             title=str(course.get("title") or ""),
             subtitle=subtitle,
             meta=" · ".join(meta_parts),
-            image_url=str(course.get("preview_image_url") or "").strip(),
+            image_url=_resolve_row_image_url(row=course, kind="course"),
             primary_label="Open details",
             on_primary=actions.on_view,
             secondary_label="Review",
@@ -181,7 +203,7 @@ def render_article_item(
             title=str(article.get("title") or ""),
             subtitle=" · ".join(subtitle_parts),
             meta=review_summary or tags,
-            image_url=str(article.get("preview_image_url") or "").strip(),
+            image_url=_resolve_row_image_url(row=article, kind="article"),
             primary_label="Open details",
             on_primary=actions.on_view,
             secondary_label="Review",
@@ -211,7 +233,7 @@ def render_video_item(
             title=str(video.get("title") or ""),
             subtitle=" · ".join(subtitle_parts),
             meta=review_summary or "No reviews yet",
-            image_url=str(video.get("preview_image_url") or "").strip(),
+            image_url=_resolve_row_image_url(row=video, kind="video"),
             primary_label="Open details",
             on_primary=lambda: ui.navigate.to(f"/explore/videos/{video_id}"),
             secondary_label="Review",

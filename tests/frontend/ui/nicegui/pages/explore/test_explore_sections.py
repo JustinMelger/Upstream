@@ -201,3 +201,39 @@ def test_render_course_item_shows_tracking_status_without_error(monkeypatch) -> 
 
     assert "Tracked course" in fake_ui.labels
     assert "GitHub Docs · In Progress" in fake_ui.labels
+
+
+def test_render_course_item_uses_youtube_thumbnail_fallback(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _capture_row(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(list_items, "_render_browse_row", _capture_row)
+
+    list_items.render_course_item(
+        course={
+            "id": 7,
+            "title": "Tracked course",
+            "provider": "GitHub Docs",
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "preview_image_url": "",
+        },
+        item_classes="x",
+        state=type(
+            "_State",
+            (),
+            {
+                "tracking_by_course_id": {},
+                "course_review_summary_by_course_id": {},
+            },
+        )(),
+        username="alice",
+        is_admin=False,
+        course_actions_builder=lambda *_: _FakeActions(),
+        item_type="course",
+        on_set_tracking=lambda *_: None,
+        on_clear_tracking=lambda *_: None,
+    )
+
+    assert captured["image_url"] == "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
