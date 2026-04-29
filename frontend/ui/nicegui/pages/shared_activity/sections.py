@@ -33,16 +33,14 @@ def render_activity_error(*, message: str, on_retry: Callable[[], Any]) -> None:
 
 
 def render_activity_items(*, events: list[Any], on_open: Callable[[Any], Any]) -> None:
-    """Render shared activity cards."""
-    with ui.column().classes("w-full gap-3 lp-teams-feed"):
+    """Render compact shared activity feed rows."""
+    with ui.column().classes("w-full gap-0 lp-teams-feed"):
         for event in list(events or []):
-            with ui.card().classes("lp-card w-full lp-teams-item"):
-                with ui.row().classes("items-center justify-between w-full lp-teams-item-head"):
-                    ui.label(str(event.message or "Activity update")).classes("text-sm lp-teams-item-title")
-                    ui.label(format_when(event.created_at)).classes("text-xs lp-teams-item-time").style(
-                        "color: var(--lp-muted)"
-                    )
-                with ui.row().classes("items-center justify-between w-full mt-2 lp-teams-item-foot"):
+            with ui.element("div").classes("w-full lp-teams-feed-row"):
+                with ui.row().classes("items-center gap-4 w-full no-wrap"):
+                    ui.icon("auto_stories").classes("text-[18px]").style("color: var(--lp-primary-strong)")
+                    with ui.column().classes("gap-1 min-w-0 flex-1"):
+                        ui.label(str(event.message or "Activity update")).classes("text-sm lp-teams-feed-row-title")
                     meta_parts = [
                         str(event.actor or "").strip(),
                         str(event.target.target_type_label or "").strip(),
@@ -51,8 +49,11 @@ def render_activity_items(*, events: list[Any], on_open: Callable[[Any], Any]) -
                     if str(event.target.target_label or "").strip():
                         meta_parts.append(str(event.target.target_label or "").strip())
                     meta = " · ".join(part for part in meta_parts if part)
-                    ui.label(meta).classes("text-xs lp-teams-item-meta").style("color: var(--lp-muted)")
-                    ui.button("Open", on_click=lambda target=event.target: on_open(target)).props("dense outline").classes(
+                    ui.label(meta).classes("text-xs lp-teams-feed-row-meta").style("color: var(--lp-muted)")
+                    ui.label(format_when(event.created_at)).classes("text-xs lp-teams-item-time").style(
+                        "color: var(--lp-muted)"
+                    )
+                    ui.button("Open", on_click=lambda target=event.target: on_open(target)).props("dense flat color=primary").classes(
                         "lp-teams-open-btn"
                     )
 

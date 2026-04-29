@@ -3791,13 +3791,9 @@ def apply_theme() -> None:
           min-height: 34px;
         }
 
-        .lp-teams-overview-strip {
-          border-color: rgba(186, 204, 227, 0.1);
-          background:
-            radial-gradient(120% 120% at 10% 6%, rgba(88, 166, 232, 0.1), transparent 58%),
-            linear-gradient(160deg, rgba(17, 30, 48, 0.68), rgba(11, 23, 38, 0.6));
-          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
-          padding: 10px 12px !important;
+        .lp-teams-toolbar {
+          margin-top: 2px;
+          margin-bottom: 6px;
         }
 
         .lp-teams-overview-title {
@@ -3832,7 +3828,7 @@ def apply_theme() -> None:
         .lp-teams-workspace-grid {
           width: 100%;
           display: grid;
-          grid-template-columns: 220px minmax(260px, 0.72fr) minmax(0, 1.28fr);
+          grid-template-columns: 260px minmax(0, 1fr);
           gap: 16px;
           align-items: start;
         }
@@ -3841,6 +3837,13 @@ def apply_theme() -> None:
           position: sticky;
           top: 82px;
           padding-top: 2px;
+        }
+
+        .lp-teams-sidebar-card {
+          border-color: rgba(186, 204, 227, 0.08) !important;
+          background: rgba(12, 22, 36, 0.34) !important;
+          box-shadow: none !important;
+          border-radius: 18px !important;
         }
 
         .lp-teams-sidebar-title {
@@ -3889,6 +3892,13 @@ def apply_theme() -> None:
 
         .lp-teams-workspace-shell {
           padding: 14px 18px 12px !important;
+        }
+
+        .lp-teams-main-panel {
+          border-color: rgba(186, 204, 227, 0.08) !important;
+          background: rgba(14, 24, 39, 0.34) !important;
+          box-shadow: none !important;
+          border-radius: 18px !important;
         }
 
         .lp-teams-empty-workspace {
@@ -4019,15 +4029,13 @@ def apply_theme() -> None:
         }
 
         .lp-teams-feed-row {
-          padding: 11px 4px;
+          padding: 14px 4px;
           border-bottom: 1px solid rgba(186, 204, 227, 0.09);
-          transition: background-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+          transition: background-color 140ms ease;
         }
 
         .lp-teams-feed-row:hover {
           background: rgba(255, 255, 255, 0.02);
-          transform: translateY(var(--lp-hover-lift));
-          box-shadow: var(--lp-hover-shadow);
         }
 
         .lp-teams-workspace-shell .lp-empty-compact {
@@ -4036,45 +4044,24 @@ def apply_theme() -> None:
           box-shadow: none !important;
         }
 
+        .lp-teams-item-time {
+          opacity: 0.75;
+          flex: 0 0 auto;
+        }
+
         .lp-teams-feed-row-title {
           line-height: 1.28;
-          font-weight: 500;
+          font-weight: 600;
         }
 
         .lp-teams-feed-row-meta {
           opacity: 0.74;
         }
 
-        .lp-teams-item {
-          border-color: rgba(186, 204, 227, 0.1);
-          background: linear-gradient(160deg, rgba(29, 41, 61, 0.56), rgba(18, 29, 46, 0.5));
-          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.13);
-        }
-
-        .lp-teams-item-head {
-          align-items: flex-start;
-        }
-
-        .lp-teams-item-title {
-          font-weight: 600;
-        }
-
-        .lp-teams-item-time {
-          opacity: 0.75;
-        }
-
-        .lp-teams-item-meta {
-          opacity: 0.74;
-        }
-
         .lp-teams-open-btn {
-          min-width: 86px;
-        }
-
-        .lp-home-focus-separator,
-        .lp-home-review-separator {
-          margin: 4px 0 6px;
-          opacity: 0.28;
+          min-width: 0;
+          padding-left: 8px !important;
+          padding-right: 2px !important;
         }
 
         .lp-home-review-table .lp-home-track-row {

@@ -40,6 +40,7 @@ def test_render_team_detail_view_renders_inbox_without_selected_team(monkeypatch
 
     fake_ui = SimpleNamespace(
         column=lambda: _FakeContainer(),
+        card=lambda: _FakeContainer(),
         label=lambda _text="": _FakeContainer(),
     )
     captured: dict[str, object] = {}

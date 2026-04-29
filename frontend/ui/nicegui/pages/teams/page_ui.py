@@ -52,10 +52,9 @@ class _TeamsPageView:
         self._bind_actions()
 
     def _render_topbar(self) -> None:
-        with ui.card().classes("lp-card w-full lp-teams-shell lp-teams-overview-strip"):
-            with ui.row().classes("items-center justify-end gap-2 w-full lp-teams-overview-actions"):
-                self.create_team_btn = ui.button("Create team").props("dense")
-                self.refresh_btn = ui.button("Refresh").props("dense outline").classes("lp-teams-refresh")
+        with ui.row().classes("items-center justify-end gap-2 w-full lp-teams-toolbar"):
+            self.create_team_btn = ui.button("Create team").props("dense")
+            self.refresh_btn = ui.button("Refresh").props("dense outline").classes("lp-teams-refresh")
 
     def _render_create_dialog(self) -> None:
         with ui.dialog() as create_team_dialog:
@@ -116,7 +115,7 @@ class _TeamsPageView:
             return
 
         with ui.element("div").classes("lp-teams-workspace-grid"):
-            with ui.column().classes("w-full gap-2 lp-teams-sidebar"):
+            with ui.column().classes("w-full gap-3 lp-teams-sidebar"):
                 ui.label("Workspace").classes("text-xs lp-teams-sidebar-title")
                 self.view_tabs = (
                     ui.radio(
@@ -126,7 +125,6 @@ class _TeamsPageView:
                     .props("dense")
                     .classes("text-sm lp-teams-tabs lp-teams-side-nav")
                 )
-            with ui.column().classes("w-full gap-3"):
                 self.teams_list_view()
             with ui.column().classes("w-full gap-3"):
                 self.team_detail_view()
@@ -138,9 +136,9 @@ class _TeamsPageView:
             self.view_tabs.on("update:model-value", self.on_tab_change)
 
     def _render_teams_list_view(self) -> None:
-        with ui.card().classes("lp-card w-full lp-teams-shell lp-teams-list-shell"):
+        with ui.card().classes("lp-card w-full lp-teams-sidebar-card lp-teams-list-shell"):
             with ui.row().classes("items-center justify-between w-full"):
-                ui.label("My teams").classes("text-lg font-semibold lp-teams-list-title")
+                ui.label("My teams").classes("text-base font-semibold lp-teams-list-title")
                 if self.state.teams:
                     ui.label(f"{len(self.state.teams)} total").classes("text-xs lp-teams-list-count").style(
                         "color: var(--lp-muted)"
@@ -173,13 +171,14 @@ class _TeamsPageView:
                         on_retry=self.refresh_all,
                     )
                     return
-                ui.label("Inbox").classes("text-sm font-semibold")
-                render_activity_feed(
-                    events=build_activity_event_views(events=self.state.inbox_rows),
-                    on_open=self.open_activity_target,
-                    empty_title="No conversations pending.",
-                    empty_description="Review requests and replies from teammates will appear here.",
-                )
+                with ui.card().classes("lp-card w-full lp-teams-main-panel"):
+                    ui.label("Inbox").classes("text-base font-semibold")
+                    render_activity_feed(
+                        events=build_activity_event_views(events=self.state.inbox_rows),
+                        on_open=self.open_activity_target,
+                        empty_title="No conversations pending.",
+                        empty_description="Review requests and replies from teammates will appear here.",
+                    )
                 return
 
             if self.state.error_message and not self.state.selected_team:
@@ -204,30 +203,26 @@ class _TeamsPageView:
         members = [row for row in list(team.get("members") or []) if isinstance(row, dict)]
         members_count = len(members)
 
-        with ui.card().classes("lp-card w-full lp-teams-shell lp-teams-workspace-shell"):
+        with ui.card().classes("lp-card w-full lp-teams-main-panel lp-teams-workspace-shell"):
             with ui.row().classes("items-start justify-between w-full"):
                 with ui.column().classes("gap-1"):
-                    ui.label(str(team.get("name") or "Untitled team")).classes("text-lg font-semibold lp-teams-workspace-title")
+                    ui.label(str(team.get("name") or "Untitled team")).classes("text-xl font-semibold lp-teams-workspace-title")
                     description = str(team.get("description") or "").strip()
                     if description:
                         ui.label(description).classes("text-sm").style("color: var(--lp-muted)")
-                    ui.label(f"Owner: {str(team.get('owner_user_id') or '')}").classes("text-xs").style(
-                        "color: var(--lp-muted)"
-                    )
-                    with ui.row().classes("items-center gap-3 flex-wrap lp-teams-workspace-meta"):
-                        ui.label(f"Members: {members_count}").classes("text-xs").style("color: var(--lp-muted)")
-                        ui.label(f"Role: {my_role or 'member'}").classes("text-xs").style("color: var(--lp-muted)")
+                    ui.label(
+                        f"Owner: {str(team.get('owner_user_id') or '')} · Members: {members_count} · Role: {my_role or 'member'}"
+                    ).classes("text-xs").style("color: var(--lp-muted)")
                 with ui.row().classes("items-center gap-2"):
                     if can_manage:
-                        ui.button(
-                            "Invite members",
-                            on_click=lambda: ui.navigate.to(build_activity_tab_link(tab="my_teams")),
-                        ).props("dense outline")
+                        ui.button("Invite members", on_click=lambda: ui.navigate.to(build_activity_tab_link(tab="my_teams"))).props(
+                            "dense outline"
+                        )
             ui.separator()
 
             current_tab = self._current_tab()
             if current_tab == "team":
-                ui.label("Team activity").classes("text-sm font-semibold")
+                ui.label("Team activity").classes("text-base font-semibold")
                 render_activity_feed(
                     events=build_activity_event_views(events=self.state.activity_rows),
                     on_open=self.open_activity_target,
@@ -236,7 +231,7 @@ class _TeamsPageView:
                 )
                 return
 
-            ui.label("Members").classes("text-sm font-semibold")
+            ui.label("Members").classes("text-base font-semibold")
             render_team_members(
                 team=team,
                 can_manage=can_manage,
