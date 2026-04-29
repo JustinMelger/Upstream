@@ -93,9 +93,7 @@ def render_course_item(
         actions = course_actions_builder(course, course_id, url)
         tracked_row = tracked if isinstance(tracked, dict) else None
         status_text = (
-            normalize_course_tracking_status(tracked_row.get("status")).replace("_", " ").title()
-            if tracked_row
-            else ""
+            normalize_course_tracking_status(tracked_row.get("status")).replace("_", " ").title() if tracked_row else ""
         )
         provider = str(course.get("provider") or "").strip()
         review_summary = format_review_summary(
@@ -157,7 +155,9 @@ def render_path_item(
             ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
 
         review_summary = format_review_summary(state.path_review_summary_by_id.get(path_id), style="star")
-        subtitle = f"{0 if not is_tracked else max(0, int(detail.get('completed_count') or 0))} / {max(0, total_courses)} courses"
+        subtitle = (
+            f"{0 if not is_tracked else max(0, int(detail.get('completed_count') or 0))} / {max(0, total_courses)} courses"
+        )
         meta_parts = []
         if is_tracked:
             meta_parts.append("Selected")

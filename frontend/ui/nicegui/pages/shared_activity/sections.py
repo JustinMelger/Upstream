@@ -53,9 +53,9 @@ def render_activity_items(*, events: list[Any], on_open: Callable[[Any], Any]) -
                     ui.label(format_when(event.created_at)).classes("text-xs lp-teams-item-time").style(
                         "color: var(--lp-muted)"
                     )
-                    ui.button("Open", on_click=lambda target=event.target: on_open(target)).props("dense flat color=primary").classes(
-                        "lp-teams-open-btn"
-                    )
+                    ui.button("Open", on_click=lambda target=event.target: on_open(target)).props(
+                        "dense flat color=primary"
+                    ).classes("lp-teams-open-btn")
 
 
 def render_activity_feed(

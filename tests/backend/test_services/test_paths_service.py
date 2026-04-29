@@ -203,9 +203,9 @@ async def test_list_paths_includes_course_count(db_session):
     paths = PathsService(PathsRepository(db_session))
     course_a = (await courses.create_course({"title": "Course 1", "description": "A"}))["id"]
     course_b = (await courses.create_course({"title": "Course 2", "description": "B"}))["id"]
-    article_id = (await articles.create_article(payload={"title": "Article 1", "url": "https://example.com/a"}, created_by="admin"))[
-        "id"
-    ]
+    article_id = (
+        await articles.create_article(payload={"title": "Article 1", "url": "https://example.com/a"}, created_by="admin")
+    )["id"]
 
     await paths.create_path(
         {

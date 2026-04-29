@@ -90,7 +90,9 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                     kicker="",
                 )
 
-                with ui.row().classes("w-full items-center justify-end gap-3 flex-wrap lp-page-controls-row lp-home-controls-simple"):
+                with ui.row().classes(
+                    "w-full items-center justify-end gap-3 flex-wrap lp-page-controls-row lp-home-controls-simple"
+                ):
                     view_filter = (
                         ui.radio({"learning": "Learning", "shared": "Shared"}, value=initial_view)
                         .props("inline dense")

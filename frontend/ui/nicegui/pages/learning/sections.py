@@ -368,9 +368,7 @@ def render_selected_paths_section(
                 if meta_bits:
                     ui.label(" · ".join(meta_bits)).classes("text-xs lp-home-track-meta")
 
-                with ui.row().classes(
-                    "w-full items-center gap-2 lp-track-progress-meta lp-home-status--active"
-                ):
+                with ui.row().classes("w-full items-center gap-2 lp-track-progress-meta lp-home-status--active"):
                     ui.label("Selected").classes("text-xs lp-track-status-text")
                     ui.linear_progress(float(ratio), show_value=False).classes(
                         "grow lp-home-track-progress lp-track-progress-inline"
@@ -420,7 +418,9 @@ def render_shared_content(
                     with ui.element("div").classes(grid_classes):
                         for item in shared_items_visible:
                             item_type = str(item.item_type or "")
-                            item_icon = "play_circle" if item_type == "video" else ("article" if item_type == "article" else "school")
+                            item_icon = (
+                                "play_circle" if item_type == "video" else ("article" if item_type == "article" else "school")
+                            )
                             with ui.element("div").classes("lp-track-card lp-shared-card"):
                                 with ui.row().classes("w-full items-start justify-between gap-3 lp-track-head-row"):
                                     with ui.row().classes("items-start gap-2 lp-track-identity"):
@@ -428,7 +428,9 @@ def render_shared_content(
                                         with ui.column().classes("gap-0 lp-track-title-block"):
                                             ui.label(str(item.title or "")).classes("text-sm font-semibold lp-track-title")
                                             ui.label(learning_item_type_label(item_type)).classes("text-xs lp-home-track-meta")
-                                    with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group lp-shared-actions"):
+                                    with ui.row().classes(
+                                        "items-center gap-1 lp-track-actions lp-track-actions-group lp-shared-actions"
+                                    ):
                                         ui.button(
                                             learning_item_primary_action_label(item_type),
                                             on_click=on_open_learning_item(item),
@@ -448,7 +450,9 @@ def render_shared_content(
             with ui.column().classes("w-full gap-3"):
                 ui.label("Paths").classes("lp-home-section-title")
                 if not shared_paths:
-                    ui.label("You haven't shared any paths yet.").classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
+                    ui.label("You haven't shared any paths yet.").classes("text-sm lp-home-empty-copy").style(
+                        "color: var(--lp-muted)"
+                    )
                 else:
                     grid_classes = "lp-shared-grid"
                     if len(shared_paths_visible) <= 1:
@@ -463,13 +467,15 @@ def render_shared_content(
                                         with ui.column().classes("gap-0 lp-track-title-block"):
                                             ui.label(str(p.get("name") or "")).classes("text-sm font-semibold lp-track-title")
                                             ui.label("Path").classes("text-xs lp-home-track-meta")
-                                    with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group lp-shared-actions"):
+                                    with ui.row().classes(
+                                        "items-center gap-1 lp-track-actions lp-track-actions-group lp-shared-actions"
+                                    ):
                                         ui.button("View", on_click=on_view_path(pid)).props("unelevated no-caps").classes(
                                             "lp-shared-primary-btn"
                                         )
-                                        ui.button("Review", on_click=on_review_path(pid)).props("dense outline no-caps").classes(
-                                            "lp-shared-secondary-btn"
-                                        )
+                                        ui.button("Review", on_click=on_review_path(pid)).props(
+                                            "dense outline no-caps"
+                                        ).classes("lp-shared-secondary-btn")
                                 parts = [review_summary_label(shared_path_review_summary_by_id.get(pid))]
                                 parts = [part for part in parts if part]
                                 if parts:

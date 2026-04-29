@@ -66,7 +66,9 @@ def render_explore_share_dialog(*, on_share_learning_item: Any, on_share_path: A
 
 def render_explore_topbar(*, initial_tab: str, on_open_share: Any) -> ExploreTopbarControls:
     """Render Explore topbar and return control handles."""
-    with ui.column().classes("lp-topbar lp-sticky-controls lp-courses-toolbar lp-explore-toolbar lp-explore-control-card w-full gap-3"):
+    with ui.column().classes(
+        "lp-topbar lp-sticky-controls lp-courses-toolbar lp-explore-toolbar lp-explore-control-card w-full gap-3"
+    ):
         with ui.row().classes("w-full items-center gap-2 flex-wrap"):
             search_input = (
                 ui.input("Search learning content")

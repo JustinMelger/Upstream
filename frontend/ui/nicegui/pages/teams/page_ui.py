@@ -215,9 +215,9 @@ class _TeamsPageView:
                     ).classes("text-xs").style("color: var(--lp-muted)")
                 with ui.row().classes("items-center gap-2"):
                     if can_manage:
-                        ui.button("Invite members", on_click=lambda: ui.navigate.to(build_activity_tab_link(tab="my_teams"))).props(
-                            "dense outline"
-                        )
+                        ui.button(
+                            "Invite members", on_click=lambda: ui.navigate.to(build_activity_tab_link(tab="my_teams"))
+                        ).props("dense outline")
             ui.separator()
 
             current_tab = self._current_tab()
