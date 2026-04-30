@@ -39,7 +39,7 @@ async def test_list_articles_includes_preview_image_url_from_preview_service(db_
 
 @pytest.mark.unit
 async def test_list_articles_preview_resolver_deduplicates_shared_urls(db_session):
-    """Preview resolver is called once per unique URL and shared across matching rows."""
+    """Preview resolver is called once per article URL after duplicate URLs are rejected."""
     calls: list[str] = []
 
     class _PreviewService:
@@ -52,10 +52,9 @@ async def test_list_articles_preview_resolver_deduplicates_shared_urls(db_sessio
     service = ArticlesService(ArticlesRepository(db_session), url_preview_service=_PreviewService())
     shared_url = "https://example.com/shared"
     await service.create_article(payload={"title": "A", "url": shared_url}, created_by="alice")
-    await service.create_article(payload={"title": "B", "url": shared_url}, created_by="alice")
     calls.clear()
 
     rows = await service.list_articles(query=None, tag=None)
-    assert len(rows) == 2
+    assert len(rows) == 1
     assert calls == [shared_url]
     assert all(str(r.get("preview_image_url") or "") == "https://cdn.example.com/shared.png" for r in rows)

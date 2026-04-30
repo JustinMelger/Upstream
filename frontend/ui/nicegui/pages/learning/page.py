@@ -83,7 +83,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
             await _load(reset_visibility=False)
 
         with render_catalog_scope(variant="explore").classes("lp-home-scope"):
-            with render_page_scope(scope_classes="lp-home-page-shell lp-container"):
+            with render_page_scope(scope_classes="lp-home-page-shell"):
                 render_page_header(
                     title="Learning dashboard",
                     subtitle="",

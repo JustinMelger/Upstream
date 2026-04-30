@@ -391,9 +391,9 @@ def render_shared_content(
     shared_items_visible = shared_learning_items[:12]
     shared_paths_visible = shared_paths[:12]
 
-    with ui.column().classes("w-full gap-4 lp-shared-tab-shell"):
+    with ui.column().classes("w-full gap-3 lp-shared-tab-shell"):
         with ui.column().classes("w-full gap-1 lp-shared-tab-header"):
-            ui.label("You shared").classes("text-lg font-semibold mt-2")
+            ui.label("You shared").classes("text-lg font-semibold")
             ui.label("Content you shared for others to discover.").classes("text-sm").style("color: var(--lp-muted)")
 
         with ui.row().classes("w-full gap-3 flex-wrap lp-shared-summary-row"):
@@ -404,7 +404,7 @@ def render_shared_content(
                 ui.label("Paths").classes("lp-shared-summary-label")
                 ui.label(str(len(shared_paths))).classes("lp-shared-summary-value")
 
-        with ui.column().classes("w-full gap-5 lp-shared-content-column"):
+        with ui.column().classes("w-full gap-4 lp-shared-content-column"):
             with ui.column().classes("w-full gap-3"):
                 ui.label("Shared learning items").classes("lp-home-section-title")
                 if not shared_learning_items:

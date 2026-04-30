@@ -145,72 +145,119 @@ def render_article_card(
     """Render one article card with actions."""
     title = str(article_row.get("title") or "").strip()
     url = str(article_row.get("url") or "").strip()
+    subtitle_parts = [part.strip() for part in str(subtitle_text or "").split("·") if str(part).strip()]
 
     with ui.card().classes("w-full lp-card lp-card--hover lp-article-card"):
-        with render_card_topright():
-            if is_new:
-                ui.label("New").classes("lp-chip lp-chip--sky")
-            card_menu = apply_icon_button_a11y(
-                ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
-                label="Open article actions",
-                tooltip="Article actions",
-            )
-            with card_menu:
-                ui.menu_item("Review", review_action)
-
+        _render_article_topright(is_new=is_new, review_action=review_action)
         with render_card_main_row(classes="lp-article-card-main"):
-            with render_card_content_column(classes="lp-article-card-content"):
-                ui.label(title).classes("text-lg font-semibold lp-card-title")
-                if url and (not compact_mode):
-                    ui.link(url, url).props("target=_blank").classes("text-sm")
+            _render_article_card_content(
+                title=title,
+                url=url,
+                tags=tags,
+                summary_text=summary_text,
+                subtitle_parts=subtitle_parts,
+                view_action=view_action,
+                compact_mode=compact_mode,
+            )
+            _render_article_thumbnail(thumbnail_url=thumbnail_url)
 
-                subtitle_parts = [part.strip() for part in str(subtitle_text or "").split("·") if str(part).strip()]
-                with ui.row().classes("items-center gap-2 flex-wrap lp-article-meta-row"):
-                    ui.label("Article").classes("lp-meta-chip lp-meta-chip--quiet")
-                    if subtitle_parts:
-                        ui.label(subtitle_parts[0]).classes("text-xs lp-card-subtitle lp-article-byline")
-                    if len(subtitle_parts) > 1:
-                        ui.label(subtitle_parts[1]).classes("text-xs lp-card-subtitle lp-article-date")
-                if compact_mode:
-                    context_line = subtitle_parts[1] if len(subtitle_parts) > 1 else ""
-                    if not context_line and url:
-                        context_line = "Source link"
-                    ui.label(context_line or "Shared by teammate").classes("text-xs lp-card-subtitle lp-article-context-line")
 
-                with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
-                    if tags:
-                        for t in tags[:10]:
-                            ui.label(t).classes("lp-meta-chip")
-                        if len(tags) > 10:
-                            ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
-                    else:
-                        ui.label("").classes("lp-article-tag-placeholder")
-                if compact_mode:
-                    ui.element("div").classes("lp-card-meta-spacer")
-                review_classes = "lp-card-review-line lp-article-summary-chip"
-                if not str(summary_text or "").strip():
-                    review_classes += " lp-card-review-line--empty"
-                ui.label(str(summary_text or "").strip() or "No reviews yet").classes(review_classes)
+def _render_article_topright(*, is_new: bool, review_action: Any) -> None:
+    """Render card top-right status and menu controls."""
+    with render_card_topright():
+        if is_new:
+            ui.label("New").classes("lp-chip lp-chip--sky")
+        card_menu = apply_icon_button_a11y(
+            ui.dropdown_button("", icon="more_vert", auto_close=True).props("dense flat"),
+            label="Open article actions",
+            tooltip="Article actions",
+        )
+        with card_menu:
+            ui.menu_item("Review", review_action)
 
-                def _render_actions() -> None:
-                    ui.button("Open details", on_click=view_action).props("dense")
 
-                render_card_actions_row(render_actions=_render_actions)
+def _render_article_card_content(
+    *,
+    title: str,
+    url: str,
+    tags: list[str],
+    summary_text: str,
+    subtitle_parts: list[str],
+    view_action: Any,
+    compact_mode: bool,
+) -> None:
+    """Render article card text and actions."""
+    with render_card_content_column(classes="lp-article-card-content"):
+        ui.label(title).classes("text-lg font-semibold lp-card-title")
+        if url and (not compact_mode):
+            ui.link(url, url).props("target=_blank").classes("text-sm")
 
-            with ui.element("div").classes("lp-article-media-slot"):
-                safe_src = html.escape(str(thumbnail_url or "").strip(), quote=True)
-                if safe_src:
-                    ui.html(
-                        (
-                            '<img class="lp-course-thumb lp-course-thumb--side lp-article-thumb" '
-                            f'src="{safe_src}" '
-                            'alt="Article thumbnail" loading="lazy" referrerpolicy="no-referrer">'
-                        ),
-                        sanitize=False,
-                    )
-                else:
-                    with ui.element("div").classes("lp-course-thumb lp-course-thumb--side lp-course-thumb--placeholder-block"):
-                        ui.icon("article").classes("lp-course-thumb-placeholder-block-icon")
+        _render_article_meta(subtitle_parts=subtitle_parts, url=url, compact_mode=compact_mode)
+        _render_article_tags(tags=tags)
+        if compact_mode:
+            ui.element("div").classes("lp-card-meta-spacer")
+        _render_article_review_summary(summary_text=summary_text)
+
+        def _render_actions() -> None:
+            ui.button("Open details", on_click=view_action).props("dense")
+
+        render_card_actions_row(render_actions=_render_actions)
+
+
+def _render_article_meta(*, subtitle_parts: list[str], url: str, compact_mode: bool) -> None:
+    """Render article byline/date context."""
+    with ui.row().classes("items-center gap-2 flex-wrap lp-article-meta-row"):
+        ui.label("Article").classes("lp-meta-chip lp-meta-chip--quiet")
+        if subtitle_parts:
+            ui.label(subtitle_parts[0]).classes("text-xs lp-card-subtitle lp-article-byline")
+        if len(subtitle_parts) > 1:
+            ui.label(subtitle_parts[1]).classes("text-xs lp-card-subtitle lp-article-date")
+    if not compact_mode:
+        return
+
+    context_line = subtitle_parts[1] if len(subtitle_parts) > 1 else ""
+    if not context_line and url:
+        context_line = "Source link"
+    ui.label(context_line or "Shared by teammate").classes("text-xs lp-card-subtitle lp-article-context-line")
+
+
+def _render_article_tags(*, tags: list[str]) -> None:
+    """Render article tag chips."""
+    with ui.row().classes("items-center gap-2 flex-wrap mt-1 lp-article-tag-row"):
+        if not tags:
+            ui.label("").classes("lp-article-tag-placeholder")
+            return
+        for tag in tags[:10]:
+            ui.label(tag).classes("lp-meta-chip")
+        if len(tags) > 10:
+            ui.label(f"+{len(tags) - 10}").classes("lp-meta-chip")
+
+
+def _render_article_review_summary(*, summary_text: str) -> None:
+    """Render article review summary line."""
+    summary = str(summary_text or "").strip()
+    review_classes = "lp-card-review-line lp-article-summary-chip"
+    if not summary:
+        review_classes += " lp-card-review-line--empty"
+    ui.label(summary or "No reviews yet").classes(review_classes)
+
+
+def _render_article_thumbnail(*, thumbnail_url: str) -> None:
+    """Render article thumbnail or fallback icon."""
+    with ui.element("div").classes("lp-article-media-slot"):
+        safe_src = html.escape(str(thumbnail_url or "").strip(), quote=True)
+        if safe_src:
+            ui.html(
+                (
+                    '<img class="lp-course-thumb lp-course-thumb--side lp-article-thumb" '
+                    f'src="{safe_src}" '
+                    'alt="Article thumbnail" loading="lazy" referrerpolicy="no-referrer">'
+                ),
+                sanitize=False,
+            )
+            return
+        with ui.element("div").classes("lp-course-thumb lp-course-thumb--side lp-course-thumb--placeholder-block"):
+            ui.icon("article").classes("lp-course-thumb-placeholder-block-icon")
 
 
 def render_articles_catalog(

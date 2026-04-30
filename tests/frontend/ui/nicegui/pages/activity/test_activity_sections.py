@@ -43,6 +43,9 @@ class _FakeUi:
         self.labels.append(str(_text))
         return _FakeElement()
 
+    def icon(self, _name: str) -> _FakeElement:
+        return _FakeElement()
+
     def button(self, label: str, on_click=None) -> _FakeElement:  # noqa: ANN001
         self.buttons.append((label, on_click))
         return _FakeElement()

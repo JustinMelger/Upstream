@@ -36,7 +36,7 @@ def render_activity_items(*, events: list[Any], on_open: Callable[[Any], Any]) -
     """Render compact shared activity feed rows."""
     with ui.column().classes("w-full gap-0 lp-teams-feed"):
         for event in list(events or []):
-            with ui.element("div").classes("w-full lp-teams-feed-row"):
+            with ui.row().classes("w-full lp-teams-feed-row"):
                 with ui.row().classes("items-center gap-4 w-full no-wrap"):
                     ui.icon("auto_stories").classes("text-[18px]").style("color: var(--lp-primary-strong)")
                     with ui.column().classes("gap-1 min-w-0 flex-1"):

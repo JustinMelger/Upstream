@@ -45,27 +45,37 @@ def build_admin_users_controls() -> AdminUsersControls:
                 ui.label("Create user").classes("text-base font-semibold")
                 ui.label("Add a new team member or administrator.").classes("text-xs text-gray-600")
                 new_username = ui.input("Username").props("clearable").classes("w-full lp-admin-users-input")
-                new_password = ui.input("Password", password=True, password_toggle_button=True).classes("w-full lp-admin-users-input")
-                new_role = ui.select({"user": "user", "admin": "admin"}, label="Role", value="user").classes("w-full lp-admin-users-input")
+                new_password = ui.input("Password", password=True, password_toggle_button=True).classes(
+                    "w-full lp-admin-users-input"
+                )
+                new_role = ui.select({"user": "user", "admin": "admin"}, label="Role", value="user").classes(
+                    "w-full lp-admin-users-input"
+                )
                 create_btn = ui.button("Create user")
 
             with ui.tab_panel("Reset password").classes("gap-3 lp-admin-users-panel"):
                 ui.label("Reset password").classes("text-base font-semibold")
                 ui.label("Set a new password for an existing account.").classes("text-xs text-gray-600")
                 reset_username = ui.input("Username").props("clearable").classes("w-full lp-admin-users-input")
-                reset_password = ui.input("New password", password=True, password_toggle_button=True).classes("w-full lp-admin-users-input")
+                reset_password = ui.input("New password", password=True, password_toggle_button=True).classes(
+                    "w-full lp-admin-users-input"
+                )
                 reset_btn = ui.button("Reset password").props("outline")
 
             with ui.tab_panel("Access").classes("gap-3 lp-admin-users-panel"):
                 ui.label("Access status").classes("text-base font-semibold")
                 ui.label("Disable or re-enable an account without deleting it.").classes("text-xs text-gray-600")
                 disable_username = ui.input("Username").props("clearable").classes("w-full lp-admin-users-input")
-                disable_action = ui.select({"disable": "Disable", "enable": "Enable"}, label="Action", value="disable").classes("w-full lp-admin-users-input")
+                disable_action = ui.select({"disable": "Disable", "enable": "Enable"}, label="Action", value="disable").classes(
+                    "w-full lp-admin-users-input"
+                )
                 status_btn = ui.button("Update status").props("outline")
 
             with ui.tab_panel("Delete").classes("gap-3 lp-admin-users-panel"):
                 ui.label("Delete user").classes("text-base font-semibold")
-                ui.label("Permanent action. Use only when an account should be removed entirely.").classes("text-xs text-red-300")
+                ui.label("Permanent action. Use only when an account should be removed entirely.").classes(
+                    "text-xs text-red-300"
+                )
                 delete_username = ui.input("Username").props("clearable").classes("w-full lp-admin-users-input")
                 confirm_delete = ui.checkbox("Confirm delete")
                 delete_btn = ui.button("Delete user").props("color=negative")
