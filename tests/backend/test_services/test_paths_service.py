@@ -200,7 +200,9 @@ async def test_list_paths_includes_course_count(db_session):
     """Path listings include the number of course items for browse surfaces."""
     courses = CoursesService(CoursesRepository(db_session))
     articles = ArticlesService(ArticlesRepository(db_session))
+    auth = AuthService(AuthRepository(db_session))
     paths = PathsService(PathsRepository(db_session))
+    await auth.create_user("admin", "pass123", "admin")
     course_a = (await courses.create_course({"title": "Course 1", "description": "A"}))["id"]
     course_b = (await courses.create_course({"title": "Course 2", "description": "B"}))["id"]
     article_id = (

@@ -3428,13 +3428,14 @@ def apply_theme() -> None:
 
         .lp-catalog--explore .lp-explore-path-grid {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(280px, 360px));
           gap: 14px;
           align-items: start;
+          justify-content: start;
         }
 
         .lp-catalog--explore .lp-explore-path-grid--pair {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(2, minmax(280px, 360px));
         }
 
         .lp-catalog--explore .lp-explore-path-grid--single {
@@ -3606,13 +3607,6 @@ def apply_theme() -> None:
           color: rgba(204, 216, 231, 0.74);
         }
 
-        .lp-profile-stat-line {
-          font-size: 0.92rem;
-          color: rgba(220, 228, 238, 0.88);
-          line-height: 1.35;
-        }
-
-        .lp-profile-summary-card,
         .lp-profile-chart-card,
         .lp-profile-table-card {
           position: relative;
@@ -3628,7 +3622,6 @@ def apply_theme() -> None:
           padding: 16px 18px 14px !important;
         }
 
-        .lp-profile-summary-card::before,
         .lp-profile-chart-card::before,
         .lp-profile-table-card::before {
           content: "";
@@ -3647,8 +3640,10 @@ def apply_theme() -> None:
           margin-bottom: 2px;
         }
 
-        .lp-profile-summary-card {
-          padding: 14px 16px !important;
+        .lp-profile-summary-row {
+          padding: 2px 0 14px;
+          border-bottom: 1px solid rgba(186, 204, 227, 0.1);
+          margin-bottom: 2px;
         }
 
         .lp-profile-summary-rail {
@@ -3656,7 +3651,7 @@ def apply_theme() -> None:
         }
 
         .lp-profile-summary-meta {
-          min-width: 170px;
+          min-width: 138px;
         }
 
         .lp-profile-avatar-img,
@@ -3699,10 +3694,10 @@ def apply_theme() -> None:
 
         .lp-profile-mode-toggle .q-btn {
           margin: 0 !important;
-          padding: 7px 14px !important;
+          padding: 6px 12px !important;
           border-radius: 8px;
-          min-width: 124px;
-          min-height: 34px !important;
+          min-width: 116px;
+          min-height: 32px !important;
           justify-content: center !important;
           text-transform: none !important;
           letter-spacing: 0.01em !important;
@@ -3727,16 +3722,10 @@ def apply_theme() -> None:
 
         .lp-profile-metric-card {
           border-color: rgba(186, 204, 227, 0.14);
-          background: linear-gradient(160deg, rgba(20, 34, 54, 0.78), rgba(12, 24, 39, 0.7));
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
-          padding: 12px 14px !important;
-          min-height: 148px;
-          transition: transform 140ms ease, box-shadow 160ms ease;
-        }
-
-        .lp-profile-metric-card:hover {
-          transform: translateY(var(--lp-hover-lift));
-          box-shadow: var(--lp-hover-shadow);
+          background: rgba(13, 24, 39, 0.56);
+          box-shadow: none;
+          padding: 10px 12px !important;
+          min-height: 118px;
         }
 
         .lp-profile-metric-icon {
@@ -3746,11 +3735,16 @@ def apply_theme() -> None:
 
         .lp-profile-metric-value {
           font-family: var(--lp-font-display);
-          font-size: clamp(1.8rem, 2.4vw, 2.1rem);
+          font-size: clamp(1.55rem, 2vw, 1.9rem);
           font-weight: 700;
           line-height: 1.1;
-          margin-top: 6px;
+          margin-top: 4px;
           color: rgba(239, 244, 250, 0.97);
+        }
+
+        .lp-profile-contributor-summary {
+          min-height: 92px;
+          align-items: center;
         }
 
         .lp-profile-team-table .q-table thead tr th:first-child,
@@ -4251,6 +4245,60 @@ def apply_theme() -> None:
           animation-delay: 120ms;
         }
 
+        .lp-admin-users-tabs {
+          margin-top: var(--lp-space-3);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .lp-admin-users-tabs .q-tab {
+          color: var(--lp-muted);
+          min-height: 42px;
+          padding: 0 var(--lp-space-4);
+        }
+
+        .lp-admin-users-tabs .q-tab--active {
+          color: var(--lp-text) !important;
+        }
+
+        .lp-admin-users-tabs .q-tabs__content {
+          gap: var(--lp-space-2);
+        }
+
+        .lp-admin-users-tabs .q-tab__indicator {
+          background: var(--lp-primary-strong) !important;
+          height: 2px !important;
+        }
+
+        .lp-admin-users-panels.q-tab-panels {
+          background: transparent !important;
+          box-shadow: none !important;
+          border-radius: 0 !important;
+        }
+
+        .lp-admin-users-panel.q-tab-panel {
+          background: transparent !important;
+          color: var(--lp-text) !important;
+          padding: var(--lp-space-5) 0 0 !important;
+        }
+
+        .lp-admin-users-input .q-field__control {
+          background: rgba(11, 18, 29, 0.72) !important;
+          border: 1px solid rgba(148, 163, 184, 0.16) !important;
+          box-shadow: none !important;
+        }
+
+        .lp-admin-users-input.q-field--focused .q-field__control {
+          border-color: rgba(116, 176, 228, 0.38) !important;
+          box-shadow: 0 0 0 3px rgba(116, 176, 228, 0.12) !important;
+        }
+
+        .lp-admin-users-input .q-field__native,
+        .lp-admin-users-input .q-field__label,
+        .lp-admin-users-input .q-field__marginal,
+        .lp-admin-users-input .q-select__dropdown-icon {
+          color: var(--lp-text) !important;
+        }
+
         @keyframes lp-refresh-fade {
           from {
             opacity: 0;
@@ -4273,10 +4321,6 @@ def apply_theme() -> None:
           }
         }
 
-        .lp-explore-detail {
-          --lp-max-content: 1380px;
-        }
-
         .lp-explore-detail-breadcrumb {
           color: var(--lp-muted);
           opacity: 0.92;
@@ -4291,17 +4335,15 @@ def apply_theme() -> None:
           flex: 1 1 0%;
           min-width: 0;
           gap: 12px;
-          padding: 14px 16px 8px;
+          padding: 12px 14px 8px;
           border-radius: var(--lp-radius-md);
           border: 1px solid var(--lp-border-soft);
-          background:
-            linear-gradient(180deg, rgba(18, 30, 48, 0.72), rgba(12, 22, 38, 0.64)),
-            radial-gradient(720px 360px at 24% -12%, rgba(124, 184, 235, 0.12), transparent 60%);
+          background: rgba(15, 24, 38, 0.7);
           box-shadow: var(--lp-shadow-sm);
         }
 
         .lp-explore-detail-hero {
-          padding: 4px 0 6px;
+          padding: 2px 0 4px;
           border-bottom: 1px solid rgba(186, 204, 227, 0.1);
           margin-bottom: 0;
         }
@@ -4328,9 +4370,9 @@ def apply_theme() -> None:
 
         .lp-explore-detail-card {
           border-radius: 12px;
-          border: 1px solid rgba(186, 204, 227, 0.13);
-          background: linear-gradient(160deg, rgba(18, 30, 47, 0.64), rgba(11, 22, 36, 0.58));
-          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(186, 204, 227, 0.1);
+          background: rgba(18, 29, 45, 0.58);
+          box-shadow: none;
         }
 
         .lp-explore-reviews-grid {
@@ -4346,14 +4388,14 @@ def apply_theme() -> None:
 
         .lp-explore-reviews-panel {
           min-height: 0;
-          padding-top: 14px;
-          padding-bottom: 14px;
+          padding-top: 10px;
+          padding-bottom: 10px;
         }
 
         .lp-explore-info-card {
-          border-color: rgba(186, 204, 227, 0.15);
-          background: linear-gradient(165deg, rgba(11, 24, 40, 0.78), rgba(8, 19, 31, 0.7));
-          box-shadow: 0 7px 18px rgba(0, 0, 0, 0.18);
+          border-color: rgba(186, 204, 227, 0.12);
+          background: rgba(11, 21, 34, 0.72);
+          box-shadow: none;
         }
 
         .lp-explore-info-card .text-base.font-semibold {
@@ -4398,11 +4440,11 @@ def apply_theme() -> None:
         .lp-explore-detail-side {
           flex: 0 0 288px;
           gap: 10px;
-          padding: 14px;
-          border-radius: var(--lp-radius-md);
-          border: 1px solid var(--lp-border-soft);
-          background: rgba(9, 18, 32, 0.64);
-          box-shadow: var(--lp-shadow-sm);
+          padding: 12px;
+          border-radius: 12px;
+          border: 1px solid rgba(186, 204, 227, 0.1);
+          background: rgba(9, 18, 32, 0.54);
+          box-shadow: none;
         }
 
         .lp-explore-detail-title {
@@ -4432,7 +4474,7 @@ def apply_theme() -> None:
         }
 
         .lp-explore-main-surface {
-          padding: 12px 14px;
+          padding: 10px 12px;
         }
 
         .lp-explore-main-surface .text-base.font-semibold {
@@ -4456,11 +4498,17 @@ def apply_theme() -> None:
         }
 
         .lp-explore-reviews-panel .lp-review-entry {
-          border-radius: 16px;
-          border-color: rgba(186, 204, 227, 0.11);
-          background: linear-gradient(160deg, rgba(26, 38, 58, 0.58), rgba(17, 29, 47, 0.5));
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-          padding: 12px 14px 10px !important;
+          padding: 10px 0 !important;
+          border-bottom: 1px solid rgba(186, 204, 227, 0.08);
+        }
+
+        .lp-explore-reviews-panel .lp-review-entry:last-child {
+          border-bottom: 0;
+        }
+
+        .lp-explore-reviews-panel .lp-review-entry-rating {
+          min-width: 44px;
+          color: rgba(235, 241, 249, 0.92);
         }
 
         .lp-explore-reviews-panel .lp-review-entry-title {
@@ -4469,15 +4517,16 @@ def apply_theme() -> None:
 
         .lp-explore-reviews-panel .lp-review-entry-date {
           margin-top: 1px;
-          margin-bottom: 3px;
+          margin-bottom: 2px;
         }
 
         .lp-explore-reviews-panel .lp-review-entry-body {
           line-height: 1.5;
+          color: rgba(222, 230, 242, 0.84);
         }
 
         .lp-explore-reviews-panel .lp-review-form-title {
-          margin-top: 8px;
+          margin-top: 10px;
           margin-bottom: 2px;
         }
 
@@ -4501,6 +4550,17 @@ def apply_theme() -> None:
 
         .lp-explore-reviews-panel .lp-review-save {
           min-width: 136px;
+        }
+
+        .lp-explore-content-row {
+          padding: 8px 0 10px;
+          border-bottom: 1px solid rgba(186, 204, 227, 0.08);
+          cursor: pointer;
+        }
+
+        .lp-explore-content-icon {
+          color: var(--lp-primary-strong);
+          font-size: 1.1rem;
         }
 
         .lp-path-sequence-card .lp-path-sequence-item {

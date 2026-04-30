@@ -77,14 +77,13 @@ def _rating_stars(*, avg: float) -> str:
 
 def _render_course_content_card(*, course: dict[str, Any], source_url: str, view_mode: str) -> None:
     with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface"):
-        with ui.row().classes("w-full items-center justify-between"):
-            ui.label("Course Content").classes("text-base font-semibold")
-            ui.icon("chevron_right").classes("lp-explore-detail-muted")
-
         if view_mode == "reviews":
-            ui.label("Content hidden in reviews mode.").classes("lp-explore-detail-muted")
+            ui.label("Course content hidden in reviews mode.").classes("lp-explore-detail-muted")
             return
 
+        title = str(course.get("title") or "Course").strip()
+        provider = str(course.get("provider") or "").strip()
+        description = str(course.get("description") or "").strip()
         video_id = extract_youtube_video_id(source_url)
         if video_id:
             with ui.element("div").classes("lp-video-wrap mt-1"):
@@ -92,7 +91,18 @@ def _render_course_content_card(*, course: dict[str, Any], source_url: str, view
 
         learning_outcomes = str(course.get("learning_outcomes") or "").strip()
         prerequisites = str(course.get("prerequisites") or "").strip()
-        description = str(course.get("description") or "").strip()
+        content_row = ui.row().classes("items-center w-full lp-explore-content-row")
+        if source_url:
+            content_row.on("click", lambda _e=None: ui.navigate.to(source_url, new_tab=True))
+        with content_row:
+            ui.icon("menu_book").classes("lp-explore-content-icon")
+            with ui.column().classes("gap-0 grow min-w-0"):
+                ui.label(title).classes("text-base font-semibold")
+                meta = provider or "Course content"
+                ui.label(meta).classes("lp-explore-detail-muted")
+            if source_url:
+                ui.icon("chevron_right").classes("lp-explore-detail-muted")
+
         if learning_outcomes or prerequisites:
             if learning_outcomes:
                 ui.label(learning_outcomes).classes("lp-explore-detail-body")
@@ -161,16 +171,17 @@ def _render_course_main_panel(
 
             @ui.refreshable
             def _hero_rating() -> None:
-                if panel_review_count <= 0:
-                    return
                 with ui.row().classes("items-center gap-2 flex-wrap"):
-                    ui.label(_rating_stars(avg=panel_avg_rating)).classes("lp-explore-rating-stars")
-                    ui.label(f"{panel_avg_rating:.1f}").classes("lp-explore-rating-score")
-                    ui.label(f"{panel_review_count} reviews").classes("lp-explore-detail-muted")
+                    if panel_review_count > 0:
+                        ui.label(_rating_stars(avg=panel_avg_rating)).classes("lp-explore-rating-stars")
+                        ui.label(f"{panel_avg_rating:.1f}").classes("lp-explore-rating-score")
+                    ui.label(f"{panel_review_count} review{'s' if panel_review_count != 1 else ''}").classes(
+                        "lp-explore-detail-muted"
+                    )
+                    if owner:
+                        ui.label(f"by {owner}").classes("lp-explore-detail-muted")
 
             _hero_rating()
-            if owner:
-                ui.label(f"by {owner}").classes("lp-explore-detail-muted")
             if str(course.get("description") or "").strip():
                 ui.label(str(course.get("description") or "")).classes("lp-explore-detail-body")
         _render_course_badges(course=course)
@@ -182,14 +193,12 @@ def _render_course_main_panel(
             def _panel_summary() -> None:
                 with ui.row().classes("w-full items-start justify-between gap-3 flex-wrap"):
                     with ui.column().classes("gap-0"):
+                        title = "Reviews"
                         if panel_review_count > 0:
-                            ui.label(
-                                f"{panel_review_count} review{'s' if panel_review_count != 1 else ''} · {panel_avg_rating:.1f} average"
-                            ).classes("lp-explore-detail-muted")
-                        else:
+                            title += f" ({panel_review_count} · avg {panel_avg_rating:.1f})"
+                        ui.label(title).classes("text-lg font-semibold lp-review-panel-title")
+                        if panel_review_count <= 0:
                             ui.label("Be the first to review this course.").classes("lp-explore-detail-muted")
-                if panel_review_count <= 0:
-                    ui.element("div").classes("h-1")
 
             def _handle_reviews_changed(updated_reviews: list[dict[str, Any]]) -> None:
                 nonlocal panel_avg_rating, panel_review_count
