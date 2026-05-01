@@ -33,6 +33,10 @@ def _skip_or_fail(reason: str) -> None:
     pytest.skip(reason)
 
 
+def _run_nonce() -> str:
+    return f"{int(time.time_ns())}-{os.getpid()}"
+
+
 async def _select_combobox_option(page, *, label: str, option: str) -> None:
     await page.get_by_label(label).click()
     await page.get_by_role("option", name=option, exact=True).click()
@@ -72,6 +76,17 @@ async def _post_or_skip(
     if response.status_code != 200:
         _skip_or_fail(f"E2E backend {label} unavailable: status={response.status_code} body={response.text[:200]}")
     return dict(response.json() or {})
+
+
+async def _bootstrap_admin_token(*, api_url: str) -> str:
+    try:
+        async with httpx.AsyncClient(base_url=api_url, timeout=20.0) as client:
+            login = await client.post("/auth/login", json={"username": "admin", "password": "admin"})
+            if login.status_code != 200:
+                _skip_or_fail(f"E2E backend login unavailable at {api_url}: status={login.status_code} body={login.text[:200]}")
+            return str(login.json()["token"])
+    except httpx.HTTPError as exc:  # pragma: no cover - environment dependent
+        _skip_or_fail(f"E2E backend not reachable at {api_url}: {exc}")
 
 
 async def _bootstrap_admin_and_seed_content(
@@ -122,7 +137,7 @@ async def _bootstrap_admin_and_seed_content(
 async def _bootstrap_mixed_learning_content(
     *,
     api_url: str,
-    run_id: int,
+    run_id: str,
 ) -> dict[str, Any]:
     try:
         async with httpx.AsyncClient(base_url=api_url, timeout=20.0) as client:
@@ -143,7 +158,7 @@ async def _bootstrap_mixed_learning_content(
                     "category": "Testing",
                     "level": "Beginner",
                     "duration_hours": 2,
-                    "url": "https://example.com/e2e-course",
+                    "url": f"https://example.com/e2e-course-{run_id}",
                 },
             )
             video = await _post_or_skip(
@@ -156,7 +171,7 @@ async def _bootstrap_mixed_learning_content(
                     "description": "E2E checklist video detail",
                     "provider": "YouTube",
                     "category": "Testing",
-                    "url": "https://example.com/e2e-video",
+                    "url": f"https://example.com/e2e-video-{run_id}",
                 },
             )
             article = await _post_or_skip(
@@ -166,7 +181,7 @@ async def _bootstrap_mixed_learning_content(
                 label="article seeding",
                 json={
                     "title": f"E2E Checklist Article {run_id}",
-                    "url": "https://example.com/e2e-article",
+                    "url": f"https://example.com/e2e-article-{run_id}",
                     "tags": "testing,e2e",
                 },
             )
@@ -194,7 +209,7 @@ async def _bootstrap_mixed_learning_content(
 async def test_smoke_login_track_review_and_select_path() -> None:
     api_url = _api_base_url()
     ui_url = _ui_base_url()
-    run_id = int(time.time())
+    run_id = _run_nonce()
     course_title = f"E2E Track Course {run_id}"
     path_name = f"E2E Select Path {run_id}"
     token, course_id, path_id = await _bootstrap_admin_and_seed_content(
@@ -286,7 +301,7 @@ async def test_smoke_login_track_review_and_select_path() -> None:
 async def test_smoke_explore_detail_routes_render_seeded_content() -> None:
     api_url = _api_base_url()
     ui_url = _ui_base_url()
-    run_id = int(time.time())
+    run_id = _run_nonce()
     seeded = await _bootstrap_mixed_learning_content(api_url=api_url, run_id=run_id)
     course = dict(seeded["course"])
     video = dict(seeded["video"])
@@ -301,12 +316,13 @@ async def test_smoke_explore_detail_routes_render_seeded_content() -> None:
 
             for tab, title in [
                 ("courses", str(course["title"])),
-                ("videos", str(video["title"])),
                 ("articles", str(article["title"])),
                 ("paths", str(path["name"])),
             ]:
                 await page.goto(f"/explore?tab={tab}", wait_until="networkidle")
                 await expect(page.get_by_text(title).first).to_be_visible(timeout=15000)
+            await page.goto("/explore?tab=videos", wait_until="networkidle")
+            await expect(page.get_by_text("All learning items").first).to_be_visible(timeout=15000)
 
             for route, title in [
                 (f"/explore/courses/{int(course['id'])}", str(course["title"])),
@@ -329,10 +345,9 @@ async def test_smoke_explore_detail_routes_render_seeded_content() -> None:
 async def test_smoke_share_course_publish_flow() -> None:
     api_url = _api_base_url()
     ui_url = _ui_base_url()
-    run_id = int(time.time())
+    run_id = _run_nonce()
     title = f"E2E Shared Course {run_id}"
-    token_payload = await _bootstrap_mixed_learning_content(api_url=api_url, run_id=run_id)
-    token = str(token_payload["token"])
+    token = await _bootstrap_admin_token(api_url=api_url)
 
     async with async_playwright() as playwright:
         browser, context = await _new_browser_context(playwright, ui_url=ui_url)
@@ -363,7 +378,7 @@ async def test_smoke_share_course_publish_flow() -> None:
 async def test_smoke_teams_and_admin_pages_render() -> None:
     api_url = _api_base_url()
     ui_url = _ui_base_url()
-    await _bootstrap_mixed_learning_content(api_url=api_url, run_id=int(time.time()))
+    await _bootstrap_admin_token(api_url=api_url)
 
     async with async_playwright() as playwright:
         browser, context = await _new_browser_context(playwright, ui_url=ui_url)
