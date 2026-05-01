@@ -189,7 +189,5 @@ Rules:
 
 ## Actionable Checklist
 
-- [Phase 1 Stabilization Checklist](./phase1_stabilization_checklist.md)
-- [Phase 1 Canonical Module Audit](./phase1_module_audit.md)
 - [Post-Phase-1 Backlog](./post_phase1_backlog.md)
 - [Activity Domain Restructuring](./activity_domain_restructuring.md)

@@ -1,5 +1,17 @@
 # Roadmap
 
+This file is historical plus forward-looking. For the current v1 release contract, use `docs/v1/README.md` and
+`docs/v1/status.md`.
+
+## Current-State Source Of Truth
+
+- V1 scope: `docs/v1/README.md`
+- V1 status: `docs/v1/status.md`
+- V1 release checklist: `docs/v1/release_checklist.md`
+- V1 smoke checklist: `docs/v1/smoke_test_checklist.md`
+
+## Historical Roadmap
+
 ## Current V1 Snapshot
 - Implemented core product contract:
   - share `course|article|video`
@@ -447,7 +459,7 @@ Implementation map (routes + files, ordered):
   - Primary files: add onboarding component (recommended `frontend/ui/nicegui/components/onboarding_intro.py`) and wire in `frontend/ui/nicegui/pages/home/page.py`.
   - Empty-state harmonization targets: `frontend/ui/nicegui/pages/home/sections.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/domains/courses/sections.py`, `frontend/ui/nicegui/domains/paths/sections.py`, `frontend/ui/nicegui/domains/articles/sections.py`.
   - Validation/testing harness: add/update integration tests under `tests/frontend/ui/nicegui/pages/home/` and `tests/frontend/ui/nicegui/pages/explore/` for one-clear-next-action empty states and intro dismiss behavior.
-- [ ] Sprint-level execution plan: track active sprint tasks in `docs/sprint.md`.
+- [ ] Sprint-level execution plan: create a new sprint note only when active sprint tracking is needed.
 
 ### Phase 11F — Social Learning Hub v1 (Teams + Team Relevance Layer)
 

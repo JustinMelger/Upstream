@@ -52,10 +52,6 @@ Reference implementation (current):
 - `frontend/ui/nicegui/components/path_detail_sections.py`
 - `frontend/ui/nicegui/components/paths_sections.py`
 
-Migration details (template + phased implementation plan):
-
-- `docs/frontend_mvc_migration.md`
-
 ## Phase 10D Implementation Notes
 
 The current implementation now standardizes several frontend patterns across pages:

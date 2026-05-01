@@ -35,6 +35,7 @@ Use `docs/roadmap.md` for post-v1 strategy.
   - [x] profile/home
   - [x] admin users
 - [x] Run smoke validation for the main end-to-end flows:
+  - [x] canonical smoke checklist added at `docs/v1/smoke_test_checklist.md`
   - [x] login
   - [x] share a learning item
   - [x] create a path
