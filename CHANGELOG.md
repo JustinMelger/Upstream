@@ -19,6 +19,28 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [0.12.0](https://github.com/JustinMelger/learning-platform/compare/v0.11.0...v0.12.0) (2026-05-01)
+
+
+### Features
+
+* v1 release plan ([3b48b2d](https://github.com/JustinMelger/learning-platform/commit/3b48b2d58475fd5e0622c0a479bebfb66301ba82))
+* v1 ui polish ([aad66c5](https://github.com/JustinMelger/learning-platform/commit/aad66c500de7c78405b0104a2f608e08e7792bb8))
+
+
+### Bug Fixes
+
+* bug hunting v1 ([be4e50a](https://github.com/JustinMelger/learning-platform/commit/be4e50ab59439096dce826724ef3b8a8a4aa0552))
+* details selection artice ([5123b8f](https://github.com/JustinMelger/learning-platform/commit/5123b8fc8e21f54069c7780eb4f29bacbcda854c))
+* images explore ([2234e97](https://github.com/JustinMelger/learning-platform/commit/2234e97e2ecc8fc23874d48f76ce16280857c115))
+* loop teams ([c42fa9b](https://github.com/JustinMelger/learning-platform/commit/c42fa9b5927cacd0dc891ec97b431b9f2e8ab686))
+
+
+### Documentation
+
+* add roadmap + release plan ([280e55f](https://github.com/JustinMelger/learning-platform/commit/280e55fbdc6ddb62aded081a5401ac741dd8d3fe))
+* cleanup old docs ([457851d](https://github.com/JustinMelger/learning-platform/commit/457851d8fe12b3e78225a90fdc4e6cce6554d61d))
+
 ## [0.9.1](https://github.com/JustinMelger/learning-platform/compare/v0.9.0...v0.9.1) (2026-03-07)
 
 
