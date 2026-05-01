@@ -108,7 +108,7 @@ Execution slices:
     - [x] `frontend/ui/nicegui/pages/learning/page.py`
     - [x] `frontend/ui/nicegui/pages/ai_curator/page.py`
     - [x] `frontend/ui/nicegui/pages/admin_users/page.py`
-    - [x] `frontend/ui/nicegui/pages/courses/sections.py`
+    - [x] `frontend/ui/nicegui/domains/courses/sections.py`
   - [x] Record and execute the next extraction target when a page stays structurally large even after complexity cleanup:
     - [x] Extract `frontend/ui/nicegui/pages/teams/page.py` route-specific UI composition into `frontend/ui/nicegui/pages/teams/page_ui.py` and keep `page.py` as auth guard + route binder + initial load orchestration.
     - [x] Decompose `frontend/ui/nicegui/pages/share/page.py` by flow and responsibility instead of using a single overflow file:
@@ -378,9 +378,9 @@ Sprint 7 acceptance criteria:
   - [x] Remove `/activity` alias from `frontend/ui/nicegui/pages/activity/page.py` (keep `/teams` only).
   - [x] Remove `/insights` redirect route from `frontend/ui/nicegui/pages/home/page.py`.
   - [x] Remove compatibility routes `/courses`, `/paths`, `/articles` and delete:
-    - [x] `frontend/ui/nicegui/pages/courses/compat.py`
-    - [x] `frontend/ui/nicegui/pages/paths/compat.py`
-    - [x] `frontend/ui/nicegui/pages/articles/compat.py`
+    - [x] `frontend/ui/nicegui/domains/courses/compat.py`
+    - [x] `frontend/ui/nicegui/domains/paths/compat.py`
+    - [x] `frontend/ui/nicegui/domains/articles/compat.py`
 - [x] Remove legacy navigation/query compatibility behavior:
   - [x] Delete `?share=1` compatibility checks from legacy compatibility routes after Explore-native share flow is confirmed stable.
   - [x] Remove obsolete route/query init helpers tied to legacy entry model where no longer used.

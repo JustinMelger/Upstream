@@ -15,6 +15,7 @@ class UiSettings:
     storage_secret: str = os.getenv("NICEGUI_STORAGE_SECRET", "dev-storage-secret-change-me")
     feature_ai_curator: bool = os.getenv("FEATURE_AI_CURATOR", "0") == "1"
     feature_articles: bool = os.getenv("FEATURE_ARTICLES", "1") == "1"
+    feature_telemetry: bool = os.getenv("FEATURE_TELEMETRY", "0") == "1"
 
 
 settings = UiSettings()

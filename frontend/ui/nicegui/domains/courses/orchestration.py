@@ -7,15 +7,15 @@ from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiError
-from frontend.ui.nicegui.pages.courses.actions import CoursesFilterControls, reset_course_filter_controls
-from frontend.ui.nicegui.pages.courses.filters import build_list_query_params
-from frontend.ui.nicegui.pages.courses.state import CoursesPageState, CoursesPageUiState
-from frontend.ui.nicegui.pages.courses.transitions import (
+from frontend.ui.nicegui.domains.courses.actions import CoursesFilterControls, reset_course_filter_controls
+from frontend.ui.nicegui.domains.courses.filters import build_list_query_params
+from frontend.ui.nicegui.domains.courses.state import CoursesPageState, CoursesPageUiState
+from frontend.ui.nicegui.domains.courses.transitions import (
     begin_courses_load,
     clear_courses_state_on_load_error,
     finalize_courses_load,
 )
-from frontend.ui.nicegui.pages.courses.ui_glue import default_courses_filter_reset_state
+from frontend.ui.nicegui.domains.courses.ui_glue import default_courses_filter_reset_state
 
 
 @dataclass(frozen=True, slots=True)

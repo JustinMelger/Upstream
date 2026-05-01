@@ -20,10 +20,10 @@ from frontend.ui.nicegui.core.learning_items import (
 )
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
-from frontend.ui.nicegui.pages.courses.dialogs import open_edit_course_dialog
-from frontend.ui.nicegui.pages.courses.media import extract_youtube_video_id, render_youtube_embed, youtube_embed_url
-from frontend.ui.nicegui.pages.courses.ui_glue import format_short_date, parse_duration_hours
+from frontend.ui.nicegui.domains.courses.controller import CoursesPageController
+from frontend.ui.nicegui.domains.courses.dialogs import open_edit_course_dialog
+from frontend.ui.nicegui.domains.courses.media import extract_youtube_video_id, render_youtube_embed, youtube_embed_url
+from frontend.ui.nicegui.domains.courses.ui_glue import format_short_date, parse_duration_hours
 from frontend.ui.nicegui.pages.explore.detail_common import (
     parse_detail_id,
     parse_view_mode,

@@ -11,12 +11,12 @@ from nicegui import ui
 
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.path_card import PathCardCallbacks, PathCardDisplay, render_path_card
-from frontend.ui.nicegui.pages.paths.actions import build_path_card_actions, PathCardActionDeps
-from frontend.ui.nicegui.pages.paths.dialogs import open_edit_path_dialog
-from frontend.ui.nicegui.pages.paths.orchestration import perform_update_path
-from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
-from frontend.ui.nicegui.pages.paths.ui_glue import compute_expanded_visible_count
-from frontend.ui.nicegui.pages.paths.view_model import map_path_card_view
+from frontend.ui.nicegui.domains.paths.actions import build_path_card_actions, PathCardActionDeps
+from frontend.ui.nicegui.domains.paths.dialogs import open_edit_path_dialog
+from frontend.ui.nicegui.domains.paths.orchestration import perform_update_path
+from frontend.ui.nicegui.domains.paths.state import PathsPageState, PathsPageUiState
+from frontend.ui.nicegui.domains.paths.ui_glue import compute_expanded_visible_count
+from frontend.ui.nicegui.domains.paths.view_model import map_path_card_view
 
 
 @dataclass(frozen=True, slots=True)

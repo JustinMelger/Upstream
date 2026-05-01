@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
-from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
-from frontend.ui.nicegui.pages.courses.controller import CourseDetailBundle, CoursesPageController
-from frontend.ui.nicegui.pages.paths.controller import PathsPageController
-from frontend.ui.nicegui.pages.paths.state import PathsPageState
+from frontend.ui.nicegui.domains.articles.controller import ArticlesPageController
+from frontend.ui.nicegui.domains.courses.controller import CourseDetailBundle, CoursesPageController
+from frontend.ui.nicegui.domains.paths.controller import PathsPageController
+from frontend.ui.nicegui.domains.paths.state import PathsPageState
 from frontend.ui.nicegui.pages.videos.controller import VideosPageController
 
 

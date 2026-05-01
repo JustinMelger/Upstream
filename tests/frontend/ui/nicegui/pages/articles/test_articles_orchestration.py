@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 
 from frontend.ui.nicegui.core.api_client import ApiError
-from frontend.ui.nicegui.pages.articles.actions import ArticlesFacetControls
-from frontend.ui.nicegui.pages.articles.orchestration import (
+from frontend.ui.nicegui.domains.articles.actions import ArticlesFacetControls
+from frontend.ui.nicegui.domains.articles.orchestration import (
     ArticlesListRefreshDeps,
     clear_articles_filter_values,
     load_articles_page,
@@ -12,7 +12,7 @@ from frontend.ui.nicegui.pages.articles.orchestration import (
     perform_create_article,
     refresh_articles_list,
 )
-from frontend.ui.nicegui.pages.articles.state import ArticlesPageState
+from frontend.ui.nicegui.domains.articles.state import ArticlesPageState
 
 
 class _Element:

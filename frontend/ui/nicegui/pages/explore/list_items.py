@@ -10,13 +10,13 @@ from nicegui import ui
 from frontend.ui.nicegui.core.learning_items import learning_item_type_label
 from frontend.ui.nicegui.core.path_items import count_course_items
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
-from frontend.ui.nicegui.pages.articles.actions import build_article_card_actions
-from frontend.ui.nicegui.pages.courses.media import (
+from frontend.ui.nicegui.domains.articles.actions import build_article_card_actions
+from frontend.ui.nicegui.domains.courses.media import (
     extract_youtube_video_id,
     website_favicon_url,
     youtube_thumbnail_url,
 )
-from frontend.ui.nicegui.pages.courses.ui_glue import normalize_course_tracking_status
+from frontend.ui.nicegui.domains.courses.ui_glue import normalize_course_tracking_status
 
 
 def _render_browse_row(

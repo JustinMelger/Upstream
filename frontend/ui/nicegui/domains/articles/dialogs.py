@@ -14,7 +14,7 @@ from frontend.ui.nicegui.core.clipboard import copy_text_to_clipboard
 from frontend.ui.nicegui.core.errors import guard_ui_action, safe_notify
 from frontend.ui.nicegui.core.metadata_fallback import build_article_metadata_fallback
 from frontend.ui.nicegui.core.suggestion_utils import suggestion_badge_text
-from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
+from frontend.ui.nicegui.domains.articles.ui_glue import parse_tags
 
 
 _HTTP_URL_ADAPTER: TypeAdapter[AnyHttpUrl] = TypeAdapter(AnyHttpUrl)

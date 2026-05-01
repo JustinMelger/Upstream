@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.articles.state import ArticlesPageState
-from frontend.ui.nicegui.pages.articles.transitions import (
+from frontend.ui.nicegui.domains.articles.state import ArticlesPageState
+from frontend.ui.nicegui.domains.articles.transitions import (
     begin_articles_load,
     clear_articles_state_on_load_error,
     finalize_articles_load,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.paths import dialogs
+from frontend.ui.nicegui.domains.paths import dialogs
 
 
 @pytest.mark.unit

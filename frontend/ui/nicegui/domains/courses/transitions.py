@@ -6,7 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from frontend.ui.nicegui.pages.courses.state import CoursesPageState
+from frontend.ui.nicegui.domains.courses.state import CoursesPageState
 
 
 @dataclass(slots=True)

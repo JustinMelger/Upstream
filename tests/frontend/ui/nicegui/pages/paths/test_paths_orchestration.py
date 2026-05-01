@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from frontend.ui.nicegui.pages.paths.actions import PathsFilterControls
-from frontend.ui.nicegui.pages.paths.orchestration import (
+from frontend.ui.nicegui.domains.paths.actions import PathsFilterControls
+from frontend.ui.nicegui.domains.paths.orchestration import (
     clear_path_filter_values,
     PathsListRefreshDeps,
     perform_create_path,
@@ -15,7 +15,7 @@ from frontend.ui.nicegui.pages.paths.orchestration import (
     run_select_path_flow,
     run_unselect_path_flow,
 )
-from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
+from frontend.ui.nicegui.domains.paths.state import PathsPageState, PathsPageUiState
 
 
 @dataclass(slots=True)

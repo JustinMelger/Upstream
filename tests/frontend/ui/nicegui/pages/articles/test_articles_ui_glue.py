@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.articles.ui_glue import (
+from frontend.ui.nicegui.domains.articles.ui_glue import (
     build_active_filter_chips,
     build_facet_select_options,
     compute_articles_meta_text,

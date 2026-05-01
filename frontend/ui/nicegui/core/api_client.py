@@ -20,6 +20,8 @@ from typing import Any, Callable
 
 import httpx
 
+from frontend.ui.nicegui.core.config import settings
+
 
 @dataclass(frozen=True, slots=True)
 class ApiError(Exception):
@@ -140,6 +142,8 @@ class ApiClient:
 
     def _emit_product_action_telemetry(self, *, method: str, path: str) -> None:
         """Emit low-noise telemetry for key share/track actions."""
+        if not settings.feature_telemetry:
+            return
         if method != "POST":
             return
         event_name = {

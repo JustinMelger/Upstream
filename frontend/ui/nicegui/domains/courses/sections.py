@@ -19,8 +19,8 @@ from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.components.status_chips import tracking_label, TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.errors import safe_notify
-from frontend.ui.nicegui.pages.courses.media import render_youtube_embed
-from frontend.ui.nicegui.pages.courses.ui_glue import (
+from frontend.ui.nicegui.domains.courses.media import render_youtube_embed
+from frontend.ui.nicegui.domains.courses.ui_glue import (
     ActiveFilterChip,
     normalize_course_tracking_status,
     primary_course_cta_label_for_status,

@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from frontend.ui.nicegui.pages.paths.actions import PathsFilterControls, recompute_path_status_filter
-from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values
-from frontend.ui.nicegui.pages.paths.orchestration import (
+from frontend.ui.nicegui.domains.paths.actions import PathsFilterControls, recompute_path_status_filter
+from frontend.ui.nicegui.domains.paths.filters import normalize_paths_filter_values
+from frontend.ui.nicegui.domains.paths.orchestration import (
     clear_path_filter_values,
     PathsListRefreshDeps,
     refresh_paths_list,
 )
-from frontend.ui.nicegui.pages.paths.reducers import build_status_options, compute_status_counts
-from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
+from frontend.ui.nicegui.domains.paths.reducers import build_status_options, compute_status_counts
+from frontend.ui.nicegui.domains.paths.state import PathsPageState, PathsPageUiState
 
 
 def recompute_paths_facet_options(

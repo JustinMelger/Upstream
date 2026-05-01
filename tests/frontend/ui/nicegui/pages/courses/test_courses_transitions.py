@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.courses.state import CoursesPageState
-from frontend.ui.nicegui.pages.courses.transitions import (
+from frontend.ui.nicegui.domains.courses.state import CoursesPageState
+from frontend.ui.nicegui.domains.courses.transitions import (
     apply_optimistic_tracking_clear,
     apply_optimistic_tracking_set,
     begin_courses_load,

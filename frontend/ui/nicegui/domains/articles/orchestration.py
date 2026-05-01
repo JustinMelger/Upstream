@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from frontend.ui.nicegui.core.api_client import ApiError
-from frontend.ui.nicegui.pages.articles.actions import ArticlesFacetControls, reset_article_filter_controls
-from frontend.ui.nicegui.pages.articles.state import ArticlesPageState
-from frontend.ui.nicegui.pages.articles.transitions import (
+from frontend.ui.nicegui.domains.articles.actions import ArticlesFacetControls, reset_article_filter_controls
+from frontend.ui.nicegui.domains.articles.state import ArticlesPageState
+from frontend.ui.nicegui.domains.articles.transitions import (
     begin_articles_load,
     clear_articles_state_on_load_error,
     finalize_articles_load,

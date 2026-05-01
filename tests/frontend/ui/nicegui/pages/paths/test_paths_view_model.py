@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.paths import view_model
+from frontend.ui.nicegui.domains.paths import view_model
 
 
 @pytest.mark.unit

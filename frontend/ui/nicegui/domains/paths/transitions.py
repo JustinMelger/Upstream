@@ -6,7 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from frontend.ui.nicegui.pages.paths.state import PathsPageState
+from frontend.ui.nicegui.domains.paths.state import PathsPageState
 
 
 @dataclass(slots=True)

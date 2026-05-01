@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.pages.articles.ui_glue import build_facet_select_options, parse_tags
+from frontend.ui.nicegui.domains.articles.ui_glue import build_facet_select_options, parse_tags
 
 
 def _filter_articles(

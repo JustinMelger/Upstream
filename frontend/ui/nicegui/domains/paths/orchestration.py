@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiError
-from frontend.ui.nicegui.pages.paths.actions import PathsFilterControls, reset_path_filter_controls
-from frontend.ui.nicegui.pages.paths.controller import PathsPageController
-from frontend.ui.nicegui.pages.paths.state import PathsPageState, PathsPageUiState
-from frontend.ui.nicegui.pages.paths.transitions import (
+from frontend.ui.nicegui.domains.paths.actions import PathsFilterControls, reset_path_filter_controls
+from frontend.ui.nicegui.domains.paths.controller import PathsPageController
+from frontend.ui.nicegui.domains.paths.state import PathsPageState, PathsPageUiState
+from frontend.ui.nicegui.domains.paths.transitions import (
     begin_paths_load,
     clear_paths_state_on_load_error,
     finalize_paths_load,

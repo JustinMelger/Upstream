@@ -7,7 +7,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.datetime_utils import format_date
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
-from frontend.ui.nicegui.pages.articles.ui_glue import article_is_new, parse_tags
+from frontend.ui.nicegui.domains.articles.ui_glue import article_is_new, parse_tags
 
 
 @dataclass(slots=True)

@@ -16,7 +16,7 @@ from frontend.ui.nicegui.components.card_frame import (
 )
 from frontend.ui.nicegui.components.pagination import render_load_more_footer
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
-from frontend.ui.nicegui.pages.articles.ui_glue import ActiveFilterChip
+from frontend.ui.nicegui.domains.articles.ui_glue import ActiveFilterChip
 
 
 @dataclass

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 
 from nicegui import ui
+
+
+Metric = tuple[str, int | str]
 
 
 def render_section_header(*, title: str, description: str | None = None, classes: str = "") -> None:
@@ -23,6 +26,28 @@ def render_metric_card(*, label: str, value: int | str, classes: str = "") -> No
     with ui.card().classes(card_classes):
         ui.label(str(label or "")).classes("lp-metric-label")
         ui.label(str(value)).classes("lp-metric-value")
+
+
+def render_metric_group(*, metrics: Iterable[Metric], classes: str, as_row: bool = False) -> None:
+    """Render a group of compact dashboard metrics."""
+    container = ui.row() if as_row else ui.element("div")
+    with container.classes(classes):
+        for label, value in metrics:
+            render_metric_card(label=label, value=value)
+
+
+def render_empty_copy(text: str, *, classes: str = "") -> None:
+    """Render muted empty-state copy."""
+    label_classes = f"text-sm lp-empty-copy {classes}".strip()
+    ui.label(str(text or "")).classes(label_classes).style("color: var(--lp-muted)")
+
+
+@contextmanager
+def render_panel(*, classes: str, tag: str = "card") -> Iterator[None]:
+    """Render a dashboard panel shell."""
+    container = ui.card() if tag == "card" else ui.element(tag)
+    with container.classes(classes):
+        yield
 
 
 @contextmanager
@@ -57,7 +82,7 @@ def render_content_list_section(*, title: str, empty_text: str, has_items: bool,
     with ui.column().classes(section_classes):
         ui.label(str(title or "")).classes("lp-section-title")
         if not has_items:
-            ui.label(str(empty_text or "")).classes("text-sm lp-empty-copy").style("color: var(--lp-muted)")
+            render_empty_copy(empty_text)
             yield False
             return
         yield True

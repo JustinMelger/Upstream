@@ -33,7 +33,7 @@ These items are the first cleanup passes because they reduce confusion without c
   - move later
   - remove now
 - [x] Review `frontend/ui/nicegui/pages/home/*` for overlap with `pages/learning/*`
-- [x] Review `frontend/ui/nicegui/pages/courses/*`, `articles/*`, and `paths/*` for helper modules that still exist only because of earlier routing/layout splits
+- [x] Review `frontend/ui/nicegui/domains/courses/*`, `articles/*`, and `paths/*` for helper modules that still exist only because of earlier routing/layout splits
 - [x] Record decisions in a follow-up cleanup note:
   - `docs/phase1_module_audit.md`
 

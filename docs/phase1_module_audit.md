@@ -91,7 +91,7 @@ Notes:
 ## Courses Package
 
 Package:
-- `frontend/ui/nicegui/pages/courses/*`
+- `frontend/ui/nicegui/domains/courses/*`
 
 Current role:
 - support package for shared course cards, filters, reducers, controller logic, and detail-dialog compatibility
@@ -128,7 +128,7 @@ Notes:
 ## Articles Package
 
 Package:
-- `frontend/ui/nicegui/pages/articles/*`
+- `frontend/ui/nicegui/domains/articles/*`
 
 Current role:
 - support package for article card rendering, filtering, dialogs, and controller logic
@@ -162,7 +162,7 @@ Notes:
 ## Paths Package
 
 Package:
-- `frontend/ui/nicegui/pages/paths/*`
+- `frontend/ui/nicegui/domains/paths/*`
 
 Current role:
 - active support package for path cards, filters, reducers, controller logic, and detail interactions

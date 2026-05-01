@@ -10,7 +10,9 @@ from nicegui import ui
 from frontend.ui.nicegui.components.dashboard import (
     render_content_list_section,
     render_dashboard_list_card,
-    render_metric_card,
+    render_empty_copy,
+    render_metric_group,
+    render_panel,
     render_section_header,
 )
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
@@ -287,10 +289,10 @@ def render_tracked_courses_section(
     card_classes = "lp-card w-full lp-panel-card lp-home-track-shell"
     if not tracked_courses:
         card_classes += " lp-home-passive-empty"
-    with ui.card().classes(card_classes):
+    with render_panel(classes=card_classes):
         ui.label("Tracked courses").classes("lp-home-section-title lp-home-track-title")
         if not tracked_courses:
-            ui.label("Track a course to see it here.").classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
+            render_empty_copy("Track a course to see it here.")
             ui.button("Browse courses", on_click=on_browse_courses).props("dense outline").classes("lp-home-empty-btn")
             return
 
@@ -328,15 +330,13 @@ def render_selected_paths_section(
 ) -> None:
     """Render selected-paths card and rows."""
     if not selected_paths:
-        with ui.card().classes("lp-card w-full lp-panel-card lp-home-path-shell lp-home-path-empty-shell"):
+        with render_panel(classes="lp-card w-full lp-panel-card lp-home-path-shell lp-home-path-empty-shell"):
             ui.label("Selected Path").classes("lp-home-section-title")
-            ui.label("No path selected yet. Pick one path to track progress here.").classes("text-sm lp-home-empty-copy").style(
-                "color: var(--lp-muted)"
-            )
+            render_empty_copy("No path selected yet. Pick one path to track progress here.")
             ui.button("Browse paths", on_click=on_browse_paths).props("dense outline").classes("lp-home-empty-btn")
         return
 
-    with ui.card().classes("lp-card w-full lp-home-path-shell"):
+    with render_panel(classes="lp-card w-full lp-home-path-shell"):
         ui.label("Selected Path").classes("lp-home-section-title")
         ui.separator().classes("lp-home-path-separator")
         for idx, row in enumerate(selected_paths[:selected_visible]):
@@ -404,9 +404,11 @@ def render_shared_content(
             classes="lp-shared-tab-header",
         )
 
-        with ui.row().classes("w-full gap-3 flex-wrap lp-shared-summary-row"):
-            render_metric_card(label="Learning items", value=len(shared_learning_items))
-            render_metric_card(label="Paths", value=len(shared_paths))
+        render_metric_group(
+            metrics=(("Learning items", len(shared_learning_items)), ("Paths", len(shared_paths))),
+            classes="w-full gap-3 flex-wrap lp-shared-summary-row",
+            as_row=True,
+        )
 
         with ui.column().classes("w-full gap-4 lp-shared-content-column"):
             with render_content_list_section(
@@ -518,9 +520,7 @@ def render_next_focus_section(*, ctx: FocusSectionContext) -> None:
             ui.label("Next focus").classes("lp-home-hero-eyebrow")
 
             if next_course is None:
-                ui.label("No active next step yet. Start by tracking a course.").classes("text-sm lp-home-empty-copy").style(
-                    "color: var(--lp-muted)"
-                )
+                render_empty_copy("No active next step yet. Start by tracking a course.")
                 with ui.row().classes("w-full items-center gap-2 flex-wrap lp-home-focus-actions"):
                     ui.button("Browse courses", on_click=lambda: ui.navigate.to("/explore?tab=courses")).props(
                         "dense outline"
@@ -585,13 +585,14 @@ def render_team_activity_section(
     with ui.column().classes("w-full gap-2 lp-home-snapshot-panel lp-home-snapshot-shell"):
         render_section_header(title="Team Activity")
         ui.separator().classes("lp-home-snapshot-separator")
-        with ui.element("div").classes("lp-home-stat-grid lp-home-stat-grid--compact"):
-            for label, value in (
+        render_metric_group(
+            metrics=(
                 ("Active learners", active_learners),
                 ("Shares this week", shares_count),
                 ("Reviews posted", reviews_count),
-            ):
-                render_metric_card(label=label, value=value)
+            ),
+            classes="lp-home-stat-grid lp-home-stat-grid--compact",
+        )
         with ui.row().classes("w-full justify-end lp-home-team-chart-footer lp-home-team-chart-footer--simple"):
             ui.button("Open stats", on_click=on_open_full_stats).props("dense flat")
 
@@ -607,7 +608,7 @@ def render_conversations_section(
 ) -> None:
     """Render social conversation queue with inline actions and review nudges."""
     total_pending_reviews = len(pending_course_review_ids) + len(pending_path_review_ids)
-    with ui.element("section").classes("lp-card w-full lp-panel-card lp-home-convo-shell"):
+    with render_panel(classes="lp-card w-full lp-panel-card lp-home-convo-shell", tag="section"):
         with ui.column().classes("w-full gap-3"):
             with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
                 with ui.row().classes("items-center gap-1"):
@@ -634,7 +635,7 @@ def render_conversations_section(
                     if total_pending_reviews > 0
                     else "No conversations are waiting right now. Share a learning item or path to start team activity."
                 )
-                ui.label(empty_copy).classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
+                render_empty_copy(empty_copy)
                 return
 
             for row in items[:3]:
@@ -794,7 +795,7 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
             on_open_first_path_review=first_path_review_action,
         )
 
-        with ui.card().classes("lp-card w-full lp-panel-card lp-panel-card--compact lp-home-secondary-shell"):
+        with render_panel(classes="lp-card w-full lp-panel-card lp-panel-card--compact lp-home-secondary-shell"):
             render_team_activity_section(
                 tracking_by_course_id=learning_vm.tracking_by_course_id,
                 active_learners=active_learners,

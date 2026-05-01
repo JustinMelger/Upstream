@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from frontend.ui.nicegui.pages.articles.state import ArticlesPageState
+from frontend.ui.nicegui.domains.articles.state import ArticlesPageState
 
 
 @dataclass(frozen=True)

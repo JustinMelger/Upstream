@@ -6,8 +6,8 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
-from frontend.ui.nicegui.pages.articles.filters import normalize_articles_filter_values
-from frontend.ui.nicegui.pages.articles.reducers import compute_facet_state
+from frontend.ui.nicegui.domains.articles.filters import normalize_articles_filter_values
+from frontend.ui.nicegui.domains.articles.reducers import compute_facet_state
 
 
 @dataclass(slots=True)

@@ -67,24 +67,24 @@ Phase 5: Clean up and enforce (complete)
 
 Completed (Phase 1 + Phase 2 + Phase 3):
 
-- Folder-based MVC page package in `pages/paths/`: `page.py`, `controller.py`, `state.py`, `__init__.py`.
-- View-model extraction in `pages/paths/view_model.py`: badge/label formatting, path progress/outcomes, detail-dialog presentation mapping, path card display mapping (`map_path_card_view`).
-- Dialog extraction in `pages/paths/dialogs.py`: `build_share_path_dialog`, `open_edit_path_dialog`.
-- Action extraction in `pages/paths/actions.py`: recommend flow, link copy flow, track/untrack toggle wiring, per-card callback factory (`build_path_card_actions`).
-- Detail orchestration extraction in `pages/paths/detail_flow.py`: `open_path_details_dialog`.
-- Reducer extraction in `pages/paths/reducers.py`: filter/sort/scope transitions, facet count/options transitions.
-- UI glue extraction in `pages/paths/ui_glue.py`: active-filter chip descriptors, pagination transition (`next_visible_count`).
-- Route/query init extraction in `pages/paths/route_init.py`: initial scope/path/dialog resolution, intent consume checks.
-- Phase 3 transition helpers in `pages/paths/transitions.py`: loading lifecycle transitions, load-error reset transition, optimistic select/unselect + rollback transitions.
+- Extracted path domain package in `domains/paths/`: `controller.py`, `state.py`, `__init__.py`.
+- View-model extraction in `domains/paths/view_model.py`: badge/label formatting, path progress/outcomes, detail-dialog presentation mapping, path card display mapping (`map_path_card_view`).
+- Dialog extraction in `domains/paths/dialogs.py`: `build_share_path_dialog`, `open_edit_path_dialog`.
+- Action extraction in `domains/paths/actions.py`: recommend flow, link copy flow, track/untrack toggle wiring, per-card callback factory (`build_path_card_actions`).
+- Detail orchestration lives in route detail modules under `pages/explore/`, while reusable path actions stay in `domains/paths/`.
+- Reducer extraction in `domains/paths/reducers.py`: filter/sort/scope transitions, facet count/options transitions.
+- UI glue extraction in `domains/paths/ui_glue.py`: active-filter chip descriptors, pagination transition (`next_visible_count`).
+- Route/query initialization should stay in route packages such as `pages/explore/`.
+- Phase 3 transition helpers in `domains/paths/transitions.py`: loading lifecycle transitions, load-error reset transition, optimistic select/unselect + rollback transitions.
 
 Module boundaries (enforced by tests):
 
-- `page.py`: UI composition + event binding only.
+- `pages/*/page.py`: UI composition + event binding only.
 - `dialogs.py`, `detail_flow.py`, `actions.py`: UI-facing flow modules, allowed to import `nicegui`.
 - `controller.py`: API/workflow orchestration; no `nicegui` imports.
 - `state.py`: typed page state models only.
 - `reducers.py`, `transitions.py`, `view_model.py`, `ui_glue.py`, `route_init.py`: pure helpers; no `nicegui` imports.
-- `page.py` should consume path domain logic via `pages/paths/*` modules (not directly from low-level service modules).
+- Route pages should consume path domain logic via `domains/paths/*` modules (not directly from low-level service modules).
 
 Migration recipe (apply to next page, e.g. `courses`):
 

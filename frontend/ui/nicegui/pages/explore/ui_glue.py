@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from frontend.ui.nicegui.core.feed_copy import format_explore_scope_text
-from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
+from frontend.ui.nicegui.domains.articles.ui_glue import parse_tags
 
 
 TAB_OPTIONS = {"all": "All", "courses": "Courses", "videos": "Videos", "paths": "Paths", "articles": "Articles"}

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable
 
-from frontend.ui.nicegui.pages.paths.filters import normalize_paths_filter_values, PathsFilterValues
+from frontend.ui.nicegui.domains.paths.filters import normalize_paths_filter_values, PathsFilterValues
 
 
 @dataclass(frozen=True, slots=True)

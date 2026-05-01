@@ -8,7 +8,7 @@ from typing import Any
 from frontend.ui.nicegui.components.status_chips import tracking_chip_class, tracking_label
 from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetime
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
-from frontend.ui.nicegui.pages.courses.media import (
+from frontend.ui.nicegui.domains.courses.media import (
     extract_youtube_video_id,
     website_favicon_url,
     youtube_embed_url,

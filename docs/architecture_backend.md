@@ -11,7 +11,7 @@ The backend is a FastAPI application organized as:
 
 The backend also includes an observability layer:
 - OpenTelemetry traces + metrics initialization at app startup.
-- Authenticated frontend product-event ingestion via `POST /telemetry/events`.
+- Optional authenticated frontend product-event ingestion via `POST /telemetry/events` when `FEATURE_TELEMETRY=1`.
 - OTLP export to an OpenTelemetry Collector (fan-out to Tempo/Prometheus).
 - Logs shipped by Promtail into Loki for Grafana log exploration.
 
@@ -73,7 +73,7 @@ flowchart LR
   - FastAPI / HTTPX / SQLAlchemy instrumentation.
 
 ### Telemetry ingestion flow
-- Frontend emits product events to `POST /telemetry/events` (authenticated).
+- Frontend emits product events to `POST /telemetry/events` only when `FEATURE_TELEMETRY=1`.
 - Router: `backend/api/telemetry.py`
 - Service: `backend/services/telemetry_service.py`
 - Current behavior:
@@ -254,7 +254,7 @@ erDiagram
 - Supports mailbox-style scopes: `inbox` (personal) and `team` (team-wide timeline).
 
 ### Telemetry service
-- Accepts low-risk frontend product telemetry events (`event_name`, optional context, timestamp).
+- Accepts low-risk frontend product telemetry events (`event_name`, optional context, timestamp) when enabled.
 - Records event count + tracing attributes for product-loop analysis and operability.
 - Keeps ingestion auth-protected via `require_session`.
 
