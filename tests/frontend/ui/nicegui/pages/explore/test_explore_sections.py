@@ -176,6 +176,31 @@ def test_render_path_item_counts_course_items_from_detail_when_listing_row_lacks
     assert "0 / 2 courses" in fake_ui.labels
 
 
+def test_render_path_item_uses_api_name_for_title(monkeypatch) -> None:  # noqa: ANN001
+    fake_ui = _FakeUi()
+    monkeypatch.setattr(list_items, "ui", fake_ui)
+
+    list_items.render_path_item(
+        path={"id": 7, "name": "API named path"},
+        item_classes="x",
+        state=type(
+            "_State",
+            (),
+            {
+                "selected_by_path_id": {},
+                "selected_detail_by_path_id": {},
+                "path_review_summary_by_id": {},
+            },
+        )(),
+        username="alice",
+        is_admin=False,
+        on_toggle_path_selection=lambda *_: None,
+        open_path=lambda *_: None,
+    )
+
+    assert "API named path" in fake_ui.labels
+
+
 def test_render_course_item_shows_tracking_status_without_error(monkeypatch) -> None:  # noqa: ANN001
     fake_ui = _FakeUi()
     monkeypatch.setattr(list_items, "ui", fake_ui)
