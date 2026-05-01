@@ -394,14 +394,6 @@
   gap: 8px;
 }
 
-.lp-home-stat-card {
-  border: 1px solid rgba(186, 204, 227, 0.1) !important;
-  border-radius: 14px;
-  background: rgba(8, 16, 30, 0.4);
-  padding: 10px 10px 9px;
-  min-height: 58px;
-}
-
 .lp-home-team-chart-footer {
   padding-top: 2px;
 }
@@ -413,20 +405,6 @@
 
 .lp-home-team-chart-footer--simple {
   margin-top: 2px;
-}
-
-.lp-home-stat-value {
-  font-family: var(--lp-font-display);
-  font-size: 1.08rem;
-  font-weight: 600;
-  line-height: 1.1;
-  color: rgba(237, 243, 250, 0.96);
-}
-
-.lp-home-stat-label {
-  font-size: 0.7rem;
-  color: rgba(204, 216, 231, 0.66);
-  letter-spacing: 0.01em;
 }
 
 .lp-home-section-title {
@@ -459,7 +437,8 @@
   margin-top: 8px;
 }
 
-.lp-home-empty-copy {
+.lp-home-empty-copy,
+.lp-home-scope .lp-empty-copy {
   opacity: 0.76;
 }
 
@@ -947,26 +926,6 @@
   gap: 10px !important;
 }
 
-.lp-shared-summary-card {
-  min-width: 136px;
-  padding: 12px 14px !important;
-  border-radius: 14px !important;
-  background: rgba(23, 35, 52, 0.62) !important;
-  box-shadow: none !important;
-}
-
-.lp-shared-summary-label {
-  font-size: 0.8rem;
-  color: rgba(220, 225, 235, 0.68);
-}
-
-.lp-shared-summary-value {
-  font-family: var(--lp-font-display);
-  font-size: 1.26rem;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
 .lp-shared-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1144,4 +1103,3 @@
 .lp-catalog--explore .lp-explore-path-compact .q-btn {
   min-width: 112px !important;
 }
-

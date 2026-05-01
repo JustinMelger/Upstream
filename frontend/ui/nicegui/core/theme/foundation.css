@@ -391,6 +391,47 @@ a:hover { text-decoration: underline; }
   min-height: 34px;
 }
 
+.lp-section-header {
+  align-items: flex-start;
+}
+
+.lp-section-title {
+  font-family: var(--lp-font-display);
+  font-size: var(--lp-type-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--lp-section-title);
+}
+
+.lp-section-description,
+.lp-empty-copy {
+  color: var(--lp-muted);
+}
+
+.lp-content-list-section {
+  align-items: stretch;
+}
+
+.lp-metric-card {
+  min-width: 136px;
+  padding: 12px 14px !important;
+  border-radius: 14px !important;
+  background: rgba(23, 35, 52, 0.62) !important;
+  box-shadow: none !important;
+}
+
+.lp-metric-label {
+  font-size: 0.8rem;
+  color: rgba(220, 225, 235, 0.68);
+}
+
+.lp-metric-value {
+  font-family: var(--lp-font-display);
+  font-size: 1.26rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
 .lp-panel-card {
   border: 1px solid rgba(186, 204, 227, 0.1) !important;
   border-radius: 18px;
@@ -2290,4 +2331,3 @@ body .q-dialog .q-card.lp-dialog .q-field__control:focus-visible {
   outline: none !important;
   box-shadow: var(--lp-focus-ring) !important;
 }
-
