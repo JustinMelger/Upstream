@@ -100,6 +100,7 @@ async def test_smoke_login_track_review_and_select_path() -> None:
 
             # Track course flow.
             await page.goto("/explore?tab=courses", wait_until="networkidle")
+            await page.get_by_label("Search learning content").fill(course_title)
             course_card = page.locator(".lp-course-card", has_text=course_title).first
             await expect(course_card).to_be_visible(timeout=20000)
             await course_card.get_by_role("button", name="Start").first.click()
@@ -117,6 +118,7 @@ async def test_smoke_login_track_review_and_select_path() -> None:
 
             # Path select flow.
             await page.goto("/explore?tab=paths", wait_until="networkidle")
+            await page.get_by_label("Search learning content").fill(path_name)
             path_card = page.locator(".lp-path-card", has_text=path_name).first
             await expect(path_card).to_be_visible(timeout=20000)
             await path_card.get_by_role("button", name="Select").first.click()
