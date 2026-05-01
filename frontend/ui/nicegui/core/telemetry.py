@@ -7,6 +7,7 @@ from datetime import datetime, UTC
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
+from frontend.ui.nicegui.core.config import settings
 
 
 def _event_payload(*, event_name: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -19,6 +20,8 @@ def _event_payload(*, event_name: str, context: dict[str, Any] | None = None) ->
 
 def track_ui_event_nowait(*, api: ApiClient, event_name: str, context: dict[str, Any] | None = None) -> None:
     """Fire-and-forget telemetry emit; ignore failures in UI flows."""
+    if not settings.feature_telemetry:
+        return
     post = getattr(api, "post", None)
     if not callable(post):
         return

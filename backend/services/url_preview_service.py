@@ -182,8 +182,6 @@ class UrlPreviewService:
 
         addresses: set[str] = set()
         for _family, _socktype, _proto, _canonname, sockaddr in infos:
-            if not sockaddr:
-                continue
             candidate = str(sockaddr[0] or "").strip()
             if candidate:
                 addresses.add(candidate)

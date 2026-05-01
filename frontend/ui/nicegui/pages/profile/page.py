@@ -141,13 +141,13 @@ async def _load_profile_stats(*, ctx: ProfileStatsPageContext, dashboard: Any) -
 
 
 def _render_profile_summary_rail(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
-    """Render the compact profile summary rail."""
+    """Render the compact profile summary row."""
     interested = _safe_int(ctx.state.snapshot_stats.get("interested"))
     in_progress = _safe_int(ctx.state.snapshot_stats.get("in_progress"))
     completed = _safe_int(ctx.state.snapshot_stats.get("completed"))
 
-    with ui.card().classes("lp-card w-full lp-profile-summary-card"):
-        with ui.row().classes("w-full items-start justify-between gap-4 no-wrap lp-profile-summary-rail"):
+    with ui.element("div").classes("w-full lp-profile-summary-row"):
+        with ui.row().classes("w-full items-center justify-between gap-4 no-wrap lp-profile-summary-rail"):
             with ui.row().classes("items-center gap-3 lp-profile-head"):
                 if ctx.avatar_url:
                     ui.image(ctx.avatar_url).classes("lp-profile-avatar-img")
@@ -155,15 +155,15 @@ def _render_profile_summary_rail(*, ctx: ProfileStatsPageContext, on_refresh: An
                     ui.label(ctx.avatar_initial).classes("lp-profile-avatar-fallback")
                 with ui.column().classes("gap-0"):
                     ui.label(ctx.username).classes("lp-profile-user-name")
-                    ui.label("Personal and team learning totals").classes("lp-profile-muted")
-                    ui.label(f"{in_progress} in progress  ·  {completed} completed  ·  {interested} interested").classes(
-                        "lp-profile-stat-line"
+                    ui.label(f"{in_progress} in progress · {completed} completed · {interested} interested").classes(
+                        "lp-profile-muted"
                     )
-            with ui.column().classes("items-end gap-2 lp-profile-summary-meta"):
-                ui.label(_last_updated_copy(last_loaded_at=ctx.last_loaded_at)).classes("lp-profile-muted")
+            ui.space()
+            with ui.column().classes("items-end gap-1 lp-profile-summary-meta"):
                 if ctx.meta_text:
                     ui.label(ctx.meta_text).classes("text-xs lp-profile-meta")
-                ui.button("Refresh stats", on_click=on_refresh).props("outline dense")
+                ui.label(_last_updated_copy(last_loaded_at=ctx.last_loaded_at)).classes("lp-profile-muted")
+                ui.button("Refresh", on_click=on_refresh).props("outline dense")
 
 
 def _render_mode_toggle(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
@@ -183,13 +183,23 @@ def _render_mode_toggle(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> Non
     mode_control.on("update:model-value", _on_mode_change)
 
 
+def _render_learning_stats_header(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
+    """Render the stats header row with anchored mode toggle."""
+    with ui.row().classes("items-center w-full"):
+        with ui.column().classes("gap-0"):
+            ui.label("Learning stats").classes("lp-profile-section-title")
+            ui.label("Quick personal overview with optional team drill-down.").classes("lp-profile-muted")
+        ui.space()
+        _render_mode_toggle(ctx=ctx, on_refresh=on_refresh)
+
+
 def _render_profile_snapshot_section(*, ctx: ProfileStatsPageContext) -> None:
     """Render the profile progress snapshot cards."""
     interested = _safe_int(ctx.state.snapshot_stats.get("interested"))
     in_progress = _safe_int(ctx.state.snapshot_stats.get("in_progress"))
     completed = _safe_int(ctx.state.snapshot_stats.get("completed"))
-    ui.label("Progress Snapshot").classes("lp-profile-section-title")
-    ui.label("Your learning activity across courses").classes("lp-profile-muted mb-1")
+    ui.label("Progress snapshot").classes("lp-profile-card-title")
+    ui.label("Your learning activity across courses").classes("lp-profile-card-subtitle")
     with ui.element("section").classes("lp-home-grid-12"):
         for icon, label, value, summary in (
             ("star", "Interested", interested, "saved items"),
@@ -200,7 +210,7 @@ def _render_profile_snapshot_section(*, ctx: ProfileStatsPageContext) -> None:
                 with ui.card().classes("lp-card w-full lp-profile-metric-card"):
                     with ui.row().classes("items-center gap-2"):
                         ui.icon(icon).classes("lp-profile-metric-icon")
-                        ui.label(label).classes("lp-profile-card-title")
+                        ui.label(label).classes("lp-profile-muted")
                     ui.label(str(value)).classes("lp-profile-metric-value")
                     ui.label(summary).classes("lp-profile-muted")
 
@@ -240,8 +250,16 @@ def _render_team_stats_section(*, ctx: ProfileStatsPageContext) -> None:
                     ui.label(
                         "No team contributor data yet. Open Teams to invite teammates or switch to My stats to review your own progress."
                     ).classes("lp-profile-muted")
+                elif len(contributors) == 1:
+                    row = contributors[0]
+                    who = str(row.get("who") or "Unknown")
+                    score = _safe_int(row.get("score"))
+                    with ui.row().classes("items-center justify-between w-full lp-profile-contributor-summary"):
+                        with ui.column().classes("gap-0"):
+                            ui.label("Top contributor this week").classes("lp-profile-muted")
+                            ui.label(f"{who} — {score} contributions").classes("lp-profile-user-name")
                 else:
-                    ui.echart(_contributors_chart_option(contributors=contributors)).classes("w-full h-64")
+                    ui.echart(_contributors_chart_option(contributors=contributors)).classes("w-full h-52")
 
     with ui.element("section").classes("lp-home-grid-12"):
         with ui.element("div").classes("lp-home-span-12"):
@@ -289,7 +307,7 @@ async def _render_profile_stats_page(*, store: SessionStore, api: ApiClient) -> 
     render_shell(title="Profile", store=store, api=api)
     with render_container().classes("lp-profile-scope"):
         ui.label(subtitle_for(PrimaryPage.PROFILE)).classes("text-sm text-gray-600")
-        ui.label("Learning stats").classes("lp-home-title")
+        ui.label("Profile overview").classes("lp-home-title")
 
         @ui.refreshable
         def dashboard() -> None:
@@ -299,11 +317,11 @@ async def _render_profile_stats_page(*, store: SessionStore, api: ApiClient) -> 
                 render_card_skeletons(count=3)
                 return
 
-            _render_mode_toggle(
+            _render_learning_stats_header(
                 ctx=ctx,
                 on_refresh=lambda: _load_profile_stats(ctx=ctx, dashboard=dashboard),
             )
-            ui.element("div").classes("h-3")
+            ui.element("div").classes("h-2")
             _render_profile_summary_rail(
                 ctx=ctx,
                 on_refresh=lambda: _load_profile_stats(ctx=ctx, dashboard=dashboard),

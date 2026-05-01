@@ -48,6 +48,7 @@ class PathRecord:
     name: str
     description: str | None
     created_by: str | None
+    course_count: int = 0
 
 
 @dataclass(frozen=True)

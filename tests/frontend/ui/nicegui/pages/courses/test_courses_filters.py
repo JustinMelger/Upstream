@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.courses.filters import build_list_query_params, normalize_courses_filter_values
+from frontend.ui.nicegui.domains.courses.filters import build_list_query_params, normalize_courses_filter_values
 
 
 def test_normalize_courses_filter_values_normalizes_search_and_facets() -> None:

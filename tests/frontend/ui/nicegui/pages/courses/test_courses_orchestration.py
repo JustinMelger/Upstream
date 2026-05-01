@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from frontend.ui.nicegui.core.api_client import ApiError
-from frontend.ui.nicegui.pages.courses.orchestration import (
+from frontend.ui.nicegui.domains.courses.orchestration import (
     CoursesListRefreshDeps,
     CoursesTrackingRefreshDeps,
     open_delete_course_confirmation,
@@ -15,7 +15,7 @@ from frontend.ui.nicegui.pages.courses.orchestration import (
     perform_update_course,
     reload_tracking_only,
 )
-from frontend.ui.nicegui.pages.courses.state import CoursesPageState
+from frontend.ui.nicegui.domains.courses.state import CoursesPageState
 
 
 class _Controller:

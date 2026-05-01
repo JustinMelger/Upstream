@@ -5,7 +5,7 @@ from __future__ import annotations
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container, render_shell
-from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
@@ -33,9 +33,15 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
                 ui.label("Create a team, follow shared activity, and keep reviews moving from one workspace.").classes(
                     "text-sm lp-teams-header-subtitle"
                 ).style("color: var(--lp-muted)")
+            controller = TeamsPageController(api=api)
+            initial_state = TeamsPageState()
+            try:
+                initial_state.teams = await controller.list_my_teams()
+            except (ApiError, RuntimeError):
+                initial_state.teams = []
             view = _TeamsPageView(
-                controller=TeamsPageController(api=api),
-                state=TeamsPageState(),
+                controller=controller,
+                state=initial_state,
                 username=str((user or {}).get("username") or ""),
                 role=str((user or {}).get("role") or ""),
                 initial_tab=resolve_activity_tab(request=request),

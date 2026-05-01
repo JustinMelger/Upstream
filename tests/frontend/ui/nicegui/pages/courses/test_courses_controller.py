@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
+from frontend.ui.nicegui.domains.courses.controller import CoursesPageController
 
 
 class _FakeApi:

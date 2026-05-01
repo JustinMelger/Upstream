@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.paths.filters import build_paths_list_query_params, normalize_paths_filter_values
+from frontend.ui.nicegui.domains.paths.filters import build_paths_list_query_params, normalize_paths_filter_values
 
 
 def test_normalize_paths_filter_values_normalizes_search_and_fields() -> None:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.paths import actions as paths_actions
-from frontend.ui.nicegui.pages.paths.actions import (
+from frontend.ui.nicegui.domains.paths import actions as paths_actions
+from frontend.ui.nicegui.domains.paths.actions import (
     build_path_card_actions,
     build_track_toggle,
     clear_path_filter_by_key,

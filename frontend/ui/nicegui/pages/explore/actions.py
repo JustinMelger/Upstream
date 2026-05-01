@@ -6,7 +6,7 @@ from typing import Any
 
 from nicegui import ui
 
-from frontend.ui.nicegui.pages.courses.actions import build_course_card_actions
+from frontend.ui.nicegui.domains.courses.actions import build_course_card_actions
 
 
 def build_explore_course_actions(

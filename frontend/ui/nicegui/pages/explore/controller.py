@@ -8,6 +8,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
+from frontend.ui.nicegui.domains.paths.state import PathsPageState
 from frontend.ui.nicegui.pages.explore.gateway import CourseDetailBundle, ExploreDataGateway
 from frontend.ui.nicegui.pages.explore.orchestration import (
     clear_explore_tracking_status,
@@ -19,7 +20,6 @@ from frontend.ui.nicegui.pages.explore.orchestration import (
 )
 from frontend.ui.nicegui.pages.explore.share_models import ExploreSharePayload, ExploreUrlValue
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
-from frontend.ui.nicegui.pages.paths.state import PathsPageState
 
 
 class ExplorePageController:

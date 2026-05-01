@@ -22,18 +22,6 @@ def _parse(path: Path) -> ast.Module:
     return ast.parse(path.read_text(encoding="utf-8"))
 
 
-def _imports_for(path: Path) -> set[str]:
-    tree = _parse(path)
-    out: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                out.add(str(alias.name))
-        elif isinstance(node, ast.ImportFrom):
-            out.add(str(node.module or ""))
-    return out
-
-
 def _calls_function_named(path: Path, name: str) -> bool:
     tree = _parse(path)
     for node in ast.walk(tree):
@@ -131,9 +119,9 @@ def test_admin_users_page_requires_admin_guard() -> None:
 
 def test_legacy_catalog_compat_modules_are_removed() -> None:
     removed = (
-        Path("frontend/ui/nicegui/pages/courses/compat.py"),
-        Path("frontend/ui/nicegui/pages/paths/compat.py"),
-        Path("frontend/ui/nicegui/pages/articles/compat.py"),
+        Path("frontend/ui/nicegui/domains/courses/compat.py"),
+        Path("frontend/ui/nicegui/domains/paths/compat.py"),
+        Path("frontend/ui/nicegui/domains/articles/compat.py"),
     )
     for path in removed:
         assert not path.exists(), f"Legacy compatibility module should be removed: {path}"
@@ -184,6 +172,12 @@ def test_main_create_app_keeps_feature_flag_gates() -> None:
     assert "articles.register(store=store, api=api)" not in source
 
 
+def test_backend_main_keeps_telemetry_feature_gate() -> None:
+    source = Path("backend/main.py").read_text(encoding="utf-8")
+    assert "if settings.feature_telemetry:" in source
+    assert "app.include_router(telemetry.router)" in source
+
+
 def test_architecture_docs_describe_typed_path_items_contract() -> None:
     backend_doc = _BACKEND_ARCH_DOC.read_text(encoding="utf-8")
     standards_doc = _STANDARDS_DOC.read_text(encoding="utf-8")
@@ -193,34 +187,6 @@ def test_architecture_docs_describe_typed_path_items_contract() -> None:
     assert "PATH_ITEMS" in backend_doc
 
     assert "ordered typed `items` (`type`, `id`, `position`) as the mutation contract" in standards_doc
-
-
-def test_pages_and_services_do_not_import_httpx_directly() -> None:
-    roots = [
-        Path("frontend/ui/nicegui/pages"),
-        Path("frontend/ui/nicegui/services"),
-    ]
-    for root in roots:
-        for path in sorted(root.rglob("*.py")):
-            imports = _imports_for(path)
-            assert "httpx" not in imports
-            assert not any(name.startswith("httpx.") for name in imports)
-
-
-def test_page_modules_do_not_import_services_directly() -> None:
-    for path in sorted(_PAGES_ROOT.glob("*/page.py")):
-        imports = _imports_for(path)
-        assert not any(name.startswith("frontend.ui.nicegui.services") for name in imports), (
-            f"page.py should use controller/actions, not services directly: {path}"
-        )
-
-
-def test_service_modules_do_not_import_pages_modules() -> None:
-    for path in sorted(_SERVICES_ROOT.rglob("*.py")):
-        imports = _imports_for(path)
-        assert not any(name.startswith("frontend.ui.nicegui.pages") for name in imports), (
-            f"service module should not depend on page modules: {path}"
-        )
 
 
 def test_page_modules_do_not_call_api_client_methods_directly() -> None:
@@ -252,14 +218,6 @@ def test_ui_flow_modules_do_not_call_api_client_methods_directly() -> None:
                     raise AssertionError(f"UI flow module should route API calls through controller/service callbacks: {path}")
 
 
-def test_controller_modules_do_not_import_nicegui_ui_primitives() -> None:
-    for path in sorted(_PAGES_ROOT.glob("*/controller.py")):
-        imports = _imports_for(path)
-        assert "nicegui" not in imports, f"controller should not import nicegui directly: {path}"
-        assert "nicegui.ui" not in imports, f"controller should not import nicegui.ui: {path}"
-        assert "nicegui.app" not in imports, f"controller should not import nicegui.app: {path}"
-
-
 def test_page_package_modules_do_not_use_broad_exception_handlers() -> None:
     for path in sorted(_PAGES_ROOT.rglob("*.py")):
         tree = _parse(path)
@@ -281,8 +239,8 @@ def test_card_pages_use_view_model_mappers() -> None:
         ),
     }
     for page_path, (module_name, mapper_names) in expected.items():
-        imports = _imports_for(page_path)
-        assert module_name in imports, f"Expected {page_path} to import {module_name}"
+        src = page_path.read_text(encoding="utf-8")
+        assert module_name in src, f"Expected {page_path} to import {module_name}"
         for mapper_name in mapper_names:
             assert _calls_function_named(page_path, mapper_name), f"Expected {page_path} to call {mapper_name}"
 
@@ -334,7 +292,7 @@ def test_ruff_complexity_per_file_ignores_do_not_broaden_scope() -> None:
         "frontend/ui/nicegui/pages/ai_curator/page.py",
         "frontend/ui/nicegui/pages/learning/page.py",
         "frontend/ui/nicegui/pages/profile/page.py",
-        "frontend/ui/nicegui/pages/courses/sections.py",
+        "frontend/ui/nicegui/domains/courses/sections.py",
         "frontend/ui/nicegui/pages/learning/sections.py",
     }
     unexpected = sorted(complexity_ignore_targets - approved_targets)

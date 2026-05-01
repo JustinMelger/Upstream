@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.pages.paths.reducers import (
+from frontend.ui.nicegui.domains.paths.reducers import (
     apply_scope_and_status,
     build_status_options,
     compute_status_counts,

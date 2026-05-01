@@ -14,7 +14,7 @@ import pytest
 from frontend.ui.nicegui.components.filters import filter_selected_paths
 from frontend.ui.nicegui.components.status_chips import status_chip_class, status_label, tracking_chip_class, tracking_label
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
-from frontend.ui.nicegui.pages.courses.ui_glue import parse_duration_hours
+from frontend.ui.nicegui.domains.courses.ui_glue import parse_duration_hours
 from frontend.ui.nicegui.pages.shared_stats.helpers import (
     ids_by_status,
     recent_courses,

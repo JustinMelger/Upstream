@@ -40,6 +40,7 @@ def test_render_team_detail_view_renders_inbox_without_selected_team(monkeypatch
 
     fake_ui = SimpleNamespace(
         column=lambda: _FakeContainer(),
+        card=lambda: _FakeContainer(),
         label=lambda _text="": _FakeContainer(),
     )
     captured: dict[str, object] = {}
@@ -110,3 +111,42 @@ def test_member_mutations_refresh_full_teams_state() -> None:
 
 def test_activity_target_link_opens_article_detail() -> None:
     assert build_activity_target_link(target_type="article", target_id=7) == "/explore/articles/7"
+
+
+def test_on_tab_change_does_not_navigate_for_current_route_tab(monkeypatch) -> None:  # noqa: ANN001
+    navigated: list[str] = []
+    fake_ui = SimpleNamespace(navigate=SimpleNamespace(to=lambda path: navigated.append(str(path))))
+    monkeypatch.setattr("frontend.ui.nicegui.pages.teams.page_ui.ui", fake_ui)
+
+    class _Refreshable:
+        def refresh(self) -> None:
+            return None
+
+    class _Tabs:
+        value = "inbox"
+
+    class _Controller:
+        async def list_inbox(self, *, limit: int) -> list[dict[str, object]]:  # noqa: ARG002
+            return []
+
+    view = _TeamsPageView(
+        controller=_Controller(),  # type: ignore[arg-type]
+        state=TeamsPageState(),
+        username="alice",
+        role="member",
+        initial_tab="inbox",
+    )
+    view.current_route_tab = "inbox"
+    view.view_tabs = _Tabs()
+    view.team_detail_view = _Refreshable()
+
+    import asyncio
+
+    asyncio.run(view.on_tab_change())
+
+    assert navigated == []
+
+
+def test_teams_route_preloads_teams_before_view_build() -> None:
+    src = Path("frontend/ui/nicegui/pages/teams/page.py").read_text(encoding="utf-8")
+    assert "initial_state.teams = await controller.list_my_teams()" in src

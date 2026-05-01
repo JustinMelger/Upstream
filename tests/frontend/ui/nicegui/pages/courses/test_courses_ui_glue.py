@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.courses.ui_glue import (
+from frontend.ui.nicegui.domains.courses.ui_glue import (
     build_active_filter_chips,
     compute_courses_meta_text,
     compute_expanded_visible_count,

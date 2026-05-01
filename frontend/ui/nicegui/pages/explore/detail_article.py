@@ -16,9 +16,9 @@ from frontend.ui.nicegui.core.learning_items import (
 )
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
-from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
-from frontend.ui.nicegui.pages.courses.ui_glue import format_short_date
+from frontend.ui.nicegui.domains.articles.controller import ArticlesPageController
+from frontend.ui.nicegui.domains.articles.ui_glue import parse_tags
+from frontend.ui.nicegui.domains.courses.ui_glue import format_short_date
 from frontend.ui.nicegui.pages.explore.detail_common import parse_detail_id, render_breadcrumb, render_detail_scope
 
 

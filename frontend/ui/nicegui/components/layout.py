@@ -98,6 +98,34 @@ def render_container() -> ui.column:
     return ui.column().classes("lp-container")
 
 
+def render_page_scope(*, scope_classes: str = "") -> ui.column:
+    """Return a stable top-level page shell container.
+
+    Args:
+        scope_classes: Optional additional scope classes.
+
+    Returns:
+        A NiceGUI column with shared page-shell classes.
+    """
+    return ui.column().classes(f"lp-page-shell {scope_classes}".strip())
+
+
+def render_page_header(*, title: str, subtitle: str = "", kicker: str = "") -> None:
+    """Render a standard page header block.
+
+    Args:
+        title: Main page title.
+        subtitle: Optional supporting copy below the title.
+        kicker: Optional eyebrow text above the title.
+    """
+    with ui.column().classes("w-full gap-1 lp-page-header-block"):
+        if str(kicker or "").strip():
+            ui.label(kicker).classes("text-sm lp-page-header-kicker")
+        ui.label(title).classes("lp-page-title")
+        if str(subtitle or "").strip():
+            ui.label(subtitle).classes("text-sm lp-page-header-subtitle").style("color: var(--lp-muted)")
+
+
 def render_split_layout(*, rail: Callable[[], None], main: Callable[[], None], rail_classes: str = "") -> None:
     """Render a reusable rail + main split layout.
 

@@ -7,6 +7,14 @@ from typing import Any
 
 from nicegui import ui
 
+from frontend.ui.nicegui.components.dashboard import (
+    render_content_list_section,
+    render_dashboard_list_card,
+    render_empty_copy,
+    render_metric_group,
+    render_panel,
+    render_section_header,
+)
 from frontend.ui.nicegui.components.status_chips import TRACKING_STATUS_OPTIONS
 from frontend.ui.nicegui.core.a11y import apply_icon_button_a11y
 from frontend.ui.nicegui.core.api_client import ApiError
@@ -43,6 +51,25 @@ class LearningTabContext:
     recently_shared_in_teams: list[dict[str, Any]]
     on_open_recently_shared_item: Any
     on_load_more_selected: Any
+
+
+@dataclass(slots=True)
+class FocusSectionContext:
+    """Bundled dependencies for rendering the Home focus section."""
+
+    next_course: dict[str, Any] | None
+    teammates_progressing: int
+    reviews_count: int
+    pending_course_review_ids: list[int]
+    pending_path_review_ids: list[int]
+    selected_paths_count: int
+    tracked_courses_count: int
+    on_join_discussion: Any
+    on_open_selected_paths: Any
+    on_open_first_course_review: Any
+    on_open_first_path_review: Any
+    on_open_tracked_courses: Any
+    on_browse_courses: Any
 
 
 def _tracking_status_counts(*, tracking_by_course_id: dict[int, dict[str, Any]]) -> tuple[int, int, int]:
@@ -231,12 +258,11 @@ def _render_tracked_course_card(
                     for key, label in TRACKING_STATUS_OPTIONS:
                         ui.menu_item(label, on_click=_set_status_handler(key=key, cid=course_id))
 
-        with ui.row().classes("w-full items-center gap-2 lp-track-social-line"):
-            with ui.row().classes("items-center gap-1"):
-                ui.icon("person").classes("text-[12px] lp-home-track-meta")
-                ui.icon("person").classes("text-[12px] lp-home-track-meta")
-                ui.icon("person").classes("text-[12px] lp-home-track-meta")
-            ui.label(f"{max(0, teammates_active)} teammates active").classes("text-xs lp-home-track-meta")
+        social_bits: list[str] = []
+        if teammates_active > 0:
+            social_bits.append(f"{max(0, teammates_active)} teammates active")
+        if social_bits:
+            ui.label(" · ".join(social_bits)).classes("text-xs lp-home-track-meta")
 
         with ui.row().classes(f"w-full items-center gap-2 lp-track-progress-meta {tone_class}"):
             ui.label(tracking_label_fn(status)).classes("text-xs lp-track-status-text")
@@ -260,18 +286,21 @@ def render_tracked_courses_section(
     on_browse_courses: Any,
 ) -> None:
     """Render tracked-courses card and rows."""
-    card_classes = "lp-card w-full lp-home-track-shell"
+    card_classes = "lp-card w-full lp-panel-card lp-home-track-shell"
     if not tracked_courses:
         card_classes += " lp-home-passive-empty"
-    with ui.card().classes(card_classes):
+    with render_panel(classes=card_classes):
         ui.label("Tracked courses").classes("lp-home-section-title lp-home-track-title")
         if not tracked_courses:
-            ui.label("Track a course to see it here.").classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
+            render_empty_copy("Track a course to see it here.", ui_ref=ui)
             ui.button("Browse courses", on_click=on_browse_courses).props("dense outline").classes("lp-home-empty-btn")
             return
 
         ui.separator().classes("lp-home-track-separator")
-        with ui.element("div").classes("lp-tracked-grid"):
+        grid_classes = "lp-tracked-grid"
+        if min(len(tracked_courses), int(tracked_visible)) <= 1:
+            grid_classes += " lp-tracked-grid--single"
+        with ui.element("div").classes(grid_classes):
             for idx, course in enumerate(tracked_courses[:tracked_visible]):
                 _render_tracked_course_card(
                     index=idx,
@@ -301,15 +330,13 @@ def render_selected_paths_section(
 ) -> None:
     """Render selected-paths card and rows."""
     if not selected_paths:
-        with ui.element("div").classes("w-full lp-home-path-empty-shell"):
+        with render_panel(classes="lp-card w-full lp-panel-card lp-home-path-shell lp-home-path-empty-shell"):
             ui.label("Selected Path").classes("lp-home-section-title")
-            ui.label("No path selected yet. Pick one path to track progress here.").classes("text-sm lp-home-empty-copy").style(
-                "color: var(--lp-muted)"
-            )
+            render_empty_copy("No path selected yet. Pick one path to track progress here.", ui_ref=ui)
             ui.button("Browse paths", on_click=on_browse_paths).props("dense outline").classes("lp-home-empty-btn")
         return
 
-    with ui.card().classes("lp-card w-full lp-home-path-shell"):
+    with render_panel(classes="lp-card w-full lp-home-path-shell"):
         ui.label("Selected Path").classes("lp-home-section-title")
         ui.separator().classes("lp-home-path-separator")
         for idx, row in enumerate(selected_paths[:selected_visible]):
@@ -321,36 +348,33 @@ def render_selected_paths_section(
             )
 
             progress_pct = int(round(max(0.0, min(1.0, float(ratio))) * 100))
-            card_tier_class = "lp-path-card--primary" if idx == 0 else "lp-path-card--secondary"
+            card_tier_class = "lp-track-card--primary" if idx == 0 else "lp-track-card--secondary"
+            card_size_class = "lp-track-card--major" if idx == 0 else "lp-track-card--minor"
 
-            with ui.element("div").classes(f"lp-track-card lp-path-card {card_tier_class} w-full"):
-                with ui.row().classes("w-full items-start justify-between gap-3"):
-                    with ui.row().classes("items-start gap-2"):
+            with ui.element("div").classes(f"lp-track-card {card_tier_class} {card_size_class} w-full"):
+                with ui.row().classes("w-full items-start justify-between gap-3 lp-track-head-row"):
+                    with ui.row().classes("items-start gap-2 lp-track-identity"):
                         ui.icon("route").classes("lp-track-avatar")
                         with ui.column().classes("gap-0 lp-track-title-block"):
-                            ui.label(str(row.get("name") or "")).classes("text-sm font-semibold")
+                            ui.label(str(row.get("name") or "")).classes("text-sm font-semibold lp-track-title")
                             ui.label(f"{completed} / {total} completed").classes("text-xs lp-home-track-meta").style(
                                 "color: var(--lp-muted)"
                             )
-                    with ui.row().classes("items-center gap-1 lp-track-actions"):
+                    with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group"):
                         ui.button("Continue path", on_click=on_view_path(pid)).props("dense outline").classes(
                             "lp-track-continue-btn"
                         )
 
                 review_badge = review_summary_label(path_review_summary_by_id.get(pid))
-                with ui.row().classes("items-center gap-2 w-full lp-track-team-row"):
-                    if teammates_following > 0:
-                        with ui.row().classes("items-center gap-1"):
-                            ui.icon("person").classes("text-[12px] lp-home-track-meta")
-                            ui.icon("person").classes("text-[12px] lp-home-track-meta")
-                        ui.label(f"{teammates_following} teammates also following").classes("text-xs lp-home-track-meta")
-                    if review_badge:
-                        ui.label(str(review_badge)).classes("text-xs lp-home-track-meta")
+                meta_bits: list[str] = []
+                if teammates_following > 0:
+                    meta_bits.append(f"{teammates_following} teammates following")
+                if review_badge:
+                    meta_bits.append(str(review_badge))
+                if meta_bits:
+                    ui.label(" · ".join(meta_bits)).classes("text-xs lp-home-track-meta")
 
-                ui.linear_progress(float(ratio), show_value=False).classes("w-full lp-home-track-progress")
-                with ui.row().classes(
-                    "w-full items-center gap-2 lp-home-track-status lp-track-status-line lp-home-status--active"
-                ):
+                with ui.row().classes("w-full items-center gap-2 lp-track-progress-meta lp-home-status--active"):
                     ui.label("Selected").classes("text-xs lp-track-status-text")
                     ui.linear_progress(float(ratio), show_value=False).classes(
                         "grow lp-home-track-progress lp-track-progress-inline"
@@ -370,165 +394,182 @@ def render_shared_content(
     on_review_path: Any,
 ) -> None:
     """Render shared tab content."""
-    ui.label("You shared").classes("text-lg font-semibold mt-2")
-    ui.label("Content you shared for others to discover.").classes("text-sm").style("color: var(--lp-muted)")
+    shared_items_visible = shared_learning_items[:12]
+    shared_paths_visible = shared_paths[:12]
 
-    with ui.card().classes("lp-card w-full lp-shared-shell"):
-        ui.label("Learning items").classes("lp-home-section-title")
-        ui.separator().classes("lp-shared-separator")
-        if not shared_learning_items:
-            ui.label("You haven't shared any learning items yet.").classes("text-sm lp-home-empty-copy").style(
-                "color: var(--lp-muted)"
-            )
-        for item in shared_learning_items[:12]:
-            item_type = str(item.item_type or "")
-            item_icon = "play_circle" if item_type == "video" else ("article" if item_type == "article" else "school")
-            with ui.element("div").classes("lp-track-card lp-shared-card"):
-                with ui.row().classes("w-full items-start justify-between gap-3"):
-                    with ui.row().classes("items-start gap-2 lp-track-identity"):
-                        ui.icon(item_icon).classes("lp-track-avatar")
-                        with ui.column().classes("gap-0 lp-track-title-block"):
-                            ui.label(str(item.title or "")).classes("text-sm font-semibold lp-track-title")
-                            ui.label(learning_item_type_label(item_type)).classes("text-xs lp-home-track-meta")
-                    with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group"):
-                        ui.button(
-                            learning_item_primary_action_label(item_type),
-                            on_click=on_open_learning_item(item),
-                        ).props("dense outline").classes("lp-track-continue-btn")
-                        if bool(getattr(item.capabilities, "supports_reviews", False)):
-                            ui.button(
-                                learning_item_review_action_label(item_type),
-                                on_click=on_review_learning_item(item),
-                            ).props("dense outline").classes("lp-track-continue-btn")
-                parts = [review_summary_label(item.review_summary_row)]
-                parts = [part for part in parts if part]
-                if parts:
-                    ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
-                        "color: var(--lp-muted)"
-                    )
+    with ui.column().classes("w-full gap-3 lp-shared-tab-shell"):
+        render_section_header(
+            title="You shared",
+            description="Content you shared for others to discover.",
+            classes="lp-shared-tab-header",
+        )
 
-    with ui.card().classes("lp-card w-full lp-shared-shell"):
-        ui.label("Paths").classes("lp-home-section-title")
-        ui.separator().classes("lp-shared-separator")
-        if not shared_paths:
-            ui.label("You haven't shared any paths yet.").classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
-        for p in shared_paths[:12]:
-            pid = int(p.get("id") or 0)
-            with ui.element("div").classes("lp-track-card lp-shared-card"):
-                with ui.row().classes("w-full items-start justify-between gap-3"):
-                    with ui.row().classes("items-start gap-2 lp-track-identity"):
-                        ui.icon("route").classes("lp-track-avatar")
-                        with ui.column().classes("gap-0 lp-track-title-block"):
-                            ui.label(str(p.get("name") or "")).classes("text-sm font-semibold lp-track-title")
-                            ui.label("Path").classes("text-xs lp-home-track-meta")
-                    with ui.row().classes("items-center gap-1 lp-track-actions lp-track-actions-group"):
-                        ui.button("View", on_click=on_view_path(pid)).props("dense outline").classes("lp-track-continue-btn")
-                        ui.button("Review", on_click=on_review_path(pid)).props("dense outline").classes(
-                            "lp-track-continue-btn"
-                        )
-                parts = [review_summary_label(shared_path_review_summary_by_id.get(pid))]
-                parts = [part for part in parts if part]
-                if parts:
-                    ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
-                        "color: var(--lp-muted)"
-                    )
+        render_metric_group(
+            metrics=(("Learning items", len(shared_learning_items)), ("Paths", len(shared_paths))),
+            classes="w-full gap-3 flex-wrap lp-shared-summary-row",
+            as_row=True,
+        )
+
+        with ui.column().classes("w-full gap-4 lp-shared-content-column"):
+            with render_content_list_section(
+                title="Shared learning items",
+                empty_text="You haven't shared any learning items yet.",
+                has_items=bool(shared_learning_items),
+            ) as should_render_items:
+                if should_render_items:
+                    grid_classes = "lp-shared-grid"
+                    if len(shared_items_visible) <= 1:
+                        grid_classes += " lp-shared-grid--single"
+                    with ui.element("div").classes(grid_classes):
+                        for item in shared_items_visible:
+                            item_type = str(item.item_type or "")
+                            item_icon = (
+                                "play_circle" if item_type == "video" else ("article" if item_type == "article" else "school")
+                            )
+
+                            def render_item_actions(*, current_item: Any = item, current_item_type: str = item_type) -> None:
+                                ui.button(
+                                    learning_item_primary_action_label(current_item_type),
+                                    on_click=on_open_learning_item(current_item),
+                                ).props("unelevated no-caps").classes("lp-shared-primary-btn")
+                                if bool(getattr(current_item.capabilities, "supports_reviews", False)):
+                                    ui.button(
+                                        learning_item_review_action_label(current_item_type),
+                                        on_click=on_review_learning_item(current_item),
+                                    ).props("dense outline no-caps").classes("lp-shared-secondary-btn")
+
+                            with render_dashboard_list_card(
+                                icon=item_icon,
+                                title=str(item.title or ""),
+                                subtitle=learning_item_type_label(item_type),
+                                classes="lp-shared-card",
+                                render_actions=render_item_actions,
+                            ):
+                                parts = [review_summary_label(item.review_summary_row)]
+                                parts = [part for part in parts if part]
+                                if parts:
+                                    ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
+                                        "color: var(--lp-muted)"
+                                    )
+
+            with render_content_list_section(
+                title="Paths",
+                empty_text="You haven't shared any paths yet.",
+                has_items=bool(shared_paths),
+            ) as should_render_paths:
+                if should_render_paths:
+                    grid_classes = "lp-shared-grid"
+                    if len(shared_paths_visible) <= 1:
+                        grid_classes += " lp-shared-grid--single"
+                    with ui.element("div").classes(grid_classes):
+                        for p in shared_paths_visible:
+                            pid = int(p.get("id") or 0)
+
+                            def render_path_actions(*, current_path_id: int = pid) -> None:
+                                ui.button("View", on_click=on_view_path(current_path_id)).props("unelevated no-caps").classes(
+                                    "lp-shared-primary-btn"
+                                )
+                                ui.button("Review", on_click=on_review_path(current_path_id)).props(
+                                    "dense outline no-caps"
+                                ).classes("lp-shared-secondary-btn")
+
+                            with render_dashboard_list_card(
+                                icon="route",
+                                title=str(p.get("name") or ""),
+                                subtitle="Path",
+                                classes="lp-shared-card",
+                                render_actions=render_path_actions,
+                            ):
+                                parts = [review_summary_label(shared_path_review_summary_by_id.get(pid))]
+                                parts = [part for part in parts if part]
+                                if parts:
+                                    ui.label(" · ".join(parts)).classes("text-xs lp-home-track-meta lp-shared-meta-line").style(
+                                        "color: var(--lp-muted)"
+                                    )
 
 
-def render_next_focus_section(
-    *,
-    next_course: dict[str, Any] | None,
-    teammates_progressing: int,
-    reviews_count: int,
-    on_join_discussion: Any,
-    on_open_selected_paths: Any,
-) -> None:
+def render_next_focus_section(*, ctx: FocusSectionContext) -> None:
     """Render the Home page next-focus section."""
-    with ui.card().classes("lp-card w-full lp-home-hero-panel lp-home-focus-shell"):
-        with ui.column().classes("w-full gap-2"):
+    next_course = ctx.next_course
+    teammates_progressing = ctx.teammates_progressing
+    reviews_count = ctx.reviews_count
+    pending_course_review_ids = ctx.pending_course_review_ids
+    pending_path_review_ids = ctx.pending_path_review_ids
+    selected_paths_count = ctx.selected_paths_count
+    tracked_courses_count = ctx.tracked_courses_count
+    on_join_discussion = ctx.on_join_discussion
+    on_open_selected_paths = ctx.on_open_selected_paths
+    on_open_first_course_review = ctx.on_open_first_course_review
+    on_open_first_path_review = ctx.on_open_first_path_review
+    on_open_tracked_courses = ctx.on_open_tracked_courses
+    on_browse_courses = ctx.on_browse_courses
+
+    pending_reviews = len(pending_course_review_ids) + len(pending_path_review_ids)
+
+    async def _open_reviews_queue() -> None:
+        if pending_course_review_ids:
+            await on_open_first_course_review()
+            return
+        if pending_path_review_ids:
+            await on_open_first_path_review()
+            return
+        ui.navigate.to("/teams")
+
+    with ui.card().classes("lp-card w-full lp-panel-card lp-home-focus-card"):
+        with ui.column().classes("w-full gap-3 lp-home-focus-card-body"):
             ui.label("Next focus").classes("lp-home-hero-eyebrow")
 
-        if next_course is None:
-            ui.label("No active next step yet. Start by tracking a course.").classes("text-sm lp-home-empty-copy").style(
-                "color: var(--lp-muted)"
-            )
-            ui.button("Browse courses", on_click=lambda: ui.navigate.to("/explore?tab=courses")).props("dense outline").classes(
-                "lp-home-empty-btn"
-            )
-            return
+            if next_course is None:
+                render_empty_copy("No active next step yet. Start by tracking a course.", ui_ref=ui)
+                with ui.row().classes("w-full items-center gap-2 flex-wrap lp-home-focus-actions"):
+                    ui.button("Browse courses", on_click=lambda: ui.navigate.to("/explore?tab=courses")).props(
+                        "dense outline"
+                    ).classes("lp-home-empty-btn")
+                return
 
-        nxt = dict(next_course.get("course") or {})
-        title = str(nxt.get("title") or "").strip() or "Continue your top track"
-        ui.label(title).classes("lp-home-hero-heading")
-        ui.label(f"{max(0, teammates_progressing)} active learners · {max(0, reviews_count)} reviews pending").classes(
-            "text-xs lp-home-hero-meta"
-        ).style("color: var(--lp-muted)")
+            nxt = dict(next_course.get("course") or {})
+            title = str(nxt.get("title") or "").strip() or "Continue your top track"
+            ui.label(title).classes("lp-home-hero-heading")
+            ui.label(f"{max(0, teammates_progressing)} active learners · {max(0, reviews_count)} reviews pending").classes(
+                "text-xs lp-home-hero-meta"
+            ).style("color: var(--lp-muted)")
 
-        with ui.row().classes("w-full items-center justify-end gap-2 lp-home-hero-actions"):
-            ui.button("Open conversation", on_click=on_join_discussion).props("dense flat no-caps").classes(
-                "lp-home-hero-secondary"
-            )
-            url = str(nxt.get("url") or "").strip()
-            if url:
-                ui.button("Continue course", on_click=lambda u=url: ui.navigate.to(u, new_tab=True)).props(
-                    "unelevated"
-                ).classes("lp-home-hero-primary")
-            elif int(next_course.get("path_id") or 0) > 0:
-                ui.button("Continue path", on_click=on_open_selected_paths).props("unelevated").classes("lp-home-hero-primary")
+            with ui.row().classes("w-full gap-1 lp-home-focus-summary"):
+                with ui.element("div").classes("lp-home-focus-summary-item"):
+                    ui.label("Reviews pending").classes("lp-home-focus-summary-label")
+                    ui.label(str(max(0, pending_reviews))).classes("lp-home-focus-summary-value")
+                with ui.element("div").classes("lp-home-focus-summary-item"):
+                    ui.label("Tracked courses").classes("lp-home-focus-summary-label")
+                    ui.label(str(max(0, tracked_courses_count))).classes("lp-home-focus-summary-value")
+                with ui.element("div").classes("lp-home-focus-summary-item"):
+                    ui.label("Selected paths").classes("lp-home-focus-summary-label")
+                    ui.label(str(max(0, selected_paths_count))).classes("lp-home-focus-summary-value")
 
-
-def render_next_actions_section(
-    *,
-    pending_course_review_ids: list[int],
-    pending_path_review_ids: list[int],
-    selected_paths_count: int,
-    tracked_courses_count: int,
-    on_open_first_course_review: Any,
-    on_open_first_path_review: Any,
-    on_open_selected_paths: Any,
-    on_open_tracked_courses: Any,
-    on_browse_courses: Any,
-) -> None:
-    """Render the compact next-actions summary beside the primary focus section."""
-    pending_reviews = len(pending_course_review_ids) + len(pending_path_review_ids)
-    with ui.card().classes("lp-card w-full lp-home-focus-queue-panel lp-home-focus-shell"):
-        with ui.column().classes("w-full gap-2"):
-            ui.label("Your next actions").classes("lp-home-queue-title")
-            with ui.column().classes("w-full gap-1 lp-home-action-stats"):
-                with ui.row().classes("w-full items-center justify-between gap-2"):
-                    ui.label("Course/path reviews pending").classes("lp-home-action-stat-label")
-                    ui.label(str(max(0, pending_reviews))).classes("lp-home-action-stat-value")
-                with ui.row().classes("w-full items-center justify-between gap-2"):
-                    ui.label("Tracked courses").classes("lp-home-action-stat-label")
-                    ui.label(str(max(0, tracked_courses_count))).classes("lp-home-action-stat-value")
-                with ui.row().classes("w-full items-center justify-between gap-2"):
-                    ui.label("Selected paths").classes("lp-home-action-stat-label")
-                    ui.label(str(max(0, selected_paths_count))).classes("lp-home-action-stat-value")
-
-            async def _open_reviews_queue() -> None:
-                if pending_course_review_ids:
-                    await on_open_first_course_review()
-                    return
-                if pending_path_review_ids:
-                    await on_open_first_path_review()
-                    return
-                ui.navigate.to("/teams")
-
-            if pending_reviews > 0:
-                ui.button("Review next", on_click=_open_reviews_queue).props("unelevated no-caps").classes(
-                    "lp-home-focus-primary-action"
+            with ui.row().classes("w-full items-center gap-2 flex-wrap lp-home-focus-actions"):
+                ui.button("Open conversation", on_click=on_join_discussion).props("dense flat no-caps").classes(
+                    "lp-home-hero-secondary"
                 )
-            elif tracked_courses_count > 0:
-                ui.button("Continue learning", on_click=on_open_tracked_courses).props("unelevated no-caps").classes(
-                    "lp-home-focus-primary-action"
-                )
-            elif selected_paths_count > 0:
-                ui.button("Continue path", on_click=on_open_selected_paths).props("unelevated no-caps").classes(
-                    "lp-home-focus-primary-action"
-                )
-            else:
-                ui.button("Browse courses", on_click=on_browse_courses).props("outline dense no-caps").classes(
-                    "lp-home-focus-secondary-action"
-                )
+                if pending_reviews > 0:
+                    ui.button("Review next", on_click=_open_reviews_queue).props("unelevated no-caps").classes(
+                        "lp-home-hero-primary"
+                    )
+                url = str(nxt.get("url") or "").strip()
+                if url:
+                    ui.button("Continue course", on_click=lambda u=url: ui.navigate.to(u, new_tab=True)).props(
+                        "unelevated"
+                    ).classes("lp-home-hero-primary")
+                elif int(next_course.get("path_id") or 0) > 0:
+                    ui.button("Continue path", on_click=on_open_selected_paths).props("unelevated").classes(
+                        "lp-home-hero-primary"
+                    )
+                elif tracked_courses_count > 0:
+                    ui.button("Continue learning", on_click=on_open_tracked_courses).props("unelevated no-caps").classes(
+                        "lp-home-hero-primary"
+                    )
+                else:
+                    ui.button("Browse courses", on_click=on_browse_courses).props("dense outline no-caps").classes(
+                        "lp-home-empty-btn"
+                    )
 
 
 def render_team_activity_section(
@@ -539,50 +580,20 @@ def render_team_activity_section(
     reviews_count: int,
     on_open_full_stats: Any,
 ) -> None:
-    """Render compact team-activity summary with minimal metrics and sparkline."""
-    interested, in_progress, completed = _tracking_status_counts(tracking_by_course_id=tracking_by_course_id)
+    """Render compact team-activity summary with minimal metrics."""
 
     with ui.column().classes("w-full gap-2 lp-home-snapshot-panel lp-home-snapshot-shell"):
-        ui.label("Team Activity").classes("lp-home-section-title")
-        ui.label("Continue your skill building").classes("text-xs lp-home-track-meta")
+        render_section_header(title="Team Activity")
         ui.separator().classes("lp-home-snapshot-separator")
-        with ui.column().classes("w-full gap-1"):
-            with ui.element("div").classes("lp-home-stat-grid"):
-                for label, value in (
-                    ("Active learners", active_learners),
-                    ("Shares this week", shares_count),
-                    ("Reviews posted", reviews_count),
-                ):
-                    with ui.element("div").classes("lp-home-stat-card"):
-                        ui.label(str(value)).classes("lp-home-stat-value")
-                        ui.label(label).classes("lp-home-stat-label")
-            with ui.element("div").classes("w-full lp-home-team-chart-wrap"):
-                ui.echart(
-                    {
-                        "grid": {"left": 0, "right": 0, "top": 4, "bottom": 0},
-                        "xAxis": {"type": "category", "show": False, "data": ["M", "T", "W", "T", "F", "S", "S"]},
-                        "yAxis": {"type": "value", "show": False},
-                        "series": [
-                            {
-                                "type": "line",
-                                "data": [
-                                    max(0, interested),
-                                    max(1, in_progress),
-                                    max(0, completed),
-                                    max(1, shares_count),
-                                    max(0, reviews_count),
-                                    max(0, in_progress),
-                                    max(0, interested),
-                                ],
-                                "smooth": True,
-                                "symbol": "none",
-                                "lineStyle": {"width": 2, "color": "#69b3f2"},
-                                "areaStyle": {"color": "rgba(105,179,242,0.12)"},
-                            }
-                        ],
-                    }
-                ).classes("w-full h-16 lp-home-team-chart")
-        with ui.row().classes("w-full justify-end lp-home-team-chart-footer"):
+        render_metric_group(
+            metrics=(
+                ("Active learners", active_learners),
+                ("Shares this week", shares_count),
+                ("Reviews posted", reviews_count),
+            ),
+            classes="lp-home-stat-grid lp-home-stat-grid--compact",
+        )
+        with ui.row().classes("w-full justify-end lp-home-team-chart-footer lp-home-team-chart-footer--simple"):
             ui.button("Open stats", on_click=on_open_full_stats).props("dense flat")
 
 
@@ -597,59 +608,56 @@ def render_conversations_section(
 ) -> None:
     """Render social conversation queue with inline actions and review nudges."""
     total_pending_reviews = len(pending_course_review_ids) + len(pending_path_review_ids)
-    with ui.column().classes("w-full gap-2 lp-home-recent-shell"):
-        with ui.row().classes("items-center gap-1"):
-            ui.icon("forum").classes("text-sm")
-            ui.label("Conversations Needing You").classes("lp-home-section-title")
-            ui.label(str(min(3, len(items)) + total_pending_reviews)).classes("lp-chip lp-chip--sky")
-            if items:
-                ui.label("").classes("lp-home-live-dot")
-        ui.separator().classes("lp-home-recent-separator")
+    with render_panel(classes="lp-card w-full lp-panel-card lp-home-convo-shell", tag="section"):
+        with ui.column().classes("w-full gap-3"):
+            with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap"):
+                with ui.row().classes("items-center gap-1"):
+                    ui.icon("forum").classes("text-sm")
+                    ui.label("Conversations Needing You").classes("lp-home-section-title")
+                    ui.label(str(min(3, len(items)) + total_pending_reviews)).classes("lp-chip lp-chip--sky")
+                if total_pending_reviews > 0:
+                    if pending_course_review_ids:
+                        ui.button("Review next", on_click=on_open_first_course_review).props("dense outline")
+                    elif pending_path_review_ids:
+                        ui.button("Review next", on_click=on_open_first_path_review).props("dense outline")
 
-        with ui.row().classes("w-full items-center justify-between gap-2 flex-wrap lp-home-convo-summary"):
-            with ui.row().classes("items-center gap-2 flex-wrap"):
-                pending_label = (
-                    f"{total_pending_reviews} course/path reviews waiting"
-                    if total_pending_reviews > 0
-                    else "No pending course/path reviews"
-                )
-                ui.label(pending_label).classes("text-xs lp-home-track-meta").style("color: var(--lp-muted)")
-            if total_pending_reviews > 0:
-                if pending_course_review_ids:
-                    ui.button("Review next", on_click=on_open_first_course_review).props("dense outline")
-                elif pending_path_review_ids:
-                    ui.button("Review next", on_click=on_open_first_path_review).props("dense outline")
-
-        if not items:
-            empty_copy = (
-                "No conversations are waiting right now. Start with your pending course or path reviews."
+            pending_label = (
+                f"{total_pending_reviews} course/path reviews waiting"
                 if total_pending_reviews > 0
-                else "No conversations are waiting right now. Share a learning item or path to start team activity."
+                else "No pending course/path reviews"
             )
-            ui.label(empty_copy).classes("text-sm lp-home-empty-copy").style("color: var(--lp-muted)")
-            return
+            ui.label(pending_label).classes("text-xs lp-home-track-meta").style("color: var(--lp-muted)")
+            ui.separator().classes("lp-home-recent-separator")
 
-        for row in items[:3]:
-            with ui.element("div").classes("lp-home-convo-row"):
-                who = str(row.get("created_by") or "").strip() or "Teammate"
-                who_display = who[:1].upper() + who[1:] if who else "Teammate"
-                title = str(row.get("title") or "").strip() or "Shared an update"
-                created_at = str(row.get("created_at") or "").strip()
-                when_label = created_at[:10] if created_at else "recent"
-                initials = "".join(part[:1] for part in who.split() if part)[:2].upper() or who[:2].upper() or "TM"
+            if not items:
+                empty_copy = (
+                    "No conversations are waiting right now. Start with your pending course or path reviews."
+                    if total_pending_reviews > 0
+                    else "No conversations are waiting right now. Share a learning item or path to start team activity."
+                )
+                render_empty_copy(empty_copy, ui_ref=ui)
+                return
 
-                with ui.row().classes("w-full items-start justify-between gap-2 lp-home-convo-main"):
-                    with ui.row().classes("items-start gap-2"):
-                        ui.label(initials).classes("lp-home-avatar-chip")
-                        with ui.column().classes("gap-0"):
-                            ui.label(who_display).classes("lp-home-convo-who")
-                            ui.label("shared").classes("lp-home-convo-shared")
-                            ui.label(title).classes("lp-home-convo-title")
-                    with ui.row().classes("items-center gap-2 no-wrap"):
-                        ui.label(when_label).classes("lp-home-convo-time")
-                        ui.button("Open", on_click=lambda _row=dict(row): on_open_item(_row)).props(
-                            "dense flat no-caps"
-                        ).classes("lp-home-convo-open")
+            for row in items[:3]:
+                with ui.element("div").classes("w-full lp-home-convo-row"):
+                    who = str(row.get("created_by") or "").strip() or "Teammate"
+                    who_display = who[:1].upper() + who[1:] if who else "Teammate"
+                    title = str(row.get("title") or "").strip() or "Shared an update"
+                    created_at = str(row.get("created_at") or "").strip()
+                    when_label = created_at[:10] if created_at else "recent"
+                    initials = "".join(part[:1] for part in who.split() if part)[:2].upper() or who[:2].upper() or "TM"
+
+                    with ui.row().classes("w-full items-center justify-between gap-3 lp-home-convo-main"):
+                        with ui.row().classes("items-center gap-3 min-w-0"):
+                            ui.label(initials).classes("lp-home-avatar-chip")
+                            with ui.column().classes("gap-0 min-w-0"):
+                                ui.label(who_display).classes("lp-home-convo-who")
+                                ui.label(title).classes("lp-home-convo-title")
+                        with ui.row().classes("items-center gap-2 no-wrap"):
+                            ui.label(when_label).classes("lp-home-convo-time")
+                            ui.button("Open", on_click=lambda _row=dict(row): on_open_item(_row)).props(
+                                "dense flat no-caps"
+                            ).classes("lp-home-convo-open")
 
 
 def render_shared_tab(
@@ -720,31 +728,27 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
     reviews_count = len(learning_vm.pending_course_review_ids) + len(learning_vm.pending_path_review_ids)
     tracked_preview_visible = min(int(state.tracked_visible), 2)
 
-    with ui.column().classes("w-full gap-4"):
-        with ui.element("section").classes("lp-home-grid-12 lp-home-grid-top"):
-            with ui.element("div").classes("lp-home-span-8"):
-                render_next_focus_section(
-                    next_course=next_course,
-                    teammates_progressing=active_learners,
-                    reviews_count=reviews_count,
-                    on_join_discussion=lambda: ui.navigate.to("/teams"),
-                    on_open_selected_paths=on_open_selected_paths,
-                )
-            with ui.element("div").classes("lp-home-span-4"):
-                render_next_actions_section(
-                    pending_course_review_ids=learning_vm.pending_course_review_ids,
-                    pending_path_review_ids=learning_vm.pending_path_review_ids,
-                    selected_paths_count=len(learning_vm.selected_paths),
-                    tracked_courses_count=len(learning_vm.tracked_courses),
-                    on_open_first_course_review=first_course_review_action,
-                    on_open_first_path_review=first_path_review_action,
-                    on_open_selected_paths=on_open_selected_paths,
-                    on_open_tracked_courses=on_browse_courses,
-                    on_browse_courses=on_browse_courses,
-                )
+    with ui.column().classes("w-full gap-3"):
+        render_next_focus_section(
+            ctx=FocusSectionContext(
+                next_course=next_course,
+                teammates_progressing=active_learners,
+                reviews_count=reviews_count,
+                pending_course_review_ids=learning_vm.pending_course_review_ids,
+                pending_path_review_ids=learning_vm.pending_path_review_ids,
+                selected_paths_count=len(learning_vm.selected_paths),
+                tracked_courses_count=len(learning_vm.tracked_courses),
+                on_join_discussion=lambda: ui.navigate.to("/teams"),
+                on_open_selected_paths=on_open_selected_paths,
+                on_open_first_course_review=first_course_review_action,
+                on_open_first_path_review=first_path_review_action,
+                on_open_tracked_courses=on_browse_courses,
+                on_browse_courses=on_browse_courses,
+            )
+        )
 
-        with ui.element("section").classes("lp-home-grid-12 lp-home-grid-middle"):
-            with ui.element("div").classes("lp-home-span-5 lp-home-col-stack"):
+        with ui.element("section").classes("lp-home-workspace-grid lp-home-workspace-grid--balanced"):
+            with ui.element("div").classes("lp-home-workspace-col lp-home-workspace-col--main lp-home-col-stack"):
                 render_tracked_courses_section(
                     tracked_courses=learning_vm.tracked_courses,
                     tracking_by_course_id=learning_vm.tracking_by_course_id,
@@ -762,7 +766,8 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                         f"View all tracked courses ({len(learning_vm.tracked_courses)})",
                         on_click=on_browse_courses,
                     ).props("outline dense")
-            with ui.element("div").classes("lp-home-span-4 lp-home-col-stack"):
+
+            with ui.element("div").classes("lp-home-workspace-col lp-home-workspace-col--rail lp-home-col-stack"):
                 render_selected_paths_section(
                     selected_paths=learning_vm.selected_paths,
                     selected_visible=state.selected_visible,
@@ -780,22 +785,21 @@ def render_learning_tab(*, ctx: LearningTabContext) -> None:
                         f"Load more ({state.selected_visible}/{len(learning_vm.selected_paths)})",
                         on_click=on_load_more_selected,
                     ).props("outline dense")
-            with ui.element("div").classes("lp-home-span-3"):
-                render_team_activity_section(
-                    tracking_by_course_id=learning_vm.tracking_by_course_id,
-                    active_learners=active_learners,
-                    shares_count=shares_count,
-                    reviews_count=reviews_count,
-                    on_open_full_stats=on_open_full_stats,
-                )
 
-        with ui.element("section").classes("lp-home-grid-12 lp-home-grid-footer"):
-            with ui.element("div").classes("lp-home-span-12 lp-home-col-stack"):
-                render_conversations_section(
-                    items=recently_shared_in_teams,
-                    pending_course_review_ids=learning_vm.pending_course_review_ids,
-                    pending_path_review_ids=learning_vm.pending_path_review_ids,
-                    on_open_item=on_open_recently_shared_item,
-                    on_open_first_course_review=first_course_review_action,
-                    on_open_first_path_review=first_path_review_action,
-                )
+        render_conversations_section(
+            items=recently_shared_in_teams,
+            pending_course_review_ids=learning_vm.pending_course_review_ids,
+            pending_path_review_ids=learning_vm.pending_path_review_ids,
+            on_open_item=on_open_recently_shared_item,
+            on_open_first_course_review=first_course_review_action,
+            on_open_first_path_review=first_path_review_action,
+        )
+
+        with render_panel(classes="lp-card w-full lp-panel-card lp-panel-card--compact lp-home-secondary-shell"):
+            render_team_activity_section(
+                tracking_by_course_id=learning_vm.tracking_by_course_id,
+                active_learners=active_learners,
+                shares_count=shares_count,
+                reviews_count=reviews_count,
+                on_open_full_stats=on_open_full_stats,
+            )

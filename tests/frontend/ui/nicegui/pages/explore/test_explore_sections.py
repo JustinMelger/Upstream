@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from frontend.ui.nicegui.pages.explore import list_sections
+from frontend.ui.nicegui.pages.explore import list_items, list_sections
 
 
 class _FakeElement:
@@ -41,11 +41,23 @@ class _FakeUi:
     def row(self) -> _FakeContainer:
         return _FakeContainer()
 
+    def card(self) -> _FakeContainer:
+        return _FakeContainer()
+
     def element(self, _tag: str) -> _FakeContainer:
         return _FakeContainer()
 
     def link(self, _label: str, _target: str) -> _FakeElement:
         return _FakeElement()
+
+    def icon(self, _name: str) -> _FakeElement:
+        return _FakeElement()
+
+
+class _FakeActions:
+    def __init__(self) -> None:
+        self.on_view = lambda: None
+        self.on_review = lambda: None
 
 
 @dataclass
@@ -91,7 +103,6 @@ def test_render_explore_sections_show_more_uses_full_learning_item_list(monkeypa
     fake_ui = _FakeUi()
     rendered_ids: list[int] = []
     monkeypatch.setattr(list_sections, "ui", fake_ui)
-    monkeypatch.setattr(list_sections, "render_explore_course_spotlight", lambda **_: None)
     monkeypatch.setattr(
         list_sections, "render_article_item", lambda **kwargs: rendered_ids.append(int(kwargs["article"]["id"]))
     )
@@ -130,3 +141,99 @@ def test_render_explore_sections_show_more_uses_full_learning_item_list(monkeypa
 
     assert rendered_ids == list(range(1, 9))
     assert any(label == "Show more learning items" for label, _ in fake_ui.buttons)
+
+
+def test_render_path_item_counts_course_items_from_detail_when_listing_row_lacks_count(monkeypatch) -> None:  # noqa: ANN001
+    fake_ui = _FakeUi()
+    monkeypatch.setattr(list_items, "ui", fake_ui)
+
+    list_items.render_path_item(
+        path={"id": 7, "title": "Test path"},
+        item_classes="x",
+        state=type(
+            "_State",
+            (),
+            {
+                "selected_by_path_id": {},
+                "selected_detail_by_path_id": {
+                    7: {
+                        "items": [
+                            {"type": "course", "id": 1},
+                            {"type": "article", "id": 2},
+                            {"type": "course", "id": 3},
+                        ]
+                    }
+                },
+                "path_review_summary_by_id": {},
+            },
+        )(),
+        username="alice",
+        is_admin=False,
+        on_toggle_path_selection=lambda *_: None,
+        open_path=lambda *_: None,
+    )
+
+    assert "0 / 2 courses" in fake_ui.labels
+
+
+def test_render_course_item_shows_tracking_status_without_error(monkeypatch) -> None:  # noqa: ANN001
+    fake_ui = _FakeUi()
+    monkeypatch.setattr(list_items, "ui", fake_ui)
+
+    list_items.render_course_item(
+        course={"id": 7, "title": "Tracked course", "provider": "GitHub Docs"},
+        item_classes="x",
+        state=type(
+            "_State",
+            (),
+            {
+                "tracking_by_course_id": {7: {"course_id": 7, "status": "in_progress"}},
+                "course_review_summary_by_course_id": {},
+            },
+        )(),
+        username="alice",
+        is_admin=False,
+        course_actions_builder=lambda *_: _FakeActions(),
+        item_type="course",
+        on_set_tracking=lambda *_: None,
+        on_clear_tracking=lambda *_: None,
+    )
+
+    assert "Tracked course" in fake_ui.labels
+    assert "GitHub Docs · In Progress" in fake_ui.labels
+
+
+def test_render_course_item_uses_youtube_thumbnail_fallback(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _capture_row(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(list_items, "_render_browse_row", _capture_row)
+
+    list_items.render_course_item(
+        course={
+            "id": 7,
+            "title": "Tracked course",
+            "provider": "GitHub Docs",
+            "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "preview_image_url": "",
+        },
+        item_classes="x",
+        state=type(
+            "_State",
+            (),
+            {
+                "tracking_by_course_id": {},
+                "course_review_summary_by_course_id": {},
+            },
+        )(),
+        username="alice",
+        is_admin=False,
+        course_actions_builder=lambda *_: _FakeActions(),
+        item_type="course",
+        on_set_tracking=lambda *_: None,
+        on_clear_tracking=lambda *_: None,
+    )
+
+    assert captured["image_url"] == "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
