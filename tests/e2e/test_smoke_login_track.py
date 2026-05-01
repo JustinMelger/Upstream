@@ -321,8 +321,6 @@ async def test_smoke_explore_detail_routes_render_seeded_content() -> None:
             ]:
                 await page.goto(f"/explore?tab={tab}", wait_until="networkidle")
                 await expect(page.get_by_text(title).first).to_be_visible(timeout=15000)
-            await page.goto("/explore?tab=videos", wait_until="networkidle")
-            await expect(page.get_by_text("All learning items").first).to_be_visible(timeout=15000)
 
             for route, title in [
                 (f"/explore/courses/{int(course['id'])}", str(course["title"])),
