@@ -127,7 +127,10 @@ async def test_smoke_login_track_review_and_select_path() -> None:
             await _select_combobox_option(page, label="Rating", option="5")
             await page.get_by_label("Comment (optional)").fill("E2E smoke review")
             await page.get_by_role("button", name="Save review").click()
-            await page.get_by_text("Rating: 5/5 · admin").first.wait_for(timeout=15000)
+            saved_review = page.locator(".lp-review-entry").filter(has_text="E2E smoke review").first
+            await expect(saved_review).to_be_visible(timeout=15000)
+            await expect(saved_review.get_by_text("5/5", exact=True)).to_be_visible()
+            await expect(saved_review.get_by_text("admin", exact=True)).to_be_visible()
             await assert_visual_snapshot(page=page, name="courses_after_review.png", full_page=False)
 
             # Path select flow.
