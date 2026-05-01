@@ -99,12 +99,11 @@ async def test_smoke_login_track_review_and_select_path() -> None:
             await assert_visual_snapshot(page=page, name="home_after_login.png", full_page=False)
 
             # Track course flow.
-            await page.goto("/explore?tab=courses", wait_until="networkidle")
-            await page.get_by_label("Search learning content").fill(course_title)
-            course_card = page.locator(".lp-course-card", has_text=course_title).first
-            await expect(course_card).to_be_visible(timeout=20000)
-            await course_card.get_by_role("button", name="Start").first.click()
-            await page.wait_for_url(re.compile(rf".*/explore/courses/{course_id}(?:\\?.*)?$"), timeout=15000)
+            await page.goto(f"/explore/courses/{course_id}", wait_until="networkidle")
+            await expect(page.get_by_text(course_title).first).to_be_visible(timeout=15000)
+            await page.get_by_role("button", name="Track course").click()
+            await expect(page.get_by_text("Status: Interested")).to_be_visible(timeout=15000)
+            await page.get_by_role("button", name="Start course").click()
             await expect(page.get_by_text("Status: In Progress")).to_be_visible(timeout=15000)
             await assert_visual_snapshot(page=page, name="courses_after_track.png", full_page=False)
 
@@ -117,14 +116,10 @@ async def test_smoke_login_track_review_and_select_path() -> None:
             await assert_visual_snapshot(page=page, name="courses_after_review.png", full_page=False)
 
             # Path select flow.
-            await page.goto("/explore?tab=paths", wait_until="networkidle")
-            await page.get_by_label("Search learning content").fill(path_name)
-            path_card = page.locator(".lp-path-card", has_text=path_name).first
-            await expect(path_card).to_be_visible(timeout=20000)
-            await path_card.get_by_role("button", name="Select").first.click()
-            close_btn = page.get_by_role("button", name="Close")
-            if await close_btn.count():
-                await close_btn.first.click()
+            await page.goto(f"/explore/paths/{path_id}", wait_until="networkidle")
+            await expect(page.get_by_text(path_name).first).to_be_visible(timeout=15000)
+            await page.get_by_role("button", name="Track Path").click()
+            await expect(page.get_by_role("button", name="Untrack Path")).to_be_visible(timeout=15000)
             await assert_visual_snapshot(page=page, name="paths_after_select.png", full_page=False)
 
             await context.close()
