@@ -77,7 +77,7 @@ async def _bootstrap_admin_and_seed_content(
         _skip_or_fail(f"E2E backend not reachable at {api_url}: {exc}")
 
 
-@pytest.mark.integration
+@pytest.mark.e2e
 async def test_smoke_login_track_review_and_select_path() -> None:
     api_url = _api_base_url()
     ui_url = _ui_base_url()
