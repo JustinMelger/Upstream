@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.courses.controller import CoursesPageController
+from frontend.ui.nicegui.domains.courses.controller import CoursesPageController
 
 
 class _FakeApi:
@@ -42,4 +42,3 @@ async def test_courses_controller_reload_tracking() -> None:
 
     tracking = await controller.reload_tracking()
     assert tracking == {7: {"course_id": 7, "status": "in_progress"}}
-

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.paths.ui_glue import (
+from frontend.ui.nicegui.domains.paths.ui_glue import (
     collect_active_filter_chips,
     compute_expanded_visible_count,
     compute_paths_meta_text,

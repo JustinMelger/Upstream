@@ -7,8 +7,7 @@ from typing import Any
 import pytest
 
 from frontend.ui.nicegui.core import errors as core_errors
-from frontend.ui.nicegui.pages.admin_users import page as admin_users_page
-from frontend.ui.nicegui.pages.admin_users import sections as admin_users_sections
+from frontend.ui.nicegui.pages.admin_users import page as admin_users_page, sections as admin_users_sections
 
 
 class _FakeElement:
@@ -97,7 +96,22 @@ class _FakeUi:
     def row(self):
         return _FakeContainer()
 
+    def column(self):
+        return _FakeContainer()
+
     def card(self):
+        return _FakeContainer()
+
+    def tabs(self):
+        return _FakeContainer()
+
+    def tab(self, _label: str) -> _FakeElement:
+        return _FakeElement()
+
+    def tab_panels(self, *_args, **_kwargs) -> _FakeContainer:  # noqa: ANN001
+        return _FakeContainer()
+
+    def tab_panel(self, _label: str) -> _FakeContainer:
         return _FakeContainer()
 
     def separator(self) -> None:
@@ -148,7 +162,7 @@ async def test_admin_users_create_user_flow_calls_create_and_reload(monkeypatch:
     await handler()
 
     # Input creation order in page:
-    # 0 search, 1 new_username, 2 new_password, 3 reset_username, 4 reset_password, 5 delete_username, 6 disable_username
+    # 0 search, 1 new_username, 2 new_password, 3 reset_username, 4 reset_password, 5 disable_username, 6 delete_username
     fake_ui.inputs[1].value = "alice"
     fake_ui.inputs[2].value = "secret"
     # Select creation order: 0 new_role, 1 disable_action

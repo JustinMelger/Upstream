@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from frontend.ui.nicegui.pages.articles.view_model import map_article_card_view
+from frontend.ui.nicegui.domains.articles.view_model import map_article_card_view
 
 
 @pytest.mark.unit

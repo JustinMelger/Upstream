@@ -7,6 +7,7 @@ from typing import Any
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.core.path_items import build_path_item_payloads
 from frontend.ui.nicegui.pages.share.controller import SharePageController
+from frontend.ui.nicegui.pages.share.helpers import complete_share_publish
 from frontend.ui.nicegui.pages.share.page_path_form import PathShareControls
 
 
@@ -73,8 +74,12 @@ def wire_path_actions(
                 "items": items,
             }
         )
-        app_module.storage.user.pop(draft_key, None)
-        notify("Path published", type="positive")
-        ui_module.navigate.to("/explore?tab=paths")
+        complete_share_publish(
+            item_type="path",
+            draft_key=draft_key,
+            app_module=app_module,
+            ui_module=ui_module,
+            notify=notify,
+        )
 
     controls.publish_btn.on("click", lambda *_: _publish())

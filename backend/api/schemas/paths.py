@@ -12,6 +12,7 @@ class PathListItem(APIModel):
     name: str
     description: str
     created_by: str | None
+    course_count: int = 0
 
 
 class PathDetailResponse(APIModel):

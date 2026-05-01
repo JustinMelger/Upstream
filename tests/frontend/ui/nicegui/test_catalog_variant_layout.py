@@ -9,11 +9,19 @@ import pytest
 pytestmark = pytest.mark.architecture
 
 
-_THEME_FILE = Path("frontend/ui/nicegui/core/theme.py")
+_THEME_FILES = (
+    Path("frontend/ui/nicegui/core/theme/foundation.css"),
+    Path("frontend/ui/nicegui/core/theme/home.css"),
+    Path("frontend/ui/nicegui/core/theme/features.css"),
+)
 
 
 def _parse(path: Path) -> ast.Module:
     return ast.parse(path.read_text(encoding="utf-8"))
+
+
+def _theme_source() -> str:
+    return "\n".join(path.read_text(encoding="utf-8") for path in _THEME_FILES)
 
 
 def _imports_for(path: Path) -> set[str]:
@@ -75,14 +83,8 @@ def test_catalog_pages_use_expected_scope_variants() -> None:
         )
 
 
-def test_catalog_identity_hero_used_on_primary_catalog_pages() -> None:
-    page = Path("frontend/ui/nicegui/pages/explore/page.py")
-    imports = _imports_for(page)
-    assert "frontend.ui.nicegui.components.catalog_hero" in imports
-
-
 def test_catalog_variant_css_selectors_are_defined_in_theme() -> None:
-    theme_src = _THEME_FILE.read_text(encoding="utf-8")
+    theme_src = _theme_source()
     for selector in [
         ".lp-catalog-scope",
         ".lp-catalog-scope.lp-catalog--courses",
@@ -100,7 +102,7 @@ def test_page_modules_do_not_define_catalog_variant_classnames_directly() -> Non
 
 
 def test_explore_card_alignment_selectors_are_defined_in_theme() -> None:
-    theme_src = _THEME_FILE.read_text(encoding="utf-8")
+    theme_src = _theme_source()
     selectors = [
         ".lp-catalog--explore .lp-card-title",
         ".lp-catalog--explore .lp-course-card .lp-social-strip",

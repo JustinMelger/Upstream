@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from frontend.ui.nicegui.core.api_client import ApiError
+from frontend.ui.nicegui.domains.paths.state import PathsPageState
 from frontend.ui.nicegui.pages.explore.orchestration import (
     clear_explore_tracking_status,
     load_explore_articles_background,
@@ -15,7 +16,6 @@ from frontend.ui.nicegui.pages.explore.orchestration import (
     set_explore_tracking_status,
 )
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
-from frontend.ui.nicegui.pages.paths.state import PathsPageState
 
 
 @dataclass(slots=True)

@@ -90,6 +90,7 @@ API:
 - `SESSION_DAYS`: session lifetime in days.
 - `BOOTSTRAP_ADMIN_USERNAME`: first admin username when no users exist.
 - `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist.
+- `FEATURE_TELEMETRY`: enable authenticated product telemetry ingestion (`0` or `1`, default `0`).
 - `OTEL_ENABLED`: enable OpenTelemetry (`0` or `1`).
 - `OTEL_SERVICE_NAME`: OpenTelemetry service name.
 - `OTEL_SERVICE_VERSION`: service version label.
@@ -102,6 +103,7 @@ API:
 UI:
 - `BACKEND_URL`: backend base URL used by NiceGUI frontend.
 - `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage.
+- `FEATURE_TELEMETRY`: enable frontend product telemetry emits (`0` or `1`, default `0`).
 - `FEATURE_AI_CURATOR`: enable AI Curator page (`1` enabled, `0` disabled). Default is `0` for v1.
 - `FEATURE_ARTICLES`: enable article-specific frontend features (`1` enabled, `0` disabled).
 
@@ -194,7 +196,7 @@ Examples:
 
 ## API quick reference
 - `GET /health`
-- `POST /telemetry/events` (authenticated frontend product events sink)
+- `POST /telemetry/events` (authenticated frontend product events sink; feature-flagged)
 
 Endpoint families:
 - Auth/session: `/auth/*`
@@ -206,7 +208,7 @@ Endpoint families:
 - Notifications/activity: `/notifications/*`
 - Teams/activity context: `/teams/*`
 - URL preview metadata: `/url-preview/*`
-- Telemetry/events: `/telemetry/*`
+- Telemetry/events: `/telemetry/*` (feature-flagged)
 - AI draft planning: `/ai/*` (feature-flagged)
 
 ## Observability (OpenTelemetry + Prometheus + Grafana)

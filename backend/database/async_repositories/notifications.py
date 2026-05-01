@@ -17,7 +17,7 @@ from backend.database.orm_models import (
 
 
 class NotificationsRepository(RepositoryDateTimeCodec):
-    """Read-only repository for notifications/activity feed data."""
+    """Read-only repository for shared notification feed data."""
 
     def __init__(self, session: AsyncSession):
         """Initialize the repository.

@@ -27,6 +27,11 @@ async def test_root_redirects_to_home(monkeypatch: pytest.MonkeyPatch) -> None:
     fake_ui = _FakeUi()
     monkeypatch.setattr(home_page, "ui", fake_ui)
 
+    async def _fake_require_user(_store: object, _api: object) -> dict[str, str]:
+        return {"username": "alice"}
+
+    monkeypatch.setattr(home_page, "require_user", _fake_require_user)
+
     home_page.register(store=object(), api=object())  # type: ignore[arg-type]
     handler = fake_ui.routes["/"]
     await handler()

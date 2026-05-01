@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from frontend.ui.nicegui.pages.activity import sections as activity_sections
-from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views
+from frontend.ui.nicegui.pages.shared_activity import sections as activity_sections
+from frontend.ui.nicegui.pages.shared_activity.view_model import build_activity_event_views
 
 
 class _FakeElement:
@@ -43,6 +43,9 @@ class _FakeUi:
         self.labels.append(str(_text))
         return _FakeElement()
 
+    def icon(self, _name: str) -> _FakeElement:
+        return _FakeElement()
+
     def button(self, label: str, on_click=None) -> _FakeElement:  # noqa: ANN001
         self.buttons.append((label, on_click))
         return _FakeElement()
@@ -80,10 +83,7 @@ def test_render_empty_activity_exposes_primary_explore_action(monkeypatch) -> No
 
     assert captured.get("primary_label") == "Explore"
     assert callable(captured.get("on_primary"))
-    assert (
-        captured.get("description")
-        == "When teammates share or rate learning items and paths, updates will appear here."
-    )
+    assert captured.get("description") == "When teammates share or rate learning items and paths, updates will appear here."
 
 
 def test_render_activity_error_exposes_retry_action(monkeypatch) -> None:  # noqa: ANN001

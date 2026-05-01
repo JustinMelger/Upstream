@@ -25,7 +25,7 @@ def test_activity_target_link_builder() -> None:
     assert build_activity_target_link(target_type="course", target_id=7) == "/explore/courses/7"
     assert build_activity_target_link(target_type="video", target_id=5) == "/explore/videos/5"
     assert build_activity_target_link(target_type="path", target_id=2) == "/explore/paths/2"
-    assert build_activity_target_link(target_type="article", target_id=1) == "/explore?tab=articles"
+    assert build_activity_target_link(target_type="article", target_id=1) == "/explore/articles/1"
     assert build_activity_target_link(target_type="unknown", target_id=1) == "/home"
 
 

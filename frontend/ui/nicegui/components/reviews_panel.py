@@ -87,7 +87,6 @@ def render_reviews_panel(
     """Render a review list + editor block with in-place updates."""
     resolved_text = text if text is not None else ReviewPanelText()
     resolved_hooks = hooks if hooks is not None else ReviewPanelHooks()
-    ui.label(resolved_text.section_title).classes("text-lg font-semibold lp-review-panel-title")
 
     def _notify_changed() -> None:
         if resolved_hooks.on_changed is not None:
@@ -124,26 +123,21 @@ def render_reviews_panel(
                 when_raw = r.get("created_at")
                 when = resolved_hooks.format_date(when_raw) if resolved_hooks.format_date else str(when_raw or "").strip()
                 text = str(r.get("text") or "").strip()
+                with ui.row().classes("items-start w-full gap-4 lp-review-entry"):
+                    ui.label(f"{max(1, min(5, rating))}/5").classes("text-sm font-semibold lp-review-entry-rating")
+                    with ui.column().classes("gap-0 grow min-w-0"):
+                        ui.label(who).classes("text-sm font-semibold lp-review-entry-title")
+                        if when:
+                            ui.label(when).classes("text-xs lp-review-entry-date").style("color: var(--lp-muted)")
+                        if text:
+                            ui.label(text).classes("text-sm lp-review-entry-body")
+                    can_delete = is_admin or (who == username)
+                    if can_delete:
 
-                with ui.card().classes("lp-card w-full lp-review-entry"):
-                    with ui.row().classes("items-start justify-between w-full"):
-                        ui.label(f"Rating: {max(1, min(5, rating))}/5 · {who}").classes(
-                            "text-sm font-semibold lp-review-entry-title"
-                        )
-                        can_delete = is_admin or (who == username)
-                        if can_delete:
+                        async def _do_delete(_rid: int = int(r.get("id") or 0)) -> None:
+                            await _delete_review(_rid)
 
-                            async def _do_delete(_rid: int = int(r.get("id") or 0)) -> None:
-                                await _delete_review(_rid)
-
-                            ui.button("Delete", on_click=_do_delete).props("dense color=negative outline").classes(
-                                "lp-review-delete"
-                            )
-
-                    if when:
-                        ui.label(when).classes("text-xs lp-review-entry-date").style("color: var(--lp-muted)")
-                    if text:
-                        ui.label(text).classes("text-sm text-gray-600 lp-review-entry-body")
+                        ui.button("Delete", on_click=_do_delete).props("flat color=negative").classes("lp-review-delete")
 
     reviews_list()
 
@@ -151,14 +145,16 @@ def render_reviews_panel(
         "text-md font-semibold mt-2 lp-review-form-title"
     )
     default_rating, default_text = _review_input_defaults(my_review=my_review)
-    rating_in = ui.select(
-        {1: "1", 2: "2", 3: "3", 4: "4", 5: "5"},
-        value=default_rating,
-        label="Rating",
-    ).props("dense outlined").classes("lp-review-rating")
-    text_in = ui.textarea("Comment (optional)", value=default_text).props("autogrow outlined").classes(
-        "w-full lp-review-text"
+    rating_in = (
+        ui.select(
+            {1: "1", 2: "2", 3: "3", 4: "4", 5: "5"},
+            value=default_rating,
+            label="Rating",
+        )
+        .props("dense outlined")
+        .classes("lp-review-rating")
     )
+    text_in = ui.textarea("Comment (optional)", value=default_text).props("autogrow outlined").classes("w-full lp-review-text")
 
     @guard_ui_action(title=resolved_text.save_error_title)
     async def _submit_review() -> None:

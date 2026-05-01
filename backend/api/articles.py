@@ -44,11 +44,10 @@ async def create_article(
 @router.get("/{article_id}", response_model=ArticlePayload)
 async def get_article(
     article_id: int,
-    current_user: str = Depends(require_session),
+    _current_user: str = Depends(require_session),
     articles: ArticlesService = Depends(get_articles_service),
 ) -> dict[str, Any]:
     """Get one article by id."""
-    _ = current_user
     return require_row_exists(await articles.get_article_by_id(article_id=int(article_id)))
 
 

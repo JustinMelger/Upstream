@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.activity.view_model import build_activity_event_views, build_activity_target_view
+from frontend.ui.nicegui.pages.shared_activity.view_model import build_activity_event_views, build_activity_target_view
 
 
 def test_build_activity_target_view_maps_learning_items_and_paths() -> None:
@@ -12,7 +12,7 @@ def test_build_activity_target_view_maps_learning_items_and_paths() -> None:
     assert article_target.target_family == "learning_item"
     assert article_target.target_type_label == "Article"
     assert article_target.interaction_label == "reviews"
-    assert article_target.open_url == "/explore?tab=articles"
+    assert article_target.open_url == "/explore/articles/7"
 
     assert video_target is not None
     assert video_target.target_family == "learning_item"

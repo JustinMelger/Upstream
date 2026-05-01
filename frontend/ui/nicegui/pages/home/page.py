@@ -11,13 +11,13 @@ from frontend.ui.nicegui.core.session_store import SessionStore
 
 def register(*, store: SessionStore, api: ApiClient) -> None:
     """Register root redirects."""
-
-    async def _guard_contract_probe() -> None:
-        await require_user(store, api)
-
-    _ = _guard_contract_probe
+    _ = store
+    _ = api
 
     @ui.page("/")
     async def root_page() -> None:
         """Default app landing route: redirect to Home."""
+        user = await require_user(store, api)
+        if user is None:
+            return
         ui.navigate.to("/home")

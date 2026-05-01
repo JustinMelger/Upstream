@@ -29,6 +29,5 @@ That keeps the release focused on:
 ## Suggested Cleanup Order
 
 1. Remove remaining architecture-doc references that describe recommendations as current behavior.
-2. Remove dormant recommendation ORM/data-model code.
-3. Add and apply schema migration to drop recommendation tables.
-4. Remove any migration/test artifacts that only existed for recommendation persistence.
+2. Add and apply schema migration to drop recommendation tables.
+3. Remove any migration/test artifacts that only existed for recommendation persistence.

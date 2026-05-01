@@ -151,37 +151,52 @@ class UrlPreviewService:
             return url, False
         return url, True
 
-    async def _host_resolves_publicly(self, host: str) -> bool:
-        """Return whether a hostname resolves only to safe public IPs."""
+    def _normalize_resolvable_host(self, host: str) -> str:
+        """Return a normalized hostname when it is worth resolving."""
         hostname = str(host or "").strip()
         if not hostname:
-            return False
+            return ""
         if not _is_safe_public_host(hostname):
-            return False
-        try:
-            ipaddress.ip_address(hostname)
-        except ValueError:
-            pass
-        else:
-            return _is_safe_public_ip(hostname)
+            return ""
+        return hostname
 
+    def _public_ip_literal_status(self, host: str) -> bool | None:
+        """Return public-IP status for IP literals, or None for hostnames."""
+        try:
+            ipaddress.ip_address(host)
+        except ValueError:
+            return None
+        return _is_safe_public_ip(host)
+
+    async def _resolve_public_addresses(self, host: str) -> set[str]:
+        """Return the resolved public address candidates for one hostname."""
         try:
             infos = await asyncio.get_running_loop().getaddrinfo(
-                hostname,
+                host,
                 None,
                 type=socket.SOCK_STREAM,
                 proto=socket.IPPROTO_TCP,
             )
         except OSError:
-            return False
+            return set()
 
         addresses: set[str] = set()
         for _family, _socktype, _proto, _canonname, sockaddr in infos:
-            if not sockaddr:
-                continue
             candidate = str(sockaddr[0] or "").strip()
             if candidate:
                 addresses.add(candidate)
+        return addresses
+
+    async def _host_resolves_publicly(self, host: str) -> bool:
+        """Return whether a hostname resolves only to safe public IPs."""
+        hostname = self._normalize_resolvable_host(host)
+        if not hostname:
+            return False
+        literal_status = self._public_ip_literal_status(hostname)
+        if literal_status is not None:
+            return literal_status
+
+        addresses = await self._resolve_public_addresses(hostname)
         if not addresses:
             return False
         return all(_is_safe_public_ip(address) for address in addresses)

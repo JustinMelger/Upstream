@@ -59,4 +59,3 @@ async def test_create_article_review_invalid_payload_type_returns_invalid_payloa
         await reviews.create_review(article_id=1, payload={"rating": {"bad": 1}, "text": ""}, created_by="admin")
     assert excinfo.value.status_code == 400
     assert str(excinfo.value.detail) == "invalid_payload"
-

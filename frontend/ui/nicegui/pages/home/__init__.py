@@ -1,4 +1,4 @@
-"""Insights (home) page package exports."""
+"""Home route and shared stats helper package exports."""
 
 from frontend.ui.nicegui.pages.home.page import register
 

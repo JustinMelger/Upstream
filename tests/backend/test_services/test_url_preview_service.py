@@ -193,7 +193,9 @@ async def test_url_preview_service_blocks_redirect_to_private_host(monkeypatch: 
 
     monkeypatch.setattr(module.httpx, "AsyncClient", lambda **kwargs: _Client())
     service = UrlPreviewService()
-    monkeypatch.setattr(service, "_host_resolves_publicly", lambda host: asyncio.sleep(0, result=True if host == "example.com" else False))
+    monkeypatch.setattr(
+        service, "_host_resolves_publicly", lambda host: asyncio.sleep(0, result=True if host == "example.com" else False)
+    )
 
     payload = await service.resolve_metadata(source_url="https://example.com/course")
     assert payload["title"] == ""

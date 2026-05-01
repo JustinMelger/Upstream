@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
+from frontend.ui.nicegui.domains.articles.controller import ArticlesPageController
 
 
 @pytest.mark.unit
@@ -14,7 +14,7 @@ async def test_articles_controller_load_list_bundle(monkeypatch: pytest.MonkeyPa
             {"id": 2, "title": "B"},
         ]
 
-    from frontend.ui.nicegui.pages.articles import controller as articles_controller
+    from frontend.ui.nicegui.domains.articles import controller as articles_controller
 
     monkeypatch.setattr(articles_controller, "load_articles", _fake_load_articles)
 

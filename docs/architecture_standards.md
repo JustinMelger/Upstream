@@ -96,8 +96,13 @@ Use it as the default guide before adding or refactoring code.
 ## 7) Source of Truth Docs
 
 - High-level architecture: `docs/architecture.md`
+- Post-v1 architecture improvement plan: `docs/architecture_improvement_plan.md`
+- Stable NiceGUI design baseline: `docs/nicegui_design_baseline.md`
+- NiceGUI design implementation plan: `docs/nicegui_design_implementation_plan.md`
+- App redesign brief: `docs/app_redesign_brief.md`
 - V1 product spec: `docs/v1/README.md`
 - Backend architecture: `docs/architecture_backend.md`
 - Frontend architecture: `docs/architecture_frontend.md`
-- Frontend MVC migration status: `docs/frontend_mvc_migration.md`
+- Frontend target shape: `docs/frontend_target_shape.md`
+- Technical debt register: `docs/technical_debt_register.md`
 - Delivery roadmap: `docs/roadmap.md`

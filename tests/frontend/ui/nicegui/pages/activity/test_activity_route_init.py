@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.activity.route_init import resolve_activity_tab
+from frontend.ui.nicegui.pages.shared_activity.route_init import resolve_activity_tab
 
 
 class _Req:

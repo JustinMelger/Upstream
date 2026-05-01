@@ -327,9 +327,8 @@ class TeamsService:
             "message": message,
             "target_type": target_type,
             "target_id": target_id,
-            "target_label": str(row.get("target_label") or "").strip() or (
-                f"{target_type}:{target_id}" if target_type and target_id > 0 else ""
-            ),
+            "target_label": str(row.get("target_label") or "").strip()
+            or (f"{target_type}:{target_id}" if target_type and target_id > 0 else ""),
         }
 
     @staticmethod

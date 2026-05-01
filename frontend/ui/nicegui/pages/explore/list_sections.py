@@ -17,7 +17,7 @@ from frontend.ui.nicegui.pages.explore.list_items import (
 from frontend.ui.nicegui.pages.explore.view_model import ExploreLearningItemEntry
 
 
-_DEFAULT_COURSE_CAP = 8
+_DEFAULT_COURSE_CAP = 6
 _DEFAULT_PATH_CAP = 6
 _DEFAULT_LEARNING_ITEM_CAP = 8
 _CURATED_PATH_COUNT = 3
@@ -41,40 +41,6 @@ class ExploreSectionsDeps:
     on_show_more_learning_items: Callable[[], None]
 
 
-def render_explore_course_spotlight(
-    *,
-    shown_courses: list[dict[str, Any]],
-    tracking_by_course_id: dict[int, dict[str, Any]],
-    course_actions_builder: Callable[[dict[str, Any], int, str], Any],
-    on_track: Callable[[int, str], Awaitable[None]],
-) -> None:
-    """Render compact Explore spotlight strip."""
-    if not shown_courses:
-        return
-    from frontend.ui.nicegui.pages.explore.sections import render_explore_spotlight_strip
-
-    spotlight = shown_courses[0]
-    spotlight_id = int(spotlight.get("id") or 0)
-    spotlight_tracked = isinstance(tracking_by_course_id.get(spotlight_id), dict)
-
-    async def _spotlight_primary() -> None:
-        if spotlight_tracked:
-            await course_actions_builder(
-                spotlight,
-                spotlight_id,
-                str(spotlight.get("url") or "").strip(),
-            ).on_view()
-            return
-        await on_track(spotlight_id, "interested")
-
-    render_explore_spotlight_strip(
-        title=str(spotlight.get("title") or ""),
-        description=str(spotlight.get("description") or ""),
-        shared_by=str(spotlight.get("created_by") or ""),
-        on_primary=_spotlight_primary,
-    )
-
-
 def render_explore_sections(
     *,
     shown_courses: list[dict[str, Any]],
@@ -82,7 +48,7 @@ def render_explore_sections(
     shown_learning_items: list[ExploreLearningItemEntry],
     deps: ExploreSectionsDeps,
 ) -> None:
-    """Render the mixed Explore sections for courses/paths/articles."""
+    """Render the Explore browse sections with rows for results and cards for paths."""
     course_cap = 16 if deps.show_all_categories else _DEFAULT_COURSE_CAP
     path_cap = 12 if deps.show_all_categories else _DEFAULT_PATH_CAP
     visible_courses = shown_courses[:course_cap]
@@ -90,30 +56,37 @@ def render_explore_sections(
     visible_learning_items = list(shown_learning_items or [])
 
     if visible_courses:
+        featured_courses = visible_courses[:1]
         with ui.element("section").classes("w-full lp-explore-section-block"):
-            with ui.column().classes("w-full gap-2 lp-courses-section"):
-                ui.label("Courses to start with").classes("lp-courses-section-title")
-                ui.label("Highlighted courses from the current scope, ready to track or open.").classes(
-                    "lp-courses-section-subtitle"
-                )
-            render_explore_course_spotlight(
-                shown_courses=visible_courses,
-                tracking_by_course_id=deps.state.tracking_by_course_id,
-                course_actions_builder=deps.course_actions_builder,
-                on_track=deps.on_set_tracking,
-            )
+            with ui.row().classes("items-end justify-between w-full lp-explore-section-head"):
+                with ui.column().classes("gap-1"):
+                    ui.label("Featured courses").classes("lp-courses-section-title")
+                    ui.label("Highlighted courses from the current scope.").classes("lp-courses-section-subtitle")
+            with ui.column().classes("w-full gap-3 lp-explore-results-list"):
+                for row in featured_courses:
+                    render_course_item(
+                        course=row,
+                        item_classes="lp-explore-results-list-item",
+                        state=deps.state,
+                        username=deps.username,
+                        is_admin=deps.is_admin,
+                        course_actions_builder=deps.course_actions_builder,
+                        item_type="course",
+                        on_set_tracking=deps.on_set_tracking,
+                        on_clear_tracking=deps.on_clear_tracking,
+                    )
 
     if visible_paths:
         shown_paths_rows = (
             visible_paths[:_CURATED_PATH_COUNT] if not deps.show_all_categories else visible_paths[:_DEFAULT_PATH_CAP]
         )
         with ui.element("section").classes("w-full lp-explore-section-block"):
-            with ui.row().classes("items-center justify-between w-full"):
+            with ui.row().classes("items-end justify-between w-full lp-explore-section-head"):
                 with ui.column().classes("gap-1"):
                     ui.label("Learning paths").classes("lp-courses-section-title")
                     ui.label("Structured tracks to guide your next steps.").classes("lp-courses-section-subtitle")
                 ui.link("View all paths", "/explore?tab=paths").classes("text-sm")
-            path_grid_class = "lp-courses-grid lp-explore-path-grid"
+            path_grid_class = "lp-explore-path-grid"
             if len(shown_paths_rows) == 1:
                 path_grid_class += " lp-explore-path-grid--single"
             elif len(shown_paths_rows) == 2:
@@ -135,25 +108,18 @@ def render_explore_sections(
         shown_learning_item_rows = visible_learning_items[:limit]
 
         with ui.element("section").classes("w-full lp-explore-section-block"):
-            with ui.row().classes("items-center justify-between w-full"):
+            with ui.row().classes("items-end justify-between w-full lp-explore-section-head"):
                 with ui.column().classes("gap-1"):
-                    ui.label("Learning items").classes("lp-courses-section-title")
-                    ui.label("Courses, videos, and articles across the current scope.").classes(
-                        "lp-courses-section-subtitle"
-                    )
-            item_grid_class = "lp-courses-grid lp-explore-course-grid"
-            if len(shown_learning_item_rows) == 1:
-                item_grid_class += " lp-explore-course-grid--single"
-            elif len(shown_learning_item_rows) == 2:
-                item_grid_class += " lp-explore-course-grid--pair"
-            with ui.element("div").classes(item_grid_class):
+                    ui.label("All learning items").classes("lp-courses-section-title")
+                    ui.label("Courses, videos, and articles across the current scope.").classes("lp-courses-section-subtitle")
+            with ui.column().classes("w-full gap-3 lp-explore-results-list"):
                 for item in shown_learning_item_rows:
                     row = dict(item.row or {})
                     item_type = str(item.learning_item_type or "").strip().lower()
                     if item_type == "article":
                         render_article_item(
                             article=row,
-                            item_classes="lp-courses-grid-item",
+                            item_classes="lp-explore-results-list-item",
                             state=deps.state,
                             open_article_details=deps.open_article_details,
                         )
@@ -161,13 +127,13 @@ def render_explore_sections(
                     if item_type == "video":
                         render_video_item(
                             video=row,
-                            item_classes="lp-courses-grid-item",
+                            item_classes="lp-explore-results-list-item",
                             state=deps.state,
                         )
                         continue
                     render_course_item(
                         course=row,
-                        item_classes="lp-courses-grid-item",
+                        item_classes="lp-explore-results-list-item",
                         state=deps.state,
                         username=deps.username,
                         is_admin=deps.is_admin,

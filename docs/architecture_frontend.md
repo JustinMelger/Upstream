@@ -10,6 +10,7 @@ Recommended separation:
 - Page state (Model): typed state objects owned by each page/controller pair.
 - Page controllers (Controller): page-level orchestration and mutation flows.
 - UI components (View): reusable widgets (tables, forms, dialogs, sections).
+- Domain implementation packages: reusable catalog/path/article logic consumed by route pages.
 - Frontend services: domain-specific “use cases” used by controllers.
 - API client: typed wrapper that handles base URL, `X-Session-Token` injection, and error mapping.
 - Session store: single place to manage login state, token persistence, and current-user metadata.
@@ -22,7 +23,8 @@ We use a lightweight MVC variant for NiceGUI pages:
   - Typed page state objects (for example `PathsPageState`).
   - Backend/domain payloads returned by API/services.
 - View:
-  - Page modules (`frontend/ui/nicegui/pages/<domain>/page.py`) for composition + event binding.
+  - Page modules (`frontend/ui/nicegui/pages/<route>/page.py`) for route composition + event binding.
+  - Domain section/dialog modules (`frontend/ui/nicegui/domains/<domain>/*.py`) for reusable feature UI.
   - Reusable sections/components (`frontend/ui/nicegui/components/*.py`).
 - Controller:
   - Page-specific controller modules (`*_controller.py`) that orchestrate page workflows.
@@ -36,21 +38,19 @@ Rules:
 - Page package `__init__.py` should export `register` only; tests should import helper functions from their source modules.
 - Keep dependency direction one-way:
   - `pages/*` may depend on page-local modules, components, core helpers, and services via controllers.
+  - `pages/*` may consume `domains/*` implementation modules for shared catalog/detail behavior.
+  - `domains/*` must not register routes.
   - `services/*` must not depend on `pages/*` modules.
   - If shared transforms are needed by both page/controller and service, place them in `services/*` (or `core/*`) and import from there.
 
 Reference implementation (current):
 
-- `frontend/ui/nicegui/pages/paths/page.py` (View composition + bindings)
-- `frontend/ui/nicegui/pages/paths/controller.py` (Controller orchestration)
-- `frontend/ui/nicegui/pages/paths/state.py` (Model)
+- `frontend/ui/nicegui/pages/explore/page.py` (Route composition + bindings)
+- `frontend/ui/nicegui/domains/paths/controller.py` (Domain workflow orchestration)
+- `frontend/ui/nicegui/domains/paths/state.py` (Model)
 - `frontend/ui/nicegui/components/path_card.py`
 - `frontend/ui/nicegui/components/path_detail_sections.py`
 - `frontend/ui/nicegui/components/paths_sections.py`
-
-Migration details (template + phased implementation plan):
-
-- `docs/frontend_mvc_migration.md`
 
 ## Phase 10D Implementation Notes
 
@@ -79,11 +79,10 @@ The current implementation now standardizes several frontend patterns across pag
 
 - Performance/caching:
   - `frontend/ui/nicegui/services/courses_service.py`
-    - Short-TTL cache for course detail dialog payloads (`/courses/{id}`, reviews, recommendations).
+    - Short-TTL cache for course detail payloads (`/courses/{id}` and reviews).
     - Cache key is scoped (`cache_scope`, `course_id`) to avoid cross-user leakage.
   - Cache invalidation points:
-    - Review save/delete in `frontend/ui/nicegui/pages/courses/detail_flow.py`.
-    - Recommendation save flow in `frontend/ui/nicegui/pages/courses/page.py`.
+    - Review save/delete in Explore course detail flows.
 
 - Import-cycle guard:
   - `frontend/ui/nicegui/pages/__init__.py` no longer eagerly imports all pages.
@@ -193,7 +192,7 @@ Notes:
 - Admin routes additionally check `role == "admin"`.
 - Some routes may be feature-flagged via environment variables (see Feature Flags below).
 - Canonical product model: a learning item is the primary shareable unit (`video`, `course`, `article` in the current phase), while a path is a separate object composed of learning items.
-- Subtype capability model: keep one shared learning-item contract, but do not force feature symmetry. In the current phase, `course` supports tracking + reviews + recommendations, `article` supports reviews, and `video` supports reviews without tracking/recommendation flows.
+- Subtype capability model: keep one shared learning-item contract, but do not force feature symmetry. In the released v1 product, `course` supports tracking + reviews, while `article` and `video` support reviews without tracking flows.
 
 ## Feature Flags
 

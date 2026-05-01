@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.activity.transitions import begin_activity_load, finalize_activity_load
+from frontend.ui.nicegui.pages.shared_activity.transitions import begin_activity_load, finalize_activity_load
 
 
 def test_begin_activity_load_defaults() -> None:

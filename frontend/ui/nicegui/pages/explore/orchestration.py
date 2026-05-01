@@ -7,8 +7,8 @@ from collections.abc import Callable
 from typing import Any
 
 from frontend.ui.nicegui.core.api_client import ApiError
+from frontend.ui.nicegui.domains.paths.state import PathsPageState
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
-from frontend.ui.nicegui.pages.paths.state import PathsPageState
 
 
 async def load_explore_courses(

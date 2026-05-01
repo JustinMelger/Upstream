@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.paths.state import PathsPageState
-from frontend.ui.nicegui.pages.paths.transitions import (
+from frontend.ui.nicegui.domains.paths.state import PathsPageState
+from frontend.ui.nicegui.domains.paths.transitions import (
     apply_optimistic_select,
     apply_optimistic_unselect,
     begin_paths_load,

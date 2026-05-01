@@ -10,7 +10,12 @@ from frontend.ui.nicegui.pages.learning.view_model import (
 def test_build_shared_tab_view_projects_expected_fields() -> None:
     data = {
         "shared_courses": [
-            {"id": 1, "title": "YouTube-hosted course", "url": "https://www.youtube.com/watch?v=course-demo", "provider": "YouTube"}
+            {
+                "id": 1,
+                "title": "YouTube-hosted course",
+                "url": "https://www.youtube.com/watch?v=course-demo",
+                "provider": "YouTube",
+            }
         ],
         "shared_videos": [{"id": 4, "title": "Video title", "url": "https://youtu.be/demo"}],
         "shared_paths": [{"id": 2}],

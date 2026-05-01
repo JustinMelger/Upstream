@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.articles.reducers import compute_facet_state, derive_shown_articles
+from frontend.ui.nicegui.domains.articles.reducers import compute_facet_state, derive_shown_articles
 
 
 def test_compute_facet_state_returns_options_and_normalized_selection() -> None:

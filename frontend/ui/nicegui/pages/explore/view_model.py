@@ -8,11 +8,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from frontend.ui.nicegui.core.datetime_utils import parse_iso_datetime
 from frontend.ui.nicegui.core.learning_items import interleave_learning_item_entries
-from frontend.ui.nicegui.pages.articles.reducers import derive_shown_articles
-from frontend.ui.nicegui.pages.courses.reducers import filter_courses, sort_courses
+from frontend.ui.nicegui.domains.articles.reducers import derive_shown_articles
+from frontend.ui.nicegui.domains.courses.reducers import filter_courses, sort_courses
+from frontend.ui.nicegui.domains.paths.reducers import filter_paths_by_needle, sort_paths
 from frontend.ui.nicegui.pages.explore.state import ExplorePageState
 from frontend.ui.nicegui.pages.explore.ui_glue import apply_tab_scope, compute_explore_meta_text
-from frontend.ui.nicegui.pages.paths.reducers import filter_paths_by_needle, sort_paths
 
 
 class ExploreListFilters(BaseModel):

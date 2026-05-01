@@ -193,3 +193,33 @@ async def test_paths_service_works_inside_existing_transaction_scope(db_session)
         listed = await paths.list_paths()
     assert int(created["id"]) > 0
     assert any(str(row.get("name") or "") == "Nested Path" for row in listed)
+
+
+@pytest.mark.unit
+async def test_list_paths_includes_course_count(db_session):
+    """Path listings include the number of course items for browse surfaces."""
+    courses = CoursesService(CoursesRepository(db_session))
+    articles = ArticlesService(ArticlesRepository(db_session))
+    auth = AuthService(AuthRepository(db_session))
+    paths = PathsService(PathsRepository(db_session))
+    await auth.create_user("admin", "pass123", "admin")
+    course_a = (await courses.create_course({"title": "Course 1", "description": "A"}))["id"]
+    course_b = (await courses.create_course({"title": "Course 2", "description": "B"}))["id"]
+    article_id = (
+        await articles.create_article(payload={"title": "Article 1", "url": "https://example.com/a"}, created_by="admin")
+    )["id"]
+
+    await paths.create_path(
+        {
+            "name": "Counted Path",
+            "items": [
+                {"type": "course", "id": course_a, "position": 0},
+                {"type": "article", "id": article_id, "position": 1},
+                {"type": "course", "id": course_b, "position": 2},
+            ],
+        }
+    )
+
+    listed = await paths.list_paths()
+    counted = next(row for row in listed if str(row.get("name") or "") == "Counted Path")
+    assert counted["course_count"] == 2

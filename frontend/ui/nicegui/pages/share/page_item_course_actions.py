@@ -6,7 +6,11 @@ from typing import Any
 
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.pages.share.controller import SharePageController
-from frontend.ui.nicegui.pages.share.helpers import normalize_requested_share_type, validate_course_like_publish
+from frontend.ui.nicegui.pages.share.helpers import (
+    complete_share_publish,
+    normalize_requested_share_type,
+    validate_course_like_publish,
+)
 from frontend.ui.nicegui.pages.share.page_item_drafts import refresh_detected_type_hint, refresh_title_suggestion
 from frontend.ui.nicegui.pages.share.page_item_form import CourseShareControls, normalize_http_url
 from frontend.ui.nicegui.pages.share.state import ShareCourseUiState
@@ -100,14 +104,22 @@ def wire_course_actions(
             payload["provider"] = "YouTube"
         if normalize_requested_share_type(item_type) == "video":
             await controller.create_video(payload=payload)
-            app_module.storage.user.pop(draft_key, None)
-            notify("Learning item published", type="positive")
-            ui_module.navigate.to("/explore?tab=videos")
+            complete_share_publish(
+                item_type="video",
+                draft_key=draft_key,
+                app_module=app_module,
+                ui_module=ui_module,
+                notify=notify,
+            )
             return
         await controller.create_course(payload=payload)
-        app_module.storage.user.pop(draft_key, None)
-        notify("Learning item published", type="positive")
-        ui_module.navigate.to("/explore?tab=courses")
+        complete_share_publish(
+            item_type="course",
+            draft_key=draft_key,
+            app_module=app_module,
+            ui_module=ui_module,
+            notify=notify,
+        )
 
     controls.import_btn.on("click", lambda *_: _import_metadata())
     controls.apply_title_btn.on("click", lambda *_: _apply_title_suggestion())

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from frontend.ui.nicegui.pages.articles.actions import (
+from frontend.ui.nicegui.domains.articles.actions import (
     ArticlesFacetControls,
     build_article_card_actions,
     build_articles_facet_controls,

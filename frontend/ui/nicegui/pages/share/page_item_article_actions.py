@@ -6,7 +6,7 @@ from typing import Any
 
 from frontend.ui.nicegui.core.errors import guard_ui_action
 from frontend.ui.nicegui.pages.share.controller import SharePageController
-from frontend.ui.nicegui.pages.share.helpers import normalize_requested_share_type
+from frontend.ui.nicegui.pages.share.helpers import complete_share_publish, normalize_requested_share_type
 from frontend.ui.nicegui.pages.share.page_item_drafts import refresh_detected_type_hint
 from frontend.ui.nicegui.pages.share.page_item_form import ArticleShareControls, normalize_http_url
 from frontend.ui.nicegui.pages.share.state import ShareArticleUiState
@@ -74,9 +74,13 @@ def wire_article_actions(
             "tags": str(controls.tags_input.value or "").strip(),
         }
         await controller.create_article(payload=payload)
-        app_module.storage.user.pop(draft_key, None)
-        notify("Learning item published", type="positive")
-        ui_module.navigate.to("/explore?tab=articles")
+        complete_share_publish(
+            item_type="article",
+            draft_key=draft_key,
+            app_module=app_module,
+            ui_module=ui_module,
+            notify=notify,
+        )
 
     controls.import_btn.on("click", lambda *_: _import_metadata())
     controls.publish_btn.on("click", lambda *_: _publish())

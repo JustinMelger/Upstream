@@ -15,14 +15,14 @@ from frontend.ui.nicegui.core.guards import require_user
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.path_items import encode_path_item_ref, learning_item_option_label
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.courses.ui_glue import format_short_date
+from frontend.ui.nicegui.domains.courses.ui_glue import format_short_date
+from frontend.ui.nicegui.domains.paths.controller import PathsPageController
+from frontend.ui.nicegui.domains.paths.dialogs import open_edit_path_dialog
 from frontend.ui.nicegui.pages.explore.detail_common import (
     parse_detail_id,
     render_breadcrumb,
     render_detail_scope,
 )
-from frontend.ui.nicegui.pages.paths.controller import PathsPageController
-from frontend.ui.nicegui.pages.paths.dialogs import open_edit_path_dialog
 from frontend.ui.nicegui.services.paths_service import select_path_and_seed_tracking
 
 
@@ -243,6 +243,7 @@ def _render_path_main_panel(
         _render_path_sequence_card(items=panel.items, tracking_by_course_id=panel.tracking_by_course_id)
 
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
+
             @ui.refreshable
             def _review_summary() -> None:
                 with ui.row().classes("w-full items-center gap-2 flex-wrap"):

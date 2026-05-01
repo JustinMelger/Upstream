@@ -129,7 +129,7 @@ async def get_recent_activity(
     auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
 ) -> list[dict[str, Any]]:
-    """Return recent activity for the team (admin only).
+    """Return recent tracking activity (admin only).
 
     Args:
         limit: Max number of records.

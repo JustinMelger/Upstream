@@ -25,7 +25,7 @@ async def create_plan(
 
     Args:
         payload: Plan request payload.
-        _current_user: Authenticated username (not used yet).
+        _current_user: Authenticated username.
 
     Returns:
         Draft path and ordered draft course list.

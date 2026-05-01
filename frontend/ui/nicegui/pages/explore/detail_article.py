@@ -16,9 +16,9 @@ from frontend.ui.nicegui.core.learning_items import (
 )
 from frontend.ui.nicegui.core.page_copy import PrimaryPage, subtitle_for
 from frontend.ui.nicegui.core.session_store import SessionStore
-from frontend.ui.nicegui.pages.articles.controller import ArticlesPageController
-from frontend.ui.nicegui.pages.articles.ui_glue import parse_tags
-from frontend.ui.nicegui.pages.courses.ui_glue import format_short_date
+from frontend.ui.nicegui.domains.articles.controller import ArticlesPageController
+from frontend.ui.nicegui.domains.articles.ui_glue import parse_tags
+from frontend.ui.nicegui.domains.courses.ui_glue import format_short_date
 from frontend.ui.nicegui.pages.explore.detail_common import parse_detail_id, render_breadcrumb, render_detail_scope
 
 
@@ -81,6 +81,7 @@ def _render_article_main_panel(
             ui.label(body or "No content available yet.").classes("lp-explore-detail-muted")
 
         with ui.card().classes("lp-card w-full lp-explore-detail-card lp-explore-main-surface lp-explore-reviews-panel"):
+
             @ui.refreshable
             def _review_summary() -> None:
                 with ui.row().classes("w-full items-center gap-2 flex-wrap"):

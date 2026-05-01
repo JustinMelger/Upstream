@@ -11,6 +11,7 @@ from backend.api.deps import (
 from backend.api.policies import (
     require_existing_owner_or_admin,
     require_row_exists,
+    require_row_parent_match,
 )
 from backend.api.schemas import (
     CourseCreateRequest,

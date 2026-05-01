@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.articles.filters import build_articles_list_query_params, normalize_articles_filter_values
+from frontend.ui.nicegui.domains.articles.filters import build_articles_list_query_params, normalize_articles_filter_values
 
 
 def test_normalize_articles_filter_values_normalizes_fields() -> None:

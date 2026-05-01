@@ -152,6 +152,9 @@ jobs:
       - name: Run frontend architecture guard tests
         run: uv run pytest tests/frontend/ui/nicegui/test_page_package_exports.py tests/frontend/ui/nicegui/test_page_package_layout.py
 
+      - name: Run import architecture contracts
+        run: uv run lint-imports
+
       - name: Run architecture marker tests
         run: uv run pytest -m architecture
 
@@ -271,24 +274,40 @@ jobs:
         run: |
           set -euo pipefail
           nohup uv run uvicorn backend.main:app --host 127.0.0.1 --port 8000 > backend.log 2>&1 &
-          nohup uv run python -m frontend.ui.nicegui.main > ui.log 2>&1 &
+          echo $! > backend.pid
+          BACKEND_URL="$E2E_API_URL" nohup uv run python -m frontend.ui.nicegui.main > ui.log 2>&1 &
+          echo $! > ui.pid
 
       - name: Wait for backend + UI health
         shell: bash
         run: |
           set -euo pipefail
-          for i in {1..120}; do
-            if curl -fsS "$E2E_API_URL/health" >/dev/null; then
-              break
-            fi
-            sleep 1
-          done
-          for i in {1..120}; do
-            if curl -fsS "$E2E_UI_URL/login" >/dev/null; then
-              break
-            fi
-            sleep 1
-          done
+          wait_for_http() {
+            local name="$1"
+            local url="$2"
+            local log_file="$3"
+            local pid_file="$4"
+            for i in {1..120}; do
+              if curl -fsS "$url" >/dev/null; then
+                echo "$name is ready at $url"
+                return 0
+              fi
+              if [ -f "$pid_file" ] && ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
+                echo "$name process exited before becoming ready"
+                echo "---- $log_file ----"
+                cat "$log_file" || true
+                return 1
+              fi
+              sleep 1
+            done
+            echo "$name did not become ready at $url"
+            echo "---- $log_file ----"
+            cat "$log_file" || true
+            return 1
+          }
+
+          wait_for_http "Backend" "$E2E_API_URL/health" backend.log backend.pid
+          wait_for_http "UI" "$E2E_UI_URL/login" ui.log ui.pid
 
       - name: Run e2e smoke tests
         run: uv run pytest tests/e2e -m e2e

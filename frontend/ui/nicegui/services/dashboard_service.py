@@ -47,7 +47,7 @@ def _index_review_summary(rows: list[dict[str, Any]] | None) -> dict[int, dict[s
     return out
 
 
-def _tracking_map(tracking_rows: list[dict[str, Any]]) -> dict[int, str]:
+def tracking_map(tracking_rows: list[dict[str, Any]]) -> dict[int, str]:
     """Build a mapping of course_id -> status."""
     out: dict[int, str] = {}
     for r in list(tracking_rows or []):
@@ -245,7 +245,7 @@ async def load_dashboard_data(
 
     selected_path_details = await _load_selected_path_details(api=api, selected_paths=selected_paths)
 
-    tracking = _tracking_map(tracking_rows)
+    tracking = tracking_map(tracking_rows)
     in_progress_ids = [cid for cid, st in tracking.items() if st == "in_progress"]
     next_up_ids = _collect_next_up_ids(selected_path_details=selected_path_details, tracking=tracking)
     recent_course_ids = _collect_recent_course_ids(courses)

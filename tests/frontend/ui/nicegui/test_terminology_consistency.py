@@ -9,11 +9,11 @@ def _read(path: str) -> str:
 
 def test_card_and_detail_action_labels_use_consistent_terms() -> None:
     path_card_src = _read("frontend/ui/nicegui/components/path_card.py")
-    article_sections_src = _read("frontend/ui/nicegui/pages/articles/sections.py")
-    course_sections_src = _read("frontend/ui/nicegui/pages/courses/sections.py")
+    article_sections_src = _read("frontend/ui/nicegui/domains/articles/sections.py")
+    course_sections_src = _read("frontend/ui/nicegui/domains/courses/sections.py")
     explore_course_detail_src = _read("frontend/ui/nicegui/pages/explore/detail_course.py")
     explore_article_detail_src = _read("frontend/ui/nicegui/pages/explore/detail_article.py")
-    article_dialogs_src = _read("frontend/ui/nicegui/pages/articles/dialogs.py")
+    article_dialogs_src = _read("frontend/ui/nicegui/domains/articles/dialogs.py")
 
     assert 'ui.button("Open details"' in path_card_src
     assert 'ui.button("Open details"' in article_sections_src

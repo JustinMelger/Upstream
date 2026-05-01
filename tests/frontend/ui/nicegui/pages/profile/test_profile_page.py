@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from frontend.ui.nicegui.pages.home.state import HomePageState
 from frontend.ui.nicegui.pages.profile import page as profile_page
+from frontend.ui.nicegui.pages.shared_stats.state import SharedStatsState
 
 
 class _FakeElement:
@@ -46,7 +46,7 @@ class _DummyController:
         raise AssertionError("not used in this test")
 
 
-def test_render_profile_team_sections_empty_state_points_to_next_steps(monkeypatch) -> None:  # noqa: ANN001
+def test_render_team_stats_section_empty_state_points_to_next_steps(monkeypatch) -> None:  # noqa: ANN001
     fake_ui = _FakeUi()
     monkeypatch.setattr(profile_page, "ui", fake_ui)
 
@@ -56,11 +56,11 @@ def test_render_profile_team_sections_empty_state_points_to_next_steps(monkeypat
         avatar_initial="A",
         is_admin=True,
         controller=_DummyController(),  # type: ignore[arg-type]
-        state=HomePageState(team_stats_by_user=[]),
+        state=SharedStatsState(team_stats_by_user=[]),
         mode_value="team",
     )
 
-    profile_page._render_profile_team_sections(ctx=ctx)
+    profile_page._render_team_stats_section(ctx=ctx)
 
     assert (
         "No team contributor data yet. Open Teams to invite teammates or switch to My stats to review your own progress."

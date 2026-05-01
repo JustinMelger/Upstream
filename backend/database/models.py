@@ -48,6 +48,7 @@ class PathRecord:
     name: str
     description: str | None
     created_by: str | None
+    course_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -157,28 +158,6 @@ class VideoReviewRecord:
     video_id: int
     rating: int
     text: str | None
-    created_by: str
-    created_at: str
-
-
-@dataclass(frozen=True)
-class CourseRecommendationRecord:
-    """Course recommendation row representation."""
-
-    id: int
-    course_id: int
-    note: str | None
-    created_by: str
-    created_at: str
-
-
-@dataclass(frozen=True)
-class PathRecommendationRecord:
-    """Path recommendation row representation."""
-
-    id: int
-    path_id: int
-    note: str | None
     created_by: str
     created_at: str
 

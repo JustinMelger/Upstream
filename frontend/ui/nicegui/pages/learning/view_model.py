@@ -77,14 +77,14 @@ def build_shared_learning_item_views(
         if not title:
             continue
         items.append(
-                SharedLearningItemView(
-                    item_type="article",
-                    item_id=item_id,
-                    title=title,
-                    capabilities=learning_item_capabilities("article"),
-                    review_summary_row=dict(article_review_summary_by_id.get(item_id) or {}) or None,
-                )
+            SharedLearningItemView(
+                item_type="article",
+                item_id=item_id,
+                title=title,
+                capabilities=learning_item_capabilities("article"),
+                review_summary_row=dict(article_review_summary_by_id.get(item_id) or {}) or None,
             )
+        )
     for row in list(shared_videos or []):
         item_id = int(row.get("id") or 0)
         if item_id <= 0:

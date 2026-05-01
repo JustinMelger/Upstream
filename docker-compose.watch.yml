@@ -30,13 +30,6 @@ services:
       - SESSION_DAYS=30
       - BOOTSTRAP_ADMIN_USERNAME=admin
       - BOOTSTRAP_ADMIN_PASSWORD=admin
-      - OTEL_ENABLED=1
-      - OTEL_SERVICE_NAME=learning-hub-api
-      - OTEL_SERVICE_VERSION=0.1.0
-      - OTEL_DEPLOYMENT_ENVIRONMENT=docker
-      - OTEL_TRACES_SAMPLE_RATIO=1.0
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://host.docker.internal:4318/v1/traces
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://host.docker.internal:4318/v1/metrics
     develop:
       watch:
         - action: sync

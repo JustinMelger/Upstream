@@ -216,4 +216,3 @@ async def test_create_course_duplicate_title_provider_returns_409(app_client):
     body = duplicate.json()
     assert body.get("status") == "error"
     assert body.get("message") == "duplicate_title_provider"
-

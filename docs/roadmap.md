@@ -1,5 +1,17 @@
 # Roadmap
 
+This file is historical plus forward-looking. For the current v1 release contract, use `docs/v1/README.md` and
+`docs/v1/status.md`.
+
+## Current-State Source Of Truth
+
+- V1 scope: `docs/v1/README.md`
+- V1 status: `docs/v1/status.md`
+- V1 release checklist: `docs/v1/release_checklist.md`
+- V1 smoke checklist: `docs/v1/smoke_test_checklist.md`
+
+## Historical Roadmap
+
 ## Current V1 Snapshot
 - Implemented core product contract:
   - share `course|article|video`
@@ -424,19 +436,19 @@ Implementation map (routes + files, ordered):
   - Test/docs updates: `tests/frontend/ui/nicegui/test_routes.py`, `tests/frontend/ui/nicegui/core/test_core_navigation.py`, `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`, `docs/architecture_frontend.md`.
 - [x] Phase 11E.2 page merge + IA reorganization:
   - Home merge (`My learning` + `Insights`): `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/home/sections.py`, `frontend/ui/nicegui/pages/home/controller.py`, `frontend/ui/nicegui/pages/home/state.py`, `frontend/ui/nicegui/services/learning_service.py`, `frontend/ui/nicegui/services/dashboard_service.py`.
-  - Explore consolidation (Courses/Paths/Articles): `frontend/ui/nicegui/pages/explore/page.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/explore/orchestration.py`, `frontend/ui/nicegui/pages/explore/state.py`, `frontend/ui/nicegui/pages/explore/ui_glue.py`, plus card adapters from `pages/courses/view_model.py`, `pages/paths/view_model.py`, `pages/articles/view_model.py`.
+  - Explore consolidation (Courses/Paths/Articles): `frontend/ui/nicegui/pages/explore/page.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/explore/orchestration.py`, `frontend/ui/nicegui/pages/explore/state.py`, `frontend/ui/nicegui/pages/explore/ui_glue.py`, plus card adapters from `domains/courses/view_model.py`, `domains/paths/view_model.py`, `domains/articles/view_model.py`.
   - Stats relocation: create `frontend/ui/nicegui/pages/profile/page.py` and move full stats rendering from current insights/home blocks into `Profile > Stats`.
 - [x] Phase 11E.3 home redesign (action-oriented):
   - Primary files: `frontend/ui/nicegui/pages/home/sections.py` (hero + compact review nudges + team shares), `frontend/ui/nicegui/pages/home/page.py` (layout hierarchy + single dominant CTA), `frontend/ui/nicegui/pages/home/controller.py` (load ordering), `frontend/ui/nicegui/core/theme.py` (above-the-fold emphasis styles).
   - Data feeds likely reused: learning progression from `frontend/ui/nicegui/services/learning_service.py`, team-share activity from `frontend/ui/nicegui/services/notifications_service.py`.
 - [x] Phase 11E.4 explore hub redesign:
   - Primary files: `frontend/ui/nicegui/pages/explore/sections.py` (search-dominant topbar + tabs), `frontend/ui/nicegui/pages/explore/page.py` (single discovery flow), `frontend/ui/nicegui/pages/explore/orchestration.py` (unified load/filter pipeline), `frontend/ui/nicegui/core/theme.py` (card consistency tokens).
-  - Remove duplicate discovery logic from standalone catalogs after parity: `frontend/ui/nicegui/pages/courses/page.py`, `frontend/ui/nicegui/pages/paths/page.py`, `frontend/ui/nicegui/pages/articles/page.py`.
+  - Removed duplicate standalone catalog routes after parity; reusable catalog logic now lives under `frontend/ui/nicegui/domains/{courses,paths,articles}/`.
 - [x] Phase 11E.5 visual/action density reduction:
-  - Primary files: `frontend/ui/nicegui/pages/courses/sections.py`, `frontend/ui/nicegui/pages/articles/sections.py`, `frontend/ui/nicegui/components/path_card.py`, `frontend/ui/nicegui/components/card_actions.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/core/theme.py`.
+  - Primary files: `frontend/ui/nicegui/domains/courses/sections.py`, `frontend/ui/nicegui/domains/articles/sections.py`, `frontend/ui/nicegui/components/path_card.py`, `frontend/ui/nicegui/components/card_actions.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/core/theme.py`.
   - Acceptance checks in code: one primary CTA + one state control per card, overflow for secondary actions, reduced metadata defaults.
 - [x] Phase 11E.6 terminology alignment:
-  - Primary files: `frontend/ui/nicegui/components/layout.py`, `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/explore/page.py`, `frontend/ui/nicegui/pages/courses/`, `frontend/ui/nicegui/pages/paths/`, `frontend/ui/nicegui/pages/articles/`, `frontend/ui/nicegui/pages/activity/`.
+  - Primary files: `frontend/ui/nicegui/components/layout.py`, `frontend/ui/nicegui/pages/home/page.py`, `frontend/ui/nicegui/pages/explore/page.py`, `frontend/ui/nicegui/domains/courses/`, `frontend/ui/nicegui/domains/paths/`, `frontend/ui/nicegui/domains/articles/`, `frontend/ui/nicegui/pages/activity/`.
   - Copy + route helper updates: `frontend/ui/nicegui/core/navigation.py`, `frontend/ui/nicegui/pages/learning/route_init.py` (or replacement home route init).
   - Test updates for label/route expectations: `tests/frontend/ui/nicegui/pages/login/test_login_page_integration.py`, `tests/frontend/ui/nicegui/pages/home/test_home_page_integration.py`, `tests/frontend/ui/nicegui/test_architecture_docs_contracts.py`.
   - Learning-item unification targets: `frontend/ui/nicegui/pages/share/page.py`, `frontend/ui/nicegui/pages/share/controller.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/explore/view_model.py`, `frontend/ui/nicegui/core/theme.py`, `frontend/ui/nicegui/main.py`.
@@ -445,9 +457,9 @@ Implementation map (routes + files, ordered):
   - Closed implementation slices: add URL/provider-based subtype detection, restore `/share/item` course validation parity, preserve available subtype diversity in the default Explore view, add focused tests for YouTube/Udemy/article classification and share-page behavior, and make subtype capability differences explicit across Home/Explore/Activity/Teams.
 - [ ] Phase 11E.7 first-time-user clarity pass:
   - Primary files: add onboarding component (recommended `frontend/ui/nicegui/components/onboarding_intro.py`) and wire in `frontend/ui/nicegui/pages/home/page.py`.
-  - Empty-state harmonization targets: `frontend/ui/nicegui/pages/home/sections.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/pages/courses/sections.py`, `frontend/ui/nicegui/pages/paths/sections.py`, `frontend/ui/nicegui/pages/articles/sections.py`.
+  - Empty-state harmonization targets: `frontend/ui/nicegui/pages/home/sections.py`, `frontend/ui/nicegui/pages/explore/sections.py`, `frontend/ui/nicegui/domains/courses/sections.py`, `frontend/ui/nicegui/domains/paths/sections.py`, `frontend/ui/nicegui/domains/articles/sections.py`.
   - Validation/testing harness: add/update integration tests under `tests/frontend/ui/nicegui/pages/home/` and `tests/frontend/ui/nicegui/pages/explore/` for one-clear-next-action empty states and intro dismiss behavior.
-- [ ] Sprint-level execution plan: track active sprint tasks in `docs/sprint.md`.
+- [ ] Sprint-level execution plan: create a new sprint note only when active sprint tracking is needed.
 
 ### Phase 11F — Social Learning Hub v1 (Teams + Team Relevance Layer)
 
