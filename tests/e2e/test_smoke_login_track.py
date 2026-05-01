@@ -22,6 +22,16 @@ def _ui_base_url() -> str:
     return str(os.getenv("E2E_UI_URL", "http://127.0.0.1:8080")).rstrip("/")
 
 
+def _strict_e2e_env() -> bool:
+    return os.getenv("E2E_STRICT_ENV", "0") == "1" or os.getenv("GITHUB_ACTIONS", "").lower() == "true"
+
+
+def _skip_or_fail(reason: str) -> None:
+    if _strict_e2e_env():
+        pytest.fail(reason)
+    pytest.skip(reason)
+
+
 async def _bootstrap_admin_and_seed_content(
     *,
     api_url: str,
@@ -32,7 +42,9 @@ async def _bootstrap_admin_and_seed_content(
         async with httpx.AsyncClient(base_url=api_url, timeout=20.0) as client:
             login = await client.post("/auth/login", json={"username": "admin", "password": "admin"})
             if login.status_code != 200:
-                pytest.skip(f"E2E backend login unavailable at {api_url}: status={login.status_code} body={login.text[:200]}")
+                _skip_or_fail(
+                    f"E2E backend login unavailable at {api_url}: status={login.status_code} body={login.text[:200]}"
+                )
             token = str(login.json()["token"])
 
             create_course = await client.post(
@@ -41,7 +53,7 @@ async def _bootstrap_admin_and_seed_content(
                 headers={"X-Session-Token": token},
             )
             if create_course.status_code != 200:
-                pytest.skip(
+                _skip_or_fail(
                     "E2E backend course seeding unavailable: "
                     f"status={create_course.status_code} body={create_course.text[:200]}"
                 )
@@ -57,14 +69,14 @@ async def _bootstrap_admin_and_seed_content(
                 headers={"X-Session-Token": token},
             )
             if create_path.status_code != 200:
-                pytest.skip(
+                _skip_or_fail(
                     f"E2E backend path seeding unavailable: status={create_path.status_code} body={create_path.text[:200]}"
                 )
             path_id = int(create_path.json()["id"])
 
             return token, course_id, path_id
     except httpx.HTTPError as exc:  # pragma: no cover - environment dependent
-        pytest.skip(f"E2E backend not reachable at {api_url}: {exc}")
+        _skip_or_fail(f"E2E backend not reachable at {api_url}: {exc}")
 
 
 @pytest.mark.integration
@@ -125,7 +137,7 @@ async def test_smoke_login_track_review_and_select_path() -> None:
             await context.close()
             await browser.close()
     except PlaywrightError as exc:  # pragma: no cover - environment/browser install dependent
-        pytest.skip(f"Playwright/browser not available: {exc}")
+        _skip_or_fail(f"Playwright/browser not available: {exc}")
 
     async with httpx.AsyncClient(base_url=api_url, timeout=20.0) as client:
         tracking = await client.get("/tracking", headers={"X-Session-Token": token})
