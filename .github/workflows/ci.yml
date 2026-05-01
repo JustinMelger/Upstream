@@ -246,6 +246,7 @@ jobs:
       E2E_VISUAL_ASSERT: "1"
       # Keep strict baseline failures deferred until the major UI surfaces settle.
       E2E_VISUAL_STRICT: "0"
+      E2E_STRICT_ENV: "1"
       NICEGUI_STORAGE_SECRET: ci-e2e-storage-secret
     steps:
       - name: Checkout

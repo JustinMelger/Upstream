@@ -169,7 +169,7 @@ def render_path_item(
                     with ui.element("div").classes("lp-explore-row-icon"):
                         ui.icon("route").classes("text-lg")
                     with ui.column().classes("gap-1 min-w-0 flex-1"):
-                        ui.label(str(path.get("title") or "")).classes("lp-explore-row-title")
+                        ui.label(str(path.get("name") or path.get("title") or "")).classes("lp-explore-row-title")
                         ui.label(subtitle).classes("lp-explore-row-subtitle")
                     ui.button("Open details", on_click=lambda: open_path(path_id)).props("unelevated color=primary")
                 if meta_parts:
