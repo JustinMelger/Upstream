@@ -12,12 +12,15 @@ EXISTING_CHANGED_PY="$(
 
 if [ -z "$EXISTING_CHANGED_PY" ]; then
   echo "No changed backend/frontend Python files for ratchet checks."
-else
-  echo "Changed Python files:"
-  echo "$EXISTING_CHANGED_PY"
-  uv run ruff check $EXISTING_CHANGED_PY
-  uv run mypy $EXISTING_CHANGED_PY
+  echo "Skipping strict core quality scope because no Python files changed."
+  exit 0
 fi
+
+echo "Changed Python files:"
+echo "$EXISTING_CHANGED_PY"
+
+uv run ruff check $EXISTING_CHANGED_PY
+uv run mypy $EXISTING_CHANGED_PY
 
 echo "Running strict ruff profile on core quality scope..."
 uv run ruff check backend/services frontend/ui/nicegui/core frontend/ui/nicegui/services \
