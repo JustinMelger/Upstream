@@ -42,9 +42,7 @@ async def _bootstrap_admin_and_seed_content(
         async with httpx.AsyncClient(base_url=api_url, timeout=20.0) as client:
             login = await client.post("/auth/login", json={"username": "admin", "password": "admin"})
             if login.status_code != 200:
-                _skip_or_fail(
-                    f"E2E backend login unavailable at {api_url}: status={login.status_code} body={login.text[:200]}"
-                )
+                _skip_or_fail(f"E2E backend login unavailable at {api_url}: status={login.status_code} body={login.text[:200]}")
             token = str(login.json()["token"])
 
             create_course = await client.post(
