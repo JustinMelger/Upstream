@@ -32,6 +32,11 @@ def _skip_or_fail(reason: str) -> None:
     pytest.skip(reason)
 
 
+async def _select_combobox_option(page, *, label: str, option: str) -> None:
+    await page.get_by_label(label).click()
+    await page.get_by_role("option", name=option, exact=True).click()
+
+
 async def _bootstrap_admin_and_seed_content(
     *,
     api_url: str,
@@ -119,7 +124,7 @@ async def test_smoke_login_track_review_and_select_path() -> None:
 
             # Course review flow.
             await page.goto(f"/explore/courses/{course_id}?view=reviews", wait_until="networkidle")
-            await page.get_by_label("Rating").select_option("5")
+            await _select_combobox_option(page, label="Rating", option="5")
             await page.get_by_label("Comment (optional)").fill("E2E smoke review")
             await page.get_by_role("button", name="Save review").click()
             await page.get_by_text("Rating: 5/5 · admin").first.wait_for(timeout=15000)
