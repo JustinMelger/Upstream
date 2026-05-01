@@ -152,6 +152,9 @@ jobs:
       - name: Run frontend architecture guard tests
         run: uv run pytest tests/frontend/ui/nicegui/test_page_package_exports.py tests/frontend/ui/nicegui/test_page_package_layout.py
 
+      - name: Run import architecture contracts
+        run: uv run lint-imports
+
       - name: Run architecture marker tests
         run: uv run pytest -m architecture
 
