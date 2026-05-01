@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
+from typing import Any
 
 from nicegui import ui
 
@@ -36,10 +37,11 @@ def render_metric_group(*, metrics: Iterable[Metric], classes: str, as_row: bool
             render_metric_card(label=label, value=value)
 
 
-def render_empty_copy(text: str, *, classes: str = "") -> None:
+def render_empty_copy(text: str, *, classes: str = "", ui_ref: Any | None = None) -> None:
     """Render muted empty-state copy."""
+    target_ui = ui if ui_ref is None else ui_ref
     label_classes = f"text-sm lp-empty-copy {classes}".strip()
-    ui.label(str(text or "")).classes(label_classes).style("color: var(--lp-muted)")
+    target_ui.label(str(text or "")).classes(label_classes).style("color: var(--lp-muted)")
 
 
 @contextmanager

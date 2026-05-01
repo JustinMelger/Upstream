@@ -292,7 +292,7 @@ def render_tracked_courses_section(
     with render_panel(classes=card_classes):
         ui.label("Tracked courses").classes("lp-home-section-title lp-home-track-title")
         if not tracked_courses:
-            render_empty_copy("Track a course to see it here.")
+            render_empty_copy("Track a course to see it here.", ui_ref=ui)
             ui.button("Browse courses", on_click=on_browse_courses).props("dense outline").classes("lp-home-empty-btn")
             return
 
@@ -332,7 +332,7 @@ def render_selected_paths_section(
     if not selected_paths:
         with render_panel(classes="lp-card w-full lp-panel-card lp-home-path-shell lp-home-path-empty-shell"):
             ui.label("Selected Path").classes("lp-home-section-title")
-            render_empty_copy("No path selected yet. Pick one path to track progress here.")
+            render_empty_copy("No path selected yet. Pick one path to track progress here.", ui_ref=ui)
             ui.button("Browse paths", on_click=on_browse_paths).props("dense outline").classes("lp-home-empty-btn")
         return
 
@@ -520,7 +520,7 @@ def render_next_focus_section(*, ctx: FocusSectionContext) -> None:
             ui.label("Next focus").classes("lp-home-hero-eyebrow")
 
             if next_course is None:
-                render_empty_copy("No active next step yet. Start by tracking a course.")
+                render_empty_copy("No active next step yet. Start by tracking a course.", ui_ref=ui)
                 with ui.row().classes("w-full items-center gap-2 flex-wrap lp-home-focus-actions"):
                     ui.button("Browse courses", on_click=lambda: ui.navigate.to("/explore?tab=courses")).props(
                         "dense outline"
@@ -635,7 +635,7 @@ def render_conversations_section(
                     if total_pending_reviews > 0
                     else "No conversations are waiting right now. Share a learning item or path to start team activity."
                 )
-                render_empty_copy(empty_copy)
+                render_empty_copy(empty_copy, ui_ref=ui)
                 return
 
             for row in items[:3]:
