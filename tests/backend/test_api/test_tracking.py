@@ -111,6 +111,44 @@ async def test_tracking_stats_permissions(app_client):
 
 
 @pytest.mark.integration
+async def test_tracking_admin_team_totals_remain_global_without_teams(app_client):
+    """Admins keep org-wide totals even when they are not members of any team."""
+    admin_token = await _login_admin(app_client)
+    await _create_user(app_client, admin_token, "alice")
+    await _create_user(app_client, admin_token, "bob")
+
+    alice_token = await _login(app_client, "alice", "pass123")
+    bob_token = await _login(app_client, "bob", "pass123")
+
+    alice_course_id = await _create_course(app_client, alice_token, "Alice Course")
+    bob_course_id = await _create_course(app_client, bob_token, "Bob Course")
+
+    response = await app_client.post(
+        "/tracking",
+        json={"course_id": alice_course_id, "status": "completed"},
+        headers={"X-Session-Token": alice_token},
+    )
+    assert response.status_code == 200
+    response = await app_client.post(
+        "/tracking",
+        json={"course_id": bob_course_id, "status": "interested"},
+        headers={"X-Session-Token": bob_token},
+    )
+    assert response.status_code == 200
+
+    admin_stats = await app_client.get("/tracking/stats", headers={"X-Session-Token": admin_token})
+    assert admin_stats.status_code == 200
+    assert admin_stats.json() == {"interested": 1, "in_progress": 0, "completed": 1}
+
+    admin_by_user = await app_client.get("/tracking/stats/users", headers={"X-Session-Token": admin_token})
+    assert admin_by_user.status_code == 200
+    assert admin_by_user.json() == [
+        {"colleague_id": "alice", "interested": 0, "in_progress": 0, "completed": 1},
+        {"colleague_id": "bob", "interested": 1, "in_progress": 0, "completed": 0},
+    ]
+
+
+@pytest.mark.integration
 async def test_tracking_team_totals_merge_all_memberships_for_current_user(app_client):
     """Team totals should use the union of all members across the viewer's teams."""
     admin_token = await _login_admin(app_client)

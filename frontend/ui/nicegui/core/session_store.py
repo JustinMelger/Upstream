@@ -76,14 +76,30 @@ class SessionStore:
         Raises:
             ApiError: If authentication fails or the backend response is invalid.
         """
+        previous_token = self.get_token()
+        previous_user = self.get_user()
         self.clear()
-        payload = await api.post("/auth/login", {"username": username, "password": password}, token_override="")
+        try:
+            payload = await api.post("/auth/login", {"username": username, "password": password}, token_override="")
+        except ApiError:
+            self.set_token(previous_token)
+            self.set_user(previous_user)
+            raise
         token = str(payload.get("token") or "")
         if not token:
+            self.set_token(previous_token)
+            self.set_user(previous_user)
             raise ApiError(status_code=500, message="missing_token")
         self.set_token(token)
-        me_raw = await api.get("/auth/me")
+        try:
+            me_raw = await api.get("/auth/me")
+        except ApiError:
+            self.set_token(previous_token)
+            self.set_user(previous_user)
+            raise
         if not isinstance(me_raw, dict):
+            self.set_token(previous_token)
+            self.set_user(previous_user)
             raise ApiError(status_code=500, message="invalid_auth_me_payload")
         me: dict[str, Any] = dict(me_raw)
         self.set_user(me)
