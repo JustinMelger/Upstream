@@ -64,7 +64,10 @@ async def get_user_paths_service(session: AsyncSession = Depends(get_session)) -
 
 async def get_tracking_service(session: AsyncSession = Depends(get_session)) -> TrackingService:
     """Provide a request-scoped TrackingService dependency."""
-    return TrackingService(SQLTrackingRepository(session))
+    return TrackingService(
+        SQLTrackingRepository(session),
+        SQLTeamsRepository(session),
+    )
 
 
 async def get_articles_service(session: AsyncSession = Depends(get_session)) -> ArticlesService:

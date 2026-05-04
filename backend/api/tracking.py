@@ -98,7 +98,7 @@ async def get_stats(
         raise HTTPException(status_code=403, detail="admin_required")
     if colleague_id:
         return await tracking.stats_for_colleague(colleague_id)
-    return await tracking.stats_all()
+    return await tracking.stats_for_workspace(current_user)
 
 
 @router.get("/stats/users", response_model=list[TrackingStatsByUserItem])
@@ -114,8 +114,7 @@ async def get_stats_by_user(
     Returns:
         list[dict]: Stats by user.
     """
-    _ = current_user
-    return await tracking.stats_by_user()
+    return await tracking.stats_by_workspace_user(current_user)
 
 
 @router.get("/recent", response_model=list[TrackingRecordPayload])

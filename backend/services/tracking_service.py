@@ -6,6 +6,7 @@ from pydantic import StrictInt, StrictStr, ValidationError
 from pydantic.dataclasses import dataclass
 
 from backend.core.errors import tracking_error_handler, TrackingServiceError
+from backend.database.async_repositories.teams import TeamsRepository
 from backend.database.async_repositories.tracking import TrackingRepository
 from backend.database.models import TrackingRecord
 from backend.database.tx import session_scope
@@ -40,13 +41,15 @@ class TrackingMutationPayload:
 class TrackingService:
     """Course tracking service."""
 
-    def __init__(self, repo: TrackingRepository):
+    def __init__(self, repo: TrackingRepository, teams_repo: TeamsRepository):
         """Initialize the service.
 
         Args:
             repo: Persistence repository for tracking data.
+            teams_repo: Persistence repository for team membership queries.
         """
         self._repo = repo
+        self._teams_repo = teams_repo
 
     @tracking_error_handler()
     async def list_tracking(self, colleague_id: str | None = None) -> list[dict]:
@@ -96,6 +99,20 @@ class TrackingService:
         """Get tracking stats grouped by user."""
         async with session_scope(self._repo.session):
             return await self._repo.stats_by_user()
+
+    @tracking_error_handler()
+    async def stats_for_workspace(self, current_user: str) -> dict[str, int]:
+        """Get tracking stats across the union of members in the user's teams."""
+        async with session_scope(self._repo.session):
+            teammate_ids = await self._teams_repo.list_workspace_user_ids(user_id=str(current_user))
+            return await self._repo.stats_for_users(teammate_ids)
+
+    @tracking_error_handler()
+    async def stats_by_workspace_user(self, current_user: str) -> list[dict]:
+        """Get per-user tracking stats across the union of members in the user's teams."""
+        async with session_scope(self._repo.session):
+            teammate_ids = await self._teams_repo.list_workspace_user_ids(user_id=str(current_user))
+            return await self._repo.stats_by_users(teammate_ids)
 
     @tracking_error_handler()
     async def upsert_tracking(self, colleague_id: str, course_id: int, status: str) -> dict:

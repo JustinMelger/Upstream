@@ -9,6 +9,7 @@ from backend.database.async_repositories.course_reviews import CourseReviewsRepo
 from backend.database.async_repositories.courses import CoursesRepository, CreateCoursePayload
 from backend.database.async_repositories.path_reviews import PathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository
+from backend.database.async_repositories.teams import TeamsRepository
 from backend.database.async_repositories.tracking import TrackingRepository
 from backend.database.async_repositories.user_paths import UserPathsRepository
 from backend.services.auth_service import AuthService
@@ -37,7 +38,7 @@ async def test_session_and_tracking_timestamps_are_utc_iso8601(db_session):
     courses = CoursesService(CoursesRepository(db_session))
     course_id = (await courses.create_course({"title": "Timestamps", "description": "Timestamps course"}))["id"]
 
-    tracking = TrackingService(TrackingRepository(db_session))
+    tracking = TrackingService(TrackingRepository(db_session), TeamsRepository(db_session))
     item = await tracking.upsert_tracking("alice", course_id, "interested")
     _assert_iso_utc(item["updated_at"])
 
