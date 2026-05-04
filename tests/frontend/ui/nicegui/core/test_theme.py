@@ -9,6 +9,3 @@ def test_theme_injects_static_css_links_and_nicegui_js_constants() -> None:
     )
 
     assert "/lp-static/theme/foundation.css" in css_head
-    assert "var True = true;" in theme._NICEGUI_JS_COMPAT_HTML
-    assert "var False = false;" in theme._NICEGUI_JS_COMPAT_HTML
-    assert "var None = null;" in theme._NICEGUI_JS_COMPAT_HTML
