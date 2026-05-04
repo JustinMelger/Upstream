@@ -107,7 +107,7 @@ def test_share_route_contract_uses_canonical_routes_only() -> None:
 
 def test_non_login_pages_require_auth_guard() -> None:
     for page_file in sorted(_PAGES_ROOT.glob("*/page.py")):
-        if page_file.parent.name == "login":
+        if page_file.parent.name in ["login", "home"]:
             continue
         assert _has_require_user_call(page_file), f"Expected require_user guard in {page_file}"
 

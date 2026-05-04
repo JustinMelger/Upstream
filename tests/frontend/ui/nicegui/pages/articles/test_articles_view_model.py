@@ -34,3 +34,15 @@ def test_map_article_card_view_handles_missing_values() -> None:
     assert vm.tags == []
     assert vm.summary_text == ""
     assert vm.thumbnail_url == ""
+
+
+@pytest.mark.unit
+def test_map_article_card_view_rejects_low_quality_preview_image() -> None:
+    vm = map_article_card_view(
+        article_row={
+            "id": 10,
+            "preview_image_url": "https://cdn.example.com/avatar-64x64.png",
+        },
+        review_summary_row=None,
+    )
+    assert vm.thumbnail_url == ""

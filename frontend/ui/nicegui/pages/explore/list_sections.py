@@ -48,7 +48,7 @@ def render_explore_sections(
     shown_learning_items: list[ExploreLearningItemEntry],
     deps: ExploreSectionsDeps,
 ) -> None:
-    """Render the Explore browse sections with rows for results and cards for paths."""
+    """Render the Explore browse sections with consistent row-based results."""
     course_cap = 16 if deps.show_all_categories else _DEFAULT_COURSE_CAP
     path_cap = 12 if deps.show_all_categories else _DEFAULT_PATH_CAP
     visible_courses = shown_courses[:course_cap]
@@ -86,16 +86,11 @@ def render_explore_sections(
                     ui.label("Learning paths").classes("lp-courses-section-title")
                     ui.label("Structured tracks to guide your next steps.").classes("lp-courses-section-subtitle")
                 ui.link("View all paths", "/explore?tab=paths").classes("text-sm")
-            path_grid_class = "lp-explore-path-grid"
-            if len(shown_paths_rows) == 1:
-                path_grid_class += " lp-explore-path-grid--single"
-            elif len(shown_paths_rows) == 2:
-                path_grid_class += " lp-explore-path-grid--pair"
-            with ui.element("div").classes(path_grid_class):
+            with ui.column().classes("w-full gap-3 lp-explore-results-list"):
                 for row in shown_paths_rows:
                     render_path_item(
                         path=row,
-                        item_classes="lp-courses-grid-item",
+                        item_classes="lp-explore-results-list-item",
                         state=deps.state,
                         username=deps.username,
                         is_admin=deps.is_admin,

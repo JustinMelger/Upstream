@@ -201,6 +201,40 @@ def test_render_path_item_uses_api_name_for_title(monkeypatch) -> None:  # noqa:
     assert "API named path" in fake_ui.labels
 
 
+def test_render_path_item_uses_shared_browse_row_pattern(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _capture_row(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(list_items, "_render_browse_row", _capture_row)
+
+    list_items.render_path_item(
+        path={"id": 7, "name": "Backend track", "course_count": 2},
+        item_classes="x",
+        state=type(
+            "_State",
+            (),
+            {
+                "selected_by_path_id": {7: {"path_id": 7}},
+                "selected_detail_by_path_id": {7: {"completed_count": 1}},
+                "path_review_summary_by_id": {7: {"path_id": 7, "avg_rating": 4.5, "review_count": 2}},
+            },
+        )(),
+        username="alice",
+        is_admin=False,
+        on_toggle_path_selection=lambda *_: None,
+        open_path=lambda *_: None,
+    )
+
+    assert captured["icon"] == "route"
+    assert captured["title"] == "Backend track"
+    assert captured["subtitle"] == "1 / 2 courses · Selected"
+    assert captured["meta"] == "★ 4.5 (2)"
+    assert captured["primary_label"] == "Open details"
+    assert captured["secondary_label"] == "Review"
+
+
 def test_render_course_item_shows_tracking_status_without_error(monkeypatch) -> None:  # noqa: ANN001
     fake_ui = _FakeUi()
     monkeypatch.setattr(list_items, "ui", fake_ui)
@@ -262,3 +296,62 @@ def test_render_course_item_uses_youtube_thumbnail_fallback(monkeypatch) -> None
     )
 
     assert captured["image_url"] == "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg"
+
+
+def test_render_video_item_rejects_low_quality_preview_image(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _capture_row(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(list_items, "_render_browse_row", _capture_row)
+
+    list_items.render_video_item(
+        video={
+            "id": 31,
+            "title": "Architecture walkthrough",
+            "provider": "YouTube",
+            "url": "https://example.com/watch/architecture",
+            "preview_image_url": "https://cdn.example.com/icon-48x48.png",
+        },
+        item_classes="x",
+        state=type("_State", (), {"video_review_summary_by_video_id": {}})(),
+    )
+
+    assert captured["image_url"] == ""
+
+
+def test_render_course_item_uses_default_icon_when_non_youtube_has_no_preview(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _capture_row(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(list_items, "_render_browse_row", _capture_row)
+
+    list_items.render_course_item(
+        course={
+            "id": 7,
+            "title": "Tracked course",
+            "provider": "Udemy",
+            "url": "https://puurdata.udemy.com/course/pydantic/",
+            "preview_image_url": "",
+        },
+        item_classes="x",
+        state=type(
+            "_State",
+            (),
+            {
+                "tracking_by_course_id": {},
+                "course_review_summary_by_course_id": {},
+            },
+        )(),
+        username="alice",
+        is_admin=False,
+        course_actions_builder=lambda *_: _FakeActions(),
+        item_type="course",
+        on_set_tracking=lambda *_: None,
+        on_clear_tracking=lambda *_: None,
+    )
+
+    assert captured["image_url"] == ""

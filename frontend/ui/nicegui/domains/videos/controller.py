@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from frontend.ui.nicegui.core.api_client import ApiClient
+from frontend.ui.nicegui.core.api_client import ApiClient, ApiError
 from frontend.ui.nicegui.services.videos_service import load_videos
 
 
@@ -34,7 +34,10 @@ class VideosPageController:
         video_ids = [int(v.get("id") or 0) for v in videos if int(v.get("id") or 0) > 0]
         review_summary_by_video_id: dict[int, dict[str, Any]] = {}
         if video_ids:
-            summaries = await self._api.get("/videos/reviews/summary", params={"video_ids": video_ids})
+            try:
+                summaries = await self._api.get("/videos/reviews/summary", params={"video_ids": video_ids})
+            except ApiError:
+                summaries = []
             for row in list(summaries or []):
                 if not isinstance(row, dict):
                     continue
