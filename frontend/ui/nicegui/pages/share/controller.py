@@ -7,7 +7,7 @@ from frontend.ui.nicegui.core.path_items import encode_path_item_ref, learning_i
 from frontend.ui.nicegui.domains.articles.controller import ArticlesPageController
 from frontend.ui.nicegui.domains.courses.controller import CoursesPageController
 from frontend.ui.nicegui.domains.paths.controller import PathsPageController
-from frontend.ui.nicegui.pages.videos.controller import VideosPageController
+from frontend.ui.nicegui.domains.videos.controller import VideosPageController
 
 
 class SharePageController:

@@ -10,7 +10,7 @@ from frontend.ui.nicegui.domains.articles.controller import ArticlesPageControll
 from frontend.ui.nicegui.domains.courses.controller import CourseDetailBundle, CoursesPageController
 from frontend.ui.nicegui.domains.paths.controller import PathsPageController
 from frontend.ui.nicegui.domains.paths.state import PathsPageState
-from frontend.ui.nicegui.pages.videos.controller import VideosPageController
+from frontend.ui.nicegui.domains.videos.controller import VideosPageController
 
 
 @dataclass(slots=True)
