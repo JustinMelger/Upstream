@@ -19,6 +19,13 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [0.12.1](https://github.com/JustinMelger/learning-platform/compare/v0.12.0...v0.12.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* css served as static files ([3ba4849](https://github.com/JustinMelger/learning-platform/commit/3ba48491cc97b695766df78da5c09f2eba58961f))
+
 ## [0.12.0](https://github.com/JustinMelger/learning-platform/compare/v0.11.0...v0.12.0) (2026-05-01)
 
 
