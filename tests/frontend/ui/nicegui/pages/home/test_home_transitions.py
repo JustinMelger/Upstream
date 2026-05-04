@@ -28,4 +28,4 @@ def test_finalize_shared_stats_load_failure() -> None:
 def test_should_render_team_stats_rules() -> None:
     assert should_render_team_stats(is_admin=True, mode_value="team") is True
     assert should_render_team_stats(is_admin=True, mode_value="mine") is False
-    assert should_render_team_stats(is_admin=False, mode_value="team") is False
+    assert should_render_team_stats(is_admin=False, mode_value="team") is True

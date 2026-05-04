@@ -55,7 +55,7 @@ async def test_tracking_lifecycle(app_client):
 
 @pytest.mark.integration
 async def test_tracking_stats_permissions(app_client):
-    """Tracking stats are restricted to admins for team views."""
+    """Tracking team stats are available to authenticated users."""
     admin_token = await _login_admin(app_client)
     create_user = await app_client.post(
         "/auth/users",
@@ -67,8 +67,10 @@ async def test_tracking_stats_permissions(app_client):
     user_token = user_login.json()["token"]
 
     response = await app_client.get("/tracking/stats", headers={"X-Session-Token": user_token})
-    assert response.status_code == 403
-    assert response.json().get("message") == "admin_required"
+    assert response.status_code == 200
+
+    by_user = await app_client.get("/tracking/stats/users", headers={"X-Session-Token": user_token})
+    assert by_user.status_code == 200
 
     admin_stats = await app_client.get("/tracking/stats", headers={"X-Session-Token": admin_token})
     assert admin_stats.status_code == 200

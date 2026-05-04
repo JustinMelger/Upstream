@@ -26,7 +26,7 @@ async def test_home_controller_load_overview_for_user_uses_colleague_stats() -> 
 
 @pytest.mark.unit
 @pytest.mark.anyio
-async def test_home_controller_load_overview_for_admin_team_uses_team_endpoints() -> None:
+async def test_home_controller_load_overview_for_team_mode_uses_team_endpoints() -> None:
     calls: list[tuple[str, dict | None]] = []
 
     class _Api:
@@ -37,7 +37,7 @@ async def test_home_controller_load_overview_for_admin_team_uses_team_endpoints(
             return {"interested": 10, "in_progress": 4, "completed": 6}
 
     c = SharedStatsController(api=_Api())  # type: ignore[arg-type]
-    out = await c.load_overview(username="admin", is_admin=True, mode_value="team")
+    out = await c.load_overview(username="alice", is_admin=False, mode_value="team")
     assert out.snapshot_stats == {"interested": 10, "in_progress": 4, "completed": 6}
     assert out.team_stats_by_user == [{"colleague_id": "alice", "completed": 2}]
     assert len(calls) == 2

@@ -98,18 +98,15 @@ async def get_stats(
         raise HTTPException(status_code=403, detail="admin_required")
     if colleague_id:
         return await tracking.stats_for_colleague(colleague_id)
-    if await auth.is_admin(current_user):
-        return await tracking.stats_all()
-    raise HTTPException(status_code=403, detail="admin_required")
+    return await tracking.stats_all()
 
 
 @router.get("/stats/users", response_model=list[TrackingStatsByUserItem])
 async def get_stats_by_user(
     current_user: str = Depends(require_session),
-    auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
 ) -> list[dict[str, Any]]:
-    """Return tracking stats grouped by user (admin only).
+    """Return tracking stats grouped by user for authenticated users.
 
     Args:
         current_user: Authenticated username.
@@ -117,8 +114,7 @@ async def get_stats_by_user(
     Returns:
         list[dict]: Stats by user.
     """
-    if not await auth.is_admin(current_user):
-        raise HTTPException(status_code=403, detail="admin_required")
+    _ = current_user
     return await tracking.stats_by_user()
 
 

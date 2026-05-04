@@ -54,7 +54,7 @@ def test_render_team_stats_section_empty_state_points_to_next_steps(monkeypatch)
         username="alice",
         avatar_url="",
         avatar_initial="A",
-        is_admin=True,
+        is_admin=False,
         controller=_DummyController(),  # type: ignore[arg-type]
         state=SharedStatsState(team_stats_by_user=[]),
         mode_value="team",

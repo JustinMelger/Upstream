@@ -167,9 +167,7 @@ def _render_profile_summary_rail(*, ctx: ProfileStatsPageContext, on_refresh: An
 
 
 def _render_mode_toggle(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
-    """Render the admin stats mode toggle."""
-    if not ctx.is_admin:
-        return
+    """Render the profile stats mode toggle."""
     mode_control = (
         ui.toggle({"mine": "My stats", "team": "Team totals"}, value=ctx.mode_value)
         .props("unelevated dense no-caps")
