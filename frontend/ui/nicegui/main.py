@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 """NiceGUI application composition.
 
 This module wires together core utilities (`ApiClient`, `SessionStore`) and
