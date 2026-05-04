@@ -17,6 +17,8 @@ class UiSettings:
     feature_articles: bool = os.getenv("FEATURE_ARTICLES", "1") == "1"
     feature_telemetry: bool = os.getenv("FEATURE_TELEMETRY", "0") == "1"
     reload: bool = os.getenv("NICEGUI_RELOAD", "0") == "1"
+    websocket_max_bytes: int = int(os.getenv("NICEGUI_WEBSOCKET_MAX_BYTES", "10000000"))
+    message_history_length: int = int(os.getenv("NICEGUI_MESSAGE_HISTORY_LENGTH", "0"))
 
 
 settings = UiSettings()

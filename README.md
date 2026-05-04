@@ -106,6 +106,8 @@ UI:
 - `BACKEND_URL`: backend base URL used by NiceGUI frontend.
 - `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage.
 - `NICEGUI_RELOAD`: enable NiceGUI reload mode (`0` or `1`, default `0`; keep disabled for container deployments).
+- `NICEGUI_WEBSOCKET_MAX_BYTES`: Socket.IO payload limit for UI updates (default `10000000`).
+- `NICEGUI_MESSAGE_HISTORY_LENGTH`: reconnect replay history length (default `0` for container deployments).
 - `FEATURE_TELEMETRY`: enable frontend product telemetry emits (`0` or `1`, default `0`).
 - `FEATURE_AI_CURATOR`: enable AI Curator page (`1` enabled, `0` disabled). Default is `0` for v1.
 - `FEATURE_ARTICLES`: enable article-specific frontend features (`1` enabled, `0` disabled).

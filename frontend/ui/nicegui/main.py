@@ -7,7 +7,7 @@ This module wires together core utilities (`ApiClient`, `SessionStore`) and
 registers all `@ui.page` routes.
 """
 
-from nicegui import app, ui
+from nicegui import app, core, ui
 
 from frontend.ui.nicegui.core.api_client import ApiClient
 from frontend.ui.nicegui.core.config import settings
@@ -48,7 +48,13 @@ def create_app() -> None:
 def main() -> None:
     """Start the NiceGUI dev server."""
     create_app()
-    ui.run(title="Learning Hub", reload=settings.reload, storage_secret=settings.storage_secret)
+    core.sio.eio.max_http_buffer_size = max(1_000_000, int(settings.websocket_max_bytes))
+    ui.run(
+        title="Learning Hub",
+        reload=settings.reload,
+        storage_secret=settings.storage_secret,
+        message_history_length=max(0, int(settings.message_history_length)),
+    )
 
 
 if __name__ in {"__main__", "__mp_main__"}:

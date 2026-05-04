@@ -58,6 +58,8 @@ services:
       - BACKEND_URL=http://api:8000
       - NICEGUI_STORAGE_SECRET=dev-storage-secret-change-me
       - NICEGUI_RELOAD=0
+      - NICEGUI_WEBSOCKET_MAX_BYTES=10000000
+      - NICEGUI_MESSAGE_HISTORY_LENGTH=0
       - PYTHONPATH=/app
 
 volumes:
