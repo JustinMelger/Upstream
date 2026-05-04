@@ -328,6 +328,6 @@ class TeamsRepository(RepositoryDateTimeCodec):
             select(TeamMemberModel.user_id)
             .where(TeamMemberModel.team_id.in_(membership_team_ids))
             .distinct()
-            .order_by(func.lower(TeamMemberModel.user_id).asc())
+            .order_by(TeamMemberModel.user_id.asc())
         )
         return [str(row[0] or "") for row in result.all() if str(row[0] or "").strip()]
