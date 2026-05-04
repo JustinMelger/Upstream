@@ -113,6 +113,8 @@ async def load_explore_videos_background(
     if state.videos_loading:
         return
 
+    previous_videos = list(state.videos or [])
+    previous_review_summaries = dict(state.video_review_summary_by_video_id or {})
     state.videos_loading = True
     refresh_ui()
     try:
@@ -120,8 +122,8 @@ async def load_explore_videos_background(
         state.videos = list(videos_bundle.videos or [])
         state.video_review_summary_by_video_id = dict(videos_bundle.review_summary_by_video_id or {})
     except (ApiError, TimeoutError) as exc:
-        state.videos = []
-        state.video_review_summary_by_video_id = {}
+        state.videos = previous_videos
+        state.video_review_summary_by_video_id = previous_review_summaries
         notify_warning(str(exc))
     finally:
         state.videos_loading = False

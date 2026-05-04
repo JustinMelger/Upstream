@@ -33,6 +33,9 @@ class SessionStore:
         Args:
             token: Token to store, or `None` to clear it.
         """
+        current_token = app.storage.user.get(self._TOKEN_KEY)
+        if current_token != token:
+            app.storage.user.pop(self._USER_KEY, None)
         if token:
             app.storage.user[self._TOKEN_KEY] = token
         else:
@@ -73,7 +76,8 @@ class SessionStore:
         Raises:
             ApiError: If authentication fails or the backend response is invalid.
         """
-        payload = await api.post("/auth/login", {"username": username, "password": password}, token_override=None)
+        self.clear()
+        payload = await api.post("/auth/login", {"username": username, "password": password}, token_override="")
         token = str(payload.get("token") or "")
         if not token:
             raise ApiError(status_code=500, message="missing_token")
