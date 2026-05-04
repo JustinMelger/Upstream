@@ -10,6 +10,7 @@ from pathlib import Path
 
 from nicegui import app, ui
 
+
 _THEME_DIR = Path(__file__).with_name("theme")
 _THEME_CSS_FILES = ("foundation.css", "home.css", "features.css")
 _THEME_STATIC_URL = "/lp-static/theme"
