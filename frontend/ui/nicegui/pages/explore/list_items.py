@@ -13,6 +13,7 @@ from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.domains.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.domains.courses.media import (
     extract_youtube_video_id,
+    preferred_preview_image_url,
     website_favicon_url,
     youtube_thumbnail_url,
 )
@@ -54,7 +55,7 @@ def _render_browse_row(
 
 def _resolve_row_image_url(*, row: dict[str, Any], kind: str) -> str:
     """Resolve a compact preview image URL for Explore rows."""
-    payload_image = str(row.get("preview_image_url") or "").strip()
+    payload_image = preferred_preview_image_url(row.get("preview_image_url"))
     if payload_image:
         return payload_image
 
@@ -129,11 +130,11 @@ def render_path_item(
     on_toggle_path_selection: Callable[[int], Awaitable[None]],
     open_path: Callable[[int], None],
 ) -> None:
-    """Render one compact path card item for Explore."""
+    """Render one path row item for Explore."""
     with ui.element("div").classes(item_classes):
-        _ = on_toggle_path_selection
         path_id = int(path.get("id") or 0)
         is_tracked = path_id in state.selected_by_path_id
+        _ = on_toggle_path_selection
         _ = username
         _ = is_admin
         detail = state.selected_detail_by_path_id.get(path_id) or {}
@@ -155,27 +156,22 @@ def render_path_item(
             ui.navigate.to(f"/explore/paths/{path_id}?view=reviews")
 
         review_summary = format_review_summary(state.path_review_summary_by_id.get(path_id), style="star")
-        subtitle = (
+        progress_text = (
             f"{0 if not is_tracked else max(0, int(detail.get('completed_count') or 0))} / {max(0, total_courses)} courses"
         )
-        meta_parts = []
+        subtitle_parts = [progress_text]
         if is_tracked:
-            meta_parts.append("Selected")
-        if review_summary:
-            meta_parts.append(review_summary)
-        with ui.card().classes("w-full lp-card lp-explore-path-compact"):
-            with ui.column().classes("w-full gap-3"):
-                with ui.row().classes("w-full items-center gap-3 no-wrap"):
-                    with ui.element("div").classes("lp-explore-row-icon"):
-                        ui.icon("route").classes("text-lg")
-                    with ui.column().classes("gap-1 min-w-0 flex-1"):
-                        ui.label(str(path.get("name") or path.get("title") or "")).classes("lp-explore-row-title")
-                        ui.label(subtitle).classes("lp-explore-row-subtitle")
-                    ui.button("Open details", on_click=lambda: open_path(path_id)).props("unelevated color=primary")
-                if meta_parts:
-                    ui.label(" · ".join(meta_parts)).classes("lp-explore-row-meta")
-                with ui.row().classes("items-center justify-end gap-2 w-full"):
-                    ui.button("Review", on_click=_open_path_reviews).props("outline color=primary")
+            subtitle_parts.append("Selected")
+        _render_browse_row(
+            icon="route",
+            title=str(path.get("name") or path.get("title") or ""),
+            subtitle=" · ".join(subtitle_parts),
+            meta=review_summary or "No reviews yet",
+            primary_label="Open details",
+            on_primary=lambda: open_path(path_id),
+            secondary_label="Review",
+            on_secondary=_open_path_reviews,
+        )
 
 
 def render_article_item(

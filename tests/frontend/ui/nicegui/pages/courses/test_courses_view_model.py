@@ -84,3 +84,22 @@ def test_map_course_card_view_uses_favicon_fallback_for_non_youtube_without_prev
     assert vm.has_video_preview is False
     assert vm.thumbnail_url == "https://www.google.com/s2/favicons?domain=fastapi.tiangolo.com&sz=256"
     assert vm.thumbnail_fallback_url == ""
+
+
+@pytest.mark.unit
+def test_map_course_card_view_rejects_low_quality_preview_image() -> None:
+    row = {
+        "id": 10,
+        "created_by": "alice",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "url": "https://fastapi.tiangolo.com/tutorial/testing/",
+        "preview_image_url": "https://cdn.example.com/logo-32x32.png",
+    }
+    vm = view_model.map_course_card_view(
+        course_row=row,
+        tracked_row=None,
+        review_summary_row=None,
+    )
+    assert vm.thumbnail_url == "https://www.google.com/s2/favicons?domain=fastapi.tiangolo.com&sz=256"
+    assert vm.thumbnail_fallback_url == ""

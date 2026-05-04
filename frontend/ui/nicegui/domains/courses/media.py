@@ -7,6 +7,9 @@ from urllib.parse import parse_qs, quote, urlparse
 
 
 _YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+_DIMENSION_HINT_RE = re.compile(r"(?<!\d)(\d{1,4})[xX](\d{1,4})(?!\d)")
+_SIZE_PARAM_NAMES = {"w", "width", "h", "height", "size", "sz"}
+_LOW_QUALITY_KEYWORDS = ("favicon", "icon", "logo", "avatar", "sprite")
 
 
 def extract_youtube_video_id(url: str | None) -> str | None:
@@ -59,6 +62,45 @@ def website_favicon_url(source_url: str | None) -> str:
     if not host:
         return ""
     return f"https://www.google.com/s2/favicons?domain={quote(host)}&sz=256"
+
+
+def is_low_quality_preview_image_url(image_url: str | None) -> bool:
+    """Return whether a preview image URL looks too small/icon-like for card media."""
+    raw = str(image_url or "").strip()
+    if not raw:
+        return False
+
+    parsed = urlparse(raw)
+    haystack = " ".join(part for part in (str(parsed.path or "").lower(), str(parsed.query or "").lower()) if part)
+    if any(keyword in haystack for keyword in _LOW_QUALITY_KEYWORDS):
+        return True
+
+    for match in _DIMENSION_HINT_RE.finditer(haystack):
+        try:
+            width = int(match.group(1))
+            height = int(match.group(2))
+        except (TypeError, ValueError):
+            continue
+        if width <= 96 and height <= 96:
+            return True
+
+    query = parse_qs(parsed.query)
+    size_hints: list[int] = []
+    for key in _SIZE_PARAM_NAMES:
+        for value in list(query.get(key, [])):
+            try:
+                size_hints.append(int(str(value).strip()))
+            except (TypeError, ValueError):
+                continue
+    return bool(size_hints) and max(size_hints) <= 96
+
+
+def preferred_preview_image_url(image_url: str | None) -> str:
+    """Normalize preview image URLs so obvious low-quality assets fall back to local placeholders."""
+    raw = str(image_url or "").strip()
+    if not raw:
+        return ""
+    return "" if is_low_quality_preview_image_url(raw) else raw
 
 
 def render_youtube_embed(embed_url: str, *, title: str = "Course video preview") -> str:
