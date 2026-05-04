@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 
+from frontend.ui.nicegui.core.api_client import ApiError
 from frontend.ui.nicegui.domains.videos.controller import VideosPageController
 
 
@@ -65,3 +66,23 @@ async def test_videos_controller_load_list_bundle() -> None:
 
     assert [int(v["id"]) for v in bundle.videos] == [7]
     assert int((bundle.review_summary_by_video_id[7])["review_count"]) == 2
+
+
+@pytest.mark.anyio
+async def test_videos_controller_load_list_bundle_keeps_videos_when_review_summary_fails() -> None:
+    class _BundleApi(_Api):
+        async def get(self, path: str, *, params: dict[str, Any] | None = None) -> Any:
+            self.calls.append(("GET", path, params))
+            if path == "/videos":
+                return [{"id": 7, "title": "Video 7"}]
+            if path == "/videos/reviews/summary":
+                raise ApiError(status_code=503, message="summary_unavailable")
+            return []
+
+    api = _BundleApi()
+    controller = VideosPageController(api=api)  # type: ignore[arg-type]
+
+    bundle = await controller.load_list_bundle()
+
+    assert [int(v["id"]) for v in bundle.videos] == [7]
+    assert bundle.review_summary_by_video_id == {}
