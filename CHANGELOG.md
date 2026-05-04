@@ -19,6 +19,21 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [0.12.7](https://github.com/JustinMelger/learning-platform/compare/v0.12.6...v0.12.7) (2026-05-04)
+
+
+### Bug Fixes
+
+* admin totals when no team ([ae18fd0](https://github.com/JustinMelger/learning-platform/commit/ae18fd0b493da0a9903f209a695074054f7363f1))
+* compute team toals ([80c9f3c](https://github.com/JustinMelger/learning-platform/commit/80c9f3c09fd5b4f83a4d7b0b1ef81fceedf4dc56))
+* course row alow favicon fallback ([71eb9e7](https://github.com/JustinMelger/learning-platform/commit/71eb9e728190b5853bb8d26d80602db9a62aa681))
+* favicon fallback ([3d6e6e5](https://github.com/JustinMelger/learning-platform/commit/3d6e6e530ff2645696c1393434ddff661804609a))
+* loosen guard on blurry images ([414cf99](https://github.com/JustinMelger/learning-platform/commit/414cf9986e2c0bf9773c684d485e7f61ee3032e4))
+* sort query ([e5db8dc](https://github.com/JustinMelger/learning-platform/commit/e5db8dca3acf6812df73bb858b5ef91a73fb75a0))
+* team totals profile not visible for user ([06854a6](https://github.com/JustinMelger/learning-platform/commit/06854a6a275151b2e8bc3b94da5e41ac209cb5c5))
+* test fallback favicon ([610396c](https://github.com/JustinMelger/learning-platform/commit/610396cc15a437b8631420d38a750cd0d6c01730))
+* video disapper in explore ([3bfd4a7](https://github.com/JustinMelger/learning-platform/commit/3bfd4a7406586436dfdbdef109067a8d7603f50c))
+
 ## [0.12.6](https://github.com/JustinMelger/learning-platform/compare/v0.12.5...v0.12.6) (2026-05-04)
 
 
