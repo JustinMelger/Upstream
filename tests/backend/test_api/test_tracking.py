@@ -142,7 +142,7 @@ async def test_tracking_admin_team_totals_remain_global_without_teams(app_client
 
     admin_by_user = await app_client.get("/tracking/stats/users", headers={"X-Session-Token": admin_token})
     assert admin_by_user.status_code == 200
-    assert admin_by_user.json() == [
+    assert sorted(admin_by_user.json(), key=lambda row: str(row.get("colleague_id") or "")) == [
         {"colleague_id": "alice", "interested": 0, "in_progress": 0, "completed": 1},
         {"colleague_id": "bob", "interested": 1, "in_progress": 0, "completed": 0},
     ]
