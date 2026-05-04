@@ -11,7 +11,6 @@ from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.domains.courses.media import (
     extract_youtube_video_id,
     preferred_preview_image_url,
-    website_favicon_url,
     youtube_embed_url,
     youtube_thumbnail_fallback_url,
     youtube_thumbnail_url,
@@ -63,7 +62,6 @@ def map_course_card_view(
     video_id = extract_youtube_video_id(source_url)
     payload_thumbnail = preferred_preview_image_url(course_row.get("preview_image_url"))
     local_thumbnail = youtube_thumbnail_url(video_id) if video_id else ""
-    website_thumbnail = website_favicon_url(source_url) if (not video_id) else ""
     return CourseCardView(
         card_class_suffix=f" lp-course-card--{status}" if status else "",
         is_new=is_new,
@@ -74,7 +72,7 @@ def map_course_card_view(
         tracking_chip_cls=tracking_chip_class((tracked_row or {}).get("status")),
         has_video_preview=bool(video_id),
         video_embed_url=youtube_embed_url(video_id) if video_id else "",
-        thumbnail_url=payload_thumbnail or local_thumbnail or website_thumbnail,
+        thumbnail_url=payload_thumbnail or local_thumbnail,
         thumbnail_fallback_url=(
             youtube_thumbnail_fallback_url(video_id)
             if video_id and (payload_thumbnail == local_thumbnail or not payload_thumbnail)

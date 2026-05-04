@@ -318,4 +318,40 @@ def test_render_video_item_rejects_low_quality_preview_image(monkeypatch) -> Non
         state=type("_State", (), {"video_review_summary_by_video_id": {}})(),
     )
 
-    assert captured["image_url"] == "https://www.google.com/s2/favicons?domain=example.com&sz=256"
+    assert captured["image_url"] == ""
+
+
+def test_render_course_item_uses_default_icon_when_non_youtube_has_no_preview(monkeypatch) -> None:  # noqa: ANN001
+    captured: dict[str, object] = {}
+
+    def _capture_row(**kwargs):  # noqa: ANN001
+        captured.update(kwargs)
+
+    monkeypatch.setattr(list_items, "_render_browse_row", _capture_row)
+
+    list_items.render_course_item(
+        course={
+            "id": 7,
+            "title": "Tracked course",
+            "provider": "Udemy",
+            "url": "https://puurdata.udemy.com/course/pydantic/",
+            "preview_image_url": "",
+        },
+        item_classes="x",
+        state=type(
+            "_State",
+            (),
+            {
+                "tracking_by_course_id": {},
+                "course_review_summary_by_course_id": {},
+            },
+        )(),
+        username="alice",
+        is_admin=False,
+        course_actions_builder=lambda *_: _FakeActions(),
+        item_type="course",
+        on_set_tracking=lambda *_: None,
+        on_clear_tracking=lambda *_: None,
+    )
+
+    assert captured["image_url"] == ""

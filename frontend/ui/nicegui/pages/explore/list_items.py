@@ -14,7 +14,6 @@ from frontend.ui.nicegui.domains.articles.actions import build_article_card_acti
 from frontend.ui.nicegui.domains.courses.media import (
     extract_youtube_video_id,
     preferred_preview_image_url,
-    website_favicon_url,
     youtube_thumbnail_url,
 )
 from frontend.ui.nicegui.domains.courses.ui_glue import normalize_course_tracking_status
@@ -67,7 +66,7 @@ def _resolve_row_image_url(*, row: dict[str, Any], kind: str) -> str:
         video_id = extract_youtube_video_id(source_url)
         if video_id:
             return youtube_thumbnail_url(video_id)
-    return website_favicon_url(source_url)
+    return ""
 
 
 def render_course_item(
