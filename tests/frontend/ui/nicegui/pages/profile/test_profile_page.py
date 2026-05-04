@@ -70,7 +70,7 @@ def test_render_team_stats_section_empty_state_points_to_next_steps(monkeypatch)
     profile_page._render_team_stats_section(ctx=ctx)
 
     assert (
-        "No team contributor data yet. Open Teams to invite teammates or switch to My stats to review your own progress."
+        "No contributor data yet. Open Teams to invite teammates or switch to My stats to review your own progress."
         in fake_ui.labels
     )
     assert (
