@@ -40,6 +40,16 @@ class ProfileStatsPageContext:
     meta_text: str = ""
 
 
+def _aggregate_scope_label(*, is_admin: bool) -> str:
+    """Return the aggregate stats label for the current viewer."""
+    return "All users" if is_admin else "All teams"
+
+
+def _aggregate_scope_noun(*, is_admin: bool) -> str:
+    """Return the scope noun used in section copy."""
+    return "users" if is_admin else "team"
+
+
 def _safe_int(value: Any) -> int:
     """Parse int-like value with safe fallback."""
     try:
@@ -167,11 +177,9 @@ def _render_profile_summary_rail(*, ctx: ProfileStatsPageContext, on_refresh: An
 
 
 def _render_mode_toggle(*, ctx: ProfileStatsPageContext, on_refresh: Any) -> None:
-    """Render the admin stats mode toggle."""
-    if not ctx.is_admin:
-        return
+    """Render the profile stats mode toggle."""
     mode_control = (
-        ui.toggle({"mine": "My stats", "team": "Team totals"}, value=ctx.mode_value)
+        ui.toggle({"mine": "My stats", "team": _aggregate_scope_label(is_admin=ctx.is_admin)}, value=ctx.mode_value)
         .props("unelevated dense no-caps")
         .classes("lp-profile-mode-toggle")
     )
@@ -188,7 +196,9 @@ def _render_learning_stats_header(*, ctx: ProfileStatsPageContext, on_refresh: A
     with ui.row().classes("items-center w-full"):
         with ui.column().classes("gap-0"):
             ui.label("Learning stats").classes("lp-profile-section-title")
-            ui.label("Quick personal overview with optional team drill-down.").classes("lp-profile-muted")
+            ui.label(
+                f"Quick personal overview with optional {_aggregate_scope_label(is_admin=ctx.is_admin).lower()} drill-down."
+            ).classes("lp-profile-muted")
         ui.space()
         _render_mode_toggle(ctx=ctx, on_refresh=on_refresh)
 
@@ -238,18 +248,23 @@ def _render_team_stats_section(*, ctx: ProfileStatsPageContext) -> None:
     if not should_render_team_stats(is_admin=ctx.is_admin, mode_value=ctx.mode_value):
         return
 
+    scope_label = _aggregate_scope_label(is_admin=ctx.is_admin)
+    scope_noun = _aggregate_scope_noun(is_admin=ctx.is_admin)
     contributors = top_contributors(ctx.state.team_stats_by_user, limit=6)
-    ui.label("Team stats").classes("lp-profile-section-title mt-1")
-    ui.label("See how your team is progressing across contributors and totals.").classes("lp-profile-muted mb-1")
+    ui.label(scope_label).classes("lp-profile-section-title mt-1")
+    ui.label(f"See how your {scope_noun} are progressing across contributors and totals.").classes("lp-profile-muted mb-1")
     with ui.element("section").classes("lp-home-grid-12"):
         with ui.element("div").classes("lp-home-span-12"):
             with ui.card().classes("lp-card w-full lp-profile-chart-card"):
                 ui.label("Top contributors this week").classes("lp-profile-card-title")
                 ui.label("Recent contribution momentum across your workspace.").classes("lp-profile-card-subtitle")
                 if not contributors:
-                    ui.label(
-                        "No team contributor data yet. Open Teams to invite teammates or switch to My stats to review your own progress."
-                    ).classes("lp-profile-muted")
+                    empty_copy = (
+                        "No contributor data yet. Open Teams to invite teammates or switch to My stats to review your own progress."
+                        if not ctx.is_admin
+                        else "No contributor data yet. Ask teammates to start tracking learning or switch to My stats to review your own progress."
+                    )
+                    ui.label(empty_copy).classes("lp-profile-muted")
                 elif len(contributors) == 1:
                     row = contributors[0]
                     who = str(row.get("who") or "Unknown")
@@ -264,13 +279,16 @@ def _render_team_stats_section(*, ctx: ProfileStatsPageContext) -> None:
     with ui.element("section").classes("lp-home-grid-12"):
         with ui.element("div").classes("lp-home-span-12"):
             with ui.card().classes("lp-card w-full lp-profile-table-card"):
-                ui.label("Team learning totals").classes("lp-profile-card-title")
-                ui.label("Progress distribution across team members.").classes("lp-profile-card-subtitle")
+                ui.label(f"{scope_label} learning totals").classes("lp-profile-card-title")
+                ui.label(f"Progress distribution across {scope_noun} members.").classes("lp-profile-card-subtitle")
                 rows = _build_team_totals_rows(team_stats_by_user=ctx.state.team_stats_by_user)
                 if not rows:
-                    ui.label(
+                    empty_copy = (
                         "No team stats available yet. Open Teams to build your workspace or switch to My stats to review your own activity."
-                    ).classes("lp-profile-muted")
+                        if not ctx.is_admin
+                        else "No user totals available yet. Ask teammates to start tracking learning or switch to My stats to review your own activity."
+                    )
+                    ui.label(empty_copy).classes("lp-profile-muted")
                     return
                 ui.table(
                     columns=[

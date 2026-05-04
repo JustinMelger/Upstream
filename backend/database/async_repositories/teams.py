@@ -318,3 +318,16 @@ class TeamsRepository(RepositoryDateTimeCodec):
         """Return usernames for one team."""
         result = await self.session.execute(select(TeamMemberModel.user_id).where(TeamMemberModel.team_id == int(team_id)))
         return [str(row[0] or "") for row in result.all()]
+
+    async def list_workspace_user_ids(self, *, user_id: str) -> list[str]:
+        """Return distinct usernames across every team the user belongs to."""
+        membership_team_ids = select(TeamMemberModel.team_id).where(
+            func.lower(TeamMemberModel.user_id) == func.lower(str(user_id))
+        )
+        result = await self.session.execute(
+            select(TeamMemberModel.user_id)
+            .where(TeamMemberModel.team_id.in_(membership_team_ids))
+            .distinct()
+            .order_by(TeamMemberModel.user_id.asc())
+        )
+        return [str(row[0] or "") for row in result.all() if str(row[0] or "").strip()]

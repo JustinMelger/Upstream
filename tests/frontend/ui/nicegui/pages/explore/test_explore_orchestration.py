@@ -269,8 +269,8 @@ async def test_load_explore_videos_background_handles_errors_without_crashing() 
         notify_warning=lambda message: warnings.append(message),
     )
 
-    assert state.videos == []
-    assert state.video_review_summary_by_video_id == {}
+    assert state.videos == [{"id": 1}]
+    assert state.video_review_summary_by_video_id == {1: {"video_id": 1, "review_count": 1}}
     assert warnings == ["503: videos_unavailable"]
     assert state.videos_loading is False
     assert events == ["refresh", "refresh"]

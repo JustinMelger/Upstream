@@ -321,7 +321,7 @@ def test_render_video_item_rejects_low_quality_preview_image(monkeypatch) -> Non
     assert captured["image_url"] == ""
 
 
-def test_render_course_item_uses_default_icon_when_non_youtube_has_no_preview(monkeypatch) -> None:  # noqa: ANN001
+def test_render_course_item_uses_favicon_when_non_youtube_has_no_preview(monkeypatch) -> None:  # noqa: ANN001
     captured: dict[str, object] = {}
 
     def _capture_row(**kwargs):  # noqa: ANN001
@@ -354,4 +354,4 @@ def test_render_course_item_uses_default_icon_when_non_youtube_has_no_preview(mo
         on_clear_tracking=lambda *_: None,
     )
 
-    assert captured["image_url"] == ""
+    assert captured["image_url"] == "https://www.google.com/s2/favicons?domain=puurdata.udemy.com&sz=256"

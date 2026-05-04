@@ -103,6 +103,23 @@ class TrackingRepository(RepositoryDateTimeCodec):
             counts[str(status)] = int(count)
         return counts
 
+    async def stats_for_users(self, colleague_ids: list[str]) -> dict[str, int]:
+        """Compute status counts across a set of colleagues."""
+        normalized_ids = sorted(
+            {str(user_id or "").strip().lower() for user_id in list(colleague_ids or []) if str(user_id or "").strip()}
+        )
+        counts = {status: 0 for status in STATUS_VALUES}
+        if not normalized_ids:
+            return counts
+        result = await self.session.execute(
+            select(TrackingModel.status, func.count().label("count"))
+            .where(func.lower(TrackingModel.colleague_id).in_(normalized_ids))
+            .group_by(TrackingModel.status)
+        )
+        for status, count in result.all():
+            counts[str(status)] = int(count)
+        return counts
+
     async def stats_by_user(self) -> list[dict]:
         """Compute status counts grouped by colleague.
 
@@ -116,6 +133,34 @@ class TrackingRepository(RepositoryDateTimeCodec):
                 func.sum(case((TrackingModel.status == "in_progress", 1), else_=0)).label("in_progress"),
                 func.sum(case((TrackingModel.status == "completed", 1), else_=0)).label("completed"),
             ).group_by(TrackingModel.colleague_id)
+        )
+        return [
+            {
+                "colleague_id": row.colleague_id,
+                "interested": int(row.interested or 0),
+                "in_progress": int(row.in_progress or 0),
+                "completed": int(row.completed or 0),
+            }
+            for row in result.all()
+        ]
+
+    async def stats_by_users(self, colleague_ids: list[str]) -> list[dict]:
+        """Compute status counts grouped by colleague for a selected user set."""
+        normalized_ids = sorted(
+            {str(user_id or "").strip().lower() for user_id in list(colleague_ids or []) if str(user_id or "").strip()}
+        )
+        if not normalized_ids:
+            return []
+        result = await self.session.execute(
+            select(
+                TrackingModel.colleague_id,
+                func.sum(case((TrackingModel.status == "interested", 1), else_=0)).label("interested"),
+                func.sum(case((TrackingModel.status == "in_progress", 1), else_=0)).label("in_progress"),
+                func.sum(case((TrackingModel.status == "completed", 1), else_=0)).label("completed"),
+            )
+            .where(func.lower(TrackingModel.colleague_id).in_(normalized_ids))
+            .group_by(TrackingModel.colleague_id)
+            .order_by(func.lower(TrackingModel.colleague_id).asc())
         )
         return [
             {

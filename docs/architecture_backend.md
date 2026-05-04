@@ -236,8 +236,9 @@ erDiagram
 - Recent activity and stats with explicit auth rules:
   - `GET /tracking?colleague_id=X`: self always allowed, other users require admin.
   - `GET /tracking/stats?colleague_id=X`: self always allowed, other users require admin.
-  - `GET /tracking/stats` without `colleague_id`: team totals, admin only.
-  - `GET /tracking/stats/users` and `GET /tracking/recent`: admin only.
+  - `GET /tracking/stats` without `colleague_id`: team totals for any authenticated user.
+  - `GET /tracking/stats/users`: per-user team totals for any authenticated user.
+  - `GET /tracking/recent`: admin only.
 
 ### Articles service
 - Allow colleagues to share links (title, URL, optional tags).
