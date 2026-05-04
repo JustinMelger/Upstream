@@ -98,4 +98,7 @@ def test_render_team_stats_section_admin_copy_matches_global_scope(monkeypatch) 
     assert "All users" in fake_ui.labels
     assert "See how your users are progressing across contributors and totals." in fake_ui.labels
     assert "All users learning totals" in fake_ui.labels
-    assert "No user totals available yet. Ask teammates to start tracking learning or switch to My stats to review your own activity." in fake_ui.labels
+    assert (
+        "No user totals available yet. Ask teammates to start tracking learning or switch to My stats to review your own activity."
+        in fake_ui.labels
+    )
