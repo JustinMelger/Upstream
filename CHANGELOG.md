@@ -19,6 +19,14 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [0.12.3](https://github.com/JustinMelger/learning-platform/compare/v0.12.2...v0.12.3) (2026-05-04)
+
+
+### Bug Fixes
+
+* cf websocket polling ([b73515b](https://github.com/JustinMelger/learning-platform/commit/b73515bf3e2e73dc7afb3bbe6963a2d2bd45568c))
+* type hint ([13cd7cc](https://github.com/JustinMelger/learning-platform/commit/13cd7cc96136c6de2f7f393bd8080c797b4e7831))
+
 ## [0.12.2](https://github.com/JustinMelger/learning-platform/compare/v0.12.1...v0.12.2) (2026-05-04)
 
 
