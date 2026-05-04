@@ -19,6 +19,17 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [0.12.6](https://github.com/JustinMelger/learning-platform/compare/v0.12.5...v0.12.6) (2026-05-04)
+
+
+### Bug Fixes
+
+* default icon instead of favicoon ([2f1105c](https://github.com/JustinMelger/learning-platform/commit/2f1105cb8de0a2c28ed9017eb532e52f7d0c20ee))
+* default icon when image unclear ([f852e9c](https://github.com/JustinMelger/learning-platform/commit/f852e9c6f8fb5d291a33b9ef9e5fe16d614450ef))
+* rm quasar loading bar ([f9d7222](https://github.com/JustinMelger/learning-platform/commit/f9d722223fa5e6e47e4e2ae0d756e894802d4dd8))
+* video default icon ([784a390](https://github.com/JustinMelger/learning-platform/commit/784a3907306f41a631c8745bfc03b6a9b2a82f60))
+* video not visible in explore ([8d0a574](https://github.com/JustinMelger/learning-platform/commit/8d0a5748237eee286d6b174129c4c0d11c71c53c))
+
 ## [0.12.5](https://github.com/JustinMelger/learning-platform/compare/v0.12.4...v0.12.5) (2026-05-04)
 
 
