@@ -19,6 +19,13 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [0.12.5](https://github.com/JustinMelger/learning-platform/compare/v0.12.4...v0.12.5) (2026-05-04)
+
+
+### Bug Fixes
+
+* js var none ([ff8d476](https://github.com/JustinMelger/learning-platform/commit/ff8d476f28ce632f5cbb9923ecc22e7af943bbc2))
+
 ## [0.12.4](https://github.com/JustinMelger/learning-platform/compare/v0.12.3...v0.12.4) (2026-05-04)
 
 
