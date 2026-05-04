@@ -147,7 +147,7 @@ def render_path_item(
             except (TypeError, ValueError):
                 inferred_total = 0
         tracked_total = count_course_items(detail=detail) if is_tracked else 0
-        total_courses = tracked_total if is_tracked else max(0, inferred_total)
+        total_courses = tracked_total if (is_tracked and tracked_total > 0) else max(0, inferred_total)
         if total_courses <= 0 and isinstance(detail, dict):
             total_courses = count_course_items(detail=detail)
 
