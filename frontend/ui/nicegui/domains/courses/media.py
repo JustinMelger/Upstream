@@ -109,9 +109,12 @@ def preferred_preview_image_url(image_url: str | None) -> str:
 
 def preferred_card_image_url(*, image_url: str | None, source_url: str | None, allow_favicon_fallback: bool = True) -> str:
     """Return the preferred card image URL, optionally falling back to a generic website favicon."""
-    normalized_preview = preferred_preview_image_url(image_url)
+    raw_preview = str(image_url or "").strip()
+    normalized_preview = preferred_preview_image_url(raw_preview)
     if normalized_preview:
         return normalized_preview
+    if raw_preview:
+        return ""
     if not allow_favicon_fallback:
         return ""
     return website_favicon_url(source_url)
