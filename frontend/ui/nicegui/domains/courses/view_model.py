@@ -10,7 +10,7 @@ from frontend.ui.nicegui.core.datetime_utils import is_recent, parse_iso_datetim
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.domains.courses.media import (
     extract_youtube_video_id,
-    preferred_preview_image_url,
+    preferred_card_image_url,
     youtube_embed_url,
     youtube_thumbnail_fallback_url,
     youtube_thumbnail_url,
@@ -60,7 +60,11 @@ def map_course_card_view(
     is_new = (not is_updated) and is_recent(created_at)
     source_url = str(course_row.get("url") or "").strip()
     video_id = extract_youtube_video_id(source_url)
-    payload_thumbnail = preferred_preview_image_url(course_row.get("preview_image_url"))
+    payload_thumbnail = preferred_card_image_url(
+        image_url=course_row.get("preview_image_url"),
+        source_url=source_url,
+        allow_favicon_fallback=not bool(video_id),
+    )
     local_thumbnail = youtube_thumbnail_url(video_id) if video_id else ""
     return CourseCardView(
         card_class_suffix=f" lp-course-card--{status}" if status else "",

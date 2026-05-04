@@ -82,7 +82,7 @@ def test_map_course_card_view_uses_default_icon_when_non_youtube_has_no_preview(
         review_summary_row=None,
     )
     assert vm.has_video_preview is False
-    assert vm.thumbnail_url == ""
+    assert vm.thumbnail_url == "https://www.google.com/s2/favicons?domain=fastapi.tiangolo.com&sz=256"
     assert vm.thumbnail_fallback_url == ""
 
 
@@ -103,3 +103,21 @@ def test_map_course_card_view_rejects_low_quality_preview_image() -> None:
     )
     assert vm.thumbnail_url == ""
     assert vm.thumbnail_fallback_url == ""
+
+
+@pytest.mark.unit
+def test_map_course_card_view_keeps_large_logo_style_preview_image() -> None:
+    row = {
+        "id": 11,
+        "created_by": "alice",
+        "created_at": "2026-01-01T00:00:00Z",
+        "updated_at": "2026-01-01T00:00:00Z",
+        "url": "https://example.com/course",
+        "preview_image_url": "https://cdn.example.com/assets/logo-social-1200x630.png",
+    }
+    vm = view_model.map_course_card_view(
+        course_row=row,
+        tracked_row=None,
+        review_summary_row=None,
+    )
+    assert vm.thumbnail_url == "https://cdn.example.com/assets/logo-social-1200x630.png"

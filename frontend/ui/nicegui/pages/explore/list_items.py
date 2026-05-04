@@ -13,7 +13,7 @@ from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.domains.articles.actions import build_article_card_actions
 from frontend.ui.nicegui.domains.courses.media import (
     extract_youtube_video_id,
-    preferred_preview_image_url,
+    preferred_card_image_url,
     youtube_thumbnail_url,
 )
 from frontend.ui.nicegui.domains.courses.ui_glue import normalize_course_tracking_status
@@ -54,11 +54,15 @@ def _render_browse_row(
 
 def _resolve_row_image_url(*, row: dict[str, Any], kind: str) -> str:
     """Resolve a compact preview image URL for Explore rows."""
-    payload_image = preferred_preview_image_url(row.get("preview_image_url"))
+    source_url = str(row.get("url") or "").strip()
+    payload_image = preferred_card_image_url(
+        image_url=row.get("preview_image_url"),
+        source_url=source_url,
+        allow_favicon_fallback=kind not in {"course", "video"},
+    )
     if payload_image:
         return payload_image
 
-    source_url = str(row.get("url") or "").strip()
     if not source_url:
         return ""
 

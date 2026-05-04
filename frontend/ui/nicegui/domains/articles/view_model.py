@@ -8,7 +8,7 @@ from typing import Any
 from frontend.ui.nicegui.core.datetime_utils import format_date
 from frontend.ui.nicegui.core.summary_formatters import format_review_summary
 from frontend.ui.nicegui.domains.articles.ui_glue import article_is_new, parse_tags
-from frontend.ui.nicegui.domains.courses.media import preferred_preview_image_url
+from frontend.ui.nicegui.domains.courses.media import preferred_card_image_url
 
 
 @dataclass(slots=True)
@@ -40,5 +40,8 @@ def map_article_card_view(
         tags=parse_tags(str(article_row.get("tags") or "")),
         summary_text=summary,
         subtitle_text=" · ".join([bit for bit in subtitle_bits if bit]),
-        thumbnail_url=preferred_preview_image_url(article_row.get("preview_image_url")),
+        thumbnail_url=preferred_card_image_url(
+            image_url=article_row.get("preview_image_url"),
+            source_url=article_row.get("url"),
+        ),
     )

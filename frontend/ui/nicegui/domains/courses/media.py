@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, quote, urlparse
 _YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 _DIMENSION_HINT_RE = re.compile(r"(?<!\d)(\d{1,4})[xX](\d{1,4})(?!\d)")
 _SIZE_PARAM_NAMES = {"w", "width", "h", "height", "size", "sz"}
-_LOW_QUALITY_KEYWORDS = ("favicon", "icon", "logo", "avatar", "sprite")
+_LOW_QUALITY_KEYWORDS = ("favicon", "avatar", "sprite")
 
 
 def extract_youtube_video_id(url: str | None) -> str | None:
@@ -75,6 +75,10 @@ def is_low_quality_preview_image_url(image_url: str | None) -> bool:
     if any(keyword in haystack for keyword in _LOW_QUALITY_KEYWORDS):
         return True
 
+    host = str(parsed.hostname or "").strip().lower()
+    if host in {"www.google.com", "google.com"} and str(parsed.path or "").startswith("/s2/favicons"):
+        return True
+
     for match in _DIMENSION_HINT_RE.finditer(haystack):
         try:
             width = int(match.group(1))
@@ -101,6 +105,16 @@ def preferred_preview_image_url(image_url: str | None) -> str:
     if not raw:
         return ""
     return "" if is_low_quality_preview_image_url(raw) else raw
+
+
+def preferred_card_image_url(*, image_url: str | None, source_url: str | None, allow_favicon_fallback: bool = True) -> str:
+    """Return the preferred card image URL, optionally falling back to a generic website favicon."""
+    normalized_preview = preferred_preview_image_url(image_url)
+    if normalized_preview:
+        return normalized_preview
+    if not allow_favicon_fallback:
+        return ""
+    return website_favicon_url(source_url)
 
 
 def render_youtube_embed(embed_url: str, *, title: str = "Course video preview") -> str:
