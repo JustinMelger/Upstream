@@ -57,7 +57,12 @@ services:
     environment:
       - BACKEND_URL=http://api:8000
       - NICEGUI_STORAGE_SECRET=dev-storage-secret-change-me
+      - NICEGUI_HOST=0.0.0.0
+      - NICEGUI_PORT=8080
+      - NICEGUI_SHOW=0
       - NICEGUI_RELOAD=0
+      - NICEGUI_RECONNECT_TIMEOUT=30
+      - NICEGUI_SOCKET_TRANSPORTS=polling,websocket
       - NICEGUI_WEBSOCKET_MAX_BYTES=10000000
       - NICEGUI_MESSAGE_HISTORY_LENGTH=0
       - PYTHONPATH=/app

@@ -48,10 +48,15 @@ def create_app() -> None:
 def main() -> None:
     """Start the NiceGUI dev server."""
     create_app()
+    core.app.config.socket_io_js_transports = list(settings.socket_transports)
     core.sio.eio.max_http_buffer_size = max(1_000_000, int(settings.websocket_max_bytes))
     ui.run(
+        host=settings.host,
+        port=settings.port,
         title="Learning Hub",
         reload=settings.reload,
+        reconnect_timeout=settings.reconnect_timeout_s,
+        show=settings.show,
         storage_secret=settings.storage_secret,
         message_history_length=max(0, int(settings.message_history_length)),
     )
