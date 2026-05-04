@@ -10,7 +10,6 @@ from pathlib import Path
 
 from nicegui import app, ui
 
-
 _THEME_DIR = Path(__file__).with_name("theme")
 _THEME_CSS_FILES = ("foundation.css", "home.css", "features.css")
 _THEME_STATIC_URL = "/lp-static/theme"
@@ -21,8 +20,6 @@ _FONT_HEAD_HTML = """
 """
 _NICEGUI_JS_COMPAT_HTML = """
 <script>
-var True = true;
-var False = false;
 var None = null;
 </script>
 """
