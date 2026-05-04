@@ -55,10 +55,11 @@ def _render_browse_row(
 def _resolve_row_image_url(*, row: dict[str, Any], kind: str) -> str:
     """Resolve a compact preview image URL for Explore rows."""
     source_url = str(row.get("url") or "").strip()
+    video_id = extract_youtube_video_id(source_url) if kind in {"course", "video"} else None
     payload_image = preferred_card_image_url(
         image_url=row.get("preview_image_url"),
         source_url=source_url,
-        allow_favicon_fallback=kind != "video",
+        allow_favicon_fallback=(kind != "video") and not bool(video_id),
     )
     if payload_image:
         return payload_image
@@ -66,10 +67,8 @@ def _resolve_row_image_url(*, row: dict[str, Any], kind: str) -> str:
     if not source_url:
         return ""
 
-    if kind in {"course", "video"}:
-        video_id = extract_youtube_video_id(source_url)
-        if video_id:
-            return youtube_thumbnail_url(video_id)
+    if video_id:
+        return youtube_thumbnail_url(video_id)
     return ""
 
 
