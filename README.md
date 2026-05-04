@@ -39,7 +39,7 @@ Core workflows:
 ### Quick start
 1. Start observability stack (separate deploy):
    - `docker compose -f docker-compose.observability.yml up -d`
-2. Build and start app services (Postgres + API + UI):
+2. Build and start app services (Postgres + migrations + API + UI):
    - `docker compose up --build`
 3. Open the UI:
    - `http://localhost:8080`
@@ -49,6 +49,8 @@ Core workflows:
 Notes:
 - App stack (`docker-compose.yml`) and observability stack (`docker-compose.observability.yml`) are intentionally separate.
 - App containers export OTLP to `host.docker.internal:4318`, so observability can run independently.
+- `docker-compose.yml` runs Alembic migrations automatically through a one-shot `migrate` service before the API starts.
+- The default app compose file runs from code baked into the image. Do not add `.:/app` bind mounts when using the published GHCR image; that masks packaged `backend` and `frontend` modules. Use `docker-compose.watch.yml` for live source sync.
 
 ## Database migrations (Postgres)
 When using Postgres, set `DATABASE_URL` and run:
@@ -103,6 +105,7 @@ API:
 UI:
 - `BACKEND_URL`: backend base URL used by NiceGUI frontend.
 - `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage.
+- `NICEGUI_RELOAD`: enable NiceGUI reload mode (`0` or `1`, default `0`; keep disabled for container deployments).
 - `FEATURE_TELEMETRY`: enable frontend product telemetry emits (`0` or `1`, default `0`).
 - `FEATURE_AI_CURATOR`: enable AI Curator page (`1` enabled, `0` disabled). Default is `0` for v1.
 - `FEATURE_ARTICLES`: enable article-specific frontend features (`1` enabled, `0` disabled).

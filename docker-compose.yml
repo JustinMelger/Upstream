@@ -17,33 +17,48 @@ services:
 
   api:
     build: .
+    image: ghcr.io/justinmelger/learning-platform:latest
+    working_dir: /app
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       - DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@postgres:5432/learning_platform
       - SESSION_DAYS=30
       - BOOTSTRAP_ADMIN_USERNAME=admin
       - BOOTSTRAP_ADMIN_PASSWORD=admin
+      - PYTHONPATH=/app
+
+  migrate:
+    build: .
+    image: ghcr.io/justinmelger/learning-platform:latest
+    working_dir: /app
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@postgres:5432/learning_platform
+      - PYTHONPATH=/app
 
   ui:
     build: .
+    image: ghcr.io/justinmelger/learning-platform:latest
+    working_dir: /app
     command: ["python", "-m", "frontend.ui.nicegui.main"]
     ports:
       - "8080:8080"
-    volumes:
-      - .:/app
     depends_on:
       - api
     environment:
       - BACKEND_URL=http://api:8000
       - NICEGUI_STORAGE_SECRET=dev-storage-secret-change-me
+      - NICEGUI_RELOAD=0
+      - PYTHONPATH=/app
 
 volumes:
   postgres_data:

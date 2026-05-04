@@ -48,7 +48,7 @@ def create_app() -> None:
 def main() -> None:
     """Start the NiceGUI dev server."""
     create_app()
-    ui.run(title="Learning Hub", reload=True, storage_secret=settings.storage_secret)
+    ui.run(title="Learning Hub", reload=settings.reload, storage_secret=settings.storage_secret)
 
 
 if __name__ in {"__main__", "__mp_main__"}:

@@ -8,14 +8,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from nicegui import ui
+from nicegui import app, ui
 
 
-_THEME_CSS_PATHS = (
-    Path(__file__).with_name("theme").joinpath("foundation.css"),
-    Path(__file__).with_name("theme").joinpath("home.css"),
-    Path(__file__).with_name("theme").joinpath("features.css"),
-)
+_THEME_DIR = Path(__file__).with_name("theme")
+_THEME_CSS_FILES = ("foundation.css", "home.css", "features.css")
+_THEME_STATIC_URL = "/lp-static/theme"
 _FONT_HEAD_HTML = """
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,5 +23,9 @@ _FONT_HEAD_HTML = """
 
 def apply_theme() -> None:
     """Apply the global design-token based theme for the NiceGUI app."""
+    app.add_static_files(_THEME_STATIC_URL, _THEME_DIR)
     ui.add_head_html(_FONT_HEAD_HTML, shared=True)
-    ui.add_css("\n".join(path.read_text(encoding="utf-8") for path in _THEME_CSS_PATHS), shared=True)
+    ui.add_head_html(
+        "\n".join(f'<link rel="stylesheet" href="{_THEME_STATIC_URL}/{filename}">' for filename in _THEME_CSS_FILES),
+        shared=True,
+    )

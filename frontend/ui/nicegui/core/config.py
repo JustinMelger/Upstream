@@ -16,6 +16,7 @@ class UiSettings:
     feature_ai_curator: bool = os.getenv("FEATURE_AI_CURATOR", "0") == "1"
     feature_articles: bool = os.getenv("FEATURE_ARTICLES", "1") == "1"
     feature_telemetry: bool = os.getenv("FEATURE_TELEMETRY", "0") == "1"
+    reload: bool = os.getenv("NICEGUI_RELOAD", "0") == "1"
 
 
 settings = UiSettings()
