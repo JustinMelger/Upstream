@@ -58,7 +58,7 @@ def _resolve_row_image_url(*, row: dict[str, Any], kind: str) -> str:
     payload_image = preferred_card_image_url(
         image_url=row.get("preview_image_url"),
         source_url=source_url,
-        allow_favicon_fallback=kind not in {"course", "video"},
+        allow_favicon_fallback=kind != "video",
     )
     if payload_image:
         return payload_image
