@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 """NiceGUI application composition.
 
 This module wires together core utilities (`ApiClient`, `SessionStore`) and
@@ -46,7 +45,7 @@ def create_app() -> None:
 
 
 def main() -> None:
-    """Start the NiceGUI dev server."""
+    """Start the NiceGUI ASGI server."""
     create_app()
     core.app.config.socket_io_js_transports = list(settings.socket_transports)
     core.sio.eio.max_http_buffer_size = max(1_000_000, int(settings.websocket_max_bytes))

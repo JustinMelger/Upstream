@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from nicegui import ui
 
 from frontend.ui.nicegui.components.layout import render_container
@@ -69,7 +71,7 @@ def register(*, store: SessionStore, api: ApiClient) -> None:
 
                     login_btn.on_click(_submit)
 
-                async def _submit_from_enter(*_args) -> None:  # noqa: ANN002
+                async def _submit_from_enter(*_args: Any) -> None:
                     await _submit()
 
                 username.on("keydown.enter", _submit_from_enter)
