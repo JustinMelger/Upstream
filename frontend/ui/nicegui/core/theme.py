@@ -18,12 +18,20 @@ _FONT_HEAD_HTML = """
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 """
+_LOADING_HEAD_HTML = """
+<style>
+.q-loading-bar {
+  display: none !important;
+}
+</style>
+"""
 
 
 def apply_theme() -> None:
     """Apply the global design-token based theme for the NiceGUI app."""
     app.add_static_files(_THEME_STATIC_URL, _THEME_DIR)
     ui.add_head_html(_FONT_HEAD_HTML, shared=True)
+    ui.add_head_html(_LOADING_HEAD_HTML, shared=True)
     ui.add_head_html(
         "\n".join(f'<link rel="stylesheet" href="{_THEME_STATIC_URL}/{filename}">' for filename in _THEME_CSS_FILES),
         shared=True,
