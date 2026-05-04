@@ -19,6 +19,13 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [0.12.2](https://github.com/JustinMelger/learning-platform/compare/v0.12.1...v0.12.2) (2026-05-04)
+
+
+### Bug Fixes
+
+* max size nicegui ([9dd63a6](https://github.com/JustinMelger/learning-platform/commit/9dd63a6caa76806b0c8812c64b2fb62b44cdcdbe))
+
 ## [0.12.1](https://github.com/JustinMelger/learning-platform/compare/v0.12.0...v0.12.1) (2026-05-04)
 
 
