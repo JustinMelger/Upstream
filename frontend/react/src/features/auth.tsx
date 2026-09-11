@@ -134,10 +134,10 @@ export function Login() {
   if (!loading && user) return <Navigate to={target} replace />;
   return (
     <main className={s.login}>
+      <div className={s.loginBrand}>
+        <BookOpen size={30} /> Learning Hub
+      </div>
       <section>
-        <div className={s.loginBrand}>
-          <BookOpen size={30} /> Learning Hub
-        </div>
         <h1>
           Make room for
           <br />

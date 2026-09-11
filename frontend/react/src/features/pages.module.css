@@ -638,8 +638,9 @@ td button {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1.1fr 1fr;
-  gap: 8vw;
-  align-items: center;
+  gap: 30px 8vw;
+  align-content: center;
+  align-items: stretch;
   max-width: 1100px;
   padding: 60px 40px;
   margin: auto;
@@ -647,14 +648,20 @@ td button {
 .login h1 {
   font-size: 36px;
   line-height: 1.12;
+  margin-top: 0;
+}
+.login > section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 .loginBrand {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 12px;
   font-family: "Space Grotesk";
   font-size: 24px;
-  margin-bottom: 70px;
 }
 .loginBrand svg {
   color: var(--accent);
@@ -667,6 +674,7 @@ td button {
 }
 .loginForm {
   display: grid;
+  align-content: start;
   gap: 21px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1450,11 +1458,24 @@ td button {
   border-radius: 12px;
   overflow: hidden;
   margin-top: 24px;
+  flex: 1;
 }
-.loginBrand {
-  margin-bottom: 30px;
+.loginArtwork > div {
+  height: 100%;
+  min-height: 160px;
 }
-@media (max-width: 599px) {
+@media (max-width: 899px) {
+  .login {
+    display: block;
+  }
+  .loginBrand {
+    margin-bottom: 30px;
+  }
+  .login > section {
+    margin-bottom: 32px;
+  }
+}
+@media (max-width: 899px) {
   .loginArtwork {
     display: none;
   }
