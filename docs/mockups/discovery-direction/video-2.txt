@@ -1,0 +1,6 @@
+Use case: illustration-story. Standalone landscape 16:9 editorial artwork for a learning resource cover. An empty contemporary screening room with coral velvet seats, glowing warm light, sophisticated cinematic geometry. Rich composition with simple large shapes that work at thumbnail size. Sophisticated welcoming and curious mood. Full bleed, no frame. Absolutely NO text, letters, slogans, logos, people, UI or watermark. Original artwork.
+
+Generation session: 01a0865e-d1a0-7683-854c-545bb586cb6c
+Source image identifier: exec-8fe862db-9e12-4a46-a21a-1ddeb086475e.png
+If you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.
+The generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.

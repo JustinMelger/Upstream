@@ -15,6 +15,8 @@ class Course(Base):
 
     __tablename__ = "courses"
 
+    recommendation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
@@ -48,6 +50,11 @@ class Path(Base):
 
     __tablename__ = "paths"
     __table_args__ = (UniqueConstraint("name", name="uq_paths_name"),)
+
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, server_default=text("CURRENT_TIMESTAMP")
+    )
+    recommendation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
@@ -132,7 +139,10 @@ class Article(Base):
 
     __tablename__ = "articles"
 
+    recommendation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -144,6 +154,8 @@ class Video(Base):
     """ORM model for shared videos."""
 
     __tablename__ = "videos"
+
+    recommendation_note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)

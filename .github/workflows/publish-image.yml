@@ -22,6 +22,15 @@ env:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - suffix: ""
+            dockerfile: Dockerfile
+            smoke: python -c "import backend.main"
+          - suffix: "-ui"
+            dockerfile: frontend/react/Dockerfile
+            smoke: nginx -v
     permissions:
       contents: read
       packages: write
@@ -67,7 +76,7 @@ jobs:
         if: ${{ steps.ref.outputs.prerelease != 'true' }}
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE_NAME }}${{ matrix.suffix }}
           tags: |
             type=semver,pattern={{version}},value=${{ steps.ref.outputs.semver_tag }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.ref.outputs.semver_tag }}
@@ -79,7 +88,7 @@ jobs:
         if: ${{ steps.ref.outputs.prerelease == 'true' }}
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE_NAME }}${{ matrix.suffix }}
           tags: |
             type=raw,value=${{ steps.ref.outputs.semver_tag }}
             type=raw,value=rc
@@ -88,18 +97,20 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ matrix.dockerfile }}
           load: true
           tags: learning-platform:smoke
 
       - name: Smoke test container image
         run: |
-          docker run --rm learning-platform:smoke python -c "import backend.main"
+          docker run --rm learning-platform:smoke ${{ matrix.smoke }}
 
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.ref.outputs.prerelease == 'true' && steps.meta_prerelease.outputs.tags || steps.meta_stable.outputs.tags }}
           labels: ${{ steps.ref.outputs.prerelease == 'true' && steps.meta_prerelease.outputs.labels || steps.meta_stable.outputs.labels }}
@@ -108,6 +119,6 @@ jobs:
         if: ${{ github.event.repository.private == false }}
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.IMAGE_NAME }}
+          subject-name: ${{ env.IMAGE_NAME }}${{ matrix.suffix }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true

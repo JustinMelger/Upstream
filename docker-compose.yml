@@ -2,70 +2,53 @@ services:
   postgres:
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=learning_platform
-      - POSTGRES_USER=learning_platform
-      - POSTGRES_PASSWORD=learning_platform
+      POSTGRES_DB: learning_platform
+      POSTGRES_USER: learning_platform
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U learning_platform -d learning_platform"]
       interval: 5s
       timeout: 5s
       retries: 20
-
-  api:
-    build: .
-    image: ghcr.io/justinmelger/learning-platform:latest
-    working_dir: /app
-    ports:
-      - "8000:8000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@postgres:5432/learning_platform
-      - SESSION_DAYS=30
-      - BOOTSTRAP_ADMIN_USERNAME=admin
-      - BOOTSTRAP_ADMIN_PASSWORD=admin
-      - PYTHONPATH=/app
-
   migrate:
     build: .
-    image: ghcr.io/justinmelger/learning-platform:latest
-    working_dir: /app
     command: ["alembic", "upgrade", "head"]
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@postgres:5432/learning_platform
-      - PYTHONPATH=/app
-
-  ui:
+      DATABASE_URL: postgresql+asyncpg://learning_platform:${POSTGRES_PASSWORD}@postgres:5432/learning_platform
+  api:
     build: .
-    image: ghcr.io/justinmelger/learning-platform:latest
-    working_dir: /app
-    command: ["python", "-m", "frontend.ui.nicegui.main"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql+asyncpg://learning_platform:${POSTGRES_PASSWORD}@postgres:5432/learning_platform
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      API_ROOT_PATH: /api
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:8080}
+      BROWSER_SECRET: ${BROWSER_SECRET:?Set BROWSER_SECRET in .env}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?Set BOOTSTRAP_ADMIN_PASSWORD in .env}
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  ui:
+    build:
+      context: .
+      dockerfile: frontend/react/Dockerfile
     ports:
       - "8080:8080"
     depends_on:
-      - api
-    environment:
-      - BACKEND_URL=http://api:8000
-      - NICEGUI_STORAGE_SECRET=dev-storage-secret-change-me
-      - NICEGUI_HOST=0.0.0.0
-      - NICEGUI_PORT=8080
-      - NICEGUI_SHOW=0
-      - NICEGUI_RELOAD=0
-      - NICEGUI_RECONNECT_TIMEOUT=30
-      - NICEGUI_SOCKET_TRANSPORTS=polling,websocket
-      - NICEGUI_WEBSOCKET_MAX_BYTES=10000000
-      - NICEGUI_MESSAGE_HISTORY_LENGTH=0
-      - PYTHONPATH=/app
-
+      api:
+        condition: service_healthy
 volumes:
   postgres_data:

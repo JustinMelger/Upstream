@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timezone
 from typing import Callable
 
@@ -11,7 +10,8 @@ from backend.core.errors import error_handler, F, ServiceError
 from backend.database.async_repositories.videos import VideosRepository
 from backend.database.models import VideoRecord
 from backend.database.tx import session_scope
-from backend.services.url_preview_service import UrlPreviewService
+from backend.services.content_edit import validate_content_edit
+from backend.services.recommendation_notes import normalize_note
 
 
 class VideosServiceError(ServiceError):
@@ -39,6 +39,7 @@ def videos_error_handler(
 class VideoCreatePayload:
     """Typed service-layer payload for video creation."""
 
+    recommendation_note: str | None = None
     title: str | None = None
     description: str | None = None
     provider: str | None = None
@@ -52,19 +53,16 @@ class VideosService:
     def __init__(
         self,
         repo: VideosRepository,
-        url_preview_service: UrlPreviewService | None = None,
     ):
-        """Initialize the videos service with repository and preview dependencies."""
+        """Initialize the videos service with repository dependency."""
         self._repo = repo
-        self._url_preview_service = url_preview_service or UrlPreviewService()
 
     @videos_error_handler()
     async def list_videos(self, *, query: str | None, provider: str | None, category: str | None) -> list[dict]:
         """List videos."""
         async with session_scope(self._repo.session):
             rows = await self._repo.list_videos(query=query, provider=provider, category=category)
-        preview_map = await self._resolve_preview_images(rows)
-        return [self._to_payload(row, preview_image_url=preview_map.get(int(row.id), "")) for row in rows]
+        return [self._to_payload(row) for row in rows]
 
     @videos_error_handler()
     async def get_video_by_id(self, *, video_id: int) -> dict | None:
@@ -73,12 +71,12 @@ class VideosService:
             row = await self._repo.get_video_by_id(int(video_id))
         if not row:
             return None
-        preview_map = await self._resolve_preview_images([row])
-        return self._to_payload(row, preview_image_url=preview_map.get(int(row.id), ""))
+        return self._to_payload(row)
 
     @videos_error_handler()
     async def create_video(self, *, payload: dict, created_by: str) -> dict:
         """Create a new video."""
+        note = normalize_note(payload.get("recommendation_note"))
         data = self._parse_create_payload(payload)
         title = str(data.title or "").strip()
         description = str(data.description or "").strip()
@@ -108,10 +106,30 @@ class VideosService:
                 created_by=str(created_by),
                 created_at=datetime.now(timezone.utc).isoformat(),
             )
+            await self._repo.set_recommendation_note(video_id, note)
         created = await self.get_video_by_id(video_id=video_id)
         if not created:
             raise VideosServiceError(detail="create_failed", status_code=500)
         return dict(created)
+
+    async def update_video(self, content_id: int, payload: dict) -> dict | None:
+        """Validate an edit and preserve omitted fields."""
+        async with session_scope(self._repo.session):
+            existing = await self._repo.get_video_by_id(content_id)
+            if not existing:
+                return None
+            values = validate_content_edit(payload, kind="video")
+            if "url" in values:
+                duplicate = await self._repo.find_video_by_url(url=values["url"])
+                if duplicate and duplicate.id != content_id:
+                    raise VideosServiceError(detail="duplicate_url", status_code=409)
+            await self._repo.update_content(content_id, values)
+        return await self.get_video_by_id(video_id=content_id)
+
+    async def delete_video(self, content_id: int) -> bool:
+        """Remove content, reviews and path references transactionally."""
+        async with session_scope(self._repo.session):
+            return await self._repo.delete_content(content_id)
 
     @staticmethod
     def _parse_create_payload(payload: dict) -> VideoCreatePayload:
@@ -122,7 +140,7 @@ class VideosService:
             raise VideosServiceError(detail="invalid_payload", status_code=400) from exc
 
     @staticmethod
-    def _to_payload(video: VideoRecord, *, preview_image_url: str = "") -> dict:
+    def _to_payload(video: VideoRecord) -> dict:
         """Convert a video record to an API payload."""
         return {
             "id": video.id,
@@ -132,29 +150,7 @@ class VideosService:
             "category": video.category or "",
             "url": video.url,
             "created_by": video.created_by,
+            "recommendation_note": video.recommendation_note,
             "created_at": video.created_at,
-            "preview_image_url": str(preview_image_url or ""),
+            "preview_image_url": "",
         }
-
-    async def _resolve_preview_images(self, videos: list[VideoRecord]) -> dict[int, str]:
-        out: dict[int, str] = {}
-        if not videos:
-            return out
-        urls: dict[str, list[int]] = {}
-        for row in videos:
-            video_id = int(getattr(row, "id", 0) or 0)
-            url = str(getattr(row, "url", "") or "").strip()
-            if video_id <= 0 or not url:
-                continue
-            urls.setdefault(url, []).append(video_id)
-        if not urls:
-            return out
-        resolved = await asyncio.gather(
-            *(self._url_preview_service.resolve_image_url(source_url=url) for url in urls.keys()),
-            return_exceptions=True,
-        )
-        for url, image_url in zip(urls.keys(), resolved, strict=False):
-            image = "" if isinstance(image_url, Exception) else str(image_url or "")
-            for video_id in urls.get(url, []):
-                out[int(video_id)] = image
-        return out

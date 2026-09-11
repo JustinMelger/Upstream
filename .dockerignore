@@ -3,6 +3,11 @@
 .venv
 .pytest_cache
 .ruff_cache
+.mypy_cache
+.import_linter_cache
+.coverage*
+coverage.xml
+htmlcov
 __pycache__
 *.pyc
 
@@ -11,3 +16,10 @@ frontend/node_modules
 
 docs
 tests
+frontend/react/node_modules
+frontend/react/dist
+frontend/react/test-results
+frontend/react/playwright-report
+.env
+.env.*
+.nicegui

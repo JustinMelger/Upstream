@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,13 +15,14 @@ from backend.database.async_repositories.courses import (
 from backend.database.models import CourseRecord
 from backend.database.tx import session_scope
 from backend.services.course_search_document import build_course_search_document
-from backend.services.url_preview_service import UrlPreviewService
+from backend.services.recommendation_notes import normalize_note
 
 
 @dataclass
 class CourseMutationPayload:
     """Typed service-layer payload for create/update course flows."""
 
+    recommendation_note: str | None = None
     title: str | None = None
     description: str | None = None
     learning_outcomes: str | None = None
@@ -42,7 +42,6 @@ class CoursesService:
     def __init__(
         self,
         repo: CoursesRepository,
-        url_preview_service: UrlPreviewService | None = None,
     ):
         """Initialize the service.
 
@@ -50,7 +49,6 @@ class CoursesService:
             repo: Persistence repository for courses.
         """
         self._repo = repo
-        self._url_preview_service = url_preview_service or UrlPreviewService()
 
     @courses_error_handler()
     async def list_courses(
@@ -74,14 +72,7 @@ class CoursesService:
         """
         async with session_scope(self._repo.session):
             rows = await self._repo.list_courses(query=query, provider=provider, category=category, level=level)
-        preview_map = await self._resolve_preview_images(rows)
-        return [
-            self._to_payload(
-                row,
-                preview_image_url=preview_map.get(int(row.id), ""),
-            )
-            for row in rows
-        ]
+        return [self._to_payload(row) for row in rows]
 
     @courses_error_handler()
     async def get_course_by_id(self, course_id: int) -> dict | None:
@@ -97,11 +88,7 @@ class CoursesService:
             course = await self._repo.get_course_by_id(course_id)
         if not course:
             return None
-        preview_map = await self._resolve_preview_images([course])
-        return self._to_payload(
-            course,
-            preview_image_url=preview_map.get(int(course.id), ""),
-        )
+        return self._to_payload(course)
 
     @courses_error_handler()
     async def create_course(self, payload: dict) -> dict:
@@ -116,6 +103,7 @@ class CoursesService:
         Raises:
             CoursesServiceError: If required fields are missing.
         """
+        note = normalize_note(payload.get("recommendation_note"))
         data = self._parse_mutation_payload(payload)
         title = str(data.title or "").strip()
         if not title:
@@ -160,6 +148,7 @@ class CoursesService:
                     created_by=created_by,
                 )
             )
+            await self._repo.set_recommendation_note(course_id, note)
         course = await self.get_course_by_id(course_id)
         if not course:
             raise CoursesServiceError(detail="created_course_missing", status_code=500)
@@ -176,6 +165,7 @@ class CoursesService:
         Returns:
             Updated course payload or None if missing.
         """
+        note = normalize_note(payload.get("recommendation_note"))
         data = self._parse_mutation_payload(payload)
         async with session_scope(self._repo.session):
             existing = await self._repo.get_course_by_id(course_id)
@@ -218,6 +208,8 @@ class CoursesService:
                     url=url,
                 )
             )
+            if "recommendation_note" in payload:
+                await self._repo.set_recommendation_note(course_id, note)
         return await self.get_course_by_id(course_id)
 
     @courses_error_handler()
@@ -252,8 +244,6 @@ class CoursesService:
     @staticmethod
     def _to_payload(
         course: CourseRecord,
-        *,
-        preview_image_url: str = "",
     ) -> dict:
         """Convert a course record to an API payload."""
         return {
@@ -268,32 +258,9 @@ class CoursesService:
             "level": course.level or "",
             "duration_hours": course.duration_hours,
             "url": course.url or "",
-            "preview_image_url": str(preview_image_url or ""),
+            "preview_image_url": "",
             "created_at": course.created_at,
             "created_by": course.created_by,
+            "recommendation_note": course.recommendation_note,
             "search_document": build_course_search_document(course=course),
         }
-
-    async def _resolve_preview_images(self, courses: list[CourseRecord]) -> dict[int, str]:
-        out: dict[int, str] = {}
-        if not courses:
-            return out
-        urls: dict[str, list[int]] = {}
-        for row in courses:
-            course_id = int(getattr(row, "id", 0) or 0)
-            url = str(getattr(row, "url", "") or "").strip()
-            if course_id <= 0 or not url:
-                continue
-            urls.setdefault(url, []).append(course_id)
-        if not urls:
-            return out
-
-        resolved = await asyncio.gather(
-            *(self._url_preview_service.resolve_image_url(source_url=url) for url in urls.keys()),
-            return_exceptions=True,
-        )
-        for url, image_url in zip(urls.keys(), resolved, strict=False):
-            image = "" if isinstance(image_url, Exception) else str(image_url or "")
-            for course_id in urls.get(url, []):
-                out[int(course_id)] = image
-        return out

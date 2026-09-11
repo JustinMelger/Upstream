@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import VideoRecord
-from backend.database.orm_models import Video as VideoModel
+from backend.database.orm_models import PathItem, Video as VideoModel
 
 
 class VideosRepository(RepositoryDateTimeCodec):
@@ -16,6 +16,10 @@ class VideosRepository(RepositoryDateTimeCodec):
     def __init__(self, session: AsyncSession):
         """Initialize the repository."""
         self.session = session
+
+    async def set_recommendation_note(self, content_id: int, note: str | None) -> None:
+        """Persist an explicitly supplied sharing note."""
+        await self.session.execute(update(VideoModel).where(VideoModel.id == content_id).values(recommendation_note=note))
 
     async def list_videos(self, *, query: str | None, provider: str | None, category: str | None) -> list[VideoRecord]:
         """List videos with optional filters."""
@@ -43,6 +47,7 @@ class VideosRepository(RepositoryDateTimeCodec):
                 provider=row.provider,
                 category=row.category,
                 url=str(row.url or ""),
+                recommendation_note=row.recommendation_note,
                 created_by=str(row.created_by or ""),
                 created_at=self._as_iso_or_empty(row.created_at),
             )
@@ -62,6 +67,7 @@ class VideosRepository(RepositoryDateTimeCodec):
             provider=row.provider,
             category=row.category,
             url=str(row.url or ""),
+            recommendation_note=row.recommendation_note,
             created_by=str(row.created_by or ""),
             created_at=self._as_iso_or_empty(row.created_at),
         )
@@ -110,6 +116,17 @@ class VideosRepository(RepositoryDateTimeCodec):
             provider=row.provider,
             category=row.category,
             url=str(row.url or ""),
+            recommendation_note=row.recommendation_note,
             created_by=str(row.created_by or ""),
             created_at=self._as_iso_or_empty(row.created_at),
         )
+
+    async def update_content(self, content_id: int, values: dict) -> None:
+        """Apply already validated content fields."""
+        await self.session.execute(update(VideoModel).where(VideoModel.id == content_id).values(**values))
+
+    async def delete_content(self, content_id: int) -> bool:
+        """Delete content and polymorphic path references in the caller transaction."""
+        await self.session.execute(delete(PathItem).where(PathItem.item_type == "video", PathItem.item_id == content_id))
+        result = await self.session.execute(delete(VideoModel).where(VideoModel.id == content_id))
+        return self._rowcount(result) > 0

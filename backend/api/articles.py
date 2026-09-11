@@ -12,6 +12,7 @@ from backend.api.schemas import (
     ArticleReviewSummaryItem,
     DeleteArticleReviewResponse,
 )
+from backend.api.schemas.articles import ArticleUpdateRequest
 from backend.services.article_reviews_service import ArticleReviewsService
 from backend.services.articles_service import ArticlesService
 from backend.services.auth_service import AuthService
@@ -38,17 +39,7 @@ async def create_article(
     articles: ArticlesService = Depends(get_articles_service),
 ) -> dict[str, Any]:
     """Create an article (any authenticated user)."""
-    return await articles.create_article(payload=payload.model_dump(), created_by=current_user)
-
-
-@router.get("/{article_id}", response_model=ArticlePayload)
-async def get_article(
-    article_id: int,
-    _current_user: str = Depends(require_session),
-    articles: ArticlesService = Depends(get_articles_service),
-) -> dict[str, Any]:
-    """Get one article by id."""
-    return require_row_exists(await articles.get_article_by_id(article_id=int(article_id)))
+    return await articles.create_article(payload=payload.model_dump(exclude_unset=True), created_by=current_user)
 
 
 @router.get("/reviews/summary", response_model=list[ArticleReviewSummaryItem])
@@ -59,6 +50,16 @@ async def article_review_summaries(
 ) -> list[dict[str, Any]]:
     """Get review summaries for a list of article ids."""
     return await reviews.summaries(article_ids=list(article_ids or []))
+
+
+@router.get("/{article_id}", response_model=ArticlePayload)
+async def get_article(
+    article_id: int,
+    _current_user: str = Depends(require_session),
+    articles: ArticlesService = Depends(get_articles_service),
+) -> dict[str, Any]:
+    """Get one article by id."""
+    return require_row_exists(await articles.get_article_by_id(article_id=int(article_id)))
 
 
 @router.get("/{article_id}/reviews", response_model=list[ArticleReviewPayload])
@@ -83,7 +84,9 @@ async def create_article_review(
 ) -> dict[str, Any]:
     """Create/update current user's review for an article."""
     require_row_exists(await articles.get_article_by_id(article_id=int(article_id)))
-    return await reviews.create_review(article_id=article_id, payload=payload.model_dump(), created_by=current_user)
+    return await reviews.create_review(
+        article_id=article_id, payload=payload.model_dump(exclude_unset=True), created_by=current_user
+    )
 
 
 @router.delete("/{article_id}/reviews/{review_id}", response_model=DeleteArticleReviewResponse)
@@ -101,3 +104,32 @@ async def delete_article_review(
 
     deleted = await reviews.delete_review(review_id=int(review_id))
     return {"deleted": bool(deleted)}
+
+
+@router.put("/{article_id}", response_model=ArticlePayload)
+async def update_article(
+    article_id: int,
+    payload: ArticleUpdateRequest,
+    current_user: str = Depends(require_session),
+    articles: ArticlesService = Depends(get_articles_service),
+    auth: AuthService = Depends(get_auth_service),
+) -> dict:
+    """Edit content as its owner or an administrator."""
+    await require_existing_owner_or_admin(
+        row=await articles.get_article_by_id(article_id=article_id), current_user=current_user, auth=auth
+    )
+    return require_row_exists(await articles.update_article(article_id, payload.model_dump(exclude_unset=True)))
+
+
+@router.delete("/{article_id}")
+async def delete_article(
+    article_id: int,
+    current_user: str = Depends(require_session),
+    articles: ArticlesService = Depends(get_articles_service),
+    auth: AuthService = Depends(get_auth_service),
+) -> dict[str, bool]:
+    """Delete content and its reviews/path references as owner or admin."""
+    await require_existing_owner_or_admin(
+        row=await articles.get_article_by_id(article_id=article_id), current_user=current_user, auth=auth
+    )
+    return {"deleted": await articles.delete_article(article_id)}

@@ -1,80 +1,16 @@
+# Use with: docker compose -f docker-compose.yml -f docker-compose.watch.yml up --watch
 services:
-  postgres:
-    image: postgres:16-alpine
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=learning_platform
-      - POSTGRES_USER=learning_platform
-      - POSTGRES_PASSWORD=learning_platform
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U learning_platform -d learning_platform"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
   api:
-    build: .
-    command: ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    ports:
-      - "8000:8000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@postgres:5432/learning_platform
-      - SESSION_DAYS=30
-      - BOOTSTRAP_ADMIN_USERNAME=admin
-      - BOOTSTRAP_ADMIN_PASSWORD=admin
     develop:
       watch:
-        - action: sync
-          path: .
-          target: /app
-          ignore:
-            - .git/
-            - .ruff_cache/
-            - .venv/
-            - __pycache__/
-            - frontend/node_modules/
-        - action: rebuild
-          path: pyproject.toml
-        - action: rebuild
-          path: uv.lock
-        - action: rebuild
-          path: Dockerfile
-
+        - action: sync+restart
+          path: ./backend
+          target: /app/backend
   ui:
-    build: .
-    command: ["python", "-m", "frontend.ui.nicegui.main"]
-    ports:
-      - "8080:8080"
-    depends_on:
-      - api
-    environment:
-      - BACKEND_URL=http://api:8000
-      - NICEGUI_STORAGE_SECRET=dev-storage-secret-change-me
     develop:
       watch:
-        - action: sync
-          path: .
-          target: /app
+        - action: rebuild
+          path: ./frontend/react
           ignore:
-            - .git/
-            - .ruff_cache/
-            - .venv/
-            - __pycache__/
-            - frontend/node_modules/
-        - action: rebuild
-          path: pyproject.toml
-        - action: rebuild
-          path: uv.lock
-        - action: rebuild
-          path: Dockerfile
-
-volumes:
-  postgres_data:
+            - node_modules/
+            - dist/

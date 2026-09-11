@@ -1,80 +1,21 @@
 [importlinter]
 root_packages =
-    frontend
     backend
 include_external_packages = True
 
-[importlinter:contract:frontend-no-direct-httpx]
-name = Frontend pages and services do not import httpx directly
+[importlinter:contract:services-no-transport]
+name = Backend services do not depend on API transport
 type = forbidden
 source_modules =
-    frontend.ui.nicegui.pages
-    frontend.ui.nicegui.services
+    backend.services
 forbidden_modules =
-    httpx
-allow_indirect_imports = True
+    backend.api
 
-[importlinter:contract:frontend-pages-do-not-import-services-directly]
-name = Route page modules do not import services directly
+[importlinter:contract:repositories-no-services]
+name = Repositories do not depend on services or API
 type = forbidden
 source_modules =
-    frontend.ui.nicegui.pages.*.page
+    backend.database.async_repositories
 forbidden_modules =
-    frontend.ui.nicegui.services
-allow_indirect_imports = True
-
-[importlinter:contract:frontend-services-do-not-import-pages]
-name = Frontend services do not import page modules
-type = forbidden
-source_modules =
-    frontend.ui.nicegui.services
-forbidden_modules =
-    frontend.ui.nicegui.pages
-allow_indirect_imports = True
-
-[importlinter:contract:frontend-domains-do-not-import-pages]
-name = Frontend domains do not import page modules
-type = forbidden
-source_modules =
-    frontend.ui.nicegui.domains
-forbidden_modules =
-    frontend.ui.nicegui.pages
-allow_indirect_imports = True
-
-[importlinter:contract:frontend-pure-modules-do-not-import-nicegui]
-name = Pure frontend modules do not import NiceGUI directly
-type = forbidden
-source_modules =
-    frontend.ui.nicegui.pages.*.controller
-    frontend.ui.nicegui.pages.*.event_bindings
-    frontend.ui.nicegui.pages.*.list_flow
-    frontend.ui.nicegui.pages.*.mutations_flow
-    frontend.ui.nicegui.pages.*.orchestration
-    frontend.ui.nicegui.pages.*.route_init
-    frontend.ui.nicegui.pages.*.state
-    frontend.ui.nicegui.pages.*.transitions
-    frontend.ui.nicegui.pages.*.ui_glue
-    frontend.ui.nicegui.pages.*.view_model
-    frontend.ui.nicegui.domains.*.controller
-    frontend.ui.nicegui.domains.*.filter_flow
-    frontend.ui.nicegui.domains.*.filters
-    frontend.ui.nicegui.domains.*.orchestration
-    frontend.ui.nicegui.domains.*.reducers
-    frontend.ui.nicegui.domains.*.state
-    frontend.ui.nicegui.domains.*.transitions
-    frontend.ui.nicegui.domains.*.ui_glue
-    frontend.ui.nicegui.domains.*.view_model
-forbidden_modules =
-    nicegui
-allow_indirect_imports = True
-
-[importlinter:contract:explore-controller-uses-gateway-boundary]
-name = Explore controller does not import domain controllers directly
-type = forbidden
-source_modules =
-    frontend.ui.nicegui.pages.explore.controller
-forbidden_modules =
-    frontend.ui.nicegui.domains.courses.controller
-    frontend.ui.nicegui.domains.paths.controller
-    frontend.ui.nicegui.domains.articles.controller
-allow_indirect_imports = True
+    backend.services
+    backend.api

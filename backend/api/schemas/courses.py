@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import StrictStr
+from pydantic import Field, StrictStr
 
 from backend.api.schemas.common import APIModel
 
 
 class CoursePayload(APIModel):
     """Course response payload."""
+
+    recommendation_note: str | None = Field(default=None, max_length=1000)
 
     id: int
     title: str
@@ -29,6 +31,8 @@ class CoursePayload(APIModel):
 class CourseCreateRequest(APIModel):
     """Course create request payload."""
 
+    recommendation_note: str | None = Field(default=None, max_length=1000)
+
     title: StrictStr | None = None
     description: StrictStr | None = None
     learning_outcomes: StrictStr | None = None
@@ -43,6 +47,8 @@ class CourseCreateRequest(APIModel):
 
 class CourseUpdateRequest(APIModel):
     """Course update request payload."""
+
+    recommendation_note: str | None = Field(default=None, max_length=1000)
 
     title: StrictStr | None = None
     description: StrictStr | None = None

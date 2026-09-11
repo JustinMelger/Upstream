@@ -1,0 +1,6 @@
+Use case: illustration-story. Standalone landscape 16:9 editorial artwork for a learning resource cover. Connected lavender architectural terraces climbing a quiet mountain garden, lilac mist and soft golden dawn, refined dimensional illustration. Simple large shapes readable at thumbnail size. Sophisticated welcoming and curious mood. Full bleed, no frame. Absolutely NO text, letters, slogans, logos, people, UI or watermark. Original artwork.
+
+Generation session: 01a0865e-d1a0-7683-854c-545bb586cb6c
+Source image identifier: exec-acafbf31-f535-49c4-a7df-8b95c836f07e.png
+If you need to use a generated image at another path, copy it and leave the original in place unless the user explicitly asks you to delete it.
+The generated image is already displayed to the user. There is no need to render it in the final response as a Markdown image or file link.

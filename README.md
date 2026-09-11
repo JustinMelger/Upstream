@@ -1,309 +1,52 @@
 # Learning Hub
 
-![coverage](docs/badges/coverage.svg)
-![ci](https://github.com/JustinMelger/learning-platform/actions/workflows/ci.yml/badge.svg)
-![license](https://img.shields.io/badge/license-MIT-blue.svg)
+A shared learning library with a React workspace and FastAPI backend.
 
-Learning Hub is an internal learning platform for shared skill development.
+- **Explore:** discover courses, articles, videos, and mixed learning paths.
+- **My learning:** continue a course, track course progress, and manage selected paths.
+- **Activity:** personal statistics, reviews on your content, and shared-content updates.
+- **Share:** publish learning material with an optional “Why I recommend this” note.
+- **Admin:** manage accounts and access.
 
-At a glance:
-- FastAPI backend APIs for auth, catalog, tracking, activity, and optional AI draft planning
-- NiceGUI frontend for day-to-day learning workflows and team visibility
-- Postgres persistence with Alembic migrations
-- Optional local observability stack (OpenTelemetry, Prometheus, Tempo, Loki, Grafana)
+Courses support progress tracking. Articles and videos support reviews; they do not have completion tracking. Path status is manual and independent of the displayed course-completion count. Content is globally shared; personal progress is private except for authorized administrative access.
 
-Core workflows:
-- Share courses, articles, videos, and mixed learning paths
-- Track progress per user and across teams
-- Review learning items and paths
-- Use Teams as a lightweight workspace for membership, inbox, and team activity around globally visible shared content
+Teams and AI Curator are retired. NiceGUI has been replaced by React.
 
-## Docs
-- Architecture: [docs/architecture.md](docs/architecture.md)
-- Architecture & coding standards (one-pager): [docs/architecture_standards.md](docs/architecture_standards.md)
-- V1 product spec: [docs/v1/README.md](docs/v1/README.md)
-- Roadmap: [docs/roadmap.md](docs/roadmap.md)
-- E2E notes: [tests/e2e/README.md](tests/e2e/README.md)
+## Requirements
 
-## Prerequisites
-- Python 3.13
-- `uv` for dependency/environment management
-- `just` for local development commands
-- Docker + Docker Compose (required for local Postgres and full containerized run)
+Python 3.13, uv, Node.js 22.13 or later, npm, and Docker Compose. `just` is optional.
 
-## Choose a local setup
-- Containerized app run: [Run locally (Docker)](#run-locally-docker)
-- Local Python processes: [Run locally (without Docker)](#run-locally-without-docker)
+## Run with Docker
 
-## Run locally (Docker)
-### Quick start
-1. Start observability stack (separate deploy):
-   - `docker compose -f docker-compose.observability.yml up -d`
-2. Build and start app services (Postgres + migrations + API + UI):
-   - `docker compose up --build`
-3. Open the UI:
-   - `http://localhost:8080`
-4. API docs:
-   - `http://localhost:8000/docs`
+1. Copy `.env.example` to `.env`.
+2. Set `POSTGRES_PASSWORD`, `BOOTSTRAP_ADMIN_PASSWORD`, and `BROWSER_SECRET` to unique values. Use a URL-safe database password (letters, digits, hyphens, and underscores) because Compose embeds it in the connection URL. Generate a browser secret with `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`.
+3. Run `docker compose up --build`.
+4. Open `http://localhost:8080`; API documentation is at `http://localhost:8080/api/docs`.
 
-Notes:
-- App stack (`docker-compose.yml`) and observability stack (`docker-compose.observability.yml`) are intentionally separate.
-- App containers export OTLP to `host.docker.internal:4318`, so observability can run independently.
-- `docker-compose.yml` runs Alembic migrations automatically through a one-shot `migrate` service before the API starts.
-- The default app compose file runs from code baked into the image. Do not add `.:/app` bind mounts when using the published GHCR image; that masks packaged `backend` and `frontend` modules. Use `docker-compose.watch.yml` for live source sync.
+The one-shot migration service applies additive migrations before the API starts. Nginx serves React and proxies `/api` on the same origin. Existing PostgreSQL volumes retain their data; changing an environment password does not change an existing database user's password.
 
-## Database migrations (Postgres)
-When using Postgres, set `DATABASE_URL` and run:
-- `just db-up`
-- `just migrate`
+For source watching: `docker compose -f docker-compose.yml -f docker-compose.watch.yml up --watch`.
 
-Or run the full bootstrap flow:
-- `just db-init` (starts Postgres, waits for readiness, applies latest migration)
+## Local development
 
-### Live reload (Docker Compose watch)
-1. Ensure Docker Compose supports `watch`:
-   - `docker compose version`
-2. Start observability stack:
-   - `docker compose -f docker-compose.observability.yml up -d`
-3. Start app services with file sync + reload:
-   - `docker compose -f docker-compose.watch.yml watch`
-4. Open the UI:
-   - `http://localhost:8080`
+1. Configure `.env` as above, including `DATABASE_URL`.
+2. Install dependencies: `uv sync --group dev` and `npm ci --prefix frontend/react`.
+3. Start PostgreSQL: `docker compose up -d postgres`.
+4. Export `.env` variables into your shell, then run `uv run alembic upgrade head`.
+5. Start the backend: `uv run uvicorn backend.main:app --reload --port 8000`.
+6. Start React in another terminal: `npm run dev --prefix frontend/react`.
 
-## Run locally (without Docker)
-1. Install dependencies:
-   - `uv sync --group dev`
-2. Start Postgres + migrate schema:
-   - `just db-init`
-3. Start the API:
-   - `just backend`
-4. Start the UI (in a new terminal):
-   - `just ui`
-5. Open the UI:
-   - `http://localhost:8080`
+Vite proxies `/api` to `http://127.0.0.1:8000`; `BACKEND_URL` overrides this development target. The UI is at `http://127.0.0.1:5173`. Local browser origins are allowed only on localhost/127.0.0.1. Development cookies do not require HTTPS.
 
-Why this order:
-- Backend expects a reachable Postgres database and current Alembic schema.
-- `just db-init` avoids common first-run failures.
+## Checks and further guidance
 
-## Environment variables
-API:
-- `DATABASE_URL`: async Postgres connection string.
-- `SESSION_DAYS`: session lifetime in days.
-- `BOOTSTRAP_ADMIN_USERNAME`: first admin username when no users exist.
-- `BOOTSTRAP_ADMIN_PASSWORD`: first admin password when no users exist.
-- `FEATURE_TELEMETRY`: enable authenticated product telemetry ingestion (`0` or `1`, default `0`).
-- `OTEL_ENABLED`: enable OpenTelemetry (`0` or `1`).
-- `OTEL_SERVICE_NAME`: OpenTelemetry service name.
-- `OTEL_SERVICE_VERSION`: service version label.
-- `OTEL_DEPLOYMENT_ENVIRONMENT`: environment label (for example `dev`, `staging`, `prod`).
-- `OTEL_TRACES_SAMPLE_RATIO`: trace sample ratio (`0.0` - `1.0`).
-- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`: OTLP HTTP traces endpoint.
-- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`: OTLP HTTP metrics endpoint.
-- `OTEL_EXPORTER_OTLP_HEADERS`: optional comma-separated OTLP headers (`k=v,k2=v2`).
+Use a disposable PostgreSQL database for tests: backend fixtures truncate tables.
+Run `just test` and `just build` for backend/frontend checks; browser and visual checks are separate release gates.
 
-UI:
-- `BACKEND_URL`: backend base URL used by NiceGUI frontend.
-- `NICEGUI_STORAGE_SECRET`: secret used for NiceGUI per-user storage.
-- `NICEGUI_RELOAD`: enable NiceGUI reload mode (`0` or `1`, default `0`; keep disabled for container deployments).
-- `NICEGUI_WEBSOCKET_MAX_BYTES`: Socket.IO payload limit for UI updates (default `10000000`).
-- `NICEGUI_MESSAGE_HISTORY_LENGTH`: reconnect replay history length (default `0` for container deployments).
-- `FEATURE_TELEMETRY`: enable frontend product telemetry emits (`0` or `1`, default `0`).
-- `FEATURE_AI_CURATOR`: enable AI Curator page (`1` enabled, `0` disabled). Default is `0` for v1.
-- `FEATURE_ARTICLES`: enable article-specific frontend features (`1` enabled, `0` disabled).
+- [Documentation index](docs/README.md): current guidance, implementation history, and approved designs.
+- [Operations and verification](docs/operations.md): commands, contracts, browser/visual checks, deployment, and rollback.
+- [Architecture](docs/architecture.md) and [engineering standards](AGENT.md).
 
-## Contributor quick start
-1. Install dependencies:
-   - `uv sync --group dev`
-2. Start Postgres + migrate:
-   - `just db-init`
-3. Start backend:
-   - `just backend`
-4. Start UI (new terminal):
-   - `just ui`
+New-resource forms support optional **Fetch details** from page-authored metadata. Artwork is bundled locally: ten covers per resource type. Draft recovery and personal course tracking remain independent of metadata fetching.
 
-Optional:
-- Start backend + UI together after DB init: `just dev`
-
-Typical dev loop:
-- `just fmt`
-- `just lint`
-- Run focused tests (`just unit`, `just integration`, `just architecture`)
-- Run full local quality gate before pushing: `just test`
-
-Pull request checklist:
-- Verify API/UI start locally
-- Run relevant test targets
-- Update docs if routes, commands, or env vars changed
-
-## Development commands
-- Format: `just fmt`
-- Lint: `just lint`
-- Lint ratchet + strict core quality gate: `just lint-ratchet`
-- Unit tests: `just unit`
-- Integration tests: `just integration`
-- Architecture tests: `just architecture`
-- Full local gate: `just test`
-- Frontend architecture guards: `just frontend-arch-guards`
-- Architecture docs sync guard: `just architecture-sync-check`
-
-Optional local commit hooks:
-- Install: `uv run pre-commit install`
-- Run on all files: `uv run pre-commit run --all-files`
-
-## Pages
-- Home/Insights (`/` and `/home`): team-level progress and contribution visibility.
-- Explore (`/explore`): unified global catalog for courses, paths, articles, and videos.
-- Explore detail routes:
-  - `/explore/courses/{course_id}`
-  - `/explore/paths/{path_id}`
-  - `/explore/articles/{article_id}`
-- Teams (`/teams`): basic workspace for membership, inbox, and team activity.
-- Profile (`/profile`, `/profile/stats`): personal account and stats views.
-- AI Curator (`/ai`): goal-driven draft plan workflow (feature-flagged, off by default for v1).
-- Admin (`/admin/users`): user management (admin only).
-
-Navigation note:
-- The “Menu” dropdown in the header is the canonical in-app navigation surface.
-
-## Login (username + password)
-- First login bootstraps an admin user (if no users exist yet) using the bootstrap credentials.
-- Admins can create additional user accounts from the Admin page.
-
-## Feature snapshot
-- Social learning flows: share and review learning items and paths.
-- Team activity and mailbox view within a basic Teams workspace.
-- Explore-first content workflow (courses, paths, articles, videos) with global catalog visibility.
-- Optional AI draft planner endpoint (`POST /ai/plan`) kept out of the core v1 narrative.
-
-Visibility model in v1:
-- shared learning items and paths are globally visible in `Explore`
-- Teams provide a focused activity and follow-up workspace
-- Teams do not create private catalog silos in v1
-
-## Conventional commits
-Use Conventional Commits for automated release notes.
-
-Format:
-`type(scope): description`
-
-Common types:
-- `feat`: new feature
-- `fix`: bug fix
-- `chore`: tooling or maintenance
-- `docs`: documentation changes
-- `refactor`: code change without behavior change
-
-Examples:
-- `feat(paths): add course ordering`
-- `fix(tracking): prevent empty status save`
-- `chore: add semantic-release config`
-
-## API quick reference
-- `GET /health`
-- `POST /telemetry/events` (authenticated frontend product events sink; feature-flagged)
-
-Endpoint families:
-- Auth/session: `/auth/*`
-- Courses (+ reviews): `/courses/*`
-- Paths (+ select/status + reviews): `/paths/*`
-- Articles (+ reviews): `/articles/*`
-- Videos (+ reviews): `/videos/*`
-- Tracking/stats: `/tracking/*`
-- Notifications/activity: `/notifications/*`
-- Teams/activity context: `/teams/*`
-- URL preview metadata: `/url-preview/*`
-- Telemetry/events: `/telemetry/*` (feature-flagged)
-- AI draft planning: `/ai/*` (feature-flagged)
-
-## Observability (OpenTelemetry + Prometheus + Grafana)
-- Start observability independently:
-  - `docker compose -f docker-compose.observability.yml up -d`
-- Observability stack includes:
-  - OpenTelemetry Collector on `4317`/`4318`
-  - Tempo on `http://localhost:3200` (trace backend)
-  - Loki on `http://localhost:3100` (log backend)
-  - Promtail (ships Docker logs to Loki)
-  - Prometheus on `http://localhost:9090`
-  - Grafana on `http://localhost:3000` (default `admin` / `admin`)
-  - Collector Prometheus metrics endpoint on `http://localhost:9464/metrics`
-- API exports traces + metrics via OTLP HTTP to Collector.
-  - App containers send OTLP to `host.docker.internal:4318`, so observability can run in a separate Compose project.
-- Collector config lives at:
-  - `deploy/observability/otel-collector-config.yaml`
-  - `deploy/observability/prometheus.yml`
-  - `deploy/observability/tempo.yaml`
-  - `deploy/observability/loki-config.yaml`
-  - `deploy/observability/promtail-config.yaml`
-  - `deploy/observability/grafana/provisioning/datasources/datasources.yml`
-  - `deploy/observability/grafana/provisioning/dashboards/dashboards.yml`
-  - `deploy/observability/grafana/provisioning/dashboards/json/learning-platform-observability.json`
-- Collector trace export target env vars (in observability compose):
-  - `TEMPO_OTLP_ENDPOINT` (default `http://tempo:4318/v1/traces`)
-  - `TEMPO_OTLP_AUTH_HEADER` (optional)
-- Grafana auto-loads the starter dashboard:
-  - `Learning Platform Observability`
-
-OpenAPI docs:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-Admin-only:
-- `POST /auth/users`
-- `GET /auth/users`
-- `POST /auth/users/reset`
-- `POST /auth/users/disable`
-- `DELETE /auth/users/{username}`
-- `GET /tracking/stats` (team stats)
-- `GET /tracking/stats/users` (team stats by user)
-
-Owner/admin-only (creator or admin):
-- `PUT /courses/{id}`
-- `DELETE /courses/{id}`
-- `PUT /paths/{id}`
-- `DELETE /paths/{id}`
-
-## Roles
-- Admins can create/edit/delete any courses and paths, and manage users.
-- Users can create courses and paths; they can edit/delete only the ones they created.
-
-## Tracking
-- Set status per course: `interested`, `in_progress`, or `completed`.
-- Tracking is managed from Explore course/path views and dashboard-oriented pages.
-
-## Paths
-- Create learning paths by selecting courses and ordering them.
-- Select paths from Explore or related UI flows.
-- Update per-path status (`not_selected`, `selected`, `completed`) and per-course tracking status.
-- Delete paths you created (admins can delete any).
-
-## Data
-- Schema is managed via Alembic migrations (`just migrate`).
-- The API starts with an empty database. Use the admin endpoints to create data.
-
-## Example `.env`
-```env
-DATABASE_URL=postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
-BACKEND_URL=http://127.0.0.1:8000
-SESSION_DAYS=7
-BOOTSTRAP_ADMIN_USERNAME=admin
-BOOTSTRAP_ADMIN_PASSWORD=change-me
-NICEGUI_STORAGE_SECRET=change-me-too
-FEATURE_AI_CURATOR=0
-FEATURE_ARTICLES=1
-```
-
-## Troubleshooting
-- Migrations fail / schema mismatch:
-  - Run `just db-init` (or `just db-up` + `just migrate`).
-- UI cannot reach API:
-  - Verify backend is on `http://127.0.0.1:8000` and `BACKEND_URL` matches.
-- Login bootstrap not working:
-  - Ensure database is empty and bootstrap env vars are set.
-- Port conflict:
-  - Check/stop processes on ports `8000` (API), `8080` (UI), and `5432` (Postgres).
-
-## Production notes
-- Use a managed Postgres instance and run Alembic migrations during deploy.
-- Keep secrets in environment/secret manager (never commit credentials).
-- Disable bootstrap admin credentials after initial setup.
+Docker uses port **8080** by default. The existing local preview uses **18080** in its separate project. After changing source, rebuild images; restarting an old image does not update the UI.

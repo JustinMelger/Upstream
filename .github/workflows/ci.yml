@@ -1,408 +1,106 @@
 name: ci
-
 on:
   pull_request:
-    paths-ignore:
-      - "docs/badges/coverage.svg"
   push:
-    branches:
-      - main
-    paths-ignore:
-      - "docs/badges/coverage.svg"
-
+    branches: [main]
 jobs:
-  lint:
+  backend:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --no-install-project --group dev --frozen
-
-      - name: Run quality gate (ratchet + strict core profile)
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            RANGE="origin/${{ github.base_ref }}...HEAD"
-            git fetch origin "${{ github.base_ref }}" --depth=1
-          else
-            RANGE="HEAD~1..HEAD"
-          fi
-          ./scripts/lint_quality_gate.sh "$RANGE"
-
-      - name: Run ruff lint
-        run: uv run ruff check .
-
-      - name: Run ruff format
-        run: uv run ruff format --check .
-
-      - name: Run mypy
-        run: uv run mypy backend/services frontend/ui/nicegui/services frontend/ui/nicegui/core frontend/ui/nicegui/pages/ai_curator/ui_glue.py
-
-  security:
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --no-install-project --group dev --frozen
-
-      - name: Run pip-audit
-        run: uv run pip-audit
-
-  migrations:
-    runs-on: ubuntu-latest
-    needs: security
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: learning_platform
-          POSTGRES_USER: learning_platform
-          POSTGRES_PASSWORD: learning_platform
-        ports:
-          - 5432:5432
+          POSTGRES_DB: learning_react_test
+          POSTGRES_USER: react_test
+          POSTGRES_PASSWORD: react_test
+        ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U learning_platform -d learning_platform"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
+          --health-cmd "pg_isready -U react_test -d learning_react_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
     env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
+      DATABASE_URL: postgresql+asyncpg://react_test:react_test@127.0.0.1:5432/learning_react_test
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-          cache: "pip"
-
-      - name: Install dependencies
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --group dev --frozen
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run mypy backend
+      - run: uv run lint-imports
+      - run: uv run pip-audit
+      - name: Verify populated migration
         run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --no-install-project --group dev --frozen
-
-      - name: Run Alembic migrations
-        run: uv run alembic upgrade head
-
-  unit:
+          PGPASSWORD=react_test createdb -h 127.0.0.1 -U react_test learning_migration_test
+          E2E_DATABASE_IS_DISPOSABLE=1 DATABASE_URL=postgresql+asyncpg://react_test:react_test@127.0.0.1:5432/learning_migration_test uv run python -m scripts.verify_react_migration
+      - run: uv run alembic upgrade head
+      - run: uv run pytest tests/backend --cov=backend --cov-report=xml
+      - run: uv run python -m scripts.export_openapi --check
+  frontend:
     runs-on: ubuntu-latest
-    needs: migrations
+    defaults:
+      run:
+        working-directory: frontend/react
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/react/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=moderate
+      - run: npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build
+      - run: npm run api:generate && git diff --exit-code -- src/lib/api/generated.ts
+  browser:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: learning_platform
-          POSTGRES_USER: learning_platform
-          POSTGRES_PASSWORD: learning_platform
-        ports:
-          - 5432:5432
+          POSTGRES_DB: learning_browser_test
+          POSTGRES_USER: react_test
+          POSTGRES_PASSWORD: react_test
+        ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U learning_platform -d learning_platform"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
+          --health-cmd "pg_isready -U react_test -d learning_browser_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
     env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
+      DATABASE_URL: postgresql+asyncpg://react_test:react_test@127.0.0.1:5432/learning_browser_test
+      E2E_DATABASE_IS_DISPOSABLE: '1'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --no-install-project --group dev --frozen
-
-      - name: Run Alembic migrations
-        run: uv run alembic upgrade head
-
-      - name: Run frontend architecture guard tests
-        run: uv run pytest tests/frontend/ui/nicegui/test_page_package_exports.py tests/frontend/ui/nicegui/test_page_package_layout.py
-
-      - name: Run import architecture contracts
-        run: uv run lint-imports
-
-      - name: Run architecture marker tests
-        run: uv run pytest -m architecture
-
-      - name: Run unit tests
-        run: |
-          COVERAGE_FILE=coverage.unit uv run coverage run -m pytest -m unit
-          test -f coverage.unit
-          ls -la coverage.* || true
-
-      - name: Upload unit coverage data
-        uses: actions/upload-artifact@v4
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
         with:
-          name: coverage-unit
-          path: coverage.unit
-
-  integration:
-    runs-on: ubuntu-latest
-    needs: unit
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: learning_platform
-          POSTGRES_USER: learning_platform
-          POSTGRES_PASSWORD: learning_platform
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U learning_platform -d learning_platform"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --no-install-project --group dev --frozen
-
-      - name: Run Alembic migrations
-        run: uv run alembic upgrade head
-
-      - name: Run integration tests
-        run: |
-          COVERAGE_FILE=coverage.integration uv run coverage run -m pytest -m integration
-          test -f coverage.integration
-          ls -la coverage.* || true
-
-      - name: Upload integration coverage data
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-integration
-          path: coverage.integration
-
-  e2e_smoke:
-    runs-on: ubuntu-latest
-    needs: integration
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: learning_platform
-          POSTGRES_USER: learning_platform
-          POSTGRES_PASSWORD: learning_platform
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U learning_platform -d learning_platform"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-    env:
-      DATABASE_URL: postgresql+asyncpg://learning_platform:learning_platform@127.0.0.1:5432/learning_platform
-      E2E_API_URL: http://127.0.0.1:8000
-      E2E_UI_URL: http://127.0.0.1:8080
-      E2E_VISUAL_BASELINE_DIR: tests/e2e/baselines
-      E2E_SCREENSHOT_DIR: test-results/e2e-screenshots
-      E2E_VISUAL_ASSERT: "1"
-      # Keep strict baseline failures deferred until the major UI surfaces settle.
-      E2E_VISUAL_STRICT: "0"
-      E2E_STRICT_ENV: "1"
-      NICEGUI_STORAGE_SECRET: ci-e2e-storage-secret
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --no-install-project --group dev --frozen
-
-      - name: Install Playwright Chromium
-        run: uv run playwright install --with-deps chromium
-
-      - name: Run Alembic migrations
-        run: uv run alembic upgrade head
-
-      - name: Start backend + UI
-        shell: bash
-        run: |
-          set -euo pipefail
-          nohup uv run uvicorn backend.main:app --host 127.0.0.1 --port 8000 > backend.log 2>&1 &
-          echo $! > backend.pid
-          BACKEND_URL="$E2E_API_URL" nohup uv run python -m frontend.ui.nicegui.main > ui.log 2>&1 &
-          echo $! > ui.pid
-
-      - name: Wait for backend + UI health
-        shell: bash
-        run: |
-          set -euo pipefail
-          wait_for_http() {
-            local name="$1"
-            local url="$2"
-            local log_file="$3"
-            local pid_file="$4"
-            for i in {1..120}; do
-              if curl -fsS "$url" >/dev/null; then
-                echo "$name is ready at $url"
-                return 0
-              fi
-              if [ -f "$pid_file" ] && ! kill -0 "$(cat "$pid_file")" 2>/dev/null; then
-                echo "$name process exited before becoming ready"
-                echo "---- $log_file ----"
-                cat "$log_file" || true
-                return 1
-              fi
-              sleep 1
-            done
-            echo "$name did not become ready at $url"
-            echo "---- $log_file ----"
-            cat "$log_file" || true
-            return 1
-          }
-
-          wait_for_http "Backend" "$E2E_API_URL/health" backend.log backend.pid
-          wait_for_http "UI" "$E2E_UI_URL/login" ui.log ui.pid
-
-      - name: Run e2e smoke tests
-        run: uv run pytest tests/e2e -m e2e
-
-      - name: Upload e2e artifacts
+          node-version: '22'
+      - run: uv sync --group dev --frozen && uv run alembic upgrade head
+      - run: npm ci --prefix frontend/react
+      - run: npx --prefix frontend/react playwright install --with-deps chromium
+      - run: uv run python -m scripts.seed_react_demo
+      - run: npm run e2e --prefix frontend/react
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: e2e-artifacts
-          path: |
-            backend.log
-            ui.log
-            test-results/e2e-screenshots
+          name: browser-results
+          path: frontend/react/test-results
 
-  coverage_report:
+  visual:
     runs-on: ubuntu-latest
-    needs: e2e_smoke
-    permissions:
-      contents: write
+    needs: frontend
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - name: Build pinned browser environment
+        run: docker build -t learning-visual -f frontend/react/Dockerfile.visual frontend/react
+      - name: Compare reviewed baselines
+        run: docker run --rm --ipc=host -v "$PWD/frontend/react/test-results:/app/test-results" learning-visual
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv sync --no-install-project --group dev --frozen
-
-      - name: Download unit coverage data
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-unit
-
-      - name: Download integration coverage data
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-integration
-
-      - name: Run tests with coverage
-        run: |
-          uv run coverage combine coverage.unit coverage.integration
-          uv run coverage xml -o coverage.xml
-          uv run coverage report --show-missing --skip-covered
-
-      - name: Generate coverage badge
-        run: uv run python scripts/gen_coverage_badge.py coverage.xml docs/badges/coverage.svg
-
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: |
-            coverage.xml
-            docs/badges/coverage.svg
-
-  coverage_badge:
-    runs-on: ubuntu-latest
-    needs: coverage_report
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download coverage artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage
-          path: /tmp/coverage_artifacts
-
-      - name: Sync to Latest main
-        run: |
-          git fetch origin main
-          git reset --hard origin/main
-
-      - name: Commit coverage badge
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          mkdir -p docs/badges
-          cp -f /tmp/coverage_artifacts/docs/badges/coverage.svg docs/badges/coverage.svg
-          git add docs/badges/coverage.svg
-          if git diff --cached --quiet; then
-            echo "No badge changes to commit."
-            exit 0
-          fi
-          git commit -m "chore(ci): update coverage badge"
-          git push
+          name: visual-differences
+          path: frontend/react/test-results

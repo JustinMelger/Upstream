@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from pydantic import Field, StrictStr
+
 from backend.api.schemas.common import APIModel
 
 
 class UrlPreviewMetadataRequest(APIModel):
     """Request payload for URL metadata suggestions."""
 
-    url: str
+    url: StrictStr = Field(min_length=1, max_length=4096)
 
 
 class UrlPreviewMetadataResponse(APIModel):

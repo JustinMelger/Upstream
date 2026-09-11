@@ -1,0 +1,161 @@
+.shell {
+  min-height: 100vh;
+}
+.main {
+  min-width: 0;
+}
+.utility {
+  height: 64px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 48px;
+}
+.desktopNav {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex: 1;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font: 500 20px "Space Grotesk";
+  white-space: nowrap;
+}
+.brand svg {
+  color: var(--accent);
+  width: 32px;
+  height: 32px;
+}
+.desktopNav nav {
+  display: flex;
+  gap: 24px;
+}
+.desktopNav nav a {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  font-size: 15px;
+  border-bottom: 2px solid transparent;
+}
+.desktopNav nav svg {
+  display: none;
+}
+.desktopNav nav a[aria-current="page"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.canvas {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 48px 48px;
+}
+.utilityActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+.avatar {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--accent);
+  font-size: 13px;
+}
+.skip {
+  position: fixed;
+  top: -100px;
+  left: 20px;
+  z-index: 100;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 12px;
+}
+.skip:focus {
+  top: 12px;
+}
+.mobileMenu,
+.mobileBrand {
+  display: none;
+}
+.drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(310px, 90vw);
+  background: var(--surface);
+  padding: 70px 20px 32px;
+  z-index: 40;
+}
+.drawer .brand {
+  margin-bottom: 28px;
+}
+.drawer nav {
+  display: grid;
+  gap: 10px;
+}
+.drawer nav a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 13px;
+  border-radius: 8px;
+}
+.drawer nav a[aria-current="page"] {
+  background: var(--selected);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+@media (max-width: 1199px) {
+  .canvas {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .utility {
+    padding: 0 24px;
+  }
+  .desktopNav {
+    gap: 24px;
+  }
+}
+@media (max-width: 899px) {
+  .desktopNav {
+    display: none;
+  }
+  .mobileMenu {
+    display: flex;
+    padding: 7px;
+    background: transparent;
+    color: var(--muted);
+  }
+  .mobileBrand {
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    min-width: 44px;
+    color: var(--accent);
+  }
+}
+@media (max-width: 599px) {
+  .canvas {
+    padding: 20px;
+  }
+  .utility {
+    padding: 0 20px;
+    gap: 8px;
+  }
+  .utilityActions {
+    gap: 12px;
+  }
+}

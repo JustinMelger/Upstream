@@ -101,7 +101,7 @@ async def add_course(
     Returns:
         dict: Created course.
     """
-    data = payload.model_dump()
+    data = payload.model_dump(exclude_unset=True)
     data["created_by"] = current_user
     return await courses.create_course(data)
 
@@ -129,7 +129,7 @@ async def edit_course(
         current_user=current_user,
         auth=auth,
     )
-    course = await courses.update_course(course_id, payload.model_dump())
+    course = await courses.update_course(course_id, payload.model_dump(exclude_unset=True))
     if not course:
         raise HTTPException(status_code=404, detail="not_found")
     return course
@@ -184,7 +184,9 @@ async def create_course_review(
 ) -> dict[str, Any]:
     """Create a review for a course (any authenticated user)."""
     require_row_exists(await courses.get_course_by_id(course_id))
-    return await reviews.create_review(course_id=course_id, payload=payload.model_dump(), created_by=current_user)
+    return await reviews.create_review(
+        course_id=course_id, payload=payload.model_dump(exclude_unset=True), created_by=current_user
+    )
 
 
 @router.delete("/{course_id}/reviews/{review_id}", response_model=DeleteCourseReviewResponse)

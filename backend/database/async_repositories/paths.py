@@ -27,6 +27,10 @@ class PathsRepository(RepositoryDateTimeCodec):
         """
         self.session = session
 
+    async def set_recommendation_note(self, content_id: int, note: str | None) -> None:
+        """Persist an explicitly supplied sharing note."""
+        await self.session.execute(update(PathModel).where(PathModel.id == content_id).values(recommendation_note=note))
+
     async def list_paths(self) -> list[PathRecord]:
         """List paths.
 
@@ -39,6 +43,7 @@ class PathsRepository(RepositoryDateTimeCodec):
                 PathModel.name,
                 PathModel.description,
                 PathModel.created_by,
+                PathModel.recommendation_note,
                 func.count(PathItemModel.id).label("course_count"),
             )
             .outerjoin(
@@ -56,6 +61,7 @@ class PathsRepository(RepositoryDateTimeCodec):
                 description=row.description,
                 created_by=row.created_by,
                 course_count=int(row.course_count or 0),
+                recommendation_note=row.recommendation_note,
             )
             for row in rows
         ]
@@ -86,7 +92,13 @@ class PathsRepository(RepositoryDateTimeCodec):
         rows: list[Any] = list(items_result.all())
         items = await self._load_learning_items(rows)
         return (
-            PathRecord(id=path.id, name=path.name, description=path.description, created_by=path.created_by),
+            PathRecord(
+                id=path.id,
+                name=path.name,
+                description=path.description,
+                created_by=path.created_by,
+                recommendation_note=path.recommendation_note,
+            ),
             items,
         )
 
@@ -335,13 +347,14 @@ class PathsRepository(RepositoryDateTimeCodec):
             select(
                 ArticleModel.id,
                 ArticleModel.title,
+                ArticleModel.description,
                 ArticleModel.url,
             ).where(ArticleModel.id.in_(ids))
         )
         return {
             int(row.id): {
                 "title": row.title,
-                "description": "",
+                "description": row.description or "",
                 "provider": "",
                 "category": "",
                 "level": "",

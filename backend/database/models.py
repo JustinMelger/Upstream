@@ -39,6 +39,8 @@ class CourseRecord:
     created_at: str | None
     created_by: str | None
 
+    recommendation_note: str | None = None
+
 
 @dataclass(frozen=True)
 class PathRecord:
@@ -49,6 +51,8 @@ class PathRecord:
     description: str | None
     created_by: str | None
     course_count: int = 0
+
+    recommendation_note: str | None = None
 
 
 @dataclass(frozen=True)
@@ -99,6 +103,9 @@ class ArticleRecord:
     created_by: str
     created_at: str
 
+    description: str | None = None
+    recommendation_note: str | None = None
+
 
 @dataclass(frozen=True)
 class VideoRecord:
@@ -112,6 +119,8 @@ class VideoRecord:
     url: str
     created_by: str
     created_at: str
+
+    recommendation_note: str | None = None
 
 
 @dataclass(frozen=True)
