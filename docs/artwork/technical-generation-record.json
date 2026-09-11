@@ -1,0 +1,30 @@
+[
+  {
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset type: production learning app cover artwork, wide landscape 16:9 1536x864. Create a standalone developer technical editorial illustration inspired by the user's reference images: near-black ink background #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass planes, delicate technical marks, restrained grain, generous negative space. Sophisticated engineering publication aesthetic, quietly dimensional, crisp rather than glowing. Composition concentrated in the central 65% so it works in card crops. Art only: no interface, no cards, no badges, no titles, no readable words, no logos, no watermark.\nVideo = signal and execution, see it run. A coral-red signal beam traveling left to right through three thin transparent upright glass planes, resolving into a vivid but refined coral waveform and fine silver output trace. Small packet dots, a thin playback timeline with one coral cursor beneath. Energetic, time-based, observational. The waveform and translucent beam dominate; avoid a generic play-button icon.",
+    "mode": "built-in image_gen",
+    "source": "exec-65b644dd-4d53-400c-8b3d-640ce9a59dd1.png",
+    "asset": "frontend/react/public/artwork/video-technical.webp"
+  },
+  {
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Asset type: production learning app cover artwork, wide landscape 16:9 1536x864. Create a standalone developer technical editorial illustration inspired by the user's reference images: near-black ink background #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass planes, delicate technical marks, restrained grain, generous negative space. Sophisticated engineering publication aesthetic, quietly dimensional, crisp rather than glowing. Composition concentrated in the central 65% so it works in card crops. Art only: no interface, no cards, no badges, no titles, no readable words, no logos, no watermark.\nArticle = specification and documentation, understand the idea. Three overlapping smoked-glass documentation sheets floating at a gentle perspective, with finely ruled silver text-like strokes, indented code-like lines and margin annotation connectors. One small translucent amber annotation panel offset to the right, highlighting a few lines. Calm, dense, editorial, precise. Main sheets remain dark translucent, not bright white. No readable lettering.",
+    "mode": "built-in image_gen",
+    "source": "exec-76fdf397-3a50-4574-ba23-d9bdf370a6e8.png",
+    "asset": "frontend/react/public/artwork/article-technical.webp"
+  },
+  {
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset type: production learning app cover artwork, wide landscape 16:9 1536x864. Create a standalone developer technical editorial illustration inspired by the user's reference images: near-black ink background #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass planes, delicate technical marks, restrained grain, generous negative space. Sophisticated engineering publication aesthetic, quietly dimensional, crisp rather than glowing. Composition concentrated in the central 65% so it works in card crops. Art only: no interface, no cards, no badges, no titles, no readable words, no logos, no watermark.\nCourse = architecture and construction, build the system. An exploded architectural system of three horizontal translucent blue-glass layers, supported by fine silver vertical guides, several small modular service blocks assembled across the layers. Fine right-angle dependency connectors lead to two smaller base modules. Systematic, substantial, carefully composed isometric engineering drawing. Blue accents are restrained, graphite remains dominant.\nCritical subject clarification: this is a SOFTWARE architecture illustration, abstract service cubes and translucent floating schema plates ONLY. No actual buildings, rooms, stairs, machinery, factories, pipes or physical infrastructure. Minimal abstract geometry: three separated glass rectangles in an exploded stack with 5 simple blue cubes, connected by fine orthogonal arrows. Each cube has a clean blank face. Much simpler and more diagrammatic, like the course panel of the user's reference.",
+    "mode": "built-in image_gen",
+    "source": "exec-ee6f30d9-6f5c-4d6e-834d-c8941a39facb.png",
+    "asset": "frontend/react/public/artwork/course-technical.webp"
+  },
+  {
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset type: production learning app cover artwork, wide landscape 16:9 1536x864. Create a standalone developer technical editorial illustration inspired by the user's reference images: near-black ink background #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass planes, delicate technical marks, restrained grain, generous negative space. Sophisticated engineering publication aesthetic, quietly dimensional, crisp rather than glowing. Composition concentrated in the central 65% so it works in card crops. Art only: no interface, no cards, no badges, no titles, no readable words, no logos, no watermark.\nPath = progression and branching, follow the progression. A clear left-to-right Git-like route diagram with six precise circular milestones, an elegant violet highlighted route rising through stages, silver secondary branches forking away and merging back. Fine dotted vertical guides and subtle state-transition marks. Strong forward direction, generous space between nodes, artfully composed sweeping paths, violet nodes with delicate silver rims. No landscape or physical road.",
+    "mode": "built-in image_gen",
+    "source": "exec-f63257f1-7c89-4a91-95ae-463f985dfb8a.png",
+    "asset": "frontend/react/public/artwork/path-technical.webp"
+  }
+]

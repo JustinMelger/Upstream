@@ -1,142 +1,322 @@
 [
   {
-    "key": "course-3",
-    "generation_file": "exec-517a4e7c-7d82-4f3c-9b6f-cf54bdf7bb40.png",
-    "brief": "Blue architectural / amber editorial / coral studio / lavender journey cover; landscape 16:9; no resource text or logos."
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset type: production learning app cover artwork, wide landscape 16:9 1536x864. Create a standalone developer technical editorial illustration inspired by the user's reference images: near-black ink background #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass planes, delicate technical marks, restrained grain, generous negative space. Sophisticated engineering publication aesthetic, quietly dimensional, crisp rather than glowing. Composition concentrated in the central 65% so it works in card crops. Art only: no interface, no cards, no badges, no titles, no readable words, no logos, no watermark.\nVideo = signal and execution, see it run. A coral-red signal beam traveling left to right through three thin transparent upright glass planes, resolving into a vivid but refined coral waveform and fine silver output trace. Small packet dots, a thin playback timeline with one coral cursor beneath. Energetic, time-based, observational. The waveform and translucent beam dominate; avoid a generic play-button icon.",
+    "mode": "built-in image_gen",
+    "source": "exec-65b644dd-4d53-400c-8b3d-640ce9a59dd1.png",
+    "asset": "frontend/react/public/artwork/video-0.webp",
+    "key": "video-0"
   },
   {
-    "key": "course-4",
-    "generation_file": "exec-227fe7e1-090f-4201-9e25-5ed20be5e27f.png",
-    "brief": "Blue architectural / amber editorial / coral studio / lavender journey cover; landscape 16:9; no resource text or logos."
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Asset type: production learning app cover artwork, wide landscape 16:9 1536x864. Create a standalone developer technical editorial illustration inspired by the user's reference images: near-black ink background #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass planes, delicate technical marks, restrained grain, generous negative space. Sophisticated engineering publication aesthetic, quietly dimensional, crisp rather than glowing. Composition concentrated in the central 65% so it works in card crops. Art only: no interface, no cards, no badges, no titles, no readable words, no logos, no watermark.\nArticle = specification and documentation, understand the idea. Three overlapping smoked-glass documentation sheets floating at a gentle perspective, with finely ruled silver text-like strokes, indented code-like lines and margin annotation connectors. One small translucent amber annotation panel offset to the right, highlighting a few lines. Calm, dense, editorial, precise. Main sheets remain dark translucent, not bright white. No readable lettering.",
+    "mode": "built-in image_gen",
+    "source": "exec-76fdf397-3a50-4574-ba23-d9bdf370a6e8.png",
+    "asset": "frontend/react/public/artwork/article-0.webp",
+    "key": "article-0"
   },
   {
-    "key": "course-5",
-    "generation_file": "exec-778a2b00-7efa-4682-a87f-d685792c393c.png",
-    "brief": "Standalone premium learning-library course cover. A quiet blue-steel elevated pedestrian bridge connecting two geometric university pavilions over water, glass facades reflecting sky, long elegant horizontal lines, architectural photography at blue dawn. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset type: production learning app cover artwork, wide landscape 16:9 1536x864. Create a standalone developer technical editorial illustration inspired by the user's reference images: near-black ink background #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass planes, delicate technical marks, restrained grain, generous negative space. Sophisticated engineering publication aesthetic, quietly dimensional, crisp rather than glowing. Composition concentrated in the central 65% so it works in card crops. Art only: no interface, no cards, no badges, no titles, no readable words, no logos, no watermark.\nCourse = architecture and construction, build the system. An exploded architectural system of three horizontal translucent blue-glass layers, supported by fine silver vertical guides, several small modular service blocks assembled across the layers. Fine right-angle dependency connectors lead to two smaller base modules. Systematic, substantial, carefully composed isometric engineering drawing. Blue accents are restrained, graphite remains dominant.\nCritical subject clarification: this is a SOFTWARE architecture illustration, abstract service cubes and translucent floating schema plates ONLY. No actual buildings, rooms, stairs, machinery, factories, pipes or physical infrastructure. Minimal abstract geometry: three separated glass rectangles in an exploded stack with 5 simple blue cubes, connected by fine orthogonal arrows. Each cube has a clean blank face. Much simpler and more diagrammatic, like the course panel of the user's reference.",
+    "mode": "built-in image_gen",
+    "source": "exec-ee6f30d9-6f5c-4d6e-834d-c8941a39facb.png",
+    "asset": "frontend/react/public/artwork/course-0.webp",
+    "key": "course-0"
   },
   {
-    "key": "course-6",
-    "generation_file": "exec-a7c4cf3d-c421-4044-91fa-4443a5bbc4cd.png",
-    "brief": "Standalone premium learning-library course cover. A refined engineering workshop with a large precise mechanical orrery made of brushed steel and pale blue glass, clean drafting tables and a navy industrial window wall, soft daylight, cinematic architectural still life. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset type: production learning app cover artwork, wide landscape 16:9 1536x864. Create a standalone developer technical editorial illustration inspired by the user's reference images: near-black ink background #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass planes, delicate technical marks, restrained grain, generous negative space. Sophisticated engineering publication aesthetic, quietly dimensional, crisp rather than glowing. Composition concentrated in the central 65% so it works in card crops. Art only: no interface, no cards, no badges, no titles, no readable words, no logos, no watermark.\nPath = progression and branching, follow the progression. A clear left-to-right Git-like route diagram with six precise circular milestones, an elegant violet highlighted route rising through stages, silver secondary branches forking away and merging back. Fine dotted vertical guides and subtle state-transition marks. Strong forward direction, generous space between nodes, artfully composed sweeping paths, violet nodes with delicate silver rims. No landscape or physical road.",
+    "mode": "built-in image_gen",
+    "source": "exec-f63257f1-7c89-4a91-95ae-463f985dfb8a.png",
+    "asset": "frontend/react/public/artwork/path-0.webp",
+    "key": "path-0"
   },
   {
-    "key": "course-7",
-    "generation_file": "exec-6a1fdef7-2c38-4856-ba90-64a5e953c709.png",
-    "brief": "Standalone premium learning-library course cover. A beautiful structural study of interlocking blue concrete arches and pale steel beams in a sunlit modern courtyard, reflecting pool in foreground, crisp architectural shadows, refined contemporary architecture photography. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "key": "article-1",
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Standalone wide landscape 16:9 learning app ARTICLE artwork. Match approved dark developer technical editorial art: near-black ink #0d141b, fine subtle drafting grid, translucent smoked-glass documentation planes with fine silver borders, silver indented code-like lines and small amber #efb759 annotations. Calm software documentation, no readable words or branding. No machines, mechanical parts, gears, physical engineering, buildings, devices, cameras or real-world objects. Only abstract document sheets, simple flowchart boxes and code-like rules. Two open side-by-side specification panels with a narrow gap between them, silver paragraph rules and a simple three-box software flowchart inset, three amber margin annotations with fine connectors.",
+    "mode": "built-in image_gen",
+    "source": "exec-50fdc130-6c90-43b2-9c33-4f1af52e3972.png",
+    "asset": "frontend/react/public/artwork/article-1.webp"
   },
   {
-    "key": "course-8",
-    "generation_file": "exec-764e9deb-d45a-4acf-8811-80210cb0e76c.png",
-    "brief": "Standalone premium learning-library course cover. A minimalist blue-slate lecture pavilion beside a still lake at twilight, a warm softly lit interior visible through a broad panoramic window, elegant cantilever roof, no chairs in rows, calming architectural photograph with deep navy shadows. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
-  },
-  {
-    "key": "course-9",
-    "generation_file": "exec-b3d78488-9270-4343-ba84-34ecbf7b8bb2.png",
-    "brief": "Standalone premium learning-library course cover. A dramatic blue geometric atrium with suspended pale-glass cubes and a wide staircase rising through layered balconies, soft natural skylight, matte slate and brushed steel, elegant architecture photograph, clear sculptural focal point. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, signatures, watermark, UI or collage."
+    "key": "article-2",
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Standalone wide landscape 16:9 learning app ARTICLE artwork. Match approved dark developer technical editorial art: near-black ink #0d141b, fine subtle drafting grid, translucent smoked-glass documentation planes with fine silver borders, silver indented code-like lines and small amber #efb759 annotations. Calm software documentation, no readable words or branding. No machines, mechanical parts, gears, physical engineering, buildings, devices, cameras or real-world objects. Only abstract document sheets, simple flowchart boxes and code-like rules. Four overlapping document sheets in an offset fan seen at a gentle perspective, primarily fine silver paragraph rules, indented code snippets, small square reference markers and one amber highlighted paragraph band. Flat translucent panels with no detailed diagram dominating.",
+    "mode": "built-in image_gen",
+    "source": "exec-0e756b92-fd8f-4644-a13c-1106959ec063.png",
+    "asset": "frontend/react/public/artwork/article-2.webp"
   },
   {
     "key": "article-3",
-    "generation_file": "exec-90840d30-c606-4c78-81a4-ecbbae8c1c38.png",
-    "brief": "Blue architectural / amber editorial / coral studio / lavender journey cover; landscape 16:9; no resource text or logos."
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nAn upright dark-glass code-review panel with fine indented silver strokes, two small amber comment callouts attached to specific lines, a faint duplicate version behind. Calm editorial annotation.\nAccent palette: amber #efb759 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-94973c00-c52b-4132-875e-0f9dcf0b95ae.png",
+    "asset": "frontend/react/public/artwork/article-3.webp"
   },
   {
     "key": "article-4",
-    "generation_file": "exec-36eaca2a-876d-4919-b414-e896b8887de1.png",
-    "brief": "Standalone premium learning-library article cover. A single amber linen-bound book standing open in a fan of sculptural blank paper pages, dramatic diagonal afternoon sunlight on warm sandstone, refined editorial still life with tactile fibers. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "article",
+    "prompt": "Standalone wide 16:9 developer learning ARTICLE cover. Near-black ink background #0d141b, very subtle drafting grid. Fine silver lines, translucent smoked-glass DOCUMENTATION PAGES, small amber #efb759 highlights, quiet editorial dimensional illustration matching a software developer publication. One large software specification sheet on the left, containing silver code-like indented horizontal rules and a small flowchart of three plain rectangles connected by arrows. Two smaller software reference notes on the right linked with fine silver dotted citation lines and amber markers.No mechanical diagrams, gears, physical parts, appliances, buildings or machines. No readable words, logos, watermark, UI frame or badges. Only abstract flat document planes, simple abstract text-like strokes and optional simple rectangles. Restrained grain and crisp thin edges.",
+    "mode": "built-in image_gen",
+    "source": "exec-6586658c-275b-4bf6-bc83-61b18c69454a.png",
+    "asset": "frontend/react/public/artwork/article-4.webp"
   },
   {
     "key": "article-5",
-    "generation_file": "exec-d466d750-4a9d-4b2f-a4c0-86dbb84d346a.png",
-    "brief": "Standalone premium learning-library article cover. A cozy empty reading nook with a sculptural ochre upholstered chair, an ivory book resting open on a small walnut side table and a warm brass floor lamp, honey sunlight, beautiful editorial interior photograph. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA single floating smoked-glass document with an inset simple silver block diagram, fine silver paragraph rules around it, an amber bracket connecting the diagram to a small marginal note. Read inspect understand.\nAccent palette: amber #efb759 with silver and graphite. No other saturated colors.\nSoftware documentation only. Use abstract code strokes and simple block diagrams. No mechanical parts, gears, machines, buildings or physical engineering.",
+    "mode": "built-in image_gen",
+    "source": "exec-f28195fa-16a2-4dfb-bd24-dfb4fa234009.png",
+    "asset": "frontend/react/public/artwork/article-5.webp"
   },
   {
     "key": "article-6",
-    "generation_file": "exec-5b083e9b-0901-4da0-93e6-01d93a830606.png",
-    "brief": "Standalone premium learning-library article cover. An amber glass desk lamp illuminating a folded ivory paper sculpture shaped like a gentle spiral on a walnut writing desk, quiet editorial still life, ochre wall, rich paper texture, evening warmth. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nTwo nearly parallel translucent document planes, one foreground amber outline highlighting a changed paragraph, thin silver connector leaders crossing between corresponding text-like line groups. Editorial revision study.\nAccent palette: amber #efb759 with silver and graphite. No other saturated colors.\nSoftware documentation only. Use abstract code strokes and simple block diagrams. No mechanical parts, gears, machines, buildings or physical engineering.",
+    "mode": "built-in image_gen",
+    "source": "exec-9938e092-2c24-434e-9d9e-ab3c5d16998f.png",
+    "asset": "frontend/react/public/artwork/article-6.webp"
   },
   {
     "key": "article-7",
-    "generation_file": "exec-9a1d8ace-ba1e-4c92-b142-2cf15b8af4de.png",
-    "brief": "Standalone premium learning-library article cover. A quiet editorial still life of ivory folded paper sheets, a small amber hourglass and a smooth ochre ceramic bowl on a dark walnut desk, gentle lamplight and deep honey-brown shadows, simple graphic composition. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "article",
+    "prompt": "Standalone wide 16:9 developer learning ARTICLE cover. Near-black ink background #0d141b, very subtle drafting grid. Fine silver lines, translucent smoked-glass DOCUMENTATION PAGES, small amber #efb759 highlights, quiet editorial dimensional illustration matching a software developer publication. Three flat translucent software notebook pages stacked at a gentle isometric angle. Silver paragraph rules and indented code-like horizontal strokes fill the pages. A small translucent amber folded corner and two amber annotation lines. No mechanical diagrams, gears, physical parts, appliances, buildings or machines. No readable words, logos, watermark, UI frame or badges. Only abstract flat document planes, simple abstract text-like strokes and optional simple rectangles. Restrained grain and crisp thin edges.",
+    "mode": "built-in image_gen",
+    "source": "exec-f1c9cc47-5dea-49cb-9574-a275c60cbd48.png",
+    "asset": "frontend/react/public/artwork/article-7.webp"
   },
   {
     "key": "article-8",
-    "generation_file": "exec-ff4f92bd-89c9-4439-a2da-365a1581a707.png",
-    "brief": "Standalone premium learning-library article cover. A close editorial still life of layered ivory paper arches casting warm amber shadows across a smooth ochre desk, one simple terracotta cup and a closed linen notebook, beautifully minimal tactile composition. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, signatures, watermark, UI or collage."
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA precise arrangement of three small dark-glass reference slips orbiting a larger documentation sheet, fine silver citations linking highlighted amber markers. Calm dense specification visual.\nAccent palette: amber #efb759 with silver and graphite. No other saturated colors.\nSoftware documentation only. Use abstract code strokes and simple block diagrams. No mechanical parts, gears, machines, buildings or physical engineering.",
+    "mode": "built-in image_gen",
+    "source": "exec-34a007e1-2baa-4006-a660-fd9c493fa36f.png",
+    "asset": "frontend/react/public/artwork/article-8.webp"
   },
   {
     "key": "article-9",
-    "generation_file": "exec-2dd464ce-c167-4a5a-bd27-62926fa9c87b.png",
-    "brief": "Standalone premium learning-library article cover. An ivory scroll of blank paper unfurling across a honey-colored oak desk beside a smooth amber glass cylinder, soft arch-shaped window shadow, elegant close editorial still life, warm tactile details. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, signatures, watermark, UI or collage."
+    "type": "article",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA wide dark documentation panel with structured code-like silver rules, a smaller translucent amber footnote panel below and a narrow silver index panel behind. Deliberate hierarchy, editorial negative space.\nAccent palette: amber #efb759 with silver and graphite. No other saturated colors.\nSoftware documentation only. Use abstract code strokes and simple block diagrams. No mechanical parts, gears, machines, buildings or physical engineering.",
+    "mode": "built-in image_gen",
+    "source": "exec-a1e267e0-c894-49ce-ac13-891b5daa3623.png",
+    "asset": "frontend/react/public/artwork/article-9.webp"
   },
   {
-    "key": "video-3",
-    "generation_file": "exec-ae6bdfb0-8fe2-4447-a904-262f32feb5ef.png",
-    "brief": "Blue architectural / amber editorial / coral studio / lavender journey cover; landscape 16:9; no resource text or logos."
+    "key": "course-1",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nAn abstract software service architecture of five simple translucent blue cubes: one gateway above, a central core, three base service modules linked by thin right-angle silver dependency arrows. Blank cube faces. No buildings or machinery.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-893335b2-3fa4-4f3b-a93f-9b927e27f0aa.png",
+    "asset": "frontend/react/public/artwork/course-1.webp"
   },
   {
-    "key": "video-4",
-    "generation_file": "exec-67f71f3a-55fd-485a-9810-02a5f9cf76cb.png",
-    "brief": "Standalone premium learning-library video cover. Three coral translucent discs suspended in a carefully balanced studio composition above a peach pedestal, luminous circular shadows and a soft spotlight cone, polished cinematic product photograph. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated. No people, text, lettering, logos, watermark, UI or collage."
+    "key": "course-2",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nThree parallel software pipelines assembled from small blue translucent rectangular modules resting on three spaced dark-glass plates, fine silver dependency arrows between stages. Abstract systematic construction, no physical infrastructure.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-1bf41f11-d013-4fbd-8af7-3d981f00d9e8.png",
+    "asset": "frontend/react/public/artwork/course-2.webp"
   },
   {
-    "key": "video-5",
-    "generation_file": "exec-989765be-a1d3-4614-be37-502889c0554c.png",
-    "brief": "Standalone premium learning-library video cover. An elegant sculptural wave made of parallel coral ribbons curving across a peach studio, spotlight illuminating fine ribbed textures and long soft shadows, cinematic abstract physical installation. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "key": "course-3",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nAn isometric schema of four translucent blue database cylinders connected to two simple service cubes by fine orthogonal silver lines. Restrained graphite plates behind, substantial software system, no readable labels.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-914af662-19f2-4a0a-971f-68a4a03831f6.png",
+    "asset": "frontend/react/public/artwork/course-3.webp"
   },
   {
-    "key": "video-6",
-    "generation_file": "exec-e336292b-d6a3-4280-ad86-86aab0c7b34f.png",
-    "brief": "Standalone premium learning-library video cover. A carefully composed coral studio with a large frosted glass sphere and a slender prism splitting warm spotlight into subtle peach rays, terracotta plinths and long elegant shadows, premium cinematic still life. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "key": "course-4",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nAn exploded software stack of four thin blue-glass rectangular layers with a small modular block on each and precise silver vertical dependency guides. Abstract minimal diagram, no literal architecture, buildings or machinery.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-cf1b8b10-251b-4681-a3e3-f8ec23fd9efc.png",
+    "asset": "frontend/react/public/artwork/course-4.webp"
   },
   {
-    "key": "video-7",
-    "generation_file": "exec-ac84e6f1-3810-4821-9d63-83f0b3ea7cc1.png",
-    "brief": "Standalone premium learning-library video cover. A coral sculptural acoustic wall made of softly rounded vertical fins fading into shadow, one glowing circular spotlight centered on its textured surface, peach and dusty rose cinematic studio installation, moody and elegant. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "key": "course-5",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nSix blue translucent software components assembled as a precise two-by-three modular grid on a smoked-glass foundation, one block slightly elevated revealing silver interface connectors. Software construction, no machines.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-6300d3b4-800f-4470-b460-7f1917118a7f.png",
+    "asset": "frontend/react/public/artwork/course-5.webp"
   },
   {
-    "key": "video-8",
-    "generation_file": "exec-83c9fa8c-51bf-4a8b-8e22-46926edcc0c3.png",
-    "brief": "Standalone premium learning-library video cover. A cinematic coral studio with a glowing rectangular light portal behind a suspended frosted-glass torus, dusty rose walls and warm peach reflections, balanced sculptural composition with rich soft shadows. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, signatures, watermark, UI or collage."
+    "key": "course-6",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA central translucent blue hexagonal service node connected to four small blue glass cubes around it, fine orthogonal dependency routes and two subtle dark schema panels behind. Abstract software architecture.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-e018d5c3-cbfb-4a32-b091-e2ac1d6388e1.png",
+    "asset": "frontend/react/public/artwork/course-6.webp"
   },
   {
-    "key": "video-9",
-    "generation_file": "exec-e3715379-7d08-46e5-9b54-5d41a0273bab.png",
-    "brief": "Standalone premium learning-library video cover. A kinetic-looking sculpture of three interlocking coral ceramic loops in a dusty rose studio, glowing peach rim light and a deep terracotta backdrop, cinematic lighting, physical sculptural materials, graphic clear silhouette. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, signatures, watermark, UI or collage."
+    "key": "course-7",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nTwo distinct software stacks of three blue-glass plates connected by a silver bridge of dependency arrows, small simple blue modules on each level. System composition, no literal building or physical bridge.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-cd1485b2-4bfb-409b-9a79-0218433d594a.png",
+    "asset": "frontend/react/public/artwork/course-7.webp"
+  },
+  {
+    "key": "course-8",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA three-stage software data pipeline: translucent blue cylinder to blue processing cube to an orderly three-block service cluster, slim silver arrow routes on a dark drafting plane. Precise substantial system.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-ee4fd359-5e6d-4217-b9e9-7d443f68713e.png",
+    "asset": "frontend/react/public/artwork/course-8.webp"
+  },
+  {
+    "key": "course-9",
+    "type": "course",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nAn exploded component assembly with a wide dark-glass base schema plate, four small blue service blocks suspended above their outlined slots, silver vertical registration guides and dependency connections. Pure abstract software geometry.\nAccent palette: blue #73b8f0 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-00d99dae-7fe4-410d-9497-c702120d5da5.png",
+    "asset": "frontend/react/public/artwork/course-9.webp"
+  },
+  {
+    "key": "path-1",
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA clean Git-like silver branch diagram flowing left to right, one highlighted violet feature route forks from the main line through three circular milestones and merges at a violet ring. Strong directed progression.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-2aaf33c7-4f52-4f33-9e17-ec514f4cb83d.png",
+    "asset": "frontend/react/public/artwork/path-1.webp"
+  },
+  {
+    "key": "path-2",
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nFive circular violet milestones climb an elegant ascending stepped route, fine silver alternate paths branch to hollow nodes below, subtle dotted stage guides. Progression without physical stairs or landscape.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-8d1dcaf2-0a6a-4325-908a-7661d75c968d.png",
+    "asset": "frontend/react/public/artwork/path-2.webp"
   },
   {
     "key": "path-3",
-    "generation_file": "exec-f80af5dd-08ad-4684-9463-5d8489276c47.png",
-    "brief": "Blue architectural / amber editorial / coral studio / lavender journey cover; landscape 16:9; no resource text or logos."
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA compact decision tree of fine silver curves flowing left to right, violet route highlights a sequence of four states from an origin node to a final double-ring milestone. Clear direction and choice.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-ce093597-b6a0-47fa-9df5-6ec97326b8ea.png",
+    "asset": "frontend/react/public/artwork/path-3.webp"
   },
   {
     "key": "path-4",
-    "generation_file": "exec-9b789466-cf4d-40ae-b3e4-6f7d6221bc07.png",
-    "brief": "Standalone premium learning-library path cover. A lilac stone stairway winding between terraced gardens and flowering wisteria toward a distant hilltop arch, mountains at dawn, rich lavender and mauve with warm peach light, painterly cinematic fantasy landscape. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nTwo silver branching routes converge through violet milestones into one ascending violet path, thin translucent vertical stage planes behind the nodes. Forks merges and growth.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-1a34671e-849c-4a90-927a-3e81950c17f5.png",
+    "asset": "frontend/react/public/artwork/path-4.webp"
   },
   {
     "key": "path-5",
-    "generation_file": "exec-2786e328-73f1-4cd1-b9ae-aebfb687f028.png",
-    "brief": "Standalone premium learning-library path cover. A gently curving wooden boardwalk through a misty forest of silver trunks and lavender foliage leading toward a small sunlit clearing, lilac shadows and peach dawn, painterly cinematic landscape. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nAn elegant roadmap of three parallel thin silver routes with circular milestones, one violet route changes lanes twice through curved transitions then reaches a larger outlined final node on the right.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-48d17799-5de9-4ff5-8141-2b63b0b6f4d0.png",
+    "asset": "frontend/react/public/artwork/path-5.webp"
   },
   {
     "key": "path-6",
-    "generation_file": "exec-374951d4-215c-4154-94de-f56390310724.png",
-    "brief": "Standalone premium learning-library path cover. A narrow violet stone bridge crossing a deep misty canyon toward rolling lavender hills, graceful arch and distant mountains, soft rose sunrise, atmospheric painterly cinematic landscape with a clear inviting route. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA silver version-history line with seven small circular nodes, a violet branch arcs up through three larger milestones and rejoins a final violet ring. Fine vertical drafting guides, visual Git progression.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-868a9f53-73da-4591-95e7-f291c6f1bd69.png",
+    "asset": "frontend/react/public/artwork/path-6.webp"
   },
   {
     "key": "path-7",
-    "generation_file": "exec-fe946947-0907-4c05-b0f0-afc1f67fae8b.png",
-    "brief": "Standalone premium learning-library path cover. A quiet lavender coastal footpath following a dramatic headland toward a small distant lighthouse at blue-lilac dusk, mauve sea and soft apricot light on the horizon, painterly cinematic landscape, clear central trail. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, watermark, UI or collage."
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA sequence of five dark-glass state plates aligned at a gentle perspective, connected by a violet directional route through circular nodes, small silver branches end in hollow alternate-state circles. Clear sequential growth.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-0326688f-cfe0-4a5b-ae3c-ca6954a29bc8.png",
+    "asset": "frontend/react/public/artwork/path-7.webp"
   },
   {
     "key": "path-8",
-    "generation_file": "exec-4aed6baf-0f8f-4521-ba15-c29b78a98acb.png",
-    "brief": "Standalone premium learning-library path cover. A winding lavender trail through tall purple grasses and rounded lilac boulders toward a distant mountain pass, morning mist lifting and warm sunrise touching the peaks, inviting painterly cinematic landscape. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, signatures, watermark, UI or collage."
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA central violet route winds gently upward left to right through four milestones, two fine silver detours fork and merge, a dotted future extension reaches an empty destination ring. Calm strong forward direction.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-b8ee7182-a1cf-4e45-a85e-f8b536cbb78b.png",
+    "asset": "frontend/react/public/artwork/path-8.webp"
   },
   {
     "key": "path-9",
-    "generation_file": "exec-025fe4cb-bb3d-423c-8efe-01c71e192b0d.png",
-    "brief": "Standalone premium learning-library path cover. A quiet lavender garden labyrinth seen from a gently elevated perspective, a wide lilac stone route leading toward a glowing circular pavilion, flowering hedges and distant mauve hills, painterly cinematic morning landscape. Wide 16:9, single edge-to-edge composition, central focus readable as a small card or square thumbnail. Inviting and sophisticated, tactile realism with a dreamlike quality. No people, text, lettering, logos, signatures, watermark, UI or collage."
+    "type": "path",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nThree thin silver starting routes on the left join at a violet milestone, then a highlighted violet path progresses through three circular stages and splits into two refined future directions. Route choice and progression.\nAccent palette: violet #b48af1 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-f2e47d15-db1d-4575-a5ee-7f58cd0a6123.png",
+    "asset": "frontend/react/public/artwork/path-9.webp"
+  },
+  {
+    "key": "video-1",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA coral request packet traverses four horizontal execution lanes on a smoked glass trace panel, fine timing guides, one focused coral cursor linking stacked timeline events. Signal and execution, see it run.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-8fdd3ec2-0f4d-4921-b2f1-d8340e60808e.png",
+    "asset": "frontend/react/public/artwork/video-1.webp"
+  },
+  {
+    "key": "video-2",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA sparse silver wireframe globe, two coral request/response arcs crossing it, a floating dark terminal pane containing only tiny abstract silver code strokes and coral packet dots. See a network request happen.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-5c1cfd6b-6971-4b97-a4f8-f4ef407b155e.png",
+    "asset": "frontend/react/public/artwork/video-2.webp"
+  },
+  {
+    "key": "video-3",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA vivid coral waveform passes through a translucent oscilloscope plane, two calmer silver traces trail behind at staggered depth, a coral cursor on a thin horizontal timeline. Signal inspection.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-52388b52-cc6e-4df6-8c47-0945a7a7b679.png",
+    "asset": "frontend/react/public/artwork/video-3.webp"
+  },
+  {
+    "key": "video-4",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA fan of fine coral streaming packet trails converges into a small translucent buffer cube then exits as a single ordered silver-and-coral pulse train. Clear left-to-right execution.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-f508245a-000c-4a79-92d5-a37935421783.png",
+    "asset": "frontend/react/public/artwork/video-4.webp"
+  },
+  {
+    "key": "video-5",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nThree suspended dark trace panels linked horizontally by a coral request line. Each panel contains a different tiny time-based waveform, lower silver response line curves back. Precise observational request/response flow.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-8d59c9ab-fd7c-4d3b-85e9-9856e809c015.png",
+    "asset": "frontend/react/public/artwork/video-5.webp"
+  },
+  {
+    "key": "video-6",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nAn execution timeline with five thin horizontal silver lanes and staggered coral duration bars, one glass magnifying plane revealing a crisp pulse beneath a narrow coral beam. Abstract performance trace.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-d1dc1f05-05be-45b0-9af0-e24bb7dfc0ba.png",
+    "asset": "frontend/react/public/artwork/video-6.webp"
+  },
+  {
+    "key": "video-7",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA coral light beam moves through a smoked-glass circular scanning aperture, revealing a delicate silver wireframe cluster of nodes, with a small horizontal waveform beneath. Quiet technical signal detection.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-dfaa4cbb-3ccb-4135-aded-8b9ab31a4a58.png",
+    "asset": "frontend/react/public/artwork/video-7.webp"
+  },
+  {
+    "key": "video-8",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nTwo thin translucent vertical signal planes frame an elegant coral frequency spectrum of fine bars; silver input waveform on the left and a resolved coral output pulse on the right. Engineering execution.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-dc1c13e3-68eb-43e4-b16d-0230178a2ce8.png",
+    "asset": "frontend/react/public/artwork/video-8.webp"
+  },
+  {
+    "key": "video-9",
+    "type": "video",
+    "prompt": "Use case: stylized-concept. Asset: standalone production learning app cover, landscape 16:9. Developer technical editorial illustration: near-black ink #0d141b, extremely subtle drafting grid, precise fine silver construction lines, translucent smoked glass, delicate technical marks, restrained grain. Sophisticated engineering publication, quietly dimensional, crisp rather than glowing. Strong simple central composition, readable at 320px card width. Art only, no UI, no badges, no title, no readable words, no logos or watermark. Generous breathing room. Match the approved series of glass diagrams on dark ink.\nA chain of five coral packet pulses travels around a clean rounded rectangular silver event loop on smoked-glass planes, one active pulse brightened, three fine asynchronous traces entering from the left. Visualize runtime.\nAccent palette: coral #ff8278 with silver and graphite. No other saturated colors.",
+    "mode": "built-in image_gen",
+    "source": "exec-f7328347-c30f-4ffe-9278-419f4521a2c0.png",
+    "asset": "frontend/react/public/artwork/video-9.webp"
   }
 ]

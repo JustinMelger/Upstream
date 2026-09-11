@@ -20,7 +20,14 @@
   justify-content: center;
   gap: 12px;
   border-left: 8px solid var(--content-color);
-  background: linear-gradient(135deg, var(--raised), var(--surface));
+  background:
+    linear-gradient(#8da3b00a 1px, transparent 1px),
+    linear-gradient(90deg, #8da3b00a 1px, transparent 1px),
+    linear-gradient(135deg, var(--raised), var(--surface));
+  background-size:
+    24px 24px,
+    24px 24px,
+    100% 100%;
   color: var(--text);
 }
 .fallback svg,
@@ -81,6 +88,16 @@
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  width: fit-content;
+  padding: 4px 10px;
+  border: 1px solid
+    color-mix(in srgb, var(--content-color, var(--accent)) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--content-color, var(--accent)) 7%,
+    transparent
+  );
 }
 .info {
   padding: 0 18px 18px;
@@ -183,7 +200,6 @@
   column-gap: 16px;
   row-gap: 10px;
 }
-.spotlightCopy > .type,
 .spotlightCopy h2,
 .spotlightCopy p {
   width: 100%;

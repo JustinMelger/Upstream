@@ -22,13 +22,13 @@ export const contentIcons = {
   video: Video,
   path: Route,
 };
+/** Selects a stable technical illustration from each format's ten-cover library. */
 export function artworkKey(type: ContentType, title: string) {
   const normalized = `${type}:${title.normalize("NFKC").trim().toLowerCase().replace(/\s+/g, " ")}`;
   let hash = 2166136261;
   for (const character of normalized)
     hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
   const fingerprint = String(hash >>> 0);
-  // Freeze pre-expansion catalog covers; new titles use the complete v1 pool.
   const preserved = (legacyArtwork as Record<string, number>)[fingerprint];
   return `${type}-${preserved ?? (hash >>> 0) % 10}`;
 }
@@ -44,6 +44,7 @@ export function ResourceArtwork({
   hero?: boolean;
 }) {
   const key = artworkKey(type, title);
+  const resourceKey = `${key}:${title}`;
   const [failed, setFailed] = useState("");
   const Icon = contentIcons[type];
   return (
@@ -54,7 +55,7 @@ export function ResourceArtwork({
       data-hero={hero}
       aria-hidden="true"
     >
-      {failed === key ? (
+      {failed === resourceKey ? (
         <div className={s.fallback}>
           <Icon size={32} />
           <strong>{title}</strong>
@@ -62,8 +63,8 @@ export function ResourceArtwork({
         </div>
       ) : (
         <img
-          src={`/artwork/${key}-card.webp`}
-          srcSet={`/artwork/${key}-card.webp 640w, /artwork/${key}.webp 1280w`}
+          src={`/artwork/${key}-card.webp?v=technical-2`}
+          srcSet={`/artwork/${key}-card.webp?v=technical-2 640w, /artwork/${key}.webp?v=technical-2 1280w`}
           sizes={
             hero
               ? "(max-width: 599px) 100px, 50vw"
@@ -74,7 +75,7 @@ export function ResourceArtwork({
           alt=""
           loading={eager ? "eager" : "lazy"}
           decoding="async"
-          onError={() => setFailed(key)}
+          onError={() => setFailed(resourceKey)}
         />
       )}
     </div>

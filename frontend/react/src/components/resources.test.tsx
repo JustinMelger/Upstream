@@ -6,7 +6,7 @@ import { Pagination } from "./ui";
 import { statSync } from "node:fs";
 
 describe("resource presentation", () => {
-  it("preserves covers already assigned before the v1 expansion", () => {
+  it("preserves established variant assignments in the replacement library", () => {
     expect(artworkKey("course", "Production-ready Python")).toBe("course-0");
     expect(artworkKey("course", "  PRODUCTION-READY   PYTHON ")).toBe(
       "course-0",
@@ -40,7 +40,7 @@ describe("resource presentation", () => {
     fireEvent.error(container.querySelector("img")!);
     expect(container.querySelector("img")).toBeNull();
     expect(screen.getByText("A useful article")).toBeTruthy();
-    rerender(<ResourceArtwork type="path" title="A useful path" />);
+    rerender(<ResourceArtwork type="article" title="Another useful article" />);
     expect(container.querySelector("img")).not.toBeNull();
   });
   it("has one resource link and separates author recommendations from ratings", () => {
