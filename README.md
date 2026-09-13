@@ -2,11 +2,25 @@
 
 A shared learning library with a React workspace and FastAPI backend.
 
+![Upstream Explore on desktop, with search, filters and artwork for courses, articles, videos and paths](frontend/react/tests/visual/baselines/explore-1440.png)
+
+*Explore the shared library. Screenshots use fictional content from the mocked browser suite.*
+
 - **Explore:** discover courses, articles, videos, and mixed learning paths.
 - **My learning:** continue a course, track course progress, and manage selected paths.
 - **Activity:** personal statistics, reviews on your content, and shared-content updates.
 - **Share:** publish learning material with an optional “Why I recommend this” note.
 - **Admin:** manage accounts and access.
+
+<details>
+<summary>Mobile preview — My learning</summary>
+
+<p>Continue a course, track progress and manage selected paths on a smaller screen.</p>
+<img src="frontend/react/tests/visual/baselines/home-390.png" width="280" alt="Upstream My learning on mobile, showing a course to continue, progress controls and a selected learning path" />
+
+</details>
+
+See the [brand identity](docs/branding/README.md) and [artwork guidance](docs/artwork/README.md) for the design details.
 
 Courses support progress tracking. Articles and videos support reviews; they do not have completion tracking. Path status is manual and independent of the displayed course-completion count. Content is globally shared; personal progress is private except for authorized administrative access.
 
