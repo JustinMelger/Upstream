@@ -6,6 +6,8 @@ Set `ENVIRONMENT=production`, `PUBLIC_ORIGIN=https://your-host`, a random `BROWS
 
 Browser authentication uses `/api/auth/browser/login`, `/session`, and `/logout`. Session responses contain a CSRF token, never the session credential. Mutations require the configured Origin and `X-CSRF-Token`. Header authentication remains for one rollback release; an explicit header never falls back to cookies. Logout revokes only the presented session. Password reset and disabling an account revoke all its sessions.
 
+The API and migration containers run as UID/GID `10001:10001`. The UI runs as the image's `nginx` user on port 8080, with PID and temporary files under `/tmp`. Both images use separate build and runtime stages. The API runtime includes only its virtual environment, backend code and Alembic files; development scripts and frontend sources are excluded.
+
 ## Published images
 
 Releases publish `ghcr.io/<owner>/upstream-api` and `ghcr.io/<owner>/upstream-ui`. Stable releases provide exact version, minor, major and `latest` tags; release candidates provide their release tag and `rc`. Prefer the same exact version for both images in a deployment. Release tags continue to use `v…`; package renaming does not reset version history.
