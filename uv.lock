@@ -482,7 +482,7 @@ wheels = [
 ]
 
 [[package]]
-name = "learning-platform"
+name = "upstream-api"
 version = "0.12.7"
 source = { virtual = "." }
 dependencies = [

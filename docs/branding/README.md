@@ -10,19 +10,6 @@ The shared React Brand component pairs the decorative mark with live Space Grote
 
 `favicon.svg` uses a solid mint mark on a rounded slate tile. `favicon.ico` contains 16px and 32px versions. `upstream-app-icon.svg` supplies the gradient artwork for the 180px `apple-touch-icon.png`; its square background lets the operating system apply its own mask. Raster icons are Chromium renders of the SVG sources, with Pillow encoding the ICO sizes.
 
-## Historical explorations
+## Source record
 
-### Relay icon directions
-
-Exploratory mockups for Relay's app symbol and wordmark. Generated with the built-in image tool; these are review concepts, not production vector assets.
-
-![Four Relay identity directions](relay-icon-directions.png)
-
-1. **Handoff:** two endpoints connected by a stepped route; emphasizes knowledge passing between people.
-2. **Signal:** paired rounded strokes; compact and abstract.
-3. **Connection:** opposing open links; emphasizes exchange.
-4. **Relay R:** a route-shaped lettermark; ties the symbol directly to the name.
-
-These Relay directions are historical explorations, superseded by Upstream Simple Flow.
-
-[Generation and corrective-edit prompts](generation-record.json) use portable source filenames. Earlier artwork and UI mockups retain their original branding as historical design references.
+The [approved mockup generation record](upstream-simple-flow-generation.json) preserves its original prompt and portable source filename. Use the SVG assets above for production.

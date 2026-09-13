@@ -1,5 +1,5 @@
 [project]
-name = "learning-platform"
+name = "upstream-api"
 version = "0.12.7"
 description = "A shared learning library with personal course tracking and resource recommendations"
 readme = "README.md"

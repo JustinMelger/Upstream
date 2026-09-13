@@ -1,10 +1,11 @@
-# Architecture
+# Upstream architecture
 
-The supported frontend is React/TypeScript/Vite, served by Nginx alongside FastAPI and PostgreSQL.
+Upstream uses a React/TypeScript/Vite frontend, served by Nginx alongside FastAPI and PostgreSQL. Alembic manages schema changes.
 
-- [Frontend architecture](architecture_frontend.md)
-- [Backend architecture](architecture_backend.md)
-- [React implementation record](react_redesign_plan.md)
-- [Setup, verification, and rollback](../README.md)
+The browser uses same-origin `/api` requests. FastAPI authenticates requests and applies domain rules through services; async repositories own database queries and transactions. TanStack Query manages frontend server state, while URLs hold shareable filters and pagination.
 
-NiceGUI design notes and the v1 specifications are historical references. The React implementation record defines the current product scope; the database retains team tables only for rollback compatibility.
+- [Frontend architecture](architecture_frontend.md): navigation, state, sessions, forms and artwork.
+- [Backend architecture](architecture_backend.md): authentication, content rules, read models and metadata fetching.
+- [Product guide](product.md): implemented capabilities and visibility rules.
+- [Operations](operations.md): setup requirements, checks and compatibility protections.
+- [Engineering standards](../AGENT.md): dependency boundaries and implementation practices.

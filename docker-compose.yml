@@ -15,6 +15,7 @@ services:
       timeout: 5s
       retries: 20
   migrate:
+    image: ${API_IMAGE:-upstream-api:local}
     build: .
     command: ["alembic", "upgrade", "head"]
     depends_on:
@@ -23,6 +24,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://learning_platform:${POSTGRES_PASSWORD}@postgres:5432/learning_platform
   api:
+    image: ${API_IMAGE:-upstream-api:local}
     build: .
     depends_on:
       migrate:
@@ -42,6 +44,7 @@ services:
       timeout: 5s
       retries: 10
   ui:
+    image: ${UI_IMAGE:-upstream-ui:local}
     build:
       context: .
       dockerfile: frontend/react/Dockerfile

@@ -24,18 +24,20 @@ Tracking applies only to courses. Path selection and manual status remain indepe
 
 Activity projects existing content shares and reviews. Personal scope contains others' reviews on the user's own content; shared scope contains global shares/reviews. Neither exposes other people's course tracking. Statistics are self-only for members; aggregate/per-user administrative statistics require admin access.
 
-## Migrations and retirement
+## Metadata and schema compatibility
 
-Migration `20260909_0018` adds nullable recommendation notes and a nullable path creation timestamp with a default for future records. Existing undated paths keep null timestamps and are excluded from newly-shared events. The populated migration verifier compares every original field across 14 legacy tables.
+The authenticated `/url-preview/metadata` route serves explicit Fetch details. Catalog and detail reads do not fetch external metadata or images. Suggestions use page-authored metadata; compatibility image/classification response fields remain empty.
 
-Teams, AI Curator, and legacy notification routes are unregistered. The authenticated `/url-preview/metadata` route serves explicit Fetch details. Tracking has no Teams dependency. Team tables remain during rollback, with historical migrations unchanged. Metadata-only fetching validates and pins public destinations, bounds redirects/time/content/concurrency/cache, and never runs on content reads. External-cover fetching and inferred classification helpers have been removed; response compatibility fields remain empty.
+Metadata requests validate HTTP/HTTPS destinations, require public DNS answers and pin connections to a validated address while preserving the original host and TLS verification name. Redirects are revalidated. The fetcher limits time, response size, concurrency and successful-result caching; it accepts HTML/XHTML and rejects compressed responses. No browser credentials or environment proxies are forwarded. Manual entry supports sites that require JavaScript, authentication or unsupported encoding.
+
+Alembic migrations preserve existing records. Undated paths retain null creation timestamps and are excluded from newly-shared events. Retained compatibility tables and authentication transport are protected by the [rollback policy](operations.md#release-and-rollback).
 
 ## Deployment and observability
 
 The API image contains Python runtime dependencies only. Nginx serves the React assets and proxies `/api`; `API_ROOT_PATH=/api` keeps API documentation links correct. The migration container completes before API startup. React's Vite server proxies `/api` during development.
 
-OpenTelemetry instrumentation remains available, disabled by default. The repository does not bundle a Collector/Tempo/Prometheus/Loki/Grafana stack; enable instrumentation only with independently configured OTLP endpoints. Optional authenticated `/telemetry/events` ingestion requires `FEATURE_TELEMETRY=1`; the new React UI does not require it.
+OpenTelemetry instrumentation remains available, disabled by default. The repository does not bundle a Collector/Tempo/Prometheus/Loki/Grafana stack; enable instrumentation only with independently configured OTLP endpoints. Optional authenticated `/telemetry/events` ingestion requires `FEATURE_TELEMETRY=1`; the React UI does not require it.
 
-See [React implementation record](react_redesign_plan.md) and [README](../README.md) for release gates, setup, and rollback.
+See [operations](operations.md) and the [project README](../README.md) for verification, setup and rollback.
 
-The UX refinement adds paginated provider/category facets using the catalog's active filters except the selected facet itself. Personal learning items optionally include `course_progress` for selected paths, computed in one extra SQL query for the bounded page. Catalog responses never include personal path totals. No schema migration is required.
+The catalog exposes paginated provider/category facets using the catalog's active filters except the selected facet itself. Personal learning items optionally include `course_progress` for selected paths, computed in one extra SQL query for the bounded page. Catalog responses never include personal path totals.

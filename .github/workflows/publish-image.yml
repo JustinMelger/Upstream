@@ -17,7 +17,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/learning-platform
 
 jobs:
   publish:
@@ -25,10 +24,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - suffix: ""
+          - image: upstream-api
             dockerfile: Dockerfile
             smoke: python -c "import backend.main"
-          - suffix: "-ui"
+          - image: upstream-ui
             dockerfile: frontend/react/Dockerfile
             smoke: nginx -v
     permissions:
@@ -76,7 +75,7 @@ jobs:
         if: ${{ steps.ref.outputs.prerelease != 'true' }}
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}${{ matrix.suffix }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
             type=semver,pattern={{version}},value=${{ steps.ref.outputs.semver_tag }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.ref.outputs.semver_tag }}
@@ -88,7 +87,7 @@ jobs:
         if: ${{ steps.ref.outputs.prerelease == 'true' }}
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}${{ matrix.suffix }}
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
             type=raw,value=${{ steps.ref.outputs.semver_tag }}
             type=raw,value=rc
@@ -99,11 +98,11 @@ jobs:
           context: .
           file: ${{ matrix.dockerfile }}
           load: true
-          tags: learning-platform:smoke
+          tags: ${{ matrix.image }}:smoke
 
       - name: Smoke test container image
         run: |
-          docker run --rm learning-platform:smoke ${{ matrix.smoke }}
+          docker run --rm ${{ matrix.image }}:smoke ${{ matrix.smoke }}
 
       - name: Build and push Docker image
         id: push
@@ -119,6 +118,6 @@ jobs:
         if: ${{ github.event.repository.private == false }}
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.IMAGE_NAME }}${{ matrix.suffix }}
+          subject-name: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true

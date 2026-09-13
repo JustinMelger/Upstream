@@ -24,8 +24,6 @@ See the [brand identity](docs/branding/README.md) and [artwork guidance](docs/ar
 
 Courses support progress tracking. Articles and videos support reviews; they do not have completion tracking. Path status is manual and independent of the displayed course-completion count. Content is globally shared; personal progress is private except for authorized administrative access.
 
-Teams and AI Curator are retired. NiceGUI has been replaced by React.
-
 ## Requirements
 
 Python 3.13, uv, Node.js 22.13 or later, npm, and Docker Compose. `just` is optional.
@@ -57,10 +55,11 @@ Vite proxies `/api` to `http://127.0.0.1:8000`; `BACKEND_URL` overrides this dev
 Use a disposable PostgreSQL database for tests: backend fixtures truncate tables.
 Run `just test` and `just build` for backend/frontend checks; browser and visual checks are separate release gates.
 
+- [Product guide](docs/product.md): capabilities, pagination and visibility.
 - [Documentation index](docs/README.md): current guidance, implementation history, and approved designs.
 - [Operations and verification](docs/operations.md): commands, contracts, browser/visual checks, deployment, and rollback.
 - [Architecture](docs/architecture.md) and [engineering standards](AGENT.md).
 
 New-resource forms support optional **Fetch details** from page-authored metadata. Artwork is bundled locally: ten covers per resource type. Draft recovery and personal course tracking remain independent of metadata fetching.
 
-Docker uses port **8080** by default. The existing local preview uses **18080** in its separate project. After changing source, rebuild images; restarting an old image does not update the UI.
+Docker uses port **8080** by default. After changing source, rebuild images; restarting an old image does not update the UI.

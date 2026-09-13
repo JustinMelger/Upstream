@@ -13,9 +13,9 @@ Every format uses the same drafting brief: slate `#1c2935`, a faint square grid,
 
 ## Format recognition and subject variety
 
-The refinement replaces 20 covers and retains the other 20 byte-for-byte. Each format has a dominant structure: articles explain through documentation and annotations; videos depict execution over time; courses assemble connected systems; paths follow milestones, branches and states. Color reinforces these structures rather than supplying the only distinction.
+Each format has a dominant structure: articles explain through documentation and annotations; videos depict execution over time; courses assemble connected systems; paths follow milestones, branches and states. Color reinforces these structures rather than supplying the only distinction.
 
-| Format | Refined variants | Subjects |
+| Format | Example variants | Subjects |
 | --- | --- | --- |
 | Article | 1, 2, 4, 5, 6, 8 | API reference, schema explanation, protocol documentation, query plan, test specification, runbook |
 | Course | 1, 3, 5, 6, 7, 8 | Event-driven system, databases, component assembly, identity architecture, storage, distributed network |
@@ -48,16 +48,18 @@ Each sheet shows variants 0–9 in reading order. All variants, including the fo
 
 `ResourceArtwork` selects a stable variant from the content type and normalized title. The existing title fingerprint compatibility map preserves established variant assignments. The same resource receives the same cover across cards, spotlights, previews, and detail pages. Titles and metadata remain accessible HTML; artwork is decorative and does not claim to depict a resource's exact contents.
 
-All 80 responsive assets are saved in `frontend/react/public/artwork/`: `{type}-{0..9}.webp` at 1280×720 and `{type}-{0..9}-card.webp` at 640×360. Each full image stays below 200 KB and each card below 60 KB. Image URLs include `?v=refined-1` to refresh cached old artwork. Lazy loading, responsive sources, reserved dimensions, and local failure recovery are preserved. The four `-technical` signature assets remain available as aliases of variant 0 and use the same updated artwork.
+All 80 responsive assets are saved in `frontend/react/public/artwork/`: `{type}-{0..9}.webp` at 1280×720 and `{type}-{0..9}-card.webp` at 640×360. Each full image stays below 200 KB and each card below 60 KB. Image URLs include `?v=refined-1` for cache invalidation. Lazy loading, responsive sources, reserved dimensions, and local failure recovery are supported. The four `-technical` signature assets remain available as aliases of variant 0 and match variant 0.
 
 ## Generation
 
-Generated with the built-in image generation tool. The 20 refinements use the approved samples as style references, with two corrective edits for course banner framing; earlier retained outputs also include targeted corrective edits. [Final prompts and source records](generation-record.json) identify all forty selected outputs. Source records store portable PNG filenames only, without machine-specific paths. Re-export with `python docs/artwork/export_technical.py --source-dir <generated-images-directory>` (requires Pillow and the original generated PNG files). The source directory is supplied at runtime and is never written to the records. Export only resizes and encodes the generated artwork and assembles review sheets. No generation occurs at runtime.
+The covers were generated with the built-in image tool, using [approved style references](balanced-preview/README.md). [Final prompts and source records](generation-record.json) identify all forty selected outputs. Source records store portable PNG filenames only, without machine-specific paths. Re-export with `python docs/artwork/export_technical.py --source-dir <generated-images-directory>` (requires Pillow and the original generated PNG files). The source directory is supplied at runtime and is never written to the records. Export only resizes and encodes the generated artwork and assembles review sheets. No generation occurs at runtime.
 
 The illustration files are bundled locally; no database or content changes are required.
 
 ## Verification
 
-The 20 replacements were reviewed at 320×180, without badges, in grayscale, and in wide banner crops. All 40 covers were reviewed together for consistent style and format identity. Fingerprint checks confirm the other 20 covers and signature aliases remain byte-for-byte unchanged. The 80 responsive files total 1,834,188 bytes and pass dimension and byte-budget checks. Source records use portable filenames; a project-file audit found no machine-specific paths.
+When changing covers, inspect the full collection together for subject variety, consistent lighting and format identity. Review 320×180 cards, wide banners and narrow mobile crops. Check silhouettes without badges and in grayscale; essential shapes should remain recognizable without small labels.
 
-Frontend type checks, lint, 39 unit tests and the production build pass. All 66 mocked browser scenarios pass, with refreshed screenshots at 390, 768 and 1440 pixels; no application database was involved.
+Verify ten variants per format, 1280×720 and 640×360 exports, full images below 200 KB and cards below 60 KB. Keep variant-0 signature aliases synchronized. Check portable source filenames and all repository style-reference links. Re-exporting requires the original generated PNGs; those source files are supplied separately at runtime.
+
+Run frontend checks and the [pinned Linux visual workflow](../operations.md#visual-regression-checks) after changing shipped artwork. Review changed baselines before accepting them. Use mocked visual data rather than a working application database.

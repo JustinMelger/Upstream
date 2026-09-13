@@ -6,6 +6,19 @@ Set `ENVIRONMENT=production`, `PUBLIC_ORIGIN=https://your-host`, a random `BROWS
 
 Browser authentication uses `/api/auth/browser/login`, `/session`, and `/logout`. Session responses contain a CSRF token, never the session credential. Mutations require the configured Origin and `X-CSRF-Token`. Header authentication remains for one rollback release; an explicit header never falls back to cookies. Logout revokes only the presented session. Password reset and disabling an account revoke all its sessions.
 
+## Published images
+
+Releases publish `ghcr.io/<owner>/upstream-api` and `ghcr.io/<owner>/upstream-ui`. Stable releases provide exact version, minor, major and `latest` tags; release candidates provide their release tag and `rc`. Prefer the same exact version for both images in a deployment. Release tags continue to use `v…`; package renaming does not reset version history.
+
+Local Compose builds use `upstream-api:local` (API and migration service) and `upstream-ui:local`. To deploy published images, set `API_IMAGE` and `UI_IMAGE` to the fully qualified release references in the deployment environment, authenticate to GHCR if necessary, then run:
+
+```sh
+docker compose pull
+docker compose up -d --no-build
+```
+
+The migration service uses the same API image. Preserve existing project names, database credentials and volumes. Previously published `learning-platform` and `learning-platform-ui` images are not deleted or retagged by this change; retain their exact references for rollback. Future releases publish under the Upstream names, so deployments consuming the old names must update both references.
+
 ## Routes
 
 `/home`, `/explore`, `/explore/courses/:id`, `/explore/articles/:id`, `/explore/videos/:id`, `/explore/paths/:id`, `/share/item`, `/share/path`, `/activity`, `/profile`, `/admin/users`, `/login`.
@@ -24,9 +37,9 @@ Backend paths below are exposed under `/api` by Nginx/Vite:
 - `/activity`: personal review updates or shared-content events.
 - Existing `/courses`, `/articles`, `/videos`, `/paths`, review, tracking, and account endpoints.
 
-Paginated reads return `{items, total, page, page_size}`; default page size is 24 and maximum is 100. Articles and videos now support owner/admin `PUT` and `DELETE`. Deletion removes reviews and path references without deleting the path. Recommendation notes are plain text, nullable, and limited to 1,000 characters; omitted update fields preserve the note and null clears it.
+Paginated reads return `{items, total, page, page_size}`; default page size is 24 and maximum is 100. Articles and videos support owner/admin `PUT` and `DELETE`. Deletion removes reviews and path references without deleting the path. Recommendation notes are plain text, nullable, and limited to 1,000 characters; omitted update fields preserve the note and null clears it.
 
-New resource forms offer explicit, optional Fetch details for page-authored title, description, and provider suggestions. Manual sharing never requires external metadata requests. External-image fetching and classification inference have been removed; compatibility response fields remain empty. See [metadata autofill](metadata_autofill_implementation.md) for behavior and fetching safeguards. Undated historical paths are not assigned invented share dates.
+New resource forms offer explicit, optional Fetch details for page-authored title, description, and provider suggestions. Manual sharing never requires external metadata requests. Image/classification compatibility response fields remain empty. See the [product guide](product.md#sharing-and-reviews) and [backend architecture](architecture_backend.md#metadata-and-schema-compatibility) for form behavior and fetching safeguards. Undated historical paths are not assigned invented share dates.
 
 Regenerate types after API changes:
 
@@ -99,11 +112,14 @@ CI compares baselines without updating them and uploads differences on failure. 
 
 ## Release and rollback
 
-Keep the previous NiceGUI image and header authentication available for one release cycle. React is the supported UI and cutover is complete. The removed external-image fetcher is not needed when rolling back to prior images. Team tables remain intact for rollback; no team-data destruction occurs in this release. Do not restore the old frontend while simultaneously running a future migration that drops its required tables.
+Retain compatible previous application images and a recoverable database backup before deploying. Rebuild API and UI images after source changes; restarting an old image does not refresh its contents. Preserve PostgreSQL volumes, and never seed a working application database.
 
-The repository does not bundle an observability Compose stack. Backend OpenTelemetry remains optional and requires an independently configured OTLP endpoint. See [React implementation record](react_redesign_plan.md), [frontend architecture](architecture_frontend.md), and [backend architecture](architecture_backend.md).
+Header authentication and retained team tables remain protected during the rollback window. The repository does not establish that this window has closed. Do not remove the compatibility transport, drop retained tables or edit historical migrations until retirement is explicitly authorized. Restoring older application images requires a compatible schema; do not pair an image rollback with destructive schema changes. New nullable content fields should survive an image rollback.
 
+## Optional telemetry
 
-Use `just lint`, `just unit`, `just integration`, `just architecture`, `just audit`, and `just build` for the equivalent grouped checks. `just api-types` regenerates both contracts; compare generated files to detect drift.
+Backend OpenTelemetry is disabled by default. Enable it only with independently configured OTLP trace and metric endpoints; the repository does not bundle a monitoring stack. Authenticated application telemetry ingestion is separately gated by `FEATURE_TELEMETRY=1`. See [backend architecture](architecture_backend.md#deployment-and-observability).
 
-The standard Docker address is `http://localhost:8080`. The existing developer preview at `http://localhost:18080` uses a separate Compose project; it is not the installation default. Rebuild images before refreshing a preview, tag both previous images for rollback, and preserve its PostgreSQL volume. Never run seed scripts against preview data.
+## Task shortcuts
+
+Use `just lint`, `just unit`, `just integration`, `just architecture`, `just audit` and `just build` for grouped checks. `just api-types` regenerates both contracts; compare generated files to detect drift. Database-dependent checks still require a disposable database.

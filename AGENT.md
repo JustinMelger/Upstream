@@ -1,6 +1,6 @@
 # Engineering standards
 
-Learning Hub now uses a React/TypeScript frontend and FastAPI/PostgreSQL backend. `docs/README.md` indexes current product, architecture, and operations guidance. Older NiceGUI/Teams documents marked historical are not implementation instructions.
+Upstream uses a React/TypeScript frontend and FastAPI/PostgreSQL backend. `docs/README.md` indexes current product, architecture, and operations guidance. The decision archive provides context, not current implementation instructions.
 
 ## Backend
 
