@@ -76,12 +76,23 @@ docker build -t learning-visual -f frontend/react/Dockerfile.visual frontend/rea
 docker run --rm --ipc=host learning-visual
 ```
 
+Generate committed baselines only in this pinned Linux container. Native macOS and Windows runs can render fonts and line wrapping differently, even with the same browser version and bundled fonts; their passing screenshots are not CI-compatible baselines.
+
 For an intentional design change, generate candidates with a writable baseline mount, inspect every changed PNG, and include the reviewed changes in the PR:
 
 ```sh
 docker run --rm --ipc=host \
   -v "$PWD/frontend/react/tests/visual/baselines:/app/tests/visual/baselines" \
-  learning-visual npm run test:visual -- --update-snapshots
+  learning-visual npm run test:visual -- --update-snapshots=all
+```
+
+After reviewing the candidates, rebuild the image so it contains the updated baselines, then run the normal comparison without snapshot updates:
+
+```sh
+docker build -t learning-visual -f frontend/react/Dockerfile.visual frontend/react
+docker run --rm --ipc=host \
+  -v "$PWD/frontend/react/test-results:/app/test-results" \
+  learning-visual
 ```
 
 CI compares baselines without updating them and uploads differences on failure. Browser package/image upgrades must be made together and their baseline differences reviewed.
