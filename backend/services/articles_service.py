@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timezone
 
 from pydantic import ValidationError
@@ -10,13 +9,16 @@ from backend.core.errors import articles_error_handler, ArticlesServiceError
 from backend.database.async_repositories.articles import ArticlesRepository
 from backend.database.models import ArticleRecord
 from backend.database.tx import session_scope
-from backend.services.url_preview_service import UrlPreviewService
+from backend.services.content_edit import normalize_article_description, validate_content_edit
+from backend.services.recommendation_notes import normalize_note
 
 
 @dataclass
 class ArticleCreatePayload:
     """Typed service-layer payload for article creation."""
 
+    description: str | None = None
+    recommendation_note: str | None = None
     title: str | None = None
     url: str | None = None
     tags: str | None = None
@@ -28,7 +30,6 @@ class ArticlesService:
     def __init__(
         self,
         repo: ArticlesRepository,
-        url_preview_service: UrlPreviewService | None = None,
     ):
         """Initialize the service.
 
@@ -36,7 +37,6 @@ class ArticlesService:
             repo: Articles repository.
         """
         self._repo = repo
-        self._url_preview_service = url_preview_service or UrlPreviewService()
 
     @articles_error_handler()
     async def list_articles(self, *, query: str | None, tag: str | None) -> list[dict]:
@@ -51,14 +51,7 @@ class ArticlesService:
         """
         async with session_scope(self._repo.session):
             rows = await self._repo.list_articles(query=query, tag=tag)
-        preview_map = await self._resolve_preview_images(rows)
-        return [
-            self._to_payload(
-                r,
-                preview_image_url=preview_map.get(int(r.id), ""),
-            )
-            for r in rows
-        ]
+        return [self._to_payload(r) for r in rows]
 
     @articles_error_handler()
     async def create_article(self, *, payload: dict, created_by: str) -> dict:
@@ -71,6 +64,7 @@ class ArticlesService:
         Returns:
             Newly created article payload.
         """
+        note = normalize_note(payload.get("recommendation_note"))
         data = self._parse_create_payload(payload)
         title = str(data.title or "").strip()
         url = str(data.url or "").strip()
@@ -90,21 +84,20 @@ class ArticlesService:
                 raise ArticlesServiceError(detail="duplicate_url", status_code=409)
             article_id = await self._repo.create_article(
                 title=title,
+                description=normalize_article_description(data.description),
                 url=url,
                 tags=tags,
                 created_by=str(created_by),
                 created_at=created_at,
             )
 
+            await self._repo.set_recommendation_note(article_id, note)
+
         async with session_scope(self._repo.session):
             created = await self._repo.get_article_by_id(article_id)
         if not created:
             raise ArticlesServiceError(detail="create_failed", status_code=500)
-        preview_map = await self._resolve_preview_images([created])
-        return self._to_payload(
-            created,
-            preview_image_url=preview_map.get(int(created.id), ""),
-        )
+        return self._to_payload(created)
 
     @articles_error_handler()
     async def get_article_by_id(self, *, article_id: int) -> dict | None:
@@ -113,8 +106,26 @@ class ArticlesService:
             article = await self._repo.get_article_by_id(int(article_id))
         if not article:
             return None
-        preview_map = await self._resolve_preview_images([article])
-        return self._to_payload(article, preview_image_url=preview_map.get(int(article.id), ""))
+        return self._to_payload(article)
+
+    async def update_article(self, content_id: int, payload: dict) -> dict | None:
+        """Validate an edit and preserve omitted fields."""
+        async with session_scope(self._repo.session):
+            existing = await self._repo.get_article_by_id(content_id)
+            if not existing:
+                return None
+            values = validate_content_edit(payload, kind="article")
+            if "url" in values:
+                duplicate = await self._repo.find_article_by_url(url=values["url"])
+                if duplicate and duplicate.id != content_id:
+                    raise ArticlesServiceError(detail="duplicate_url", status_code=409)
+            await self._repo.update_content(content_id, values)
+        return await self.get_article_by_id(article_id=content_id)
+
+    async def delete_article(self, content_id: int) -> bool:
+        """Remove content, reviews and path references transactionally."""
+        async with session_scope(self._repo.session):
+            return await self._repo.delete_content(content_id)
 
     @staticmethod
     def _parse_create_payload(payload: dict) -> ArticleCreatePayload:
@@ -125,38 +136,16 @@ class ArticlesService:
             raise ArticlesServiceError(detail="invalid_payload", status_code=400) from exc
 
     @staticmethod
-    def _to_payload(article: ArticleRecord, *, preview_image_url: str = "") -> dict:
+    def _to_payload(article: ArticleRecord) -> dict:
         """Convert an article record to an API payload."""
         return {
             "id": article.id,
             "title": article.title,
+            "description": article.description,
             "url": article.url,
             "tags": article.tags,
             "created_by": article.created_by,
+            "recommendation_note": article.recommendation_note,
             "created_at": article.created_at,
-            "preview_image_url": str(preview_image_url or ""),
+            "preview_image_url": "",
         }
-
-    async def _resolve_preview_images(self, articles: list[ArticleRecord]) -> dict[int, str]:
-        out: dict[int, str] = {}
-        if not articles:
-            return out
-        urls: dict[str, list[int]] = {}
-        for row in articles:
-            article_id = int(getattr(row, "id", 0) or 0)
-            url = str(getattr(row, "url", "") or "").strip()
-            if article_id <= 0 or not url:
-                continue
-            urls.setdefault(url, []).append(article_id)
-        if not urls:
-            return out
-
-        resolved = await asyncio.gather(
-            *(self._url_preview_service.resolve_image_url(source_url=url) for url in urls.keys()),
-            return_exceptions=True,
-        )
-        for url, image_url in zip(urls.keys(), resolved, strict=False):
-            image = "" if isinstance(image_url, Exception) else str(image_url or "")
-            for article_id in urls.get(url, []):
-                out[int(article_id)] = image
-        return out

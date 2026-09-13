@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import CourseRecord
-from backend.database.orm_models import Course as CourseModel
+from backend.database.orm_models import Course as CourseModel, PathItem
 
 
 class CoursesRepository(RepositoryDateTimeCodec):
@@ -21,6 +21,10 @@ class CoursesRepository(RepositoryDateTimeCodec):
             session: SQLAlchemy AsyncSession for this request.
         """
         self.session = session
+
+    async def set_recommendation_note(self, content_id: int, note: str | None) -> None:
+        """Persist an explicitly supplied sharing note."""
+        await self.session.execute(update(CourseModel).where(CourseModel.id == content_id).values(recommendation_note=note))
 
     async def list_courses(
         self,
@@ -79,6 +83,7 @@ class CoursesRepository(RepositoryDateTimeCodec):
                 duration_hours=row.duration_hours,
                 url=row.url,
                 created_at=self._as_iso(row.created_at),
+                recommendation_note=row.recommendation_note,
                 created_by=row.created_by,
             )
             for row in rows
@@ -110,6 +115,7 @@ class CoursesRepository(RepositoryDateTimeCodec):
             duration_hours=row.duration_hours,
             url=row.url,
             created_at=self._as_iso(row.created_at),
+            recommendation_note=row.recommendation_note,
             created_by=row.created_by,
         )
 
@@ -175,6 +181,7 @@ class CoursesRepository(RepositoryDateTimeCodec):
             duration_hours=row.duration_hours,
             url=row.url,
             created_at=self._as_iso(row.created_at),
+            recommendation_note=row.recommendation_note,
             created_by=row.created_by,
         )
 
@@ -207,6 +214,7 @@ class CoursesRepository(RepositoryDateTimeCodec):
             duration_hours=row.duration_hours,
             url=row.url,
             created_at=self._as_iso(row.created_at),
+            recommendation_note=row.recommendation_note,
             created_by=row.created_by,
         )
 
@@ -252,6 +260,7 @@ class CoursesRepository(RepositoryDateTimeCodec):
         Returns:
             Number of rows deleted.
         """
+        await self.session.execute(delete(PathItem).where(PathItem.item_type == "course", PathItem.item_id == course_id))
         result = await self.session.execute(delete(CourseModel).where(CourseModel.id == course_id))
         return self._rowcount(result)
 

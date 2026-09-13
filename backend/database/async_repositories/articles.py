@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
 from backend.database.models import ArticleRecord
-from backend.database.orm_models import Article as ArticleModel
+from backend.database.orm_models import Article as ArticleModel, PathItem
 
 
 class ArticlesRepository(RepositoryDateTimeCodec):
@@ -20,6 +20,10 @@ class ArticlesRepository(RepositoryDateTimeCodec):
             session: SQLAlchemy AsyncSession for this request.
         """
         self.session = session
+
+    async def set_recommendation_note(self, content_id: int, note: str | None) -> None:
+        """Persist an explicitly supplied sharing note."""
+        await self.session.execute(update(ArticleModel).where(ArticleModel.id == content_id).values(recommendation_note=note))
 
     async def list_articles(self, *, query: str | None, tag: str | None) -> list[ArticleRecord]:
         """List articles with optional filters.
@@ -52,6 +56,8 @@ class ArticlesRepository(RepositoryDateTimeCodec):
                 title=str(r.title or ""),
                 url=str(r.url or ""),
                 tags=r.tags,
+                description=r.description,
+                recommendation_note=r.recommendation_note,
                 created_by=str(r.created_by or ""),
                 created_at=self._as_iso_or_empty(r.created_at),
             )
@@ -59,14 +65,28 @@ class ArticlesRepository(RepositoryDateTimeCodec):
         ]
 
     async def create_article(
-        self, *, title: str, url: str, tags: str | None, created_by: str, created_at: str | datetime
+        self,
+        *,
+        title: str,
+        url: str,
+        tags: str | None,
+        created_by: str,
+        created_at: str | datetime,
+        description: str | None = None,
     ) -> int:
         """Create an article.
 
         Returns:
             Newly created article id.
         """
-        row = ArticleModel(title=title, url=url, tags=tags, created_by=created_by, created_at=self._as_datetime(created_at))
+        row = ArticleModel(
+            title=title,
+            description=description,
+            url=url,
+            tags=tags,
+            created_by=created_by,
+            created_at=self._as_datetime(created_at),
+        )
         self.session.add(row)
         await self.session.flush()
         return int(row.id)
@@ -82,6 +102,8 @@ class ArticlesRepository(RepositoryDateTimeCodec):
             title=str(row.title or ""),
             url=str(row.url or ""),
             tags=row.tags,
+            description=row.description,
+            recommendation_note=row.recommendation_note,
             created_by=str(row.created_by or ""),
             created_at=self._as_iso_or_empty(row.created_at),
         )
@@ -106,6 +128,18 @@ class ArticlesRepository(RepositoryDateTimeCodec):
             title=str(row.title or ""),
             url=str(row.url or ""),
             tags=row.tags,
+            description=row.description,
+            recommendation_note=row.recommendation_note,
             created_by=str(row.created_by or ""),
             created_at=self._as_iso_or_empty(row.created_at),
         )
+
+    async def update_content(self, content_id: int, values: dict) -> None:
+        """Apply already validated content fields."""
+        await self.session.execute(update(ArticleModel).where(ArticleModel.id == content_id).values(**values))
+
+    async def delete_content(self, content_id: int) -> bool:
+        """Delete content and polymorphic path references in the caller transaction."""
+        await self.session.execute(delete(PathItem).where(PathItem.item_type == "article", PathItem.item_id == content_id))
+        result = await self.session.execute(delete(ArticleModel).where(ArticleModel.id == content_id))
+        return self._rowcount(result) > 0

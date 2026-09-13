@@ -9,11 +9,11 @@ from backend.database.async_repositories.courses import CoursesRepository as SQL
 from backend.database.async_repositories.notifications import NotificationsRepository as SQLNotificationsRepository
 from backend.database.async_repositories.path_reviews import PathReviewsRepository as SQLPathReviewsRepository
 from backend.database.async_repositories.paths import PathsRepository as SQLPathsRepository
-from backend.database.async_repositories.teams import TeamsRepository as SQLTeamsRepository
 from backend.database.async_repositories.tracking import TrackingRepository as SQLTrackingRepository
 from backend.database.async_repositories.user_paths import UserPathsRepository as SQLUserPathsRepository
 from backend.database.async_repositories.video_reviews import VideoReviewsRepository as SQLVideoReviewsRepository
 from backend.database.async_repositories.videos import VideosRepository as SQLVideosRepository
+from backend.database.async_repositories.workspace import WorkspaceRepository
 from backend.database.session import get_session
 from backend.services.article_reviews_service import ArticleReviewsService
 from backend.services.articles_service import ArticlesService
@@ -23,12 +23,12 @@ from backend.services.courses_service import CoursesService
 from backend.services.notifications_service import NotificationsService
 from backend.services.path_reviews_service import PathReviewsService
 from backend.services.paths_service import PathsService
-from backend.services.teams_service import TeamsService
 from backend.services.tracking_service import TrackingService
 from backend.services.url_preview_service import UrlPreviewService
 from backend.services.user_paths_service import UserPathsService
 from backend.services.video_reviews_service import VideoReviewsService
 from backend.services.videos_service import VideosService
+from backend.services.workspace_service import WorkspaceService
 
 
 _URL_PREVIEW_SERVICE = UrlPreviewService()
@@ -48,7 +48,6 @@ async def get_courses_service(session: AsyncSession = Depends(get_session)) -> C
     """Provide a request-scoped CoursesService dependency."""
     return CoursesService(
         SQLCoursesRepository(session),
-        url_preview_service=_URL_PREVIEW_SERVICE,
     )
 
 
@@ -66,7 +65,6 @@ async def get_tracking_service(session: AsyncSession = Depends(get_session)) -> 
     """Provide a request-scoped TrackingService dependency."""
     return TrackingService(
         SQLTrackingRepository(session),
-        SQLTeamsRepository(session),
     )
 
 
@@ -74,7 +72,6 @@ async def get_articles_service(session: AsyncSession = Depends(get_session)) -> 
     """Provide a request-scoped ArticlesService dependency."""
     return ArticlesService(
         SQLArticlesRepository(session),
-        url_preview_service=_URL_PREVIEW_SERVICE,
     )
 
 
@@ -82,7 +79,6 @@ async def get_videos_service(session: AsyncSession = Depends(get_session)) -> Vi
     """Provide a request-scoped VideosService dependency."""
     return VideosService(
         SQLVideosRepository(session),
-        url_preview_service=_URL_PREVIEW_SERVICE,
     )
 
 
@@ -118,14 +114,6 @@ async def get_notifications_service(
     return NotificationsService(SQLNotificationsRepository(session))
 
 
-async def get_teams_service(session: AsyncSession = Depends(get_session)) -> TeamsService:
-    """Provide a request-scoped TeamsService dependency."""
-    return TeamsService(
-        SQLTeamsRepository(session),
-        auth=_build_auth_service(session),
-    )
-
-
 async def require_session(
     x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
@@ -135,3 +123,8 @@ async def require_session(
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
     return str(session["colleague_id"])
+
+
+async def get_workspace_service(session: AsyncSession = Depends(get_session)) -> WorkspaceService:
+    """Provide bounded React read models in one request transaction."""
+    return WorkspaceService(WorkspaceRepository(session))

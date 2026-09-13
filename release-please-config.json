@@ -3,7 +3,7 @@
   "packages": {
     ".": {
       "release-type": "python",
-      "package-name": "learning-platform",
+      "package-name": "upstream-api",
       "include-component-in-tag": false
     }
   }

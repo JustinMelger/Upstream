@@ -1,0 +1,18 @@
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font:
+    500 20px "Space Grotesk",
+    sans-serif;
+  white-space: nowrap;
+}
+.brand img {
+  display: block;
+  flex-shrink: 0;
+}
+.large {
+  font-size: 28px;
+  gap: 12px;
+}

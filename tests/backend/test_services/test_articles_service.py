@@ -10,51 +10,21 @@ pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.unit
-async def test_list_articles_includes_preview_image_url_from_preview_service(db_session):
-    """List payload includes resolved preview image URLs."""
+async def test_articles_reads_keep_empty_images_without_http(db_session, monkeypatch):
+    """Creation, lists and details never fetch external resource artwork."""
+    import httpx
 
-    class _PreviewService:
-        async def resolve_image_url(self, *, source_url: str) -> str:
-            if "docs.example.com" in source_url:
-                return "https://cdn.example.com/docs-og.png"
-            return ""
+    async def unexpected_http(*args, **kwargs):
+        raise AssertionError("Content reads must not fetch URLs")
 
-    auth = AuthService(AuthRepository(db_session))
-    await auth.create_user("alice", "pass123", "user")
-    service = ArticlesService(ArticlesRepository(db_session), url_preview_service=_PreviewService())
-    await service.create_article(
-        payload={"title": "Docs", "url": "https://docs.example.com/page", "tags": "docs"},
-        created_by="alice",
-    )
-    await service.create_article(
-        payload={"title": "No image", "url": "https://example.net/page", "tags": "misc"},
-        created_by="alice",
+    monkeypatch.setattr(httpx.AsyncClient, "send", unexpected_http)
+    await AuthService(AuthRepository(db_session)).create_user("alice", "pass123", "user")
+    service = ArticlesService(ArticlesRepository(db_session))
+    created = await service.create_article(
+        payload={"title": "Resource", "description": "Summary", "url": "https://example.com/resource"}, created_by="alice"
     )
 
     rows = await service.list_articles(query=None, tag=None)
-    by_title = {str(r.get("title")): r for r in rows}
-    assert by_title["Docs"]["preview_image_url"] == "https://cdn.example.com/docs-og.png"
-    assert by_title["No image"]["preview_image_url"] == ""
-
-
-@pytest.mark.unit
-async def test_list_articles_preview_resolver_deduplicates_shared_urls(db_session):
-    """Preview resolver is called once per article URL after duplicate URLs are rejected."""
-    calls: list[str] = []
-
-    class _PreviewService:
-        async def resolve_image_url(self, *, source_url: str) -> str:
-            calls.append(str(source_url))
-            return "https://cdn.example.com/shared.png"
-
-    auth = AuthService(AuthRepository(db_session))
-    await auth.create_user("alice", "pass123", "user")
-    service = ArticlesService(ArticlesRepository(db_session), url_preview_service=_PreviewService())
-    shared_url = "https://example.com/shared"
-    await service.create_article(payload={"title": "A", "url": shared_url}, created_by="alice")
-    calls.clear()
-
-    rows = await service.list_articles(query=None, tag=None)
-    assert len(rows) == 1
-    assert calls == [shared_url]
-    assert all(str(r.get("preview_image_url") or "") == "https://cdn.example.com/shared.png" for r in rows)
+    detail = await service.get_article_by_id(article_id=int(created["id"]))
+    assert rows[0]["preview_image_url"] == ""
+    assert detail["preview_image_url"] == ""

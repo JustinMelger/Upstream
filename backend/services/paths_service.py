@@ -7,6 +7,7 @@ from backend.core.errors import paths_error_handler, PathsServiceError
 from backend.database.async_repositories.paths import PathsRepository
 from backend.database.models import PathLearningItemRecord, PathRecord
 from backend.database.tx import session_scope
+from backend.services.recommendation_notes import normalize_note
 
 
 @dataclass
@@ -22,6 +23,7 @@ class PathItemMutationPayload:
 class PathMutationPayload:
     """Typed service-layer payload for create/update path flows."""
 
+    recommendation_note: str | None = None
     name: str | None = None
     description: str | None = None
     items: list[PathItemMutationPayload] | None = None
@@ -70,6 +72,7 @@ class PathsService:
             "name": path.name,
             "description": path.description or "",
             "created_by": path.created_by,
+            "recommendation_note": path.recommendation_note,
             "items": [self._item_payload(item) for item in items],
         }
 
@@ -86,6 +89,7 @@ class PathsService:
         Raises:
             PathsServiceError: If required fields are missing or the name is duplicate.
         """
+        note = normalize_note(payload.get("recommendation_note"))
         data = self._parse_mutation_payload(payload)
         name = str(data.name or "").strip()
         if not name:
@@ -101,6 +105,7 @@ class PathsService:
             if await self._repo.has_missing_learning_items(items):
                 raise PathsServiceError(detail="invalid_item_refs", status_code=400)
             path_id = await self._repo.create_path_with_items(name, description, items, created_by)
+            await self._repo.set_recommendation_note(path_id, note)
         path = await self.get_path(path_id)
         if not path:
             raise PathsServiceError(detail="created_path_missing", status_code=500)
@@ -120,6 +125,7 @@ class PathsService:
         Raises:
             PathsServiceError: If required fields are missing or the name is duplicate.
         """
+        note = normalize_note(payload.get("recommendation_note"))
         data = self._parse_mutation_payload(payload)
         name = str(data.name or "").strip()
         if not name:
@@ -134,6 +140,8 @@ class PathsService:
             if await self._repo.has_missing_learning_items(items):
                 raise PathsServiceError(detail="invalid_item_refs", status_code=400)
             await self._repo.update_path_with_items(path_id, name, description, items)
+            if "recommendation_note" in payload:
+                await self._repo.set_recommendation_note(path_id, note)
         path = await self.get_path(path_id)
         if not path:
             raise PathsServiceError(detail="path_not_found", status_code=404)
@@ -160,6 +168,7 @@ class PathsService:
             "name": path.name,
             "description": path.description or "",
             "created_by": path.created_by,
+            "recommendation_note": path.recommendation_note,
             "course_count": int(path.course_count or 0),
         }
 

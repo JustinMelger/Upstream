@@ -187,6 +187,10 @@ class AuthService:
             row = await self._repo.get_session(token_hash)
             if not row:
                 return None
+            user = await self._repo.get_user(row.colleague_id)
+            if not user or user.disabled:
+                await self._repo.delete_session(token_hash)
+                return None
             try:
                 expires_at = datetime.fromisoformat(row.expires_at)
             except ValueError:
@@ -196,6 +200,14 @@ class AuthService:
                 return None
             await self._repo.update_session_last_seen(token_hash, now.isoformat())
             return {"colleague_id": row.colleague_id, "expires_at": row.expires_at}
+
+    @auth_error_handler()
+    async def revoke_session(self, token: str | None) -> int:
+        """Revoke only the presented session."""
+        if not token:
+            return 0
+        async with session_scope(self._repo.session):
+            return await self._repo.delete_session(self._hash_token(token))
 
     @auth_error_handler()
     async def revoke_sessions(self, colleague_id: str) -> int:
@@ -288,7 +300,9 @@ class AuthService:
         now = datetime.now(timezone.utc).isoformat()
         password_hash = self._hash_password(password_value)
         async with session_scope(self._repo.session):
-            return await self._repo.update_password(username_value, password_hash, now)
+            updated = await self._repo.update_password(username_value, password_hash, now)
+            await self._repo.revoke_sessions(username_value)
+            return updated
 
     @auth_error_handler()
     async def delete_user(self, username: str) -> int:

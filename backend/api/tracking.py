@@ -85,7 +85,7 @@ async def get_stats(
     auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
 ) -> dict[str, int]:
-    """Return tracking stats for a colleague or team totals.
+    """Return self-only statistics, or aggregate statistics for administrators.
 
     Args:
         colleague_id: Optional colleague username to query.
@@ -100,7 +100,7 @@ async def get_stats(
         return await tracking.stats_for_colleague(colleague_id)
     if await auth.is_admin(current_user):
         return await tracking.stats_all()
-    return await tracking.stats_for_workspace(current_user)
+    return await tracking.stats_for_colleague(current_user)
 
 
 @router.get("/stats/users", response_model=list[TrackingStatsByUserItem])
@@ -109,7 +109,7 @@ async def get_stats_by_user(
     auth: AuthService = Depends(get_auth_service),
     tracking: TrackingService = Depends(get_tracking_service),
 ) -> list[dict[str, Any]]:
-    """Return tracking stats grouped by user for authenticated users.
+    """Return tracking statistics grouped by user for administrators.
 
     Args:
         current_user: Authenticated username.
@@ -119,7 +119,7 @@ async def get_stats_by_user(
     """
     if await auth.is_admin(current_user):
         return await tracking.stats_by_user()
-    return await tracking.stats_by_workspace_user(current_user)
+    raise HTTPException(status_code=403, detail="admin_required")
 
 
 @router.get("/recent", response_model=list[TrackingRecordPayload])

@@ -60,7 +60,7 @@ async def test_tracking_set_rejects_non_string_status(app_client):
 
 @pytest.mark.integration
 async def test_url_preview_metadata_rejects_non_string_url(app_client):
-    """URL preview metadata validation rejects invalid url type."""
+    """Metadata requests require a string URL."""
     login = await app_client.post("/auth/login", json={"username": "admin", "password": "admin"})
     token = login.json()["token"]
     response = await app_client.post(

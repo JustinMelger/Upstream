@@ -2,8 +2,9 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from backend.api import ai, articles, auth, courses, notifications, paths, teams, tracking, url_preview, videos
+from backend.api import articles, auth, browser_auth, courses, paths, tracking, url_preview, videos, workspace
 from backend.api.schemas import HealthResponse
+from backend.core.browser_security import BrowserSessionMiddleware
 from backend.core.config import settings
 from backend.core.errors import (
     format_service_error,
@@ -12,18 +13,18 @@ from backend.core.errors import (
 from backend.core.observability import configure_observability
 
 
-app = FastAPI(title=settings.api_title, version=settings.api_version)
+app = FastAPI(title=settings.api_title, version=settings.api_version, root_path=settings.api_root_path)
 configure_observability(app)
+app.add_middleware(BrowserSessionMiddleware)
+app.include_router(browser_auth.router)
+app.include_router(workspace.router)
 
 app.include_router(courses.router)
 app.include_router(paths.router)
 app.include_router(tracking.router)
 app.include_router(auth.router)
-app.include_router(ai.router)
 app.include_router(articles.router)
 app.include_router(videos.router)
-app.include_router(notifications.router)
-app.include_router(teams.router)
 app.include_router(url_preview.router)
 if settings.feature_telemetry:
     from backend.api import telemetry

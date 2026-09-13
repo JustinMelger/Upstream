@@ -9,11 +9,6 @@ repos:
     hooks:
       - id: mypy-scoped
         name: mypy (scoped project gate)
-        entry: uv run mypy backend/services frontend/ui/nicegui/services frontend/ui/nicegui/core frontend/ui/nicegui/pages/ai_curator/ui_glue.py
-        language: system
-        pass_filenames: false
-      - id: mypy-core-strict
-        name: mypy (core strict)
-        entry: uv run mypy frontend/ui/nicegui/core --strict
+        entry: uv run mypy backend
         language: system
         pass_filenames: false

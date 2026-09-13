@@ -1,13 +1,11 @@
 [project]
-name = "learning-platform"
+name = "upstream-api"
 version = "0.12.7"
-description = "Add your description here"
+description = "A shared learning library with personal course tracking and resource recommendations"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "bcrypt>=4.1.2",
-    "pandas>=1.4.0,<3",
-    "nicegui>=3.7.1",
     "fastapi>=0.110.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
@@ -15,7 +13,7 @@ dependencies = [
     "asyncpg>=0.29.0",
     "alembic>=1.13.0",
     "uvicorn[standard]>=0.27.0",
-    "requests>=2.31.0",
+    "httpx>=0.28.1",
     "opentelemetry-api>=1.28.2",
     "opentelemetry-sdk>=1.28.2",
     "opentelemetry-exporter-otlp-proto-http>=1.28.2",
@@ -31,11 +29,9 @@ dev = [
     "pre-commit>=4.0.1",
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
-    "pytest-anyio>=0.0.0",
-    "playwright>=1.52.0",
+    "anyio>=4.0.0",
     "pillow>=10.4.0",
     "pip-audit>=2.9.0",
-    "httpx>=0.28.1",
     "import-linter>=2.7",
 ]
 
@@ -61,7 +57,7 @@ select = ["I", "F821", "BLE", "TID", "T20", "C901", "PLR0911", "PLR0912", "PLR09
 "alembic/**/*.py" = ["D102", "D103", "D107"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["backend", "frontend"]
+known-first-party = ["backend"]
 combine-as-imports = true
 force-sort-within-sections = true
 lines-after-imports = 2
@@ -75,11 +71,11 @@ ban-relative-imports = "all"
 convention = "google"
 
 [tool.ruff.lint.mccabe]
-# Baseline repo ratchet (v7): tightened after service/control-flow extraction.
+# Function complexity limits.
 max-complexity = 19
 
 [tool.ruff.lint.pylint]
-# Baseline repo ratchet (v7): tightened after service/control-flow extraction.
+# Function complexity limits.
 max-args = 10
 max-branches = 12
 max-returns = 7
@@ -101,8 +97,7 @@ ignore_missing_imports = true
 exclude = ["^tests/"]
 
 [[tool.mypy.overrides]]
-# Temporary opt-out for the legacy FastAPI transport layer until endpoint
-# annotations are normalized to the same baseline as the rest of the app.
+# API endpoints permit untyped definitions; other backend modules require annotations.
 module = [
     "backend.api.*",
     "backend.main",

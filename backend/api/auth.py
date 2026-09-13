@@ -110,7 +110,7 @@ async def logout(
     session = await auth.get_session(x_session_token)
     if not session:
         raise HTTPException(status_code=401, detail="unauthorized")
-    revoked = await auth.revoke_sessions(session["colleague_id"])
+    revoked = await auth.revoke_session(x_session_token)
     return {"revoked": revoked}
 
 

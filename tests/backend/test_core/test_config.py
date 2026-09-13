@@ -17,7 +17,7 @@ def test_config_defaults(monkeypatch):
 
     importlib.reload(config)
 
-    assert config.settings.api_title == "Learning Hub API"
+    assert config.settings.api_title == "Upstream API"
     assert config.settings.api_version == "0.1.0"
     assert config.settings.database_url == ""
     assert config.settings.session_days == 30

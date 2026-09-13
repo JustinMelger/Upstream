@@ -1,0 +1,561 @@
+import {
+  ResourceArtwork,
+  ContentLabel,
+  Rating,
+  Contributor,
+} from "../components/resources";
+import { useState, useRef, useEffect, type FormEvent } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Link,
+  useParams,
+  useNavigate,
+  useSearchParams,
+  useLocation,
+} from "react-router";
+import { ArrowUpRight, ArrowLeft, Star, Pencil, Trash2 } from "lucide-react";
+import {
+  api,
+  send,
+  detailUrl,
+  humanError,
+  externalUrl,
+  type ContentType,
+  type Content,
+  type Review,
+  type PathProgress,
+  type Page,
+  type CatalogItem,
+} from "../lib/api/client";
+import { Confirm, Empty, ErrorPanel, Loading } from "../components/ui";
+import { useAuth } from "./auth";
+import s from "./pages.module.css";
+import { CourseActions } from "./course-journey";
+import d from "./supporting.module.css";
+export function Detail() {
+  const location = useLocation();
+  const catalogReturn =
+    typeof location.state?.catalogReturn === "string" &&
+    /^\/explore(?:\?|$)/.test(location.state.catalogReturn)
+      ? location.state.catalogReturn
+      : "/explore";
+  const { kind, id } = useParams(),
+    navigate = useNavigate(),
+    cache = useQueryClient();
+  const { user } = useAuth();
+  const [params] = useSearchParams();
+  const type = (
+    {
+      courses: "course",
+      articles: "article",
+      videos: "video",
+      paths: "path",
+    } as Record<string, ContentType>
+  )[kind || ""];
+  const contentId = Number(id),
+    valid = !!type && Number.isInteger(contentId) && contentId > 0;
+  const base = `/${kind}/${contentId}`;
+  const query = useQuery({
+    queryKey: ["detail", type, contentId],
+    queryFn: () => api<Content>(base),
+    enabled: valid,
+  });
+  const reviews = useQuery({
+    queryKey: ["reviews", type, contentId],
+    queryFn: () => api<Review[]>(base + "/reviews"),
+    enabled: valid,
+  });
+  const progress = useQuery({
+    queryKey: ["progress", type, contentId],
+    queryFn: () => api<PathProgress>(`/learning/paths/${contentId}`),
+    enabled: valid && type === "path",
+  });
+  const tracked = useQuery({
+    queryKey: ["tracking", contentId],
+    queryFn: () =>
+      api<Page<CatalogItem>>(
+        `/learning/items?view=tracked&content_id=${contentId}`,
+      ),
+    enabled: valid && type === "course",
+  });
+  const [error, setError] = useState("");
+  const mutate = useMutation({
+    mutationFn: ({
+      path,
+      body = {},
+      method = "POST",
+    }: {
+      path: string;
+      body?: unknown;
+      method?: string;
+    }) => send(path, body, method),
+    onSuccess: () => {
+      setError("");
+      void cache.invalidateQueries();
+    },
+    onError: (e) => setError(humanError(e)),
+  });
+  async function remove() {
+    try {
+      await mutate.mutateAsync({ path: base, method: "DELETE" });
+      navigate("/explore");
+    } catch {
+      /* displayed above */
+    }
+  }
+  if (!valid)
+    return (
+      <Empty title="This item isn’t here.">
+        Return to Explore to find something useful.
+      </Empty>
+    );
+  if (query.isPending) return <Loading />;
+  if (query.error)
+    return (
+      <ErrorPanel error={query.error} retry={() => void query.refetch()} />
+    );
+  const content = query.data,
+    title = content.title || content.name || "Learning item",
+    owner = user?.role === "admin" || user?.username === content.created_by;
+  const url = externalUrl(content.url);
+  const description = content.description?.trim() || "";
+  const summary =
+    description.length > 240
+      ? description.slice(0, 239).trimEnd() + "…"
+      : description;
+  const metadata = [
+    content.provider,
+    content.level,
+    content.duration_hours != null ? `${content.duration_hours} hours` : null,
+    content.language,
+    content.category,
+  ].filter(Boolean);
+  return (
+    <>
+      <Link className={s.back} to={catalogReturn}>
+        <ArrowLeft size={15} />
+        Back to Explore
+      </Link>
+      {error && (
+        <p role="alert" className={s.error}>
+          {error}
+        </p>
+      )}
+      <section className={d.intro} data-content-type={type}>
+        <div className={d.introArtwork}>
+          <ResourceArtwork type={type} title={title} hero eager />
+        </div>
+        <div className={d.introTitle}>
+          <ContentLabel type={type} />
+          <h1>{title}</h1>
+        </div>
+        {summary && <p className={d.summary}>{summary}</p>}
+        <div className={d.primaryActions}>
+          {url && type !== "course" && (
+            <a
+              className="button"
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {
+                {
+                  course: "Open course",
+                  article: "Read article",
+                  video: "Watch video",
+                  path: "Open resource",
+                }[type]
+              }
+              <ArrowUpRight size={17} />
+            </a>
+          )}
+          {type === "course" && (
+            <CourseActions
+              course={{
+                id: contentId,
+                title,
+                url: content.url,
+                status: tracked.data?.items[0]?.status,
+              }}
+              disabled={tracked.isPending || !!tracked.error}
+            />
+          )}
+          {tracked.error && (
+            <ErrorPanel
+              error={tracked.error}
+              retry={() => void tracked.refetch()}
+            />
+          )}
+          {type === "path" && progress.data && (
+            <>
+              <button
+                disabled={mutate.isPending}
+                aria-busy={mutate.isPending}
+                className={progress.data.selected ? "secondary" : ""}
+                onClick={() =>
+                  mutate.mutate({
+                    path:
+                      base + (progress.data.selected ? "/unselect" : "/select"),
+                  })
+                }
+              >
+                {progress.data.selected
+                  ? "Remove from My learning"
+                  : "Add to My learning"}
+              </button>
+              {progress.data.selected && (
+                <label>
+                  Path status
+                  <select
+                    disabled={mutate.isPending}
+                    value={progress.data.status || "interested"}
+                    onChange={(e) =>
+                      mutate.mutate({
+                        path: base + "/status",
+                        body: { status: e.target.value },
+                      })
+                    }
+                  >
+                    <option value="interested">Interested</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </label>
+              )}
+            </>
+          )}
+          {type === "path" && progress.isPending && (
+            <span role="status">Loading your path…</span>
+          )}
+          {progress.error && (
+            <ErrorPanel
+              error={progress.error}
+              retry={() => void progress.refetch()}
+            />
+          )}
+        </div>
+        <div className={d.metadata}>
+          {metadata.length > 0 && <p>{metadata.join(" · ")}</p>}
+          {type === "path" && (
+            <p>
+              {content.items?.length || 0}{" "}
+              {content.items?.length === 1 ? "resource" : "resources"}
+              {(["course", "article", "video"] as const).map((kind) => {
+                const count =
+                  content.items?.filter((item) => item.type === kind).length ||
+                  0;
+                return count
+                  ? ` · ${count} ${kind}${count === 1 ? "" : "s"}`
+                  : "";
+              })}
+            </p>
+          )}
+          <Contributor username={content.created_by} />
+          {reviews.isPending ? (
+            <span role="status">Loading reviews…</span>
+          ) : reviews.error ? (
+            <span className="muted">Rating unavailable</span>
+          ) : reviews.data?.length ? (
+            <Rating
+              count={reviews.data.length}
+              rating={
+                reviews.data.reduce((sum, r) => sum + r.rating, 0) /
+                reviews.data.length
+              }
+            />
+          ) : (
+            <span className="muted">No reviews yet</span>
+          )}
+        </div>
+      </section>
+      {owner && (
+        <div className={d.ownerActions}>
+          <Link
+            className="button secondary"
+            to={`/share/${type === "path" ? "path" : "item"}?type=${type}&edit=${contentId}`}
+          >
+            <Pencil size={15} />
+            Edit
+          </Link>
+          <Confirm
+            title={`Delete ${type}?`}
+            description="This removes the content, its reviews, and references from learning paths. This cannot be undone."
+            busy={mutate.isPending}
+            onConfirm={() => void remove()}
+          >
+            <button className="secondary">
+              <Trash2 size={15} />
+              Delete
+            </button>
+          </Confirm>
+        </div>
+      )}
+      {params.get("view") !== "reviews" && (
+        <>
+          {content.recommendation_note && (
+            <section className={d.recommendation}>
+              <Contributor
+                username={content.created_by}
+                prefix="Recommended by"
+              />
+              <blockquote>{content.recommendation_note}</blockquote>
+            </section>
+          )}
+          {type === "path" && progress.data && (
+            <section className={d.progress} aria-label="Your course progress">
+              {progress.data.total > 0 ? (
+                <>
+                  <p>
+                    {progress.data.completed} of {progress.data.total} courses
+                    completed
+                  </p>
+                  <progress
+                    aria-label="Courses completed"
+                    value={progress.data.completed}
+                    max={progress.data.total}
+                  />
+                </>
+              ) : (
+                <p>This path has no trackable courses.</p>
+              )}
+              <small className="muted">
+                Course progress and path status are separate.
+              </small>
+            </section>
+          )}
+          {(description.length > 240 ||
+            content.learning_outcomes ||
+            content.prerequisites) && (
+            <section className={d.section}>
+              {description.length > 240 && (
+                <>
+                  <h2>About this {type}</h2>
+                  <p className={s.prose}>{description}</p>
+                </>
+              )}
+              {content.learning_outcomes && (
+                <>
+                  <h2>What you’ll learn</h2>
+                  <p className={s.prose}>{content.learning_outcomes}</p>
+                </>
+              )}
+              {content.prerequisites && (
+                <>
+                  <h2>Before you begin</h2>
+                  <p className={s.prose}>{content.prerequisites}</p>
+                </>
+              )}
+            </section>
+          )}
+          {type === "path" && (
+            <section className={d.section}>
+              <h2>Your path</h2>
+              {content.items?.length ? (
+                <ol className={d.pathList}>
+                  {content.items.map((item, index) => {
+                    const status = progress.data?.courses.find(
+                      (c) => c.id === item.id,
+                    )?.status;
+                    return (
+                      <li key={`${item.type}:${item.id}`}>
+                        <Link
+                          className={d.pathLink}
+                          to={detailUrl(item.type as ContentType, item.id)}
+                          state={{ catalogReturn }}
+                        >
+                          <span className={d.position}>{index + 1}</span>
+                          <div className={d.thumbnail}>
+                            <ResourceArtwork
+                              type={item.type as ContentType}
+                              title={item.title}
+                            />
+                          </div>
+                          <div className={d.rowTitle}>
+                            <ContentLabel type={item.type as ContentType} />
+                            <strong>{item.title}</strong>
+                          </div>
+                          {item.type === "course" && (
+                            <span className={s.badge} data-status={status}>
+                              {progress.isPending
+                                ? "Loading status…"
+                                : progress.error
+                                  ? "Status unavailable"
+                                  : status
+                                    ? status.replaceAll("_", " ")
+                                    : "Not tracked"}
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : (
+                <Empty title="This path is empty." action={false}>
+                  Items may have been removed. Its owner can add new learning
+                  material.
+                </Empty>
+              )}
+            </section>
+          )}
+        </>
+      )}
+      <Reviews
+        reviews={reviews.data}
+        loading={reviews.isPending}
+        error={reviews.error}
+        retry={() => void reviews.refetch()}
+        base={base}
+      />
+    </>
+  );
+}
+
+function Reviews({
+  reviews,
+  loading,
+  error,
+  retry,
+  base,
+}: {
+  reviews?: Review[];
+  loading: boolean;
+  error: unknown;
+  retry: () => void;
+  base: string;
+}) {
+  const { user } = useAuth(),
+    cache = useQueryClient();
+  const reviewInput = useRef<HTMLTextAreaElement>(null);
+  const location = useLocation();
+  useEffect(() => {
+    if (
+      !loading &&
+      (location.hash === "#reviews" ||
+        new URLSearchParams(location.search).get("view") === "reviews")
+    )
+      document.getElementById("reviews")?.scrollIntoView();
+  }, [loading, location.hash, location.search]);
+  const mine = reviews?.find((r) => r.created_by === user?.username);
+  const mutation = useMutation({
+    mutationFn: ({ body, id }: { body?: unknown; id?: number }) =>
+      id
+        ? api(base + `/reviews/${id}`, { method: "DELETE" })
+        : send(base + "/reviews", body),
+    onSuccess: () => {
+      void cache.invalidateQueries();
+    },
+  });
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const values = new FormData(e.currentTarget);
+    mutation.mutate({
+      body: {
+        rating: Number(values.get("rating")),
+        text: String(values.get("text")),
+      },
+    });
+  }
+  return (
+    <section className={d.section} id="reviews">
+      <div className={d.sectionHeading}>
+        <h2>
+          Community reviews{" "}
+          {!loading && !error && (
+            <span className="muted">{reviews?.length || 0}</span>
+          )}
+        </h2>
+        {!loading && !error && (
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => reviewInput.current?.focus()}
+          >
+            {mine ? "Edit your review" : "Write a review"}
+          </button>
+        )}
+      </div>
+      {loading ? (
+        <Loading />
+      ) : error ? (
+        <ErrorPanel error={error} retry={retry} />
+      ) : (
+        <>
+          {reviews?.map((review) => (
+            <article className={s.review} key={review.id}>
+              <div>
+                <Contributor username={review.created_by} prefix="" />
+                <span className={s.rating}>
+                  <Star size={15} />
+                  {review.rating}/5
+                </span>
+              </div>
+              <p className={s.prose}>{review.text}</p>
+              {review.created_at && (
+                <time className={d.timestamp} dateTime={review.created_at}>
+                  {new Date(review.created_at).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </time>
+              )}
+              {(user?.role === "admin" ||
+                review.created_by === user?.username) && (
+                <button
+                  className="secondary"
+                  aria-busy={mutation.isPending}
+                  disabled={mutation.isPending}
+                  onClick={() => mutation.mutate({ id: review.id })}
+                >
+                  Remove review
+                </button>
+              )}
+            </article>
+          ))}
+          {!reviews?.length && (
+            <p className="muted">Be the first to share your experience.</p>
+          )}
+          <form
+            className={s.reviewForm}
+            key={mine?.id || "new"}
+            onSubmit={submit}
+          >
+            <h3>{mine ? "Your review" : "What did you think?"}</h3>
+            <label>
+              Rating
+              <select name="rating" defaultValue={mine?.rating || 5}>
+                {[5, 4, 3, 2, 1].map((n) => (
+                  <option key={n} value={n}>
+                    {n} out of 5
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Your experience
+              <textarea
+                ref={reviewInput}
+                name="text"
+                defaultValue={mine?.text || ""}
+                placeholder="What was useful? Who would you recommend it to?"
+              />
+            </label>
+            <button
+              aria-busy={mutation.isPending}
+              disabled={mutation.isPending}
+            >
+              {mine ? "Update review" : "Share review"}
+            </button>
+            {mutation.error && <p role="alert">{humanError(mutation.error)}</p>}
+            {mutation.isSuccess && (
+              <p role="status" className="muted">
+                Your change has been saved.
+              </p>
+            )}
+          </form>{" "}
+        </>
+      )}
+    </section>
+  );
+}

@@ -1,12 +1,26 @@
+# Python and local environments
 __pycache__/
-**/__pycache__/
-**/__pycache__/**
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 .Python
-.env
 .venv/
 venv/
-.nicegui
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.import_linter_cache/
+.coverage*
+coverage.xml
+htmlcov/
+# Local settings and secrets
+.env
+.env.*
+!.env.example
+.nicegui/
 .vscode/
+# Frontend tooling and generated reports
+node_modules/
+dist/
+*.tsbuildinfo
+test-results/
+playwright-report/
+.DS_Store

@@ -1,7 +1,5 @@
 import pytest
 
-import backend.main as main
-
 
 pytestmark = pytest.mark.anyio
 

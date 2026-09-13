@@ -8,6 +8,8 @@ from backend.api.schemas.common import APIModel
 class PathListItem(APIModel):
     """Path list item payload."""
 
+    recommendation_note: str | None = Field(default=None, max_length=1000)
+
     id: int
     name: str
     description: str
@@ -17,6 +19,8 @@ class PathListItem(APIModel):
 
 class PathDetailResponse(APIModel):
     """Path detail response payload."""
+
+    recommendation_note: str | None = Field(default=None, max_length=1000)
 
     id: int
     name: str
@@ -51,6 +55,8 @@ class PathItemRequest(APIModel):
 class PathCreateRequest(APIModel):
     """Path create request payload."""
 
+    recommendation_note: str | None = Field(default=None, max_length=1000)
+
     name: StrictStr | None = None
     description: StrictStr | None = None
     items: list[PathItemRequest] = Field(default_factory=list)
@@ -58,6 +64,8 @@ class PathCreateRequest(APIModel):
 
 class PathUpdateRequest(APIModel):
     """Path update request payload."""
+
+    recommendation_note: str | None = Field(default=None, max_length=1000)
 
     name: StrictStr | None = None
     description: StrictStr | None = None

@@ -82,7 +82,7 @@ async def add_path(
     Returns:
         dict: Created path.
     """
-    data = payload.model_dump()
+    data = payload.model_dump(exclude_unset=True)
     data["created_by"] = current_user
     return await paths.create_path(data)
 
@@ -207,7 +207,7 @@ async def create_path_review(
 ) -> dict[str, Any]:
     """Create a review for a path (any authenticated user)."""
     require_row_exists(await paths.get_path(path_id))
-    return await reviews.create_review(path_id=path_id, payload=payload.model_dump(), created_by=current_user)
+    return await reviews.create_review(path_id=path_id, payload=payload.model_dump(exclude_unset=True), created_by=current_user)
 
 
 @router.delete("/{path_id}/reviews/{review_id}", response_model=DeletePathReviewResponse)
@@ -277,4 +277,4 @@ async def edit_path(
         current_user=current_user,
         auth=auth,
     )
-    return await paths.update_path(path_id, payload.model_dump())
+    return await paths.update_path(path_id, payload.model_dump(exclude_unset=True))
