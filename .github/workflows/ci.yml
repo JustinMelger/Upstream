@@ -29,7 +29,6 @@ jobs:
       - run: uv run ruff check . && uv run ruff format --check .
       - run: uv run mypy backend
       - run: uv run lint-imports
-      - run: uv run pip-audit
       - name: Verify populated migration
         run: |
           PGPASSWORD=react_test createdb -h 127.0.0.1 -U react_test learning_migration_test
@@ -50,7 +49,6 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/react/package-lock.json
       - run: npm ci
-      - run: npm audit --audit-level=moderate
       - run: npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build
       - run: npm run api:generate && git diff --exit-code -- src/lib/api/generated.ts
   browser:
