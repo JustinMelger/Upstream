@@ -2,12 +2,12 @@
   font-family: "IBM Plex Sans", sans-serif;
   font-size: 16px;
   font-synthesis: none;
-  --bg: #0b1117;
-  --surface: #111a23;
-  --raised: #1d2935;
+  --bg: #141e28;
+  --surface: #1c2935;
+  --raised: #293a49;
   --text: #f2f5fa;
   --muted: #b9c7d8;
-  --line: #334351;
+  --line: #465a6c;
   --control: #657b96;
   --accent: #91c9f7;
   --course: var(--accent);

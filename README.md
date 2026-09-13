@@ -1,4 +1,4 @@
-# Learning Hub
+# Upstream
 
 A shared learning library with a React workspace and FastAPI backend.
 

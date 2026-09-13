@@ -36,6 +36,7 @@ import {
 } from "../features/course-journey";
 import { Share } from "../features/share";
 import { Admin } from "../features/admin";
+import { Brand } from "../components/Brand";
 import { Empty } from "../components/ui";
 import { humanError } from "../lib/api/client";
 import s from "./App.module.css";
@@ -49,8 +50,7 @@ function Navigation({ close }: { close?: () => void }) {
   return (
     <>
       <Link className={s.brand} to="/home" onClick={close}>
-        <BookOpen />
-        Learning Hub
+        <Brand />
       </Link>
       <nav aria-label="Main navigation">
         {[
@@ -106,12 +106,8 @@ function Shell() {
           <div className={s.desktopNav}>
             <Navigation />
           </div>
-          <Link
-            to="/home"
-            className={s.mobileBrand}
-            aria-label="Learning Hub home"
-          >
-            <BookOpen />
+          <Link to="/home" className={s.mobileBrand} aria-label="Upstream home">
+            <Brand wordmark={false} />
           </Link>
           <div className={s.utilityActions}>
             <DropdownMenu.Root>

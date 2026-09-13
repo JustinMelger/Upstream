@@ -1,3 +1,4 @@
+import { Brand } from "../components/Brand";
 import { ResourceArtwork } from "../components/resources";
 import {
   createContext,
@@ -15,7 +16,7 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import {
   api,
   send,
@@ -135,7 +136,8 @@ export function Login() {
   return (
     <main className={s.login}>
       <div className={s.loginBrand}>
-        <BookOpen size={30} /> Learning Hub
+        <Brand large />
+        <p className={s.brandTagline}>Share what you learn.</p>
       </div>
       <section>
         <h1>

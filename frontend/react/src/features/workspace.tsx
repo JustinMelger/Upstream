@@ -557,7 +557,7 @@ export function Profile() {
           <div>
             <h2>Your contributions</h2>
             <p className="muted">
-              Resources you’ve shared with the Learning Hub community.
+              Resources you’ve shared with the Upstream community.
             </p>
           </div>
           <div className={s.actions}>

@@ -2,7 +2,7 @@
 
 # Visual discovery implementation
 
-Learning Hub now uses the approved visual-library direction: horizontal navigation, recognizable resource artwork, personal learning collections, and a friendly sharing editor. The reference mockups remain in [the design directory](mockups/discovery-direction/README.md); illustrative data was not imported into the application.
+Upstream now uses the approved visual-library direction: horizontal navigation, recognizable resource artwork, personal learning collections, and a friendly sharing editor. The reference mockups remain in [the design directory](mockups/discovery-direction/README.md); illustrative data was not imported into the application.
 
 The follow-up [supporting pages implementation](supporting_pages_implementation.md) extends this direction to details, paths, Activity, Profile, and Admin, including Activity excerpts and focused account dialogs. Its validation record supersedes the original release counts below.
 

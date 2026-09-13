@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+import shutil
 
 from PIL import Image, ImageDraw
 
@@ -41,9 +42,15 @@ def main():
             else:
                 raise ValueError(f"Image exceeds budget: {target}")
         row["asset"] = f"frontend/react/public/artwork/{row['key']}.webp"
+        if row["key"].endswith("-0"):
+            for suffix in ("", "-card"):
+                shutil.copyfile(
+                    ARTWORK / f"{row['key']}{suffix}.webp",
+                    ARTWORK / f"{row['type']}-technical{suffix}.webp",
+                )
     (RECORDS / "generation-record.json").write_text(json.dumps(records, indent=2) + "\n")
     for kind in ("article", "video", "course", "path"):
-        sheet = Image.new("RGB", (664, 1056), "#0d141b")
+        sheet = Image.new("RGB", (664, 1056), "#1c2935")
         draw = ImageDraw.Draw(sheet)
         for i in range(10):
             x, y = 8 + (i % 2) * 328, 12 + (i // 2) * 208

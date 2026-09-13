@@ -63,8 +63,8 @@ export function ResourceArtwork({
         </div>
       ) : (
         <img
-          src={`/artwork/${key}-card.webp?v=technical-2`}
-          srcSet={`/artwork/${key}-card.webp?v=technical-2 640w, /artwork/${key}.webp?v=technical-2 1280w`}
+          src={`/artwork/${key}-card.webp?v=refined-1`}
+          srcSet={`/artwork/${key}-card.webp?v=refined-1 640w, /artwork/${key}.webp?v=refined-1 1280w`}
           sizes={
             hero
               ? "(max-width: 599px) 100px, 50vw"

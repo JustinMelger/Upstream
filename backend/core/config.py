@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(extra="ignore")
 
-    api_title: str = "Learning Hub API"
+    api_title: str = "Upstream API"
     api_version: str = "0.1.0"
     api_root_path: str = ""
     database_url: str = ""

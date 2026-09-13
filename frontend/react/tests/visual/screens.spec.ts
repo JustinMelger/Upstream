@@ -73,6 +73,8 @@ const pageOf = (data: unknown[]) => ({
 for (const width of [390, 768, 1440]) {
   for (const screen of [
     "home",
+    "login",
+    "navigation",
     "explore",
     "activity",
     "detail",
@@ -115,14 +117,19 @@ for (const width of [390, 768, 1440]) {
               "A thoughtful guide to feedback that helps people and their work grow.",
             suggested_provider: "Engineering Notes",
           };
-        } else if (path === "/auth/browser/session")
+        } else if (path === "/auth/browser/session") {
+          if (screen === "login")
+            return route.fulfill({
+              status: 401,
+              json: { message: "unauthorized" },
+            });
           body = {
             username: "alex",
             role: screen.startsWith("admin") ? "admin" : "user",
             expires_at: "2030-01-01T00:00:00Z",
             csrf_token: "visual-test",
           };
-        else if (path === "/tracking") {
+        } else if (path === "/tracking") {
           journeyStatus = route.request().postDataJSON().status;
           body = { course_id: 1, status: journeyStatus };
         } else if (path === "/learning/summary")
@@ -280,6 +287,7 @@ for (const width of [390, 768, 1440]) {
       if (screen === "fallback")
         await page.route("**/artwork/**", (route) => route.abort());
       const supportingRoutes: Record<string, string> = {
+        navigation: "/home",
         "metadata-filled": "/share/item?type=article",
         "metadata-error": "/share/item?type=article",
         "journey-added": "/explore/courses/1",
@@ -306,6 +314,29 @@ for (const width of [390, 768, 1440]) {
                 : `/${screen}${screen === "activity" ? "?scope=shared" : ""}`);
 
       await page.goto(path);
+      await expect(page).toHaveTitle("Upstream");
+      if (screen === "login") {
+        await expect(
+          page.getByText("Share what you learn.", { exact: true }),
+        ).toBeVisible();
+        for (const asset of [
+          "favicon.svg",
+          "favicon.ico",
+          "apple-touch-icon.png",
+        ]) {
+          const response = await page.request.get(`/branding/${asset}`);
+          expect(response.ok()).toBeTruthy();
+          expect(response.headers()["content-type"]).toMatch(/image/);
+        }
+      } else {
+        await expect(
+          page.getByText("Share what you learn.", { exact: true }),
+        ).toHaveCount(0);
+        if (width < 900)
+          await expect(
+            page.getByRole("link", { name: "Upstream home", exact: true }),
+          ).toBeVisible();
+      }
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       if (screen === "loading")
         await expect(
@@ -396,6 +427,20 @@ for (const width of [390, 768, 1440]) {
         if (width < 900)
           await page.getByText("Preview your share", { exact: true }).click();
       }
+      if (screen === "navigation") {
+        if (width < 900) {
+          await page.getByRole("button", { name: "Open navigation" }).click();
+          await expect(
+            page
+              .getByRole("dialog")
+              .getByRole("link", { name: "Upstream", exact: true }),
+          ).toBeVisible();
+        } else {
+          await expect(
+            page.getByRole("link", { name: "Upstream", exact: true }),
+          ).toBeVisible();
+        }
+      }
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(async () => {
         await Promise.all(
@@ -411,6 +456,19 @@ for (const width of [390, 768, 1440]) {
         fullPage: true,
         animations: "disabled",
       });
+      if (screen === "navigation" && width < 900) {
+        await page
+          .getByRole("dialog")
+          .getByRole("link", { name: "Upstream", exact: true })
+          .click();
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+        await expect(page).toHaveURL(/\/home$/);
+        await page.getByRole("button", { name: "Open navigation" }).click();
+        await page.keyboard.press("Escape");
+        await expect(
+          page.getByRole("button", { name: "Open navigation" }),
+        ).toBeFocused();
+      }
     });
   }
 }
