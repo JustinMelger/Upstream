@@ -34,7 +34,7 @@ Teams, AI Curator, and legacy notification routes are unregistered. The authenti
 
 The API image contains Python runtime dependencies only. Nginx serves the React assets and proxies `/api`; `API_ROOT_PATH=/api` keeps API documentation links correct. The migration container completes before API startup. React's Vite server proxies `/api` during development.
 
-OpenTelemetry instrumentation and the optional Collector/Tempo/Prometheus/Loki/Grafana stack remain available. Optional authenticated `/telemetry/events` ingestion requires `FEATURE_TELEMETRY=1`; the new React UI does not require it.
+OpenTelemetry instrumentation remains available, disabled by default. The repository does not bundle a Collector/Tempo/Prometheus/Loki/Grafana stack; enable instrumentation only with independently configured OTLP endpoints. Optional authenticated `/telemetry/events` ingestion requires `FEATURE_TELEMETRY=1`; the new React UI does not require it.
 
 See [React implementation record](react_redesign_plan.md) and [README](../README.md) for release gates, setup, and rollback.
 

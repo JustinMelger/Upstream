@@ -101,7 +101,7 @@ CI compares baselines without updating them and uploads differences on failure. 
 
 Keep the previous NiceGUI image and header authentication available for one release cycle. React is the supported UI and cutover is complete. The removed external-image fetcher is not needed when rolling back to prior images. Team tables remain intact for rollback; no team-data destruction occurs in this release. Do not restore the old frontend while simultaneously running a future migration that drops its required tables.
 
-The separate observability Compose stack remains optional. See [React implementation record](react_redesign_plan.md), [frontend architecture](architecture_frontend.md), and [backend architecture](architecture_backend.md).
+The repository does not bundle an observability Compose stack. Backend OpenTelemetry remains optional and requires an independently configured OTLP endpoint. See [React implementation record](react_redesign_plan.md), [frontend architecture](architecture_frontend.md), and [backend architecture](architecture_backend.md).
 
 
 Use `just lint`, `just unit`, `just integration`, `just architecture`, `just audit`, and `just build` for the equivalent grouped checks. `just api-types` regenerates both contracts; compare generated files to detect drift.
