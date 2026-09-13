@@ -53,7 +53,7 @@ Vite proxies `/api` to `http://127.0.0.1:8000`; `BACKEND_URL` overrides this dev
 ## Checks and further guidance
 
 Use a disposable PostgreSQL database for tests: backend fixtures truncate tables.
-Run `just test` and `just build` for backend/frontend checks; browser and visual checks are separate release gates.
+Run `just test` and `just build-ui` for backend/frontend checks, or `just check` to include contract and pinned Linux visual checks. Database tests require an explicit disposable database; see [operations](docs/operations.md#tests-and-quality-checks). Live browser checks use `just e2e` with a separately prepared test database.
 
 - [Product guide](docs/product.md): capabilities, pagination and visibility.
 - [Documentation index](docs/README.md): current guidance, implementation history, and approved designs.

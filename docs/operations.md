@@ -8,6 +8,8 @@ Browser authentication uses `/api/auth/browser/login`, `/session`, and `/logout`
 
 The API and migration containers run as UID/GID `10001:10001`. The UI runs as the image's `nginx` user on port 8080, with PID and temporary files under `/tmp`. Both images use separate build and runtime stages. The API runtime includes only its virtual environment, backend code and Alembic files; development scripts and frontend sources are excluded.
 
+Both Dockerfiles use the repository root as their build context. To build the API image directly, run `docker build -f backend/Dockerfile -t upstream-api:local .` from the repository root. Compose and CI use the same Dockerfile.
+
 ## Published images
 
 Releases publish `ghcr.io/<owner>/upstream-api` and `ghcr.io/<owner>/upstream-ui`. Stable releases provide exact version, minor, major and `latest` tags; release candidates provide their release tag and `rc`. Prefer the same exact version for both images in a deployment. Release tags continue to use `v…`; package renaming does not reset version history.
@@ -124,4 +126,8 @@ Backend OpenTelemetry is disabled by default. Enable it only with independently 
 
 ## Task shortcuts
 
-Use `just lint`, `just unit`, `just integration`, `just architecture`, `just audit` and `just build` for grouped checks. `just api-types` regenerates both contracts; compare generated files to detect drift. Database-dependent checks still require a disposable database.
+Use `just lint`, `just unit`, `just integration`, `just architecture`, `just audit` and `just build-ui` for grouped checks. `just quality` combines lint and import contracts. `just api-types` regenerates both contracts; `just architecture-sync-check` checks drift. `just build-images` builds the Compose images. The old `build` and `lint-ratchet` names remain compatibility aliases.
+
+`just unit`, `just integration`, `just test`, `just check` and `just e2e` require `E2E_DATABASE_IS_DISPOSABLE=1` and an explicit PostgreSQL `DATABASE_URL` whose database name ends in `_test`. This acknowledgement does not create or isolate a database: provision a disposable database first. Never use retained application data. The guard applies to just recipes; direct pytest commands still require the same care.
+
+`just visual` runs the pinned Linux screenshot comparison and saves failure artifacts in `frontend/react/test-results`. `just check` combines backend/frontend checks, contract consistency, the production UI build and visual checks. Run `just e2e` separately against a migrated and seeded disposable browser database using the preparation steps above; backend tests can truncate seed data.

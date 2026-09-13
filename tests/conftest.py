@@ -48,10 +48,12 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
             item.add_marker(pytest.mark.unit)
 
 
+# Pin test login credentials before collection imports application settings.
+# just loads .env, whose application credentials must not leak into these tests.
 os.environ.setdefault("DATABASE_URL", DEFAULT_DATABASE_URL)
 os.environ.setdefault("SESSION_DAYS", "30")
-os.environ.setdefault("BOOTSTRAP_ADMIN_USERNAME", "admin")
-os.environ.setdefault("BOOTSTRAP_ADMIN_PASSWORD", "admin")
+os.environ["BOOTSTRAP_ADMIN_USERNAME"] = "admin"
+os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin"
 
 
 @pytest.fixture(scope="session")
@@ -71,8 +73,8 @@ def configure_test_env(database_url: str) -> Iterator[None]:
     """Set required env vars for backend settings and reset cached sessionmakers."""
     os.environ["DATABASE_URL"] = database_url
     os.environ.setdefault("SESSION_DAYS", "30")
-    os.environ.setdefault("BOOTSTRAP_ADMIN_USERNAME", "admin")
-    os.environ.setdefault("BOOTSTRAP_ADMIN_PASSWORD", "admin")
+    os.environ["BOOTSTRAP_ADMIN_USERNAME"] = "admin"
+    os.environ["BOOTSTRAP_ADMIN_PASSWORD"] = "admin"
 
     # The backend caches its SQLAlchemy engine/sessionmaker; tests may set env vars
     # after import, so we reset the cache here to ensure `DATABASE_URL` is honored.

@@ -16,7 +16,9 @@ services:
       retries: 20
   migrate:
     image: ${API_IMAGE:-upstream-api:local}
-    build: .
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     command: ["alembic", "upgrade", "head"]
     depends_on:
       postgres:
@@ -25,7 +27,9 @@ services:
       DATABASE_URL: postgresql+asyncpg://learning_platform:${POSTGRES_PASSWORD}@postgres:5432/learning_platform
   api:
     image: ${API_IMAGE:-upstream-api:local}
-    build: .
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     depends_on:
       migrate:
         condition: service_completed_successfully

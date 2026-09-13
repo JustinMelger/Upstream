@@ -25,7 +25,7 @@ jobs:
       matrix:
         include:
           - image: upstream-api
-            dockerfile: Dockerfile
+            dockerfile: backend/Dockerfile
             smoke: python -c "import backend.main"
           - image: upstream-ui
             dockerfile: frontend/react/Dockerfile
