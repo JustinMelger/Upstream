@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
 async function login(
   page: Page,
   username = "alex",
@@ -12,6 +13,7 @@ async function login(
     page.getByRole("heading", { name: "My learning" }),
   ).toBeVisible();
 }
+
 test("discovery, progress, activity and reload", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -189,6 +191,7 @@ test("admin can create, disable, reset and delete a user", async ({ page }) => {
     .click();
   await expect(row).toHaveCount(0);
 });
+
 for (const type of ["course", "video"]) {
   test(`share, review, edit and delete a ${type}`, async ({ page }) => {
     const title = `Browser ${type} ${Date.now()}`;
@@ -208,10 +211,11 @@ for (const type of ["course", "video"]) {
     await expect(
       page.getByRole("heading", { name: title, exact: true }),
     ).toBeVisible();
+
     if (type === "course") {
-      await expect(page.getByRole("status")).toHaveText(
-        "Course shared. Add it to My learning when you’re ready.",
-      );
+      await expect(
+        page.getByRole("status").filter({ hasText: "Course shared." }),
+      ).toHaveText("Course shared. Add it to My learning when you’re ready.");
       await page.route(
         "**/api/tracking",
         (route) =>
@@ -233,10 +237,11 @@ for (const type of ["course", "video"]) {
       await page
         .getByRole("button", { name: "Add to My learning", exact: true })
         .click();
-      await expect(page.getByRole("status")).toHaveText(
-        "Added to My learning · Interested",
-      );
+      await expect(
+        page.getByRole("status").filter({ hasText: "Added to My learning" }),
+      ).toHaveText("Added to My learning · Interested");
     }
+
     if (type === "video")
       await expect(page.getByLabel("Your progress")).toHaveCount(0);
     await page
@@ -264,6 +269,7 @@ for (const type of ["course", "video"]) {
     await expect(page.getByRole("heading", { name: "Explore" })).toBeVisible();
   });
 }
+
 test("a recoverable publish error preserves the form", async ({ page }) => {
   await login(page);
   await page.goto("/share/item?type=article");
@@ -302,6 +308,7 @@ for (const width of [390, 768, 1440])
   test(`responsive layout ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await login(page);
+
     for (const route of [
       "/home",
       "/explore",
@@ -324,6 +331,7 @@ for (const width of [390, 768, 1440])
         fullPage: true,
       });
     }
+
     if (width === 390) {
       await page.getByRole("button", { name: "Open navigation" }).click();
       await expect(page.getByRole("dialog")).toBeVisible();

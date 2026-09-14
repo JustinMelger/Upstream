@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api, setCsrf, safeReturn, externalUrl, ApiError } from "./client";
+
+import { api, ApiError, externalUrl, safeReturn, setCsrf } from "./client";
+
 afterEach(() => {
   vi.unstubAllGlobals();
   setCsrf("");

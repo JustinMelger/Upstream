@@ -1,20 +1,9 @@
-import { ResourceCard, type ResourcePreview } from "../components/resources";
-import { useState, useRef, type FormEvent } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams, useNavigate } from "react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
-import {
-  api,
-  send,
-  plural,
-  detailUrl,
-  queryString,
-  humanError,
-  type ContentType,
-  type Content,
-  type CatalogItem,
-  type Page,
-} from "../lib/api/client";
+import { type FormEvent, useRef, useState } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+
+import { ResourceCard, type ResourcePreview } from "../components/resources";
 import {
   Empty,
   ErrorPanel,
@@ -22,12 +11,26 @@ import {
   Loading,
   Pagination,
 } from "../components/ui";
+import {
+  api,
+  type CatalogItem,
+  type Content,
+  type ContentType,
+  detailUrl,
+  humanError,
+  type Page,
+  plural,
+  queryString,
+  send,
+} from "../lib/api/client";
 import { useAuth } from "./auth";
-import s from "./pages.module.css";
 import { useCourseJourney } from "./course-journey";
-import { useMetadata } from "./metadata";
 import { useDraft } from "./drafts";
+import { useMetadata } from "./metadata";
+import s from "./pages.module.css";
+
 type PathItem = { type: string; id: number; title: string };
+
 export function Share() {
   const { kind } = useParams();
   const [params] = useSearchParams();
@@ -66,6 +69,7 @@ export function Share() {
         Only its owner or an administrator can make changes.
       </Empty>
     );
+
   return (
     <>
       <Heading
@@ -104,6 +108,7 @@ export function Share() {
     </>
   );
 }
+
 function ShareForm({
   type,
   content,
@@ -113,8 +118,8 @@ function ShareForm({
   content?: Content;
   edit: number;
 }) {
-  const navigate = useNavigate(),
-    cache = useQueryClient();
+  const navigate = useNavigate();
+  const cache = useQueryClient();
   const journey = useCourseJourney();
   const [items, setItems] = useState<PathItem[]>(content?.items || []);
   const { user } = useAuth();
@@ -134,6 +139,7 @@ function ShareForm({
     recommendation_note: content?.recommendation_note || "",
   };
   const [previewValues, setPreviewValues] = useState(initialPreview);
+
   function refreshPreview() {
     const value = (name: string) =>
       (formRef.current?.elements.namedItem(name) as HTMLInputElement | null)
@@ -144,6 +150,7 @@ function ShareForm({
       recommendation_note: value("recommendation_note"),
     });
   }
+
   const metadata = useMetadata(formRef, () => {
     draft.changed();
     refreshPreview();
@@ -186,11 +193,13 @@ function ShareForm({
       navigate(detailUrl(type, Number(result.id)));
     },
   });
+
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     metadata.cancel();
     const form = e.currentTarget;
     const invalid: Record<string, string> = {};
+
     for (const field of Array.from(form.elements)) {
       if (
         field instanceof HTMLInputElement ||
@@ -203,6 +212,7 @@ function ShareForm({
           invalid[field.name] = "Please enter a value.";
       }
     }
+
     const note = form.elements.namedItem(
       "recommendation_note",
     ) as HTMLTextAreaElement;
@@ -215,6 +225,7 @@ function ShareForm({
     )
       invalid.description = "Use 2,000 characters or fewer.";
     setErrors(invalid);
+
     if (Object.keys(invalid).length) {
       const field = form.elements.namedItem(
         Object.keys(invalid)[0],
@@ -222,14 +233,17 @@ function ShareForm({
       const details = field?.closest("details");
       if (details) details.open = true;
       field?.focus();
+
       return;
     }
+
     const values = Object.fromEntries(new FormData(form));
     const body: Record<string, unknown> = {
       ...values,
       recommendation_note:
         String(values.recommendation_note || "").trim() || null,
     };
+
     if (type === "path") {
       body.items = items.map(({ type, id }, position) => ({
         type,
@@ -237,13 +251,16 @@ function ShareForm({
         position,
       }));
     }
+
     if (type === "course") {
       body.duration_hours = values.duration_hours
         ? Number(values.duration_hours)
         : null;
     }
+
     mutation.mutate(body);
   }
+
   function move(index: number, delta: number) {
     draft.changed();
     setAnnouncement(
@@ -252,9 +269,11 @@ function ShareForm({
     setItems((old) => {
       const next = [...old];
       [next[index], next[index + delta]] = [next[index + delta], next[index]];
+
       return next;
     });
   }
+
   return (
     <div className={s.shareLayout}>
       <form
@@ -272,6 +291,7 @@ function ShareForm({
           setErrors((old) => {
             const next = { ...old };
             delete next[field.name];
+
             return next;
           });
         }}
@@ -295,6 +315,7 @@ function ShareForm({
                 onClick={() => {
                   metadata.cancel();
                   const saved = draft.restore();
+
                   if (saved) {
                     setItems(saved.items);
                     refreshPreview();
@@ -744,6 +765,7 @@ function ShareForm({
     </div>
   );
 }
+
 function ItemPicker({
   selected,
   add,
@@ -751,9 +773,9 @@ function ItemPicker({
   selected: PathItem[];
   add: (item: PathItem) => void;
 }) {
-  const [q, setQ] = useState(""),
-    [page, setPage] = useState(1),
-    [type, setType] = useState("course");
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [type, setType] = useState("course");
   const query = useQuery({
     queryKey: ["picker", q, type, page],
     queryFn: ({ signal }) =>
@@ -762,6 +784,7 @@ function ItemPicker({
         { signal },
       ),
   });
+
   return (
     <div className={s.picker}>
       <div className={s.twoFields}>

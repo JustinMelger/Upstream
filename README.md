@@ -1,6 +1,14 @@
 # Upstream
 
-A shared learning library with a React workspace and FastAPI backend.
+**A shared internal learning library, built by colleagues, for colleagues.**
+
+Upstream gives people one place to save and share useful online courses, videos and articles, and organise them into learning paths. Each contribution becomes part of an internal library that everyone in the organisation can discover and learn from.
+
+Found an article that helped you solve a problem, a video that explained something clearly, or a course worth taking? Save its link, add why you recommend it, and pass it on. Colleagues can find those recommendations later, share their own reviews, and combine resources into paths that help others get started with a subject.
+
+The library grows as people share what they learn. Resources stay on their original websites; Upstream brings the links, recommendations and learning paths together.
+
+*Share what you learn.*
 
 ![Upstream Explore on desktop, with search, filters and artwork for courses, articles, videos and paths](frontend/react/tests/visual/baselines/explore-1440.png)
 
@@ -9,7 +17,7 @@ A shared learning library with a React workspace and FastAPI backend.
 - **Explore:** discover courses, articles, videos, and mixed learning paths.
 - **My learning:** continue a course, track course progress, and manage selected paths.
 - **Activity:** personal statistics, reviews on your content, and shared-content updates.
-- **Share:** publish learning material with an optional “Why I recommend this” note.
+- **Share:** save links for colleagues with an optional “Why I recommend this” note, or assemble resources into a learning path.
 - **Admin:** manage accounts and access.
 
 <details>
@@ -25,6 +33,8 @@ See the [brand identity](docs/branding/README.md) and [artwork guidance](docs/ar
 Courses support progress tracking. Articles and videos support reviews; they do not have completion tracking. Path status is manual and independent of the displayed course-completion count. Content is globally shared; personal progress is private except for authorized administrative access.
 
 ## Requirements
+
+Upstream uses a React frontend, a FastAPI backend and PostgreSQL.
 
 Python 3.13, uv, Node.js 22.13 or later, npm, and Docker Compose. `just` is optional.
 
@@ -58,7 +68,7 @@ Run `just test` and `just build-ui` for backend/frontend checks, or `just check`
 - [Product guide](docs/product.md): capabilities, pagination and visibility.
 - [Documentation index](docs/README.md): current guidance, implementation history, and approved designs.
 - [Operations and verification](docs/operations.md): commands, contracts, browser/visual checks, deployment, and rollback.
-- [Architecture](docs/architecture.md) and [engineering standards](AGENT.md).
+- [Architecture](docs/architecture.md) and [engineering standards](AGENTS.md).
 
 New-resource forms support optional **Fetch details** from page-authored metadata. Artwork is bundled locally: ten covers per resource type. Draft recovery and personal course tracking remain independent of metadata fetching.
 

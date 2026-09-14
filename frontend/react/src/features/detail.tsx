@@ -1,37 +1,39 @@
-import {
-  ResourceArtwork,
-  ContentLabel,
-  Rating,
-  Contributor,
-} from "../components/resources";
-import { useState, useRef, useEffect, type FormEvent } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, ArrowUpRight, Pencil, Star, Trash2 } from "lucide-react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import {
   Link,
-  useParams,
-  useNavigate,
-  useSearchParams,
   useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
 } from "react-router";
-import { ArrowUpRight, ArrowLeft, Star, Pencil, Trash2 } from "lucide-react";
+
+import {
+  ContentLabel,
+  Contributor,
+  Rating,
+  ResourceArtwork,
+} from "../components/resources";
+import { Confirm, Empty, ErrorPanel, Loading } from "../components/ui";
 import {
   api,
-  send,
-  detailUrl,
-  humanError,
-  externalUrl,
-  type ContentType,
-  type Content,
-  type Review,
-  type PathProgress,
-  type Page,
   type CatalogItem,
+  type Content,
+  type ContentType,
+  detailUrl,
+  externalUrl,
+  humanError,
+  type Page,
+  type PathProgress,
+  type Review,
+  send,
 } from "../lib/api/client";
-import { Confirm, Empty, ErrorPanel, Loading } from "../components/ui";
 import { useAuth } from "./auth";
-import s from "./pages.module.css";
 import { CourseActions } from "./course-journey";
+import s from "./pages.module.css";
 import d from "./supporting.module.css";
+
 export function Detail() {
   const location = useLocation();
   const catalogReturn =
@@ -39,9 +41,9 @@ export function Detail() {
     /^\/explore(?:\?|$)/.test(location.state.catalogReturn)
       ? location.state.catalogReturn
       : "/explore";
-  const { kind, id } = useParams(),
-    navigate = useNavigate(),
-    cache = useQueryClient();
+  const { kind, id } = useParams();
+  const navigate = useNavigate();
+  const cache = useQueryClient();
   const { user } = useAuth();
   const [params] = useSearchParams();
   const type = (
@@ -52,8 +54,8 @@ export function Detail() {
       paths: "path",
     } as Record<string, ContentType>
   )[kind || ""];
-  const contentId = Number(id),
-    valid = !!type && Number.isInteger(contentId) && contentId > 0;
+  const contentId = Number(id);
+  const valid = !!type && Number.isInteger(contentId) && contentId > 0;
   const base = `/${kind}/${contentId}`;
   const query = useQuery({
     queryKey: ["detail", type, contentId],
@@ -95,6 +97,7 @@ export function Detail() {
     },
     onError: (e) => setError(humanError(e)),
   });
+
   async function remove() {
     try {
       await mutate.mutateAsync({ path: base, method: "DELETE" });
@@ -103,6 +106,7 @@ export function Detail() {
       /* displayed above */
     }
   }
+
   if (!valid)
     return (
       <Empty title="This item isn’t here.">
@@ -114,9 +118,9 @@ export function Detail() {
     return (
       <ErrorPanel error={query.error} retry={() => void query.refetch()} />
     );
-  const content = query.data,
-    title = content.title || content.name || "Learning item",
-    owner = user?.role === "admin" || user?.username === content.created_by;
+  const content = query.data;
+  const title = content.title || content.name || "Learning item";
+  const owner = user?.role === "admin" || user?.username === content.created_by;
   const url = externalUrl(content.url);
   const description = content.description?.trim() || "";
   const summary =
@@ -130,6 +134,7 @@ export function Detail() {
     content.language,
     content.category,
   ].filter(Boolean);
+
   return (
     <>
       <Link className={s.back} to={catalogReturn}>
@@ -244,6 +249,7 @@ export function Detail() {
                 const count =
                   content.items?.filter((item) => item.type === kind).length ||
                   0;
+
                 return count
                   ? ` · ${count} ${kind}${count === 1 ? "" : "s"}`
                   : "";
@@ -356,6 +362,7 @@ export function Detail() {
                     const status = progress.data?.courses.find(
                       (c) => c.id === item.id,
                     )?.status;
+
                     return (
                       <li key={`${item.type}:${item.id}`}>
                         <Link
@@ -424,8 +431,8 @@ function Reviews({
   retry: () => void;
   base: string;
 }) {
-  const { user } = useAuth(),
-    cache = useQueryClient();
+  const { user } = useAuth();
+  const cache = useQueryClient();
   const reviewInput = useRef<HTMLTextAreaElement>(null);
   const location = useLocation();
   useEffect(() => {
@@ -446,6 +453,7 @@ function Reviews({
       void cache.invalidateQueries();
     },
   });
+
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const values = new FormData(e.currentTarget);
@@ -456,6 +464,7 @@ function Reviews({
       },
     });
   }
+
   return (
     <section className={d.section} id="reviews">
       <div className={d.sectionHeading}>

@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
 async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Username", { exact: true }).fill("alex");
@@ -8,6 +9,7 @@ async function login(page: Page) {
     page.getByRole("heading", { name: "My learning", exact: true }),
   ).toBeVisible();
 }
+
 test("drafts restore after reload, stay separate by type, and clear on logout", async ({
   page,
 }) => {

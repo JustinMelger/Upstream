@@ -1,15 +1,10 @@
-import { Spotlight } from "../components/resources";
-import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Dialog, Popover } from "radix-ui";
-import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import {
-  api,
-  queryString,
-  type Page,
-  type CatalogItem,
-} from "../lib/api/client";
+
+import { Spotlight } from "../components/resources";
 import {
   ContentCard,
   Empty,
@@ -18,8 +13,15 @@ import {
   Loading,
   Pagination,
 } from "../components/ui";
+import {
+  api,
+  type CatalogItem,
+  type Page,
+  queryString,
+} from "../lib/api/client";
 import { useFilters } from "./filters";
 import s from "./pages.module.css";
+
 type Filters = {
   q: string;
   type: string;
@@ -28,6 +30,7 @@ type Filters = {
   author: string;
   sort: string;
 };
+
 function Facet({
   field,
   filters,
@@ -37,9 +40,9 @@ function Facet({
   filters: Filters;
   onChange: (value: string) => void;
 }) {
-  const [open, setOpen] = useState(false),
-    [search, setSearch] = useState(""),
-    [page, setPage] = useState(1);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const label = field === "provider" ? "Provider" : "Category";
   const query = useQuery({
     queryKey: ["facets", field, filters, search, page],
@@ -51,10 +54,12 @@ function Facet({
         { signal },
       ),
   });
+
   function choose(value: string) {
     onChange(value);
     setOpen(false);
   }
+
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger
@@ -134,6 +139,7 @@ function Facet({
     </Popover.Root>
   );
 }
+
 function FilterControls({
   filters,
   change,
@@ -168,6 +174,7 @@ function FilterControls({
     </>
   );
 }
+
 export function Explore() {
   const { params, page, update, updateMany } = useFilters();
   const filters: Filters = {
@@ -188,13 +195,14 @@ export function Explore() {
     author: params.get("author") || "",
     sort: params.get("sort") || "newest",
   };
-  const [search, setSearch] = useState(filters.q),
-    [drawer, setDrawer] = useState(false),
-    [pending, setPending] = useState(filters);
+  const [search, setSearch] = useState(filters.q);
+  const [drawer, setDrawer] = useState(false);
+  const [pending, setPending] = useState(filters);
   useEffect(() => setSearch(filters.q), [filters.q]);
   useEffect(() => {
     if (search === filters.q) return;
     const timer = setTimeout(() => update("q", search, true), 300);
+
     return () => clearTimeout(timer);
   }, [search, filters.q, update]);
   const query = useQuery({
@@ -221,6 +229,7 @@ export function Explore() {
     : undefined;
   const gridItems =
     query.data?.items.filter((item) => item !== spotlight) || [];
+
   return (
     <>
       <Heading title="Explore">

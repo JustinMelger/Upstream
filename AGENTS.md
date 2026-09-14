@@ -10,6 +10,8 @@ Keep API routers thin, business rules in services, and SQL in `backend/database/
 
 The supported UI is `frontend/react`. Use React, TypeScript, Vite, React Router, TanStack Query, Radix primitives, CSS Modules, and shared tokens. Keep API requests in `src/lib/api` or feature query hooks. Generate public types from OpenAPI. Server state belongs in the query cache, shareable filters in URLs, and ephemeral form state locally. Never store session credentials in JavaScript storage. Maintain keyboard/focus behavior and visible error/loading/empty states. Keep pages focused: Explore for discovery, My learning for next actions, Activity for stats and shared updates.
 
+Run `npm run format --prefix frontend/react` to apply ESLint Stylistic statement spacing followed by Prettier. Keep related imports together; separate functions, type declarations, blocks and returns with blank lines. Use one variable declaration per statement, explicit type imports, and sorted imports grouped by external packages and local modules. The format command fixes these automatically; CI enforces them through ESLint.
+
 ## Scope
 
 Teams/memberships and AI Curator are retired. Articles/videos support reviews and owner/admin edits/deletion, but not completion tracking. Course-only path progress is independent of manual path status. Keep shared content global and personal progress private. Avoid invented historical analytics and duplicate dashboards.

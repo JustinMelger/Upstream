@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 const items = [
   {
@@ -315,10 +315,12 @@ for (const width of [390, 768, 1440]) {
 
       await page.goto(path);
       await expect(page).toHaveTitle("Upstream");
+
       if (screen === "login") {
         await expect(
           page.getByText("Share what you learn.", { exact: true }),
         ).toBeVisible();
+
         for (const asset of [
           "favicon.svg",
           "favicon.ico",
@@ -337,7 +339,9 @@ for (const width of [390, 768, 1440]) {
             page.getByRole("link", { name: "Upstream home", exact: true }),
           ).toBeVisible();
       }
+
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
       if (screen === "loading")
         await expect(
           page.getByRole("status", { name: /Loading/ }),
@@ -349,6 +353,7 @@ for (const width of [390, 768, 1440]) {
         if (screen === "error")
           await expect(page.getByRole("alert")).toBeVisible();
       }
+
       if (screen.startsWith("metadata-")) {
         await page
           .getByLabel("Resource URL")
@@ -367,6 +372,7 @@ for (const width of [390, 768, 1440]) {
           page.getByText("Draft saved in this tab", { exact: true }),
         ).toBeVisible();
       }
+
       if (screen === "journey-added") {
         await page
           .getByRole("button", { name: "Add to My learning", exact: true })
@@ -375,6 +381,7 @@ for (const width of [390, 768, 1440]) {
           "Added to My learning · Interested",
         );
       }
+
       if (screen === "journey-completed") {
         await page
           .getByRole("button", { name: "Mark completed", exact: true })
@@ -386,6 +393,7 @@ for (const width of [390, 768, 1440]) {
           }),
         ).toBeVisible();
       }
+
       if (screen === "journey-start") {
         await page.evaluate(() => {
           window.open = () => null;
@@ -400,10 +408,12 @@ for (const width of [390, 768, 1440]) {
             .getByRole("link", { name: "Open course" }),
         ).toBeVisible();
       }
+
       if (screen === "admin-dialog")
         await page
           .getByRole("button", { name: "Add member", exact: true })
           .click();
+
       if (screen === "share") {
         await page
           .getByLabel("Title", { exact: true })
@@ -427,6 +437,7 @@ for (const width of [390, 768, 1440]) {
         if (width < 900)
           await page.getByText("Preview your share", { exact: true }).click();
       }
+
       if (screen === "navigation") {
         if (width < 900) {
           await page.getByRole("button", { name: "Open navigation" }).click();
@@ -441,6 +452,7 @@ for (const width of [390, 768, 1440]) {
           ).toBeVisible();
         }
       }
+
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(async () => {
         await Promise.all(
@@ -448,6 +460,7 @@ for (const width of [390, 768, 1440]) {
             .filter((img) => img.getClientRects().length > 0)
             .map((img) => {
               img.loading = "eager";
+
               return img.decode().catch(() => {});
             }),
         );
@@ -456,6 +469,7 @@ for (const width of [390, 768, 1440]) {
         fullPage: true,
         animations: "disabled",
       });
+
       if (screen === "navigation" && width < 900) {
         await page
           .getByRole("dialog")

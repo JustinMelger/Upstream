@@ -1,11 +1,14 @@
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { useRef, useState } from "react";
-import { render, fireEvent, act, cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useDraft, clearDrafts, claimDrafts, type DraftItem } from "./drafts";
+
+import { claimDrafts, clearDrafts, type DraftItem, useDraft } from "./drafts";
+
 function Form({ identity = "article:new" }: { identity?: string }) {
-  const ref = useRef<HTMLFormElement>(null),
-    [items, setItems] = useState<DraftItem[]>([]);
+  const ref = useRef<HTMLFormElement>(null);
+  const [items, setItems] = useState<DraftItem[]>([]);
   const draft = useDraft("alice", identity, ref, items);
+
   return (
     <form ref={ref} onInput={draft.changed}>
       <input name="title" aria-label="Title" defaultValue="Published" />
@@ -40,6 +43,7 @@ function Form({ identity = "article:new" }: { identity?: string }) {
     </form>
   );
 }
+
 const key = "learning:draft:v1:alice:article:new";
 beforeEach(() => {
   vi.useFakeTimers();

@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
 async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Username", { exact: true }).fill("alex");
@@ -8,6 +9,7 @@ async function login(page: Page) {
     page.getByRole("heading", { name: "My learning", exact: true }),
   ).toBeVisible();
 }
+
 test("spotlight preserves unique bounded results and yields to URL filters and pagination", async ({
   page,
 }) => {
@@ -28,6 +30,7 @@ test("spotlight preserves unique bounded results and yields to URL filters and p
     const p = Number(url.searchParams.get("page") || 1);
     const q = url.searchParams.get("q") || "";
     const filtered = items.filter((item) => item.title.includes(q));
+
     return route.fulfill({
       json: {
         items: filtered.slice((p - 1) * 24, p * 24),
@@ -159,6 +162,7 @@ test.afterEach(async ({ page }) => {
     "/api/catalog?author=alex&type=article&q=preview",
   );
   if (!result.ok()) return;
+
   for (const item of (await result.json()).items) {
     if (item.url === "https://example.com/discovery-preview")
       await page.request.delete(`/api/articles/${item.id}`, {

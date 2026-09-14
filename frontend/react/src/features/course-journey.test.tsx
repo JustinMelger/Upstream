@@ -1,13 +1,15 @@
-import { fireEvent, render, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { beforeEach, afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+
+import { send } from "../lib/api/client";
 import {
   CourseActions,
   CourseFeedback,
   CourseJourneyProvider,
 } from "./course-journey";
-import { send } from "../lib/api/client";
+
 const auth = vi.hoisted(() => ({ username: "alex" }));
 vi.mock("./auth", () => ({
   useAuth: () => ({ user: { username: auth.username } }),
@@ -22,6 +24,7 @@ const course = {
   status: "interested",
   url: "https://example.com/course",
 };
+
 function tree(status = "interested") {
   return (
     <QueryClientProvider
@@ -38,6 +41,7 @@ function tree(status = "interested") {
     </QueryClientProvider>
   );
 }
+
 beforeEach(() => {
   auth.username = "alex";
   vi.mocked(send).mockReset();
