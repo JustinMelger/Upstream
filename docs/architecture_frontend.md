@@ -6,11 +6,21 @@ The Upstream frontend is a Vite-built React application in `frontend/react`.
 
 - `src/app`: application providers, route tree, authentication boundary, responsive shell.
 - `src/components`: reusable visual and interaction primitives.
-- `src/features`: auth, workspace, detail/reviews, sharing/path editing, and administration.
+- `src/features`: separate My learning (`learning.tsx`), Activity (`activity.tsx`), and Profile (`profile.tsx`) pages alongside Explore, authentication, details, sharing, and administration. Routes import these pages directly.
+- `src/features/sharing/ItemPicker.tsx`: the path editor’s catalog picker and selected-item prop type. Publication, form values, drafts, and metadata suggestions stay in the Share page.
+- `src/features/details/Reviews.tsx`: review display, form, mutations, and deep-link focus behavior. The detail page still owns fetching the resource and review list.
 - `src/lib/api`: fetch/error/CSRF boundary, generated OpenAPI contracts, ID and URL helpers.
 - `src/styles`: shared tokens and baseline; CSS Modules own component/page styling.
 
 TanStack Query owns server state and invalidation. Filters and pagination use URL parameters. Forms keep input locally and recover share/edit drafts from versioned sessionStorage scoped to account, content type, and new/edit identity. Draft writes debounce by 500ms and flush on navigation/pagehide. Explicit logout/account changes clear drafts; expiry preserves them for the same account. Credentials never enter storage. Route changes preserve deep-link contracts. The backend remains authoritative for authorization and content validation.
+
+## Stylesheet ownership
+
+Shared UI primitives own `src/components/ui.module.css`, including headings, loading/empty states, pagination, statistics, and dialog controls. Other consumers import these shared styles directly; shared components do not depend on feature styles.
+
+My learning, Activity, and Profile own their exclusive styles in neighboring CSS Modules. `pages.module.css` retains shared layouts and styles for the remaining features; `supporting.module.css` retains common detail/review sections and administration styles. My learning composes shared tabs, active-state, and action classes to preserve both base styling and page-specific descendant rules. Keep media-query order and specificity intact when extracting further rules.
+
+The collection card stays local to My learning. Query keys, invalidation and URL state remain with their original page/component owners. No shared query abstraction or feature barrel is introduced.
 
 ## Sessions
 
