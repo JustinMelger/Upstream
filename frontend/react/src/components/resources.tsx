@@ -1,20 +1,21 @@
-import { useState, type ReactNode } from "react";
-import { Link, useLocation } from "react-router";
 import {
   ArrowRight,
   BookOpen,
   FileText,
-  Video,
   Route,
   Star,
+  Video,
 } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import { Link, useLocation } from "react-router";
+
 import {
-  detailUrl,
   type CatalogItem,
   type ContentType,
+  detailUrl,
 } from "../lib/api/client";
-import s from "./resources.module.css";
 import legacyArtwork from "./artwork-legacy.json";
+import s from "./resources.module.css";
 
 export const contentIcons = {
   course: BookOpen,
@@ -22,6 +23,7 @@ export const contentIcons = {
   video: Video,
   path: Route,
 };
+
 /** Selects a stable technical illustration from each format's ten-cover library. */
 export function artworkKey(type: ContentType, title: string) {
   const normalized = `${type}:${title.normalize("NFKC").trim().toLowerCase().replace(/\s+/g, " ")}`;
@@ -30,8 +32,17 @@ export function artworkKey(type: ContentType, title: string) {
     hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
   const fingerprint = String(hash >>> 0);
   const preserved = (legacyArtwork as Record<string, number>)[fingerprint];
+
   return `${type}-${preserved ?? (hash >>> 0) % 10}`;
 }
+
+/**
+ * Render responsive, decorative artwork selected by resource type and title.
+ *
+ * Failed images fall back to a format icon. The surrounding content must provide
+ * the resource's accessible name; the entire artwork is hidden from assistive
+ * technology. Use eager for above-the-fold images and hero for banner sizing.
+ */
 export function ResourceArtwork({
   type,
   title,
@@ -47,6 +58,7 @@ export function ResourceArtwork({
   const resourceKey = `${key}:${title}`;
   const [failed, setFailed] = useState("");
   const Icon = contentIcons[type];
+
   return (
     <div
       className={s.artwork}
@@ -81,8 +93,10 @@ export function ResourceArtwork({
     </div>
   );
 }
+
 export function ContentLabel({ type }: { type: ContentType }) {
   const Icon = contentIcons[type];
+
   return (
     <span className={s.type} data-content-type={type}>
       <Icon size={15} />
@@ -90,6 +104,7 @@ export function ContentLabel({ type }: { type: ContentType }) {
     </span>
   );
 }
+
 export function Contributor({
   username,
   prefix = "Shared by",
@@ -108,6 +123,7 @@ export function Contributor({
     </span>
   );
 }
+
 export function Rating({ rating, count }: { rating: number; count: number }) {
   return count > 0 ? (
     <span className={s.rating}>
@@ -116,8 +132,10 @@ export function Rating({ rating, count }: { rating: number; count: number }) {
     </span>
   ) : null;
 }
+
 export type ResourcePreview = Pick<CatalogItem, "type" | "title"> &
   Partial<CatalogItem>;
+
 export function ResourceInfo({
   item,
   compact = false,
@@ -125,8 +143,9 @@ export function ResourceInfo({
   item: ResourcePreview;
   compact?: boolean;
 }) {
-  const note = item.recommendation_note?.trim(),
-    description = item.description?.trim();
+  const note = item.recommendation_note?.trim();
+  const description = item.description?.trim();
+
   return (
     <div className={s.info}>
       {!compact && description && (
@@ -147,6 +166,7 @@ export function ResourceInfo({
     </div>
   );
 }
+
 export function ResourceCard({
   item,
   compact = false,
@@ -172,6 +192,7 @@ export function ResourceCard({
       </div>
     </>
   );
+
   return (
     <article
       className={`${s.card} ${compact ? s.compact : ""}`}
@@ -195,8 +216,10 @@ export function ResourceCard({
     </article>
   );
 }
+
 export function Spotlight({ item }: { item: CatalogItem }) {
   const location = useLocation();
+
   return (
     <section
       className={s.spotlight}

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 const course = {
   id: 71,
@@ -20,6 +20,7 @@ const pageOf = (items: unknown[], page_size = 24) => ({
   page: 1,
   page_size,
 });
+
 async function session(page: Page, role = "user") {
   await page.route("**/api/auth/browser/session", (route) =>
     route.fulfill({
@@ -186,6 +187,7 @@ test("profile uses bounded contributions and activity excerpts link to reviews",
   );
   await page.route("**/api/learning/items?**", (route) => {
     collections.push(new URL(route.request().url()).search);
+
     return route.fulfill({
       json: pageOf([{ ...course, created_by: "alex" }], 3),
     });

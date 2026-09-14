@@ -1,5 +1,11 @@
 import s from "./Brand.module.css";
 
+/**
+ * Render the decorative Upstream symbol with an optional visible wordmark.
+ *
+ * When wordmark is false, the enclosing interactive element must supply an
+ * accessible name, such as "Upstream home" for a home link.
+ */
 export function Brand({
   wordmark = true,
   large = false,

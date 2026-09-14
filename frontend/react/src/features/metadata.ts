@@ -1,8 +1,18 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
+
 import { api } from "../lib/api/client";
 import type { components } from "../lib/api/generated";
 
 type Metadata = components["schemas"]["UrlPreviewMetadataResponse"];
+
+/**
+ * Fetch optional metadata into an uncontrolled resource form without replacing edits.
+ *
+ * Call changed with each edited field name; URL changes cancel an active request.
+ * Only fields empty at request start and untouched since then receive suggestions.
+ * The applied callback runs after fields are populated so callers can save drafts.
+ * Failures leave manual entry available, and unmounting aborts the request.
+ */
 export function useMetadata(
   form: RefObject<HTMLFormElement | null>,
   applied: () => void,
@@ -15,6 +25,7 @@ export function useMetadata(
   const field = (name: string) =>
     form.current?.elements.namedItem(name) as
       HTMLInputElement | HTMLTextAreaElement | null;
+
   function cancel() {
     request.current?.abort();
     request.current = null;
@@ -22,14 +33,18 @@ export function useMetadata(
     setMessage("");
     setError("");
   }
+
   useEffect(() => () => request.current?.abort(), []);
+
   function changed(name: string) {
     touched.current.add(name);
     if (name === "url") cancel();
   }
+
   async function fetchDetails() {
     if (request.current) return;
     const url = field("url")?.value || "";
+
     try {
       const parsed = new URL(url);
       if (
@@ -40,8 +55,10 @@ export function useMetadata(
         throw new Error();
     } catch {
       setError("Enter a valid HTTP or HTTPS resource URL first.");
+
       return;
     }
+
     const controller = new AbortController();
     request.current = controller;
     touched.current.clear();
@@ -52,6 +69,7 @@ export function useMetadata(
     setPending(true);
     setMessage("");
     setError("");
+
     try {
       const data = await api<Metadata>("/url-preview/metadata", {
         method: "POST",
@@ -65,8 +83,10 @@ export function useMetadata(
         provider: data.suggested_provider,
       };
       let count = 0;
+
       for (const name of names) {
         const input = field(name);
+
         if (
           input &&
           empty.has(name) &&
@@ -78,6 +98,7 @@ export function useMetadata(
           count++;
         }
       }
+
       if (count) {
         applied();
         setMessage("Details added. Review them before sharing.");
@@ -98,5 +119,6 @@ export function useMetadata(
       }
     }
   }
+
   return { pending, message, error, changed, cancel, fetchDetails };
 }

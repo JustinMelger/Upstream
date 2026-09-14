@@ -1,34 +1,36 @@
-import { Brand } from "../components/Brand";
-import { ResourceArtwork } from "../components/resources";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowRight } from "lucide-react";
 import {
   createContext,
+  type FormEvent,
+  type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useState,
-  useCallback,
-  type ReactNode,
-  type FormEvent,
 } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Navigate,
   useLocation,
   useNavigate,
   useSearchParams,
 } from "react-router";
-import { ArrowRight } from "lucide-react";
+
+import { Brand } from "../components/Brand";
+import { ResourceArtwork } from "../components/resources";
+import { ErrorPanel, Loading } from "../components/ui";
 import {
   api,
-  send,
-  setCsrf,
-  safeReturn,
-  humanError,
   ApiError,
+  humanError,
+  safeReturn,
+  send,
   type Session,
+  setCsrf,
 } from "../lib/api/client";
-import { ErrorPanel, Loading } from "../components/ui";
-import s from "./pages.module.css";
 import { claimDrafts, clearDrafts } from "./drafts";
+import s from "./pages.module.css";
+
 type AuthState = {
   user: Session | null;
   loading: boolean;
@@ -37,15 +39,24 @@ type AuthState = {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
+
 const Auth = createContext<AuthState>(null!);
+
+/**
+ * Restore the browser session and expose sign-in and sign-out actions.
+ *
+ * Session expiry clears cached server data but preserves recoverable drafts;
+ * explicit sign-out clears drafts as well. Session credentials stay in cookies.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<Session | null>(null),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState<unknown>(null);
+  const [user, setUser] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<unknown>(null);
   const cache = useQueryClient();
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
       const session = await api<Session>("/auth/browser/session");
       claimDrafts(session.username);
@@ -60,14 +71,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     void refresh();
+
     const expire = () => {
       setUser(null);
       setCsrf("");
       cache.clear();
     };
+
     window.addEventListener("session-expired", expire);
+
     return () => window.removeEventListener("session-expired", expire);
   }, [cache, refresh]);
+
   async function login(username: string, password: string) {
     const session = await send<Session>("/auth/browser/login", {
       username,
@@ -78,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCsrf(session.csrf_token);
     setUser(session);
   }
+
   async function logout() {
     await send("/auth/browser/logout");
     clearDrafts();
@@ -85,13 +101,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     cache.clear();
   }
+
   return (
     <Auth.Provider value={{ user, loading, error, refresh, login, logout }}>
       {children}
     </Auth.Provider>
   );
 }
+
+/**
+ * Read session state and actions from the enclosing AuthProvider.
+ */
 export const useAuth = () => useContext(Auth);
+
+/**
+ * Wait for session restoration before rendering protected content.
+ *
+ * Session lookup failures offer retry; signed-out users are redirected to login
+ * with the current path, query and hash preserved as the return destination.
+ */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading, error, refresh } = useAuth();
   const location = useLocation();
@@ -109,20 +137,24 @@ export function RequireAuth({ children }: { children: ReactNode }) {
         replace
       />
     );
+
   return children;
 }
+
 export function Login() {
-  const { login, user, loading } = useAuth(),
-    navigate = useNavigate();
+  const { login, user, loading } = useAuth();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const target = safeReturn(params.get("returnTo"));
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     setBusy(true);
     setError("");
+
     try {
       await login(String(form.get("username")), String(form.get("password")));
       navigate(target, { replace: true });
@@ -132,7 +164,9 @@ export function Login() {
       setBusy(false);
     }
   }
+
   if (!loading && user) return <Navigate to={target} replace />;
+
   return (
     <main className={s.login}>
       <div className={s.loginBrand}>

@@ -1,15 +1,18 @@
-import { useState, useRef, type FormEvent } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, Plus, X } from "lucide-react";
 import { Dialog, DropdownMenu } from "radix-ui";
-import { Plus, ChevronDown, X } from "lucide-react";
-import { useAuth } from "./auth";
-import { api, send, humanError } from "../lib/api/client";
-import { Empty, ErrorPanel, Heading, Loading } from "../components/ui";
+import { type FormEvent, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
+
 import { Contributor } from "../components/resources";
+import { Empty, ErrorPanel, Heading, Loading } from "../components/ui";
+import { api, humanError, send } from "../lib/api/client";
+import { useAuth } from "./auth";
 import s from "./pages.module.css";
 import d from "./supporting.module.css";
+
 type UserRow = { username: string; role: string; disabled: boolean };
+
 export function Admin() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -32,6 +35,7 @@ export function Admin() {
       row.username.toLowerCase().includes(search.trim().toLowerCase()),
     )
     .sort((a, b) => a.username.localeCompare(b.username));
+
   return (
     <>
       <Heading
@@ -140,6 +144,7 @@ export function Admin() {
     </>
   );
 }
+
 function AccountStatus({ disabled }: { disabled: boolean }) {
   return (
     <span className={d.accountStatus} data-active={!disabled}>
@@ -147,6 +152,7 @@ function AccountStatus({ disabled }: { disabled: boolean }) {
     </span>
   );
 }
+
 function AccountActions({
   row,
   currentUsername,
@@ -166,6 +172,7 @@ function AccountActions({
     onSuccess: () => void cache.invalidateQueries({ queryKey: ["users"] }),
   });
   const self = row.username.toLowerCase() === currentUsername.toLowerCase();
+
   return (
     <div>
       <DropdownMenu.Root>
@@ -230,6 +237,7 @@ function AccountActions({
     </div>
   );
 }
+
 function AccountDialog({
   mode,
   username,
@@ -263,16 +271,19 @@ function AccountDialog({
         );
     },
   });
+
   function close() {
     if (!mutation.isPending) {
       onClose();
       mutation.reset();
     }
   }
+
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     mutation.mutate(Object.fromEntries(new FormData(e.currentTarget)));
   }
+
   return (
     <Dialog.Root
       open={open}

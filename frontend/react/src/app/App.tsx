@@ -1,51 +1,54 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  Activity as ActivityIcon,
+  BookOpen,
+  Compass,
+  LogOut,
+  Menu,
+  Plus,
+  Shield,
+  User,
+  X,
+} from "lucide-react";
+import { Dialog, DropdownMenu } from "radix-ui";
 import { useState } from "react";
 import {
   BrowserRouter,
-  Routes,
-  Route,
+  Link,
   Navigate,
   NavLink,
-  Link,
   Outlet,
+  Route,
+  Routes,
   useLocation,
 } from "react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Dialog, DropdownMenu } from "radix-ui";
-import {
-  BookOpen,
-  Compass,
-  Activity as ActivityIcon,
-  Plus,
-  Menu,
-  X,
-  LogOut,
-  User,
-  Shield,
-} from "lucide-react";
-import { AuthProvider, RequireAuth, Login, useAuth } from "../features/auth";
-import {
-  Explore,
-  Learning,
-  ActivityPage,
-  Profile,
-} from "../features/workspace";
-import { Detail } from "../features/detail";
-import {
-  CourseJourneyProvider,
-  CourseFeedback,
-} from "../features/course-journey";
-import { Share } from "../features/share";
-import { Admin } from "../features/admin";
+
 import { Brand } from "../components/Brand";
 import { Empty } from "../components/ui";
+import { Admin } from "../features/admin";
+import { AuthProvider, Login, RequireAuth, useAuth } from "../features/auth";
+import {
+  CourseFeedback,
+  CourseJourneyProvider,
+} from "../features/course-journey";
+import { Detail } from "../features/detail";
+import p from "../features/pages.module.css";
+import { Share } from "../features/share";
+import {
+  ActivityPage,
+  Explore,
+  Learning,
+  Profile,
+} from "../features/workspace";
 import { humanError } from "../lib/api/client";
 import s from "./App.module.css";
-import p from "../features/pages.module.css";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 30000, retry: 1, refetchOnWindowFocus: true },
   },
 });
+
 function Navigation({ close }: { close?: () => void }) {
   return (
     <>
@@ -59,6 +62,7 @@ function Navigation({ close }: { close?: () => void }) {
           ["/activity", "Activity", ActivityIcon],
         ].map(([path, label, Icon]) => {
           const Glyph = Icon as typeof BookOpen;
+
           return (
             <NavLink key={String(path)} to={String(path)} onClick={close}>
               <Glyph size={18} />
@@ -70,11 +74,13 @@ function Navigation({ close }: { close?: () => void }) {
     </>
   );
 }
+
 function Shell() {
-  const { user, logout } = useAuth(),
-    location = useLocation();
-  const [open, setOpen] = useState(false),
-    [error, setError] = useState("");
+  const { user, logout } = useAuth();
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState("");
+
   return (
     <div className={s.shell}>
       <a className={s.skip} href="#main">
@@ -172,6 +178,7 @@ function Shell() {
     </div>
   );
 }
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>

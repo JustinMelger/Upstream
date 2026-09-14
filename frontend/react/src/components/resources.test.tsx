@@ -1,9 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { statSync } from "node:fs";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
+import { describe, expect, it } from "vitest";
+
 import { artworkKey, ResourceArtwork, ResourceCard } from "./resources";
 import { Pagination } from "./ui";
-import { statSync } from "node:fs";
 
 describe("resource presentation", () => {
   it("preserves established variant assignments in the replacement library", () => {
@@ -16,6 +18,7 @@ describe("resource presentation", () => {
     expect(artworkKey("course", "  Useful   Learning ")).toBe(
       artworkKey("course", "useful learning"),
     );
+
     for (const type of ["course", "article", "video", "path"] as const) {
       const variants = new Set(
         Array.from({ length: 400 }, (_, i) =>
@@ -23,6 +26,7 @@ describe("resource presentation", () => {
         ),
       );
       expect(variants.size).toBe(10);
+
       for (const key of variants) {
         expect(statSync(`public/artwork/${key}.webp`).size).toBeLessThanOrEqual(
           200000,

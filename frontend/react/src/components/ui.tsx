@@ -1,10 +1,12 @@
-import { ResourceCard } from "./resources";
+import { BookOpen, RefreshCw, X } from "lucide-react";
+import { Dialog } from "radix-ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { Dialog } from "radix-ui";
-import { BookOpen, X, RefreshCw } from "lucide-react";
-import { humanError, type CatalogItem, type Summary } from "../lib/api/client";
+
 import s from "../features/pages.module.css";
+import { type CatalogItem, humanError, type Summary } from "../lib/api/client";
+import { ResourceCard } from "./resources";
+
 export function Loading() {
   return (
     <div className={s.loading} role="status" aria-label="Loading">
@@ -15,6 +17,7 @@ export function Loading() {
     </div>
   );
 }
+
 export function ErrorPanel({
   error,
   retry,
@@ -35,6 +38,7 @@ export function ErrorPanel({
     </div>
   );
 }
+
 export function Empty({
   title,
   children,
@@ -57,6 +61,7 @@ export function Empty({
     </div>
   );
 }
+
 export function Heading({
   eyebrow,
   title,
@@ -79,6 +84,7 @@ export function Heading({
     </header>
   );
 }
+
 export function ContentCard({
   item,
   row = false,
@@ -88,6 +94,13 @@ export function ContentCard({
 }) {
   return <ResourceCard item={item} compact={row} />;
 }
+
+/**
+ * Render one-based Previous/Next navigation using the full filtered result count.
+ *
+ * The caller owns fetching and page state. Controls are hidden for a single page;
+ * onChange receives the requested page number.
+ */
 export function Pagination({
   page,
   total,
@@ -100,6 +113,7 @@ export function Pagination({
   onChange: (page: number) => void;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
+
   return (
     <nav aria-label="Pagination" className={s.pagination}>
       <span className="muted">
@@ -129,6 +143,7 @@ export function Pagination({
     </nav>
   );
 }
+
 export function Stats({ summary }: { summary: Summary }) {
   return (
     <div className={s.stats}>
@@ -155,6 +170,7 @@ export function Stats({ summary }: { summary: Summary }) {
     </div>
   );
 }
+
 export function Confirm({
   title,
   description,

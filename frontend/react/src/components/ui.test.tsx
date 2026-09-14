@@ -1,11 +1,13 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Pagination, Confirm } from "./ui";
+import { describe, expect, it, vi } from "vitest";
+
+import { Confirm, Pagination } from "./ui";
+
 describe("shared interactions", () => {
   it("paginates inside a form without publishing it", async () => {
-    const submit = vi.fn((e) => e.preventDefault()),
-      change = vi.fn();
+    const submit = vi.fn((e) => e.preventDefault());
+    const change = vi.fn();
     render(
       <form onSubmit={submit}>
         <Pagination page={1} total={60} onChange={change} />

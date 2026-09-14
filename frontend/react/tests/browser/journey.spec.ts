@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+
 const course = {
   id: 80,
   type: "course",
@@ -9,6 +10,7 @@ const course = {
   rating: 0,
   review_count: 0,
 };
+
 async function fixture(
   page: Page,
   initial: string | null = null,
@@ -35,8 +37,8 @@ async function fixture(
   await page.route("**/api/**", async (route) => {
     if (!new URL(route.request().url()).pathname.startsWith("/api/"))
       return route.fallback();
-    const parsed = new URL(route.request().url()),
-      path = parsed.pathname.slice(4);
+    const parsed = new URL(route.request().url());
+    const path = parsed.pathname.slice(4);
     let body: unknown;
     if (path === "/auth/browser/session")
       body = {
@@ -98,6 +100,7 @@ async function fixture(
     else throw new Error(`Unexpected journey request ${path}`);
     await route.fulfill({ json: body });
   });
+
   return state;
 }
 

@@ -1,11 +1,21 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
+
 export type DraftItem = { type: string; id: number; title: string };
+
 type Draft = { version: 1; values: Record<string, string>; items: DraftItem[] };
+
 const prefix = "learning:draft:v1:";
 const ownerKey = "learning:draft-owner";
 let generation = 0;
+
+/**
+ * Remove this tab's saved drafts and invalidate pending writes from mounted forms.
+ *
+ * Storage failures are ignored so sign-out and account changes can still finish.
+ */
 export function clearDrafts() {
   generation++;
+
   try {
     for (const key of Object.keys(sessionStorage))
       if (key.startsWith(prefix)) sessionStorage.removeItem(key);
@@ -14,6 +24,12 @@ export function clearDrafts() {
     /* Forms report unavailable storage; authentication must remain usable. */
   }
 }
+
+/**
+ * Associate this tab's drafts with the signed-in username.
+ *
+ * Retain drafts for the same account; clear them when a different owner signs in.
+ */
 export function claimDrafts(username: string) {
   try {
     const owner = sessionStorage.getItem(ownerKey);
@@ -23,6 +39,7 @@ export function claimDrafts(username: string) {
     /* See clearDrafts. */
   }
 }
+
 const fields = new Set([
   "url",
   "title",
@@ -38,11 +55,13 @@ const fields = new Set([
   "tags",
   "recommendation_note",
 ]);
+
 function read(key: string): { draft: Draft | null; unavailable: boolean } {
   try {
     const raw = sessionStorage.getItem(key);
     if (!raw) return { draft: null, unavailable: false };
     const draft = JSON.parse(raw);
+
     if (
       draft.version !== 1 ||
       !draft.values ||
@@ -60,13 +79,26 @@ function read(key: string): { draft: Draft | null; unavailable: boolean } {
       )
     ) {
       sessionStorage.removeItem(key);
+
       return { draft: null, unavailable: false };
     }
+
     return { draft, unavailable: false };
   } catch {
     return { draft: null, unavailable: true };
   }
 }
+
+/**
+ * Save allowlisted form fields and path items in session storage after edits.
+ *
+ * Call changed after form or item edits. Restoration is explicit: restore updates
+ * DOM fields and returns the saved items for the caller to restore into state.
+ * Call complete after publication to prevent later writes, or discard to remove
+ * only the current draft. Storage failures are exposed through unavailable.
+ *
+ * Remount the form when username or identity changes; recovery state is read once.
+ */
 export function useDraft(
   username: string,
   identity: string,
@@ -78,20 +110,22 @@ export function useDraft(
   const [saveState, setSaveState] = useState<"idle" | "pending" | "saved">(
     "idle",
   );
-  const [candidate, setCandidate] = useState(initial.draft),
-    [unavailable, setUnavailable] = useState(initial.unavailable);
+  const [candidate, setCandidate] = useState(initial.draft);
+  const [unavailable, setUnavailable] = useState(initial.unavailable);
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const valuesRef = useRef<Record<string, string>>({});
-  const dirty = useRef(false),
-    finished = useRef(false),
-    epoch = useRef(generation);
+  const dirty = useRef(false);
+  const finished = useRef(false);
+  const epoch = useRef(generation);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const saveRef = useRef(() => {});
+
   saveRef.current = () => {
     if (!dirty.current || finished.current || generation !== epoch.current)
       return;
     const values = valuesRef.current;
+
     try {
       sessionStorage.setItem(
         key,
@@ -103,6 +137,7 @@ export function useDraft(
       setUnavailable(true);
     }
   };
+
   function changed() {
     if (form.current)
       valuesRef.current = Object.fromEntries(
@@ -124,6 +159,7 @@ export function useDraft(
     clearTimeout(timer.current);
     timer.current = setTimeout(() => saveRef.current(), 500);
   }
+
   // Item moves/additions commit React state before the scheduled serialization.
   useEffect(() => {
     if (dirty.current) {
@@ -136,29 +172,36 @@ export function useDraft(
       clearTimeout(timer.current);
       saveRef.current();
     };
+
     window.addEventListener("pagehide", flush);
+
     return () => {
       flush();
       window.removeEventListener("pagehide", flush);
     };
   }, []);
+
   function discard() {
     clearTimeout(timer.current);
     dirty.current = false;
     setCandidate(null);
     setSaveState("idle");
+
     try {
       sessionStorage.removeItem(key);
     } catch {
       setUnavailable(true);
     }
   }
+
   function complete() {
     finished.current = true;
     discard();
   }
+
   function restore() {
     if (!candidate || !form.current) return null;
+
     for (const [name, value] of Object.entries(candidate.values)) {
       const field = form.current.elements.namedItem(name);
       if (
@@ -168,10 +211,13 @@ export function useDraft(
       )
         field.value = value;
     }
+
     setCandidate(null);
     changed();
+
     return candidate;
   }
+
   return {
     candidate,
     unavailable,

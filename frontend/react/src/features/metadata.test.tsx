@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { useRef } from "react";
+
 import {
   act,
   cleanup,
@@ -7,17 +7,22 @@ import {
   render,
   screen,
 } from "@testing-library/react";
+import { useRef } from "react";
 import { afterEach, expect, it, vi } from "vitest";
-import { useMetadata } from "./metadata";
+
 import { api } from "../lib/api/client";
+import { useMetadata } from "./metadata";
+
 vi.mock("../lib/api/client", () => ({ api: vi.fn() }));
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
 });
+
 function Form({ applied = () => {} }: { applied?: () => void }) {
   const ref = useRef<HTMLFormElement>(null);
   const metadata = useMetadata(ref, applied);
+
   return (
     <form
       ref={ref}
@@ -42,22 +47,25 @@ function Form({ applied = () => {} }: { applied?: () => void }) {
     </form>
   );
 }
+
 function deferred() {
   let resolve!: (value: unknown) => void;
   const promise = new Promise((r) => {
     resolve = r;
   });
   vi.mocked(api).mockReturnValue(promise);
+
   return resolve;
 }
+
 const details = {
   title: "Suggested",
   description: "Useful summary",
   suggested_provider: "Docs",
 };
 it("fills only untouched empty fields and updates draft/preview once", async () => {
-  const resolve = deferred(),
-    applied = vi.fn();
+  const resolve = deferred();
+  const applied = vi.fn();
   render(<Form applied={applied} />);
   fireEvent.input(screen.getByLabelText("Provider"), {
     target: { value: "Mine" },
@@ -78,8 +86,8 @@ it("fills only untouched empty fields and updates draft/preview once", async () 
 it.each(["URL", "Discard", "unmount"])(
   "ignores stale responses after %s",
   async (action) => {
-    const resolve = deferred(),
-      applied = vi.fn();
+    const resolve = deferred();
+    const applied = vi.fn();
     const view = render(<Form applied={applied} />);
     fireEvent.click(screen.getByText("Fetch"));
     if (action === "URL")

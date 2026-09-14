@@ -1,26 +1,15 @@
-import {
-  ResourceCard,
-  ResourceArtwork,
-  Contributor,
-  ContentLabel,
-} from "../components/resources";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, Plus } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
-import { ArrowRight, Plus } from "lucide-react";
+
 import {
-  api,
-  send,
-  humanError,
-  queryString,
-  detailUrl,
-  externalUrl,
-  type Page,
-  type LearningItem,
-  type Summary,
-  type ActivityEvent,
-} from "../lib/api/client";
+  ContentLabel,
+  Contributor,
+  ResourceArtwork,
+  ResourceCard,
+} from "../components/resources";
 import {
   Empty,
   ErrorPanel,
@@ -29,12 +18,26 @@ import {
   Pagination,
   Stats,
 } from "../components/ui";
+import {
+  type ActivityEvent,
+  api,
+  detailUrl,
+  externalUrl,
+  humanError,
+  type LearningItem,
+  type Page,
+  queryString,
+  send,
+  type Summary,
+} from "../lib/api/client";
 import { useAuth } from "./auth";
+import { CourseActions, useCourseJourney } from "./course-journey";
 import { useFilters } from "./filters";
 import s from "./pages.module.css";
-import { CourseActions, useCourseJourney } from "./course-journey";
 import d from "./supporting.module.css";
+
 export { Explore } from "./explore";
+
 export function LearningRow({ item }: { item: LearningItem }) {
   const cache = useQueryClient();
   const [saved, setSaved] = useState(false);
@@ -46,10 +49,12 @@ export function LearningRow({ item }: { item: LearningItem }) {
       await cache.invalidateQueries();
     },
   });
+
   function change(status: string) {
     setSaved(false);
     mutation.mutate(status);
   }
+
   if (item.type === "course")
     return (
       <ResourceCard item={item} compact>
@@ -60,6 +65,7 @@ export function LearningRow({ item }: { item: LearningItem }) {
         )}
       </ResourceCard>
     );
+
   return (
     <ResourceCard item={item} compact>
       {item.status && (
@@ -126,9 +132,9 @@ export function Learning() {
   const { user } = useAuth();
   const { params, page, update } = useFilters();
   const view =
-      params.get("view") ||
-      (params.get("tab") === "shared" ? "contributions" : "tracked"),
-    status = params.get("status") || "in_progress";
+    params.get("view") ||
+    (params.get("tab") === "shared" ? "contributions" : "tracked");
+  const status = params.get("status") || "in_progress";
   const summary = useQuery({
     queryKey: ["learning-summary"],
     queryFn: () => api<Summary>("/learning/summary"),
@@ -155,6 +161,7 @@ export function Learning() {
   });
   const next = summary.data?.next_course;
   const nextUrl = externalUrl(next?.url);
+
   return (
     <>
       <Heading
@@ -341,10 +348,11 @@ export function Learning() {
     </>
   );
 }
+
 export function ActivityPage() {
   const { params, page, updateMany, update } = useFilters();
-  const stats = params.get("view") === "stats",
-    scope = params.get("scope") || "personal";
+  const stats = params.get("view") === "stats";
+  const scope = params.get("scope") || "personal";
   const summary = useQuery({
     queryKey: ["learning-summary"],
     queryFn: () => api<Summary>("/learning/summary"),
@@ -356,6 +364,7 @@ export function ActivityPage() {
       api<Page<ActivityEvent>>("/activity?" + queryString({ scope, page })),
     enabled: !stats,
   });
+
   return (
     <>
       <Heading title="Activity">
@@ -425,6 +434,7 @@ export function ActivityPage() {
               const target =
                 detailUrl(event.type, event.content_id) +
                 (event.event_type === "review" ? "?view=reviews#reviews" : "");
+
               return (
                 <article
                   className={d.event}
@@ -494,6 +504,7 @@ export function ActivityPage() {
     </>
   );
 }
+
 export function Profile() {
   const { user } = useAuth();
   const summary = useQuery({
@@ -507,6 +518,7 @@ export function Profile() {
         "/learning/items?view=contributions&page=1&page_size=3",
       ),
   });
+
   return (
     <>
       <header className={d.profileIdentity}>
