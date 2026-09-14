@@ -3,13 +3,13 @@ import { Dialog } from "radix-ui";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 
-import s from "../features/pages.module.css";
 import { type CatalogItem, humanError, type Summary } from "../lib/api/client";
 import { ResourceCard } from "./resources";
+import uiStyles from "./ui.module.css";
 
 export function Loading() {
   return (
-    <div className={s.loading} role="status" aria-label="Loading">
+    <div className={uiStyles.loading} role="status" aria-label="Loading">
       <div />
       <div />
       <div />
@@ -26,7 +26,7 @@ export function ErrorPanel({
   retry?: () => void;
 }) {
   return (
-    <div role="alert" className={s.empty}>
+    <div role="alert" className={uiStyles.empty}>
       <h2>We couldn’t load this.</h2>
       <p className="muted">{humanError(error)}</p>
       {retry && (
@@ -49,7 +49,7 @@ export function Empty({
   action?: boolean;
 }) {
   return (
-    <div className={s.empty}>
+    <div className={uiStyles.empty}>
       <BookOpen size={28} />
       <h2>{title}</h2>
       <p className="muted">{children}</p>
@@ -74,7 +74,7 @@ export function Heading({
   action?: ReactNode;
 }) {
   return (
-    <header className={s.heading}>
+    <header className={uiStyles.heading}>
       <div>
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h1>{title}</h1>
@@ -115,7 +115,7 @@ export function Pagination({
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <nav aria-label="Pagination" className={s.pagination}>
+    <nav aria-label="Pagination" className={uiStyles.pagination}>
       <span className="muted">
         {total} {total === 1 ? "result" : "results"}
         {pages > 1 && ` · Page ${page} of ${pages}`}
@@ -146,7 +146,7 @@ export function Pagination({
 
 export function Stats({ summary }: { summary: Summary }) {
   return (
-    <div className={s.stats}>
+    <div className={uiStyles.stats}>
       {[
         [
           "In progress",
@@ -188,11 +188,11 @@ export function Confirm({
     <Dialog.Root>
       <Dialog.Trigger asChild>{children}</Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className={s.overlay} />
-        <Dialog.Content className={s.dialog}>
+        <Dialog.Overlay className={uiStyles.overlay} />
+        <Dialog.Content className={uiStyles.dialog}>
           <Dialog.Title>{title}</Dialog.Title>
           <Dialog.Description>{description}</Dialog.Description>
-          <div className={s.actions}>
+          <div className={uiStyles.actions}>
             <Dialog.Close asChild>
               <button className="secondary" disabled={busy}>
                 Cancel
@@ -207,7 +207,7 @@ export function Confirm({
               {busy ? "Deleting…" : "Delete"}
             </button>
           </div>
-          <Dialog.Close className={s.close} aria-label="Close">
+          <Dialog.Close className={uiStyles.close} aria-label="Close">
             <X size={18} />
           </Dialog.Close>
         </Dialog.Content>

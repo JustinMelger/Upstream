@@ -1,0 +1,180 @@
+.actions {
+  composes: actions from "../components/ui.module.css";
+}
+.active {
+  composes: active from "./pages.module.css";
+}
+.tabs {
+  composes: tabs from "./pages.module.css";
+}
+.learningNav > a {
+  color: var(--accent);
+  font-size: 14px;
+  padding: 12px 0;
+}
+.learningNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.learningNav .tabs {
+  margin: 8px 0;
+}
+.statusTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+.statusTabs a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.statusTabs .active {
+  background: var(--selected);
+  color: var(--text);
+}
+.statusTabs span {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 767px) {
+  .learningNav {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .learningNav > a {
+    margin-left: auto;
+  }
+  .statusTabs {
+    gap: 4px;
+  }
+  .statusTabs a {
+    padding: 8px;
+    font-size: 13px;
+  }
+}
+.collectionActions {
+  padding: 0 18px 18px;
+  display: grid;
+  gap: 10px;
+}
+.collectionActions button {
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.pathProgress p {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.pathProgress progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--path);
+}
+.continuePanel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+  margin: 18px 0 22px;
+}
+.continuePanel > div:first-child:not(.continueCopy) {
+  aspect-ratio: auto;
+  height: 100%;
+  max-height: 260px;
+}
+.continueCopy {
+  padding: 24px 28px;
+  align-self: center;
+  min-width: 0;
+}
+.continueCopy h2 {
+  font-size: 28px;
+  margin: 10px 0;
+  line-height: 1.2;
+}
+.continueCopy > span {
+  font-size: 13px;
+}
+.continueCopy p {
+  font-size: 14px;
+}
+.continueCopy:only-child {
+  grid-column: 1/-1;
+}
+.pathPreview {
+  max-width: 680px;
+  margin-top: 24px;
+}
+.pathPreview article > a > div:first-child {
+  max-height: 130px;
+}
+.statusTabs a {
+  border-radius: 22px;
+  border: 1px solid var(--line);
+}
+.statusTabs .active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+@media (max-width: 899px) {
+  .continueCopy {
+    padding: 20px;
+  }
+  .continueCopy h2 {
+    font-size: 24px;
+  }
+}
+@media (max-width: 599px) {
+  .continuePanel {
+    grid-template-columns: 74px minmax(0, 1fr);
+    margin: 12px 0;
+  }
+  .continueCopy {
+    padding: 16px;
+  }
+  .continueCopy h2 {
+    font-size: 20px;
+  }
+  .continueCopy p {
+    margin: 8px 0;
+  }
+  .continueCopy .actions {
+    gap: 4px 12px;
+  }
+  .learningNav .tabs {
+    margin: 4px 0;
+  }
+}
+.pathPreview {
+  max-width: none;
+}
+@media (min-width: 600px) {
+  .pathPreview article {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+  .pathPreview article > a {
+    display: contents;
+  }
+  .pathPreview article > a > div:first-child {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    height: 100%;
+    max-height: none;
+    aspect-ratio: auto;
+  }
+  .pathPreview article > a > div:last-child,
+  .pathPreview article > div {
+    grid-column: 2;
+  }
+}

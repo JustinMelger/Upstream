@@ -1,26 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
+import { ArrowDown, ArrowUp, X } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 
 import { ResourceCard, type ResourcePreview } from "../components/resources";
-import {
-  Empty,
-  ErrorPanel,
-  Heading,
-  Loading,
-  Pagination,
-} from "../components/ui";
+import { Empty, ErrorPanel, Heading, Loading } from "../components/ui";
+import uiStyles from "../components/ui.module.css";
 import {
   api,
-  type CatalogItem,
   type Content,
   type ContentType,
   detailUrl,
   humanError,
-  type Page,
   plural,
-  queryString,
   send,
 } from "../lib/api/client";
 import { useAuth } from "./auth";
@@ -28,8 +20,7 @@ import { useCourseJourney } from "./course-journey";
 import { useDraft } from "./drafts";
 import { useMetadata } from "./metadata";
 import s from "./pages.module.css";
-
-type PathItem = { type: string; id: number; title: string };
+import { ItemPicker, type PathItem } from "./sharing/ItemPicker";
 
 export function Share() {
   const { kind } = useParams();
@@ -309,7 +300,7 @@ function ShareForm({
               Restore your work or continue with{" "}
               {edit ? "the published version" : "a fresh form"}.
             </p>
-            <div className={s.actions}>
+            <div className={uiStyles.actions}>
               <button
                 type="button"
                 onClick={() => {
@@ -714,7 +705,7 @@ function ShareForm({
               {humanError(mutation.error)}
             </p>
           )}
-          <div className={s.actions}>
+          <div className={uiStyles.actions}>
             <button
               aria-busy={mutation.isPending}
               disabled={mutation.isPending}
@@ -762,90 +753,6 @@ function ShareForm({
         <h2>How it will appear</h2>
         {previewContent}
       </aside>
-    </div>
-  );
-}
-
-function ItemPicker({
-  selected,
-  add,
-}: {
-  selected: PathItem[];
-  add: (item: PathItem) => void;
-}) {
-  const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
-  const [type, setType] = useState("course");
-  const query = useQuery({
-    queryKey: ["picker", q, type, page],
-    queryFn: ({ signal }) =>
-      api<Page<CatalogItem>>(
-        "/catalog?" + queryString({ q, type, page, page_size: 6 }),
-        { signal },
-      ),
-  });
-
-  return (
-    <div className={s.picker}>
-      <div className={s.twoFields}>
-        <label>
-          Find learning items
-          <input
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search the library"
-          />
-        </label>
-        <label>
-          Item type
-          <select
-            value={type}
-            onChange={(e) => {
-              setType(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="course">Courses</option>
-            <option value="article">Articles</option>
-            <option value="video">Videos</option>
-          </select>
-        </label>
-      </div>
-      {query.isPending ? (
-        <Loading />
-      ) : query.error ? (
-        <ErrorPanel error={query.error} retry={() => void query.refetch()} />
-      ) : (
-        <>
-          {query.data.items.map((item) => (
-            <div className={s.pickerRow} key={item.id}>
-              <span>{item.title}</span>
-              <button
-                type="button"
-                className="secondary"
-                disabled={selected.some(
-                  (i) => i.type === item.type && i.id === item.id,
-                )}
-                onClick={() =>
-                  add({ type: item.type, id: item.id, title: item.title })
-                }
-              >
-                <Plus size={15} />
-                Add
-              </button>
-            </div>
-          ))}
-          <Pagination
-            page={page}
-            pageSize={6}
-            total={query.data.total}
-            onChange={setPage}
-          />
-        </>
-      )}
     </div>
   );
 }

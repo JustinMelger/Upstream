@@ -1,25 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useState } from "react";
 import { Link } from "react-router";
 
-import {
-  ContentLabel,
-  Contributor,
-  ResourceArtwork,
-  ResourceCard,
-} from "../components/resources";
+import { ResourceArtwork, ResourceCard } from "../components/resources";
 import {
   Empty,
   ErrorPanel,
   Heading,
   Loading,
   Pagination,
-  Stats,
 } from "../components/ui";
 import {
-  type ActivityEvent,
   api,
   detailUrl,
   externalUrl,
@@ -33,12 +26,10 @@ import {
 import { useAuth } from "./auth";
 import { CourseActions, useCourseJourney } from "./course-journey";
 import { useFilters } from "./filters";
+import pageStyles from "./learning.module.css";
 import s from "./pages.module.css";
-import d from "./supporting.module.css";
 
-export { Explore } from "./explore";
-
-export function LearningRow({ item }: { item: LearningItem }) {
+function LearningRow({ item }: { item: LearningItem }) {
   const cache = useQueryClient();
   const [saved, setSaved] = useState(false);
   const mutation = useMutation({
@@ -59,7 +50,7 @@ export function LearningRow({ item }: { item: LearningItem }) {
     return (
       <ResourceCard item={item} compact>
         {item.status && (
-          <div className={s.collectionActions}>
+          <div className={pageStyles.collectionActions}>
             <CourseActions course={item} />
           </div>
         )}
@@ -69,8 +60,8 @@ export function LearningRow({ item }: { item: LearningItem }) {
   return (
     <ResourceCard item={item} compact>
       {item.status && (
-        <div className={s.collectionActions}>
-          <div className={s.actions}>
+        <div className={pageStyles.collectionActions}>
+          <div className={pageStyles.actions}>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger
                 className="secondary"
@@ -99,7 +90,7 @@ export function LearningRow({ item }: { item: LearningItem }) {
             </DropdownMenu.Root>
           </div>
           {item.course_progress && item.course_progress.total > 0 && (
-            <div className={s.pathProgress}>
+            <div className={pageStyles.pathProgress}>
               <p>
                 {item.course_progress.completed} of {item.course_progress.total}{" "}
                 courses completed
@@ -176,11 +167,14 @@ export function Learning() {
           retry={() => void summary.refetch()}
         />
       ) : (
-        <section className={s.continuePanel} aria-label="Continue learning">
+        <section
+          className={pageStyles.continuePanel}
+          aria-label="Continue learning"
+        >
           {next && (
             <ResourceArtwork type="course" title={next.title} hero eager />
           )}
-          <div className={s.continueCopy}>
+          <div className={pageStyles.continueCopy}>
             <span className="muted">
               {next
                 ? next.status === "in_progress"
@@ -202,7 +196,7 @@ export function Learning() {
                   .join(" · ")}
               </p>
             )}
-            <div className={s.actions}>
+            <div className={pageStyles.actions}>
               {next ? (
                 <CourseActions
                   course={next}
@@ -226,15 +220,15 @@ export function Learning() {
           </div>
         </section>
       )}
-      <div className={s.learningNav}>
-        <div className={s.tabs}>
+      <div className={pageStyles.learningNav}>
+        <div className={pageStyles.tabs}>
           {[
             ["tracked", "Courses"],
             ["paths", "Selected paths"],
           ].map(([key, label]) => (
             <button
               key={key}
-              className={view === key ? s.active : ""}
+              className={view === key ? pageStyles.active : ""}
               aria-pressed={view === key}
               onClick={() => update("view", key)}
             >
@@ -253,7 +247,7 @@ export function Learning() {
         </Link>
       </div>
       {view === "tracked" && (
-        <nav className={s.statusTabs} aria-label="Course status">
+        <nav className={pageStyles.statusTabs} aria-label="Course status">
           {[
             ["in_progress", "In progress"],
             ["interested", "Interested"],
@@ -262,7 +256,7 @@ export function Learning() {
             <Link
               key={key}
               to={`/home?view=tracked&status=${key}`}
-              className={status === key ? s.active : ""}
+              className={status === key ? pageStyles.active : ""}
               aria-current={status === key ? "page" : undefined}
             >
               {label}{" "}
@@ -339,269 +333,12 @@ export function Learning() {
           />
         ) : (
           pathPreview.data?.items[0] && (
-            <section className={s.pathPreview}>
+            <section className={pageStyles.pathPreview}>
               <h2>Your selected path</h2>
               <LearningRow item={pathPreview.data.items[0]} />
             </section>
           )
         ))}
-    </>
-  );
-}
-
-export function ActivityPage() {
-  const { params, page, updateMany, update } = useFilters();
-  const stats = params.get("view") === "stats";
-  const scope = params.get("scope") || "personal";
-  const summary = useQuery({
-    queryKey: ["learning-summary"],
-    queryFn: () => api<Summary>("/learning/summary"),
-    enabled: stats,
-  });
-  const query = useQuery({
-    queryKey: ["activity", scope, page],
-    queryFn: () =>
-      api<Page<ActivityEvent>>("/activity?" + queryString({ scope, page })),
-    enabled: !stats,
-  });
-
-  return (
-    <>
-      <Heading title="Activity">
-        See what people are sharing and how your learning is growing.
-      </Heading>
-      {params.get("retired") === "teams" && (
-        <p className={s.notice} role="status">
-          Teams has been retired. Shared learning and personal updates now live
-          here.
-        </p>
-      )}
-      <div className={s.tabs} aria-label="Activity views">
-        {[
-          ["personal", "For you"],
-          ["shared", "Shared activity"],
-          ["stats", "My stats"],
-        ].map(([key, label]) => (
-          <button
-            key={key}
-            className={(stats ? "stats" : scope) === key ? s.active : ""}
-            aria-pressed={(stats ? "stats" : scope) === key}
-            onClick={() =>
-              updateMany({
-                view: key === "stats" ? "stats" : "",
-                scope: key === "stats" ? "" : key,
-              })
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      {stats ? (
-        summary.isPending ? (
-          <Loading />
-        ) : summary.error ? (
-          <ErrorPanel
-            error={summary.error}
-            retry={() => void summary.refetch()}
-          />
-        ) : (
-          <>
-            <h2>Your learning, at a glance</h2>
-            <Stats summary={summary.data} />
-            <section className={s.panel}>
-              <Link
-                className={s.statRow}
-                to="/home?view=tracked&status=interested"
-              >
-                Courses you’re interested in
-                <strong>{summary.data.interested}</strong>
-              </Link>
-              <p className="muted">
-                Your current totals. Every step is yours to take.
-              </p>
-            </section>
-          </>
-        )
-      ) : query.isPending ? (
-        <Loading />
-      ) : query.error ? (
-        <ErrorPanel error={query.error} retry={() => void query.refetch()} />
-      ) : query.data.items.length ? (
-        <>
-          <div className={d.feed}>
-            {query.data.items.map((event) => {
-              const target =
-                detailUrl(event.type, event.content_id) +
-                (event.event_type === "review" ? "?view=reviews#reviews" : "");
-
-              return (
-                <article
-                  className={d.event}
-                  key={event.event_id}
-                  data-content-type={event.type}
-                >
-                  <Link
-                    className={d.eventLink}
-                    to={target}
-                    aria-label={
-                      event.event_type === "review"
-                        ? `Read review of ${event.title}`
-                        : event.title
-                    }
-                  >
-                    <div className={d.eventArtwork}>
-                      <ResourceArtwork type={event.type} title={event.title} />
-                    </div>
-                    <h2>{event.title}</h2>
-                  </Link>
-                  <div className={d.eventMeta}>
-                    <Contributor username={event.actor} prefix="" />
-                    <span>
-                      {event.event_type === "share" ? "shared" : "reviewed"}
-                    </span>
-                    <ContentLabel type={event.type} />
-                    <time className={d.timestamp} dateTime={event.happened_at}>
-                      {new Date(event.happened_at).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </time>
-                  </div>
-                  <div className={d.eventBody}>
-                    {event.rating != null && (
-                      <span className={s.rating}>
-                        ★ {event.rating} out of 5
-                      </span>
-                    )}
-                    {event.excerpt &&
-                      (event.excerpt_kind === "description" ? (
-                        <p>{event.excerpt}</p>
-                      ) : (
-                        <blockquote>“{event.excerpt}”</blockquote>
-                      ))}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-          <Pagination
-            page={page}
-            total={query.data.total}
-            onChange={(p) => update("page", String(p))}
-          />
-        </>
-      ) : (
-        <Empty title="You’re all caught up.">
-          {scope === "personal"
-            ? "Reviews on your shared learning will appear here."
-            : "New shares and reviews will appear here as the library grows."}
-        </Empty>
-      )}
-    </>
-  );
-}
-
-export function Profile() {
-  const { user } = useAuth();
-  const summary = useQuery({
-    queryKey: ["learning-summary"],
-    queryFn: () => api<Summary>("/learning/summary"),
-  });
-  const contributions = useQuery({
-    queryKey: ["learning-items", "contributions", "profile"],
-    queryFn: () =>
-      api<Page<LearningItem>>(
-        "/learning/items?view=contributions&page=1&page_size=3",
-      ),
-  });
-
-  return (
-    <>
-      <header className={d.profileIdentity}>
-        <span className={d.avatar} aria-hidden="true">
-          {user?.username.slice(0, 2).toUpperCase()}
-        </span>
-        <div>
-          <div className={d.identityLine}>
-            <h1>{user?.username}</h1>
-            <span className={s.badge}>
-              {user?.role === "admin" ? "Administrator" : "Member"}
-            </span>
-          </div>
-          <p className="muted">Your learning, and the ideas you’ve shared.</p>
-        </div>
-        <div className={d.profileArtwork}>
-          <ResourceArtwork type="course" title="Your learning library" eager />
-        </div>
-      </header>
-      {summary.isPending ? (
-        <Loading />
-      ) : summary.error ? (
-        <ErrorPanel
-          error={summary.error}
-          retry={() => void summary.refetch()}
-        />
-      ) : (
-        <nav className={d.profileTotals} aria-label="Your learning totals">
-          <Link to="/home?view=tracked&status=in_progress">
-            <strong>{summary.data.in_progress}</strong>
-            <span>In progress →</span>
-          </Link>
-          <Link to="/home?view=tracked&status=completed">
-            <strong>{summary.data.completed}</strong>
-            <span>Completed →</span>
-          </Link>
-          <Link to="/home?view=paths">
-            <strong>{summary.data.selected_paths}</strong>
-            <span>Selected paths →</span>
-          </Link>
-          <Link to="/activity?view=stats">
-            View my stats <ArrowRight size={16} />
-          </Link>
-        </nav>
-      )}
-      <section className={d.section}>
-        <div className={d.sectionHeading}>
-          <div>
-            <h2>Your contributions</h2>
-            <p className="muted">
-              Resources you’ve shared with the Upstream community.
-            </p>
-          </div>
-          <div className={s.actions}>
-            <Link className="button" to="/share/item">
-              <Plus size={16} />
-              Share something
-            </Link>
-            <Link className={s.textAction} to="/home?view=contributions">
-              View all contributions <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-        {contributions.isPending ? (
-          <Loading />
-        ) : contributions.error ? (
-          <ErrorPanel
-            error={contributions.error}
-            retry={() => void contributions.refetch()}
-          />
-        ) : contributions.data.items.length ? (
-          <div className={s.collectionGrid}>
-            {contributions.data.items.map((item) => (
-              <ResourceCard key={`${item.type}:${item.id}`} item={item} />
-            ))}
-          </div>
-        ) : (
-          <Empty title="Your library starts with one good find." action={false}>
-            Share a resource that helped you learn. It will appear here for you
-            to revisit.
-          </Empty>
-        )}
-      </section>
     </>
   );
 }

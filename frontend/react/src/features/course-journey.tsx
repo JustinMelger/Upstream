@@ -11,6 +11,7 @@ import {
 } from "react";
 import { Link } from "react-router";
 
+import uiStyles from "../components/ui.module.css";
 import { detailUrl, externalUrl, humanError, send } from "../lib/api/client";
 import { useAuth } from "./auth";
 import j from "./course-journey.module.css";
@@ -277,7 +278,7 @@ export function CourseFeedback() {
       {notice.course && (
         <span className={j.courseTitle}>{notice.course.title}</span>
       )}
-      <div className={s.actions}>
+      <div className={uiStyles.actions}>
         {notice.completed && notice.course && (
           <button
             className="secondary"
@@ -360,7 +361,7 @@ export function CourseActions({
 
   return (
     <div className={j.controls} ref={controls}>
-      <div className={s.actions}>
+      <div className={uiStyles.actions}>
         {!url ? (
           <Link
             className="button secondary"

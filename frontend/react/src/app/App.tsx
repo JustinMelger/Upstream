@@ -25,6 +25,8 @@ import {
 
 import { Brand } from "../components/Brand";
 import { Empty } from "../components/ui";
+import uiStyles from "../components/ui.module.css";
+import { ActivityPage } from "../features/activity";
 import { Admin } from "../features/admin";
 import { AuthProvider, Login, RequireAuth, useAuth } from "../features/auth";
 import {
@@ -32,14 +34,11 @@ import {
   CourseJourneyProvider,
 } from "../features/course-journey";
 import { Detail } from "../features/detail";
+import { Explore } from "../features/explore";
+import { Learning } from "../features/learning";
 import p from "../features/pages.module.css";
+import { Profile } from "../features/profile";
 import { Share } from "../features/share";
-import {
-  ActivityPage,
-  Explore,
-  Learning,
-  Profile,
-} from "../features/workspace";
 import { humanError } from "../lib/api/client";
 import s from "./App.module.css";
 
@@ -96,14 +95,17 @@ function Shell() {
               <Menu size={20} />
             </Dialog.Trigger>
             <Dialog.Portal>
-              <Dialog.Overlay className={p.overlay} />
+              <Dialog.Overlay className={uiStyles.overlay} />
               <Dialog.Content className={s.drawer}>
                 <Dialog.Title className={s.srOnly}>Navigation</Dialog.Title>
                 <Dialog.Description className={s.srOnly}>
                   Your learning workspace
                 </Dialog.Description>
                 <Navigation close={() => setOpen(false)} />
-                <Dialog.Close className={p.close} aria-label="Close navigation">
+                <Dialog.Close
+                  className={uiStyles.close}
+                  aria-label="Close navigation"
+                >
                   <X size={18} />
                 </Dialog.Close>
               </Dialog.Content>
