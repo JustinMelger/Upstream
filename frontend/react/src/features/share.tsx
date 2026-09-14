@@ -64,12 +64,8 @@ export function Share() {
   return (
     <>
       <Heading
-        title={
-          edit ? "Edit your shared learning" : "Found something worth sharing?"
-        }
-      >
-        Pass it on. Someone here will be glad you did.
-      </Heading>
+        title={edit ? "Edit your shared learning" : "What would you recommend?"}
+      />
       {!edit && (
         <div className={s.tabs} aria-label="Resource type">
           {(["course", "article", "video", "path"] as const).map((value) => (

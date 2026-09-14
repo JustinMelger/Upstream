@@ -233,9 +233,7 @@ export function Explore() {
 
   return (
     <>
-      <Heading title="Explore">
-        Good things to learn. Shared by your people.
-      </Heading>
+      <Heading title="Explore">Recommended by your colleagues.</Heading>
       <div className={s.discoveryControls}>
         <div className={s.controls}>
           <label className={s.search}>

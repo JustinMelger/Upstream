@@ -45,9 +45,7 @@ export function ActivityPage() {
 
   return (
     <>
-      <Heading title="Activity">
-        See what people are sharing and how your learning is growing.
-      </Heading>
+      <Heading title="Activity" />
       {params.get("retired") === "teams" && (
         <p className={s.notice} role="status">
           Teams has been retired. Shared learning and personal updates now live

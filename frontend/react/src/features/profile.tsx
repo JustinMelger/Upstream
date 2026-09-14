@@ -43,7 +43,6 @@ export function Profile() {
               {user?.role === "admin" ? "Administrator" : "Member"}
             </span>
           </div>
-          <p className="muted">Your learning, and the ideas you’ve shared.</p>
         </div>
         <div className={pageStyles.profileArtwork}>
           <ResourceArtwork type="course" title="Your learning library" eager />
@@ -82,9 +81,6 @@ export function Profile() {
         <div className={d.sectionHeading}>
           <div>
             <h2>Your contributions</h2>
-            <p className="muted">
-              Resources you’ve shared with the Upstream community.
-            </p>
           </div>
           <div className={uiStyles.actions}>
             <Link className="button" to="/share/item">
