@@ -209,9 +209,9 @@ for (const type of ["course", "video"]) {
       page.getByRole("heading", { name: title, exact: true }),
     ).toBeVisible();
     if (type === "course") {
-      await expect(page.getByRole("status")).toHaveText(
-        "Course shared. Add it to My learning when you’re ready.",
-      );
+      await expect(
+        page.getByRole("status").filter({ hasText: "Course shared." }),
+      ).toHaveText("Course shared. Add it to My learning when you’re ready.");
       await page.route(
         "**/api/tracking",
         (route) =>
@@ -233,9 +233,9 @@ for (const type of ["course", "video"]) {
       await page
         .getByRole("button", { name: "Add to My learning", exact: true })
         .click();
-      await expect(page.getByRole("status")).toHaveText(
-        "Added to My learning · Interested",
-      );
+      await expect(
+        page.getByRole("status").filter({ hasText: "Added to My learning" }),
+      ).toHaveText("Added to My learning · Interested");
     }
     if (type === "video")
       await expect(page.getByLabel("Your progress")).toHaveCount(0);
