@@ -19,6 +19,27 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [1.0.0](https://github.com/JustinMelger/Upstream/compare/v0.12.7...v1.0.0) (2026-09-15)
+
+
+### Features
+
+* deliver React v1 learning library ([647eeb8](https://github.com/JustinMelger/Upstream/commit/647eeb8b991b8b0277759bdc3bfc9def3744e0c1))
+* **ui:** adopt technical editorial artwork across the library ([1c08bd9](https://github.com/JustinMelger/Upstream/commit/1c08bd92ea9de3fc4097e82a8b9eac8cade30a1f))
+* **ui:** introduce Upstream branding and refine learning artwork ([d6a02c1](https://github.com/JustinMelger/Upstream/commit/d6a02c1b0094a069a71597ce1eace3b080c6a6b2))
+
+
+### Bug Fixes
+
+* stabilize browser status assertions and clarify product purpose ([#64](https://github.com/JustinMelger/Upstream/issues/64)) ([a9e5379](https://github.com/JustinMelger/Upstream/commit/a9e5379b3ffdd14f113cc50af3a2b9b2d5fdbb2d))
+* **ui:** align login page ([f3ab1f7](https://github.com/JustinMelger/Upstream/commit/f3ab1f7fd2a50bfd6357d931ea1cc91a4449f8da))
+* **visual:** regenerate baselines in pinned Linux environment ([95097ba](https://github.com/JustinMelger/Upstream/commit/95097ba93dc53baea7d5cc6a60a8442b3dd8988f))
+
+
+### Documentation
+
+* add visual example ([600965e](https://github.com/JustinMelger/Upstream/commit/600965eee5809cf3bc57917decb7aab4cd272ff5))
+
 ## [0.12.7](https://github.com/JustinMelger/learning-platform/compare/v0.12.6...v0.12.7) (2026-05-04)
 
 
