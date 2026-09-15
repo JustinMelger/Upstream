@@ -1,3 +1,4 @@
+/* Shared feature styles. Later refinement blocks override earlier rules; preserve their order. */
 .controls {
   display: flex;
   align-items: end;
@@ -42,6 +43,7 @@
   font-size: 13px;
   color: var(--accent);
 }
+/* Shared content-type tabs and selected states. */
 .tabs {
   display: flex;
   gap: 5px;
@@ -74,6 +76,7 @@
 .sectionLabel > span {
   font-size: 13px;
 }
+/* Base catalog layout; final discovery column rules appear later in this file. */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -245,6 +248,7 @@
   color: var(--accent);
   flex-shrink: 0;
 }
+/* Shared form surfaces and inline notices/errors. */
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -278,6 +282,7 @@
   border: 1px solid var(--danger);
   border-radius: 8px;
 }
+/* Base detail layout, metadata, and owner actions; later detail rules refine this layout. */
 .detailGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 285px;
@@ -352,6 +357,7 @@
   padding: 8px;
   font-size: 13px;
 }
+/* Review editor and existing review presentation. */
 .reviewForm {
   display: grid;
   gap: 14px;
@@ -379,6 +385,7 @@
   font-size: 13px;
   padding: 7px 10px;
 }
+/* Ordered items in the path editor, including reordering and removal controls. */
 .pathList {
   padding: 0;
   list-style: none;
@@ -417,6 +424,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
+/* Search results inside the path item picker. */
 .picker {
   margin-top: 30px;
 }
@@ -432,6 +440,7 @@
 .pickerRow button {
   padding: 7px 10px;
 }
+/* Account tables and administration layout primitives. */
 .adminGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -465,6 +474,7 @@ td button {
   font-size: 13px;
   padding: 7px 10px;
 }
+/* Portalled Radix menus: stacking and keyboard-highlight states. */
 .menu {
   min-width: 180px;
   background: var(--raised);
@@ -495,6 +505,7 @@ td button {
   font-size: 13px;
   color: var(--muted);
 }
+/* Login page composition; later breakpoint rules align artwork with the form. */
 .login {
   min-height: 100vh;
   display: grid;
@@ -639,6 +650,7 @@ td button {
   }
 }
 
+/* Catalog facets, active-filter chips, and the mobile filter drawer. */
 .desktopFilters {
   display: flex;
   align-items: end;
@@ -725,6 +737,7 @@ td button {
 .continue > a {
   flex-shrink: 0;
 }
+/* Form grouping and validation feedback. */
 .formFields {
   padding: 0;
   border: 0;
@@ -884,9 +897,11 @@ td button {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
 }
+/* My learning and Profile card widths: auto-fill reserves columns even with few items.
+   The minimum allows more columns as space grows; do not override it with fixed counts. */
 .collectionGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 20px;
 }
 .textAction {
@@ -922,9 +937,6 @@ td button {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .collectionGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 @media (max-width: 899px) {
   .grid {
@@ -946,6 +958,7 @@ td button {
     font-size: 28px;
   }
 }
+/* Resource introduction and actions, with mobile overrides immediately below. */
 .detailIntro {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
@@ -1040,6 +1053,7 @@ td button {
     clear: both;
   }
 }
+/* Share/edit editor and live preview; the preview becomes a disclosure on smaller screens. */
 .shareLayout {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
@@ -1066,6 +1080,7 @@ td button {
 .shareForm textarea {
   background: var(--surface);
 }
+/* Keep the desktop preview visible while scrolling through a long form. */
 .desktopPreview {
   min-width: 0;
   position: sticky;
@@ -1121,6 +1136,7 @@ td button {
     flex-shrink: 0;
   }
 }
+/* Let the login artwork fill remaining column height while respecting its container. */
 .loginArtwork {
   border-radius: 12px;
   overflow: hidden;
@@ -1146,6 +1162,7 @@ td button {
   }
 }
 
+/* Explicit metadata-fetch controls beside the resource URL; stack on small screens. */
 .resourceUrl {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

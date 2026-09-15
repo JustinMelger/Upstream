@@ -1,3 +1,4 @@
+/* Persistent course feedback lives outside cards so it survives collection updates. */
 .notice {
   position: relative;
   padding: 18px 60px 18px 22px;
@@ -17,6 +18,7 @@
   margin-bottom: 8px;
   overflow-wrap: anywhere;
 }
+/* Reserve notice padding for this independently focusable dismiss control. */
 .dismiss {
   position: absolute;
   right: 8px;
@@ -25,6 +27,7 @@
   color: var(--muted);
   padding: 10px;
 }
+/* Course actions and local mutation errors. */
 .controls {
   min-width: 0;
 }
@@ -34,6 +37,7 @@
 .remove {
   min-height: 44px;
 }
+/* Allow notices to wrap on phones while keeping the dismiss button clear. */
 @media (max-width: 599px) {
   .notice {
     padding: 18px 48px 18px 16px;

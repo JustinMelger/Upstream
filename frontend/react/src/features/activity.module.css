@@ -1,3 +1,4 @@
+/* Personal totals use simple rows; feed styling follows below. */
 .statRow {
   display: flex;
   justify-content: space-between;
@@ -8,6 +9,7 @@
   max-width: 1100px;
   margin-top: 24px;
 }
+/* Feed grid places artwork beside actor, title, and excerpt. */
 .event {
   display: grid;
   grid-template-columns: 144px minmax(0, 1fr);
@@ -15,6 +17,7 @@
   padding: 20px 0;
   border-top: 1px solid var(--line);
 }
+/* One link spans artwork and title; display: contents lets both occupy the parent grid. */
 .eventLink {
   display: contents;
 }
@@ -65,6 +68,7 @@
   margin: 5px 0 0;
   overflow-wrap: anywhere;
 }
+/* Smaller square thumbnails and wrapped timestamps keep the feed readable on mobile. */
 @media (max-width: 899px) {
   .event {
     grid-template-columns: 72px minmax(0, 1fr);
@@ -81,6 +85,7 @@
     font-size: 18px;
   }
 }
+/* At thumbnail size show only the fallback icon; the adjacent title supplies the text. */
 .eventArtwork [data-artwork] > div {
   padding: 12px;
   border-left-width: 3px;

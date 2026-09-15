@@ -318,7 +318,9 @@ for (const width of [390, 768, 1440]) {
 
       if (screen === "login") {
         await expect(
-          page.getByText("Share what you learn.", { exact: true }),
+          page.getByText("Turn everyday discoveries into team knowledge.", {
+            exact: true,
+          }),
         ).toBeVisible();
 
         for (const asset of [
@@ -332,7 +334,9 @@ for (const width of [390, 768, 1440]) {
         }
       } else {
         await expect(
-          page.getByText("Share what you learn.", { exact: true }),
+          page.getByText("Turn everyday discoveries into team knowledge.", {
+            exact: true,
+          }),
         ).toHaveCount(0);
         if (width < 900)
           await expect(

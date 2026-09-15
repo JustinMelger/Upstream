@@ -1,3 +1,4 @@
+/* Reuse shared controls; the rules below own My learning layout only. */
 .actions {
   composes: actions from "../components/ui.module.css";
 }
@@ -7,6 +8,7 @@
 .tabs {
   composes: tabs from "./pages.module.css";
 }
+/* Collection navigation and counted course-status filters. */
 .learningNav > a {
   color: var(--accent);
   font-size: 14px;
@@ -60,6 +62,7 @@
     font-size: 13px;
   }
 }
+/* Actions inside collection cards; keep status changes separate from detail links. */
 .collectionActions {
   padding: 0 18px 18px;
   display: grid;
@@ -69,6 +72,7 @@
   font-size: 13px;
   padding: 8px 10px;
 }
+/* Course-only path completion, independent of the manual path status. */
 .pathProgress p {
   font-size: 14px;
   margin: 0 0 8px;
@@ -78,6 +82,7 @@
   height: 8px;
   accent-color: var(--path);
 }
+/* Continue learning hero: column proportions, outer spacing, and surface. */
 .continuePanel {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -87,11 +92,13 @@
   overflow: hidden;
   margin: 18px 0 22px;
 }
+/* Cap the artwork height without applying this rule to the text-only empty hero. */
 .continuePanel > div:first-child:not(.continueCopy) {
   aspect-ratio: auto;
   height: 100%;
   max-height: 260px;
 }
+/* Hero height also depends on this padding, the title, and wrapped actions. */
 .continueCopy {
   padding: 24px 28px;
   align-self: center;
@@ -108,9 +115,11 @@
 .continueCopy p {
   font-size: 14px;
 }
+/* Without a next course, the discovery prompt spans both columns. */
 .continueCopy:only-child {
   grid-column: 1/-1;
 }
+/* Selected-path preview; the later rules expand and reshape it on wider screens. */
 .pathPreview {
   max-width: 680px;
   margin-top: 24px;
@@ -134,6 +143,7 @@
     font-size: 24px;
   }
 }
+/* Mobile hero uses a narrow artwork strip to leave room for the next action. */
 @media (max-width: 599px) {
   .continuePanel {
     grid-template-columns: 74px minmax(0, 1fr);
@@ -158,6 +168,7 @@
 .pathPreview {
   max-width: none;
 }
+/* Lay the preview artwork beside its text while retaining one resource link. */
 @media (min-width: 600px) {
   .pathPreview article {
     display: grid;
@@ -176,5 +187,19 @@
   .pathPreview article > a > div:last-child,
   .pathPreview article > div {
     grid-column: 2;
+  }
+}
+/* Show the complete technical illustration in this hero; other artwork keeps its own fit. */
+.continuePanel img {
+  object-fit: contain;
+}
+/* Give hero text more room on desktop without changing the mobile split. */
+@media (min-width: 900px) {
+  .continuePanel {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .continueCopy {
+    padding: 20px 24px;
   }
 }

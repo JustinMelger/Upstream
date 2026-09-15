@@ -1,3 +1,4 @@
+/* Application-wide semantic colors and typography. Prefer these variables to page-local color literals. */
 :root {
   font-family: "IBM Plex Sans", sans-serif;
   font-size: 16px;
@@ -27,6 +28,7 @@
   color-scheme: dark;
 }
 
+/* Base sizing and typography shared by all pages. */
 * {
   box-sizing: border-box;
 }
@@ -86,6 +88,7 @@ button.danger {
   background: var(--danger-surface);
   color: var(--danger);
 }
+/* Visible keyboard focus across native and custom controls. */
 :focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 4px;
@@ -129,6 +132,7 @@ hr {
 img {
   max-width: 100%;
 }
+/* Honor reduced motion globally, including component animations and artwork transitions. */
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
@@ -137,6 +141,7 @@ img {
   }
 }
 
+/* Minimum touch targets apply even when individual controls use compact padding. */
 button,
 .button,
 select,
@@ -166,6 +171,7 @@ a:hover {
 small {
   font-size: 13px;
 }
+/* Resource type sets the inherited accent for artwork, labels, and cards. */
 [data-content-type="course"] {
   --content-color: var(--course);
 }
@@ -184,6 +190,7 @@ small {
   }
 }
 
+/* Keep accessible announcements/labels available without taking visual space. */
 .sr-only {
   position: absolute;
   width: 1px;

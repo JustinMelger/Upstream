@@ -33,7 +33,12 @@ export function ItemPicker({
   });
 
   return (
-    <div className={s.picker}>
+    <div
+      className={s.picker}
+      // Filters are local to the picker, not edits to the publication draft.
+      // Parent input updates can reset a controlled select before change fires.
+      onInput={(event) => event.stopPropagation()}
+    >
       <div className={s.twoFields}>
         <label>
           Find learning items
