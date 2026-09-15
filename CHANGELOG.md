@@ -19,6 +19,13 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [1.0.1](https://github.com/JustinMelger/Upstream/compare/v1.0.0...v1.0.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* path selection video articles ([#66](https://github.com/JustinMelger/Upstream/issues/66)) ([01b2884](https://github.com/JustinMelger/Upstream/commit/01b288427488a374a74cc26cc97dea5d8eda515a))
+
 ## [1.0.0](https://github.com/JustinMelger/Upstream/compare/v0.12.7...v1.0.0) (2026-09-15)
 
 
