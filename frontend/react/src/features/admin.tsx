@@ -6,6 +6,7 @@ import { useSearchParams } from "react-router";
 
 import { Contributor } from "../components/resources";
 import { Empty, ErrorPanel, Heading, Loading } from "../components/ui";
+import uiStyles from "../components/ui.module.css";
 import { api, humanError, send } from "../lib/api/client";
 import { useAuth } from "./auth";
 import s from "./pages.module.css";
@@ -293,9 +294,9 @@ function AccountDialog({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className={s.overlay} />
+        <Dialog.Overlay className={uiStyles.overlay} />
         <Dialog.Content
-          className={`${s.dialog} ${d.dialog}`}
+          className={`${uiStyles.dialog} ${d.dialog}`}
           onCloseAutoFocus={(e) => {
             e.preventDefault();
             returnFocus();
@@ -353,7 +354,7 @@ function AccountDialog({
                 {humanError(mutation.error)}
               </p>
             )}
-            <div className={s.actions}>
+            <div className={uiStyles.actions}>
               <button
                 type="button"
                 className="secondary"
@@ -379,7 +380,7 @@ function AccountDialog({
           </form>
           <button
             type="button"
-            className={s.close}
+            className={uiStyles.close}
             aria-label="Close"
             onClick={close}
             disabled={mutation.isPending}

@@ -13,6 +13,7 @@ import {
   Loading,
   Pagination,
 } from "../components/ui";
+import uiStyles from "../components/ui.module.css";
 import {
   api,
   type CatalogItem,
@@ -232,9 +233,7 @@ export function Explore() {
 
   return (
     <>
-      <Heading title="Explore">
-        Good things to learn. Shared by your people.
-      </Heading>
+      <Heading title="Explore">Recommended by your colleagues.</Heading>
       <div className={s.discoveryControls}>
         <div className={s.controls}>
           <label className={s.search}>
@@ -258,7 +257,7 @@ export function Explore() {
               Filters
             </Dialog.Trigger>
             <Dialog.Portal>
-              <Dialog.Overlay className={s.overlay} />
+              <Dialog.Overlay className={uiStyles.overlay} />
               <Dialog.Content className={s.filterDrawer}>
                 <Dialog.Title>Refine your discovery</Dialog.Title>
                 <Dialog.Description>
@@ -270,7 +269,7 @@ export function Explore() {
                     setPending((old) => ({ ...old, [key]: value }))
                   }
                 />
-                <div className={s.actions}>
+                <div className={uiStyles.actions}>
                   <button
                     onClick={() => {
                       updateMany({

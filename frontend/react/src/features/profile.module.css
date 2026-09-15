@@ -1,0 +1,110 @@
+.profileIdentity {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 180px;
+  padding: 24px 0;
+  overflow: hidden;
+}
+.profileIdentity > div:not(.profileArtwork),
+.avatar {
+  position: relative;
+  z-index: 1;
+}
+.avatar {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--accent);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+}
+.identityLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.identityLine h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.profileArtwork {
+  position: absolute;
+  right: 0;
+  width: 36%;
+  opacity: 0.45;
+  mask-image: linear-gradient(to right, transparent, black);
+}
+.profileTotals {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--surface);
+}
+.profileTotals a {
+  padding: 0 24px;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  border-right: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+.profileTotals a:last-child {
+  border: 0;
+  flex-direction: row;
+  align-items: center;
+  color: var(--accent);
+}
+.profileTotals strong {
+  font-size: 28px;
+  color: var(--text);
+  font-family: "Space Grotesk", sans-serif;
+}
+@media (max-width: 899px) {
+  .profileTotals {
+    grid-template-columns: repeat(3, 1fr);
+    padding: 16px 0;
+  }
+  .profileTotals a {
+    padding: 0 16px;
+  }
+  .profileTotals a:nth-child(3) {
+    border: 0;
+  }
+  .profileTotals a:last-child {
+    grid-column: 1 / -1;
+    justify-content: start;
+    margin: 16px 16px 0;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--line);
+    min-height: 44px;
+  }
+  .profileArtwork {
+    display: none;
+  }
+}
+@media (max-width: 599px) {
+  .profileIdentity {
+    min-height: 140px;
+    gap: 16px;
+  }
+  .avatar {
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+  }
+  .profileIdentity p {
+    margin-bottom: 0;
+  }
+}

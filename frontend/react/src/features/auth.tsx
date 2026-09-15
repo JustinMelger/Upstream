@@ -175,13 +175,12 @@ export function Login() {
       </div>
       <section>
         <h1>
-          Make room for
+          Good finds.
           <br />
-          your next idea.
+          Shared knowledge.
         </h1>
         <p className="muted">
-          A shared library. A clear next step.
-          <br />A place to keep growing.
+          Discover what your colleagues are learning, and share what helped you.
         </p>
         <div className={s.loginArtwork}>
           <ResourceArtwork type="path" title="Your next idea" eager />
