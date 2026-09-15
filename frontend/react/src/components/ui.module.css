@@ -1,3 +1,4 @@
+/* Shared page headings; later rules refine typography and spacing. */
 .heading {
   display: flex;
   align-items: center;
@@ -8,6 +9,7 @@
 .heading p {
   margin-bottom: 0;
 }
+/* Result counts and page controls; responsive adjustments follow below. */
 .pagination {
   display: flex;
   justify-content: space-between;
@@ -23,6 +25,7 @@
 .pagination button {
   padding: 8px 13px;
 }
+/* Linked personal totals. */
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -51,6 +54,7 @@
 .stats small {
   font-size: 13px;
 }
+/* Empty-state explanation and recovery action. */
 .empty {
   padding: 36px 24px;
   margin: 20px 0;
@@ -72,6 +76,7 @@
 .empty h2 {
   font-size: 22px;
 }
+/* Skeleton placeholders; global reduced-motion rules disable their animation. */
 .loading {
   padding: 30px;
   display: grid;
@@ -92,12 +97,14 @@
     opacity: 0.45;
   }
 }
+/* Wrapping action groups shared by forms, cards, and dialogs. */
 .actions {
   display: flex;
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 }
+/* Modal backdrop and dialog stacking; focus management is supplied by Radix. */
 .overlay {
   position: fixed;
   inset: 0;

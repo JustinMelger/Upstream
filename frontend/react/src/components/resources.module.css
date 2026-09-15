@@ -1,3 +1,5 @@
+/* Shared artwork sizing affects catalog cards, details, and previews.
+   Page-specific overrides belong in their page module (for example, the learning hero). */
 .artwork {
   position: relative;
   aspect-ratio: 16/9;
@@ -5,6 +7,7 @@
   background: var(--surface);
   min-width: 0;
 }
+/* Cover fills the reserved area but crops mismatched proportions; use a scoped contain override to show all artwork. */
 .artwork img {
   width: 100%;
   height: 100%;
@@ -12,6 +15,7 @@
   display: block;
   transition: transform 180ms ease;
 }
+/* CSS-only fallback for failed artwork; resource text remains available in HTML. */
 .fallback {
   height: 100%;
   padding: 24px;
@@ -45,6 +49,7 @@
   font-size: 13px;
   text-transform: uppercase;
 }
+/* Resource card surface and layout; its containing grid determines the width. */
 .card {
   display: flex;
   flex-direction: column;
@@ -59,6 +64,7 @@
 .card:focus-within {
   border-color: var(--content-color);
 }
+/* Artwork and title share one link, with equivalent hover and keyboard-focus feedback. */
 .identityLink {
   display: block;
 }
@@ -72,6 +78,7 @@
 .identityLink:focus-visible {
   outline-offset: -4px;
 }
+/* Card title spacing; together with artwork and info padding, this determines card height. */
 .identity {
   padding: 16px 18px 0;
 }
@@ -99,6 +106,7 @@
     transparent
   );
 }
+/* Descriptions, recommendations, metadata, contributor attribution, and ratings. */
 .info {
   padding: 0 18px 18px;
   display: flex;
@@ -146,6 +154,7 @@
   gap: 10px;
   font-size: 13px;
 }
+/* Initials identify real contributors without external avatar requests. */
 .contributor {
   display: inline-flex;
   align-items: center;
@@ -172,6 +181,7 @@
   color: var(--article);
   font-size: 13px;
 }
+/* Explore spotlight: a single resource presented beside its artwork. */
 .spotlight {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -233,6 +243,7 @@
   font-size: 14px;
   min-height: 44px;
 }
+/* Compact mobile spotlight keeps decorative artwork beside the text. */
 @media (max-width: 599px) {
   .spotlightLink {
     grid-template-columns: minmax(0, 1fr) 82px;

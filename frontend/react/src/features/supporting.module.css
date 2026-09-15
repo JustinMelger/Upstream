@@ -1,3 +1,4 @@
+/* Resource/path detail introduction: artwork, summary, metadata, and actions. */
 .intro {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -42,6 +43,7 @@
   flex-basis: 100%;
   margin: 0;
 }
+/* Keep primary resource and tracking controls ahead of secondary owner actions. */
 .primaryActions {
   grid-column: 1;
   grid-row: 4;
@@ -64,6 +66,7 @@
 .ownerActions button {
   font-size: 14px;
 }
+/* Attributed recommendation separated from the resource description. */
 .recommendation {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -76,6 +79,7 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* Content and review sections use restrained separators instead of nested cards. */
 .section {
   margin: 28px 0;
   padding-top: 24px;
@@ -98,6 +102,7 @@
 .sectionHeading p {
   margin: 8px 0 0;
 }
+/* Personal course completion within a path; manual path status remains separate. */
 .progress {
   padding: 20px 24px;
   border: 1px solid var(--line);
@@ -114,6 +119,7 @@
   accent-color: var(--path);
   margin-bottom: 10px;
 }
+/* Mixed-resource path rows keep position, thumbnail, title, and status visible. */
 .pathList {
   list-style: none;
   padding: 0;
@@ -161,6 +167,7 @@
   font-size: 13px;
   color: var(--muted);
 }
+/* Administration search, account table, status indicators, and dialogs. */
 .adminTools {
   display: flex;
   align-items: center;
@@ -220,6 +227,7 @@
 .danger {
   color: var(--danger);
 }
+/* Switch detail artwork to a thumbnail and account tables to stacked cards. */
 @media (max-width: 899px) {
   .intro {
     grid-template-columns: 72px minmax(0, 1fr);
@@ -277,6 +285,7 @@
     gap: 8px;
   }
 }
+/* Phone spacing and wrapping for details, sections, and path rows. */
 @media (max-width: 599px) {
   .pathLink {
     display: grid;

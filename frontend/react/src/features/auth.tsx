@@ -171,7 +171,9 @@ export function Login() {
     <main className={s.login}>
       <div className={s.loginBrand}>
         <Brand large />
-        <p className={s.brandTagline}>Share what you learn.</p>
+        <p className={s.brandTagline}>
+          Turn everyday discoveries into team knowledge.
+        </p>
       </div>
       <section>
         <h1>
@@ -180,7 +182,7 @@ export function Login() {
           Shared knowledge.
         </h1>
         <p className="muted">
-          Discover what your colleagues are learning, and share what helped you.
+          Discover what others find useful and add what helps you.
         </p>
         <div className={s.loginArtwork}>
           <ResourceArtwork type="path" title="Your next idea" eager />

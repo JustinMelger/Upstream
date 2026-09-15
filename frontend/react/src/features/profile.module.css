@@ -1,3 +1,4 @@
+/* Profile identity and decorative artwork accent. */
 .profileIdentity {
   position: relative;
   display: flex;
@@ -7,6 +8,7 @@
   padding: 24px 0;
   overflow: hidden;
 }
+/* Keep identity text above the decorative background artwork. */
 .profileIdentity > div:not(.profileArtwork),
 .avatar {
   position: relative;
@@ -41,6 +43,7 @@
   opacity: 0.45;
   mask-image: linear-gradient(to right, transparent, black);
 }
+/* Linked current totals and the statistics shortcut. */
 .profileTotals {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -71,6 +74,7 @@
   color: var(--text);
   font-family: "Space Grotesk", sans-serif;
 }
+/* Move the statistics link beneath the totals and hide decorative artwork. */
 @media (max-width: 899px) {
   .profileTotals {
     grid-template-columns: repeat(3, 1fr);
@@ -94,6 +98,7 @@
     display: none;
   }
 }
+/* Reduce avatar size and identity spacing on phones. */
 @media (max-width: 599px) {
   .profileIdentity {
     min-height: 140px;
