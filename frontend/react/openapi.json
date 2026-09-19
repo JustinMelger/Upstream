@@ -2612,7 +2612,7 @@
           "auth"
         ],
         "summary": "Login",
-        "description": "Authenticate a user and create a session.\n\nArgs:\n    payload: Login payload with username and password.\n\nReturns:\n    dict: Session token, expiry, and user metadata.\n\nRaises:\n    HTTPException: If credentials are missing or invalid.",
+        "description": "Authenticate a user and create a session.\n\nArgs:\n    payload: Login payload with username and password.\n\nReturns:\n    dict: Session token, expiry, and user metadata.\n\nRaises:\n    HTTPException: If credentials are invalid.",
         "operationId": "login_auth_login_post",
         "requestBody": {
           "content": {
@@ -2798,13 +2798,73 @@
         }
       }
     },
+    "/auth/password/change": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Change Password Endpoint",
+        "description": "Change the authenticated user's password.\n\nArgs:\n    payload: Current and replacement password.\n    auth: Request-scoped authentication service.\n    current_user: Username resolved from the validated session.\n\nReturns:\n    dict: Number of updated accounts.\n\nRaises:\n    HTTPException: If the current password is invalid or the user no longer\n        exists.",
+        "operationId": "change_password_endpoint_auth_password_change_post",
+        "parameters": [
+          {
+            "name": "x-session-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetPasswordResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/users": {
       "post": {
         "tags": [
           "auth"
         ],
         "summary": "Create User Endpoint",
-        "description": "Create a new user account (admin only).\n\nArgs:\n    payload: User creation payload.\n    x_session_token: Session token from request headers.\n\nReturns:\n    dict: Created user metadata.",
+        "description": "Create a new user account (admin only).\n\nArgs:\n    payload: User creation payload.\n\nReturns:\n    dict: Created user metadata.",
         "operationId": "create_user_endpoint_auth_users_post",
         "parameters": [
           {
@@ -4932,6 +4992,25 @@
         "title": "CatalogItem",
         "description": "Common display fields; subtype capabilities remain explicit."
       },
+      "ChangePasswordRequest": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "title": "Current Password"
+          },
+          "new_password": {
+            "type": "string",
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "ChangePasswordRequest",
+        "description": "Change password request payload."
+      },
       "CourseCompletion": {
         "properties": {
           "completed": {
@@ -5439,40 +5518,28 @@
       "CreateUserRequest": {
         "properties": {
           "username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Username"
           },
           "password": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Password"
           },
           "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": "string",
+            "enum": [
+              "admin",
+              "user"
             ],
-            "title": "Role"
+            "title": "Role",
+            "default": "user"
           }
         },
         "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
         "title": "CreateUserRequest",
         "description": "Admin user-create request payload."
       },
@@ -5596,14 +5663,7 @@
       "DisableUserRequest": {
         "properties": {
           "username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Username"
           },
           "disabled": {
@@ -5613,6 +5673,9 @@
           }
         },
         "type": "object",
+        "required": [
+          "username"
+        ],
         "title": "DisableUserRequest",
         "description": "Admin disable/enable user request payload."
       },
@@ -5852,29 +5915,19 @@
       "LoginRequest": {
         "properties": {
           "username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Username"
           },
           "password": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Password"
           }
         },
         "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
         "title": "LoginRequest",
         "description": "Login request payload."
       },
@@ -6624,29 +6677,19 @@
       "ResetPasswordRequest": {
         "properties": {
           "username": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Username"
           },
           "password": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Password"
           }
         },
         "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
         "title": "ResetPasswordRequest",
         "description": "Admin reset-password request payload."
       },

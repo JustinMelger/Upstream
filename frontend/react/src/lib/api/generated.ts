@@ -763,7 +763,7 @@ export interface paths {
          *         dict: Session token, expiry, and user metadata.
          *
          *     Raises:
-         *         HTTPException: If credentials are missing or invalid.
+         *         HTTPException: If credentials are invalid.
          */
         post: operations["login_auth_login_post"];
         delete?: never;
@@ -850,6 +850,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change Password Endpoint
+         * @description Change the authenticated user's password.
+         *
+         *     Args:
+         *         payload: Current and replacement password.
+         *         auth: Request-scoped authentication service.
+         *         current_user: Username resolved from the validated session.
+         *
+         *     Returns:
+         *         dict: Number of updated accounts.
+         *
+         *     Raises:
+         *         HTTPException: If the current password is invalid or the user no longer
+         *             exists.
+         */
+        post: operations["change_password_endpoint_auth_password_change_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/users": {
         parameters: {
             query?: never;
@@ -875,7 +907,6 @@ export interface paths {
          *
          *     Args:
          *         payload: User creation payload.
-         *         x_session_token: Session token from request headers.
          *
          *     Returns:
          *         dict: Created user metadata.
@@ -1450,6 +1481,16 @@ export interface components {
             status?: string | null;
         };
         /**
+         * ChangePasswordRequest
+         * @description Change password request payload.
+         */
+        ChangePasswordRequest: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
+        /**
          * CourseCompletion
          * @description Personal course totals within a selected path.
          */
@@ -1607,11 +1648,15 @@ export interface components {
          */
         CreateUserRequest: {
             /** Username */
-            username?: string | null;
+            username: string;
             /** Password */
-            password?: string | null;
-            /** Role */
-            role?: string | null;
+            password: string;
+            /**
+             * Role
+             * @default user
+             * @enum {string}
+             */
+            role: "admin" | "user";
         };
         /**
          * CreateUserResponse
@@ -1685,7 +1730,7 @@ export interface components {
          */
         DisableUserRequest: {
             /** Username */
-            username?: string | null;
+            username: string;
             /**
              * Disabled
              * @default true
@@ -1793,9 +1838,9 @@ export interface components {
          */
         LoginRequest: {
             /** Username */
-            username?: string | null;
+            username: string;
             /** Password */
-            password?: string | null;
+            password: string;
         };
         /**
          * LoginResponse
@@ -2096,9 +2141,9 @@ export interface components {
          */
         ResetPasswordRequest: {
             /** Username */
-            username?: string | null;
+            username: string;
             /** Password */
-            password?: string | null;
+            password: string;
         };
         /**
          * ResetPasswordResponse
@@ -3791,6 +3836,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_password_endpoint_auth_password_change_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetPasswordResponse"];
                 };
             };
             /** @description Validation Error */

@@ -35,10 +35,9 @@ async def test_create_user(app_client):
 
 @pytest.mark.integration
 async def test_login_missing_fields(app_client):
-    """Login requires username and password."""
+    """Login rejects blank credentials during request validation."""
     response = await app_client.post("/auth/login", json={"username": "", "password": ""})
-    assert response.status_code == 400
-    assert response.json().get("message") == "missing_fields"
+    assert response.status_code == 422
 
 
 @pytest.mark.integration
@@ -70,16 +69,32 @@ async def test_logout_revokes_sessions(app_client):
 
 
 @pytest.mark.integration
+async def test_change_password_rejects_incorrect_current_password(app_client):
+    """An incorrect current password cannot change the account password."""
+    token = await _login_admin(app_client)
+    response = await app_client.post(
+        "/auth/password/change",
+        json={"current_password": "incorrect", "new_password": "newpass123"},
+        headers={"X-Session-Token": token},
+    )
+
+    assert response.status_code == 401
+    assert response.json().get("message") == "invalid_credentials"
+    assert (await app_client.get("/auth/me", headers={"X-Session-Token": token})).status_code == 200
+    assert (await app_client.post("/auth/login", json={"username": "admin", "password": "admin"})).status_code == 200
+    assert (await app_client.post("/auth/login", json={"username": "admin", "password": "newpass123"})).status_code == 401
+
+
+@pytest.mark.integration
 async def test_create_user_invalid_role(app_client):
-    """Creating a user with an invalid role returns 400."""
+    """Creating a user with an invalid role fails request validation."""
     token = await _login_admin(app_client)
     response = await app_client.post(
         "/auth/users",
         json={"username": "role_user", "password": "pass123", "role": "manager"},
         headers={"X-Session-Token": token},
     )
-    assert response.status_code == 400
-    assert response.json().get("message") == "invalid_role"
+    assert response.status_code == 422
 
 
 @pytest.mark.integration

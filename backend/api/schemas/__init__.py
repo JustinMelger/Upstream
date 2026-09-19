@@ -15,6 +15,7 @@ from backend.api.schemas.auth import (
     LoginResponse,
     LogoutResponse,
     MeResponse,
+    ChangePasswordRequest,
     ResetPasswordRequest,
     ResetPasswordResponse,
     RoleResponse,
@@ -64,7 +65,6 @@ from backend.api.schemas.video_reviews import (
 )
 from backend.api.schemas.videos import VideoCreateRequest, VideoPayload
 
-
 __all__ = [
     "APIModel",
     "ErrorResponse",
@@ -77,6 +77,7 @@ __all__ = [
     "CreateUserRequest",
     "CreateUserResponse",
     "UserListItem",
+    "ChangePasswordRequest",
     "ResetPasswordRequest",
     "ResetPasswordResponse",
     "DeleteUserResponse",

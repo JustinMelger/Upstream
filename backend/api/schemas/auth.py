@@ -1,15 +1,46 @@
 from __future__ import annotations
 
-from pydantic import StrictBool, StrictStr
+from typing import Literal
+
+from pydantic import field_validator, StrictBool, StrictStr
 
 from backend.api.schemas.common import APIModel
 
 
-class LoginRequest(APIModel):
+class _UsernameRequest(APIModel):
+    """Base request payload with a required normalized username."""
+
+    username: StrictStr
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        """Strip surrounding whitespace and reject blank usernames."""
+        username = value.strip()
+        if not username:
+            raise ValueError("username must not be blank")
+        return username
+
+
+def _validate_password(value: str) -> str:
+    """Validate a password without altering intentional whitespace."""
+    if not value.strip():
+        raise ValueError("password must not be blank")
+    if len(value) < 12:
+        raise ValueError("password must contain at least 12 characters")
+    return value
+
+
+class LoginRequest(_UsernameRequest):
     """Login request payload."""
 
-    username: StrictStr | None = None
-    password: StrictStr | None = None
+    password: StrictStr
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        """Require a nonblank password."""
+        return _validate_password(value)
 
 
 class LoginResponse(APIModel):
@@ -42,12 +73,17 @@ class RoleResponse(APIModel):
     role: str
 
 
-class CreateUserRequest(APIModel):
+class CreateUserRequest(_UsernameRequest):
     """Admin user-create request payload."""
 
-    username: StrictStr | None = None
-    password: StrictStr | None = None
-    role: StrictStr | None = None
+    password: StrictStr
+    role: Literal["admin", "user"] = "user"
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        """Require a nonblank password."""
+        return _validate_password(value)
 
 
 class CreateUserResponse(APIModel):
@@ -68,11 +104,29 @@ class UserListItem(APIModel):
     disabled: bool
 
 
-class ResetPasswordRequest(APIModel):
+class ResetPasswordRequest(_UsernameRequest):
     """Admin reset-password request payload."""
 
-    username: StrictStr | None = None
-    password: StrictStr | None = None
+    password: StrictStr
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        """Require a nonblank password."""
+        return _validate_password(value)
+
+
+class ChangePasswordRequest(APIModel):
+    """Change password request payload."""
+
+    current_password: StrictStr
+    new_password: StrictStr
+
+    @field_validator("current_password", "new_password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        """Require nonblank passwords without altering their values."""
+        return _validate_password(value)
 
 
 class ResetPasswordResponse(APIModel):
@@ -87,10 +141,9 @@ class DeleteUserResponse(APIModel):
     removed: int
 
 
-class DisableUserRequest(APIModel):
+class DisableUserRequest(_UsernameRequest):
     """Admin disable/enable user request payload."""
 
-    username: StrictStr | None = None
     disabled: StrictBool = True
 
 

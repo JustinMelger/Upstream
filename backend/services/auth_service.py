@@ -334,16 +334,34 @@ class AuthService:
         username_value = str(data.username or "").strip()
         password_value = str(data.password or "")
         user = await self.get_user(username_value)
-        if not user:
-            return None
-        if user.disabled:
-            return None
-        if not self._verify_password(password_value, user.password_hash):
+        if not user or user.disabled or not self._verify_password(password_value, user.password_hash):
             return None
         now = datetime.now(timezone.utc).isoformat()
         async with session_scope(self._repo.session):
             await self._repo.update_last_login(username_value, now)
         return {"username": user.username, "role": user.role}
+
+    @auth_error_handler()
+    async def change_password(self, username: str, current_password: str, new_password: str) -> bool:
+        """Authenticate a user with username and password.
+
+        Args:
+            username: Username.
+            password: Plaintext password.
+
+        Returns:
+            User metadata if valid, else None.
+        """
+        data = self._parse_authenticate_payload({"username": username, "password": current_password})
+        username_value = str(data.username or "").strip()
+        password_value = str(data.password or "")
+        user = await self.get_user(username_value)
+        if not user or user.disabled or not self._verify_password(password_value, user.password_hash):
+            return False
+        updated = await self.update_password(username=username, password=new_password)
+        if updated:
+            return True
+        return False
 
     @auth_error_handler()
     async def set_user_disabled(self, username: str, disabled: bool) -> int:
