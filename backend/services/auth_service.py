@@ -343,25 +343,35 @@ class AuthService:
 
     @auth_error_handler()
     async def change_password(self, username: str, current_password: str, new_password: str) -> bool:
-        """Authenticate a user with username and password.
+        """Change a user's password after verifying the current password.
 
         Args:
             username: Username.
-            password: Plaintext password.
+            current_password: Existing plaintext password.
+            new_password: Replacement plaintext password.
 
         Returns:
-            User metadata if valid, else None.
+            True when the password was changed, otherwise False.
         """
-        data = self._parse_authenticate_payload({"username": username, "password": current_password})
-        username_value = str(data.username or "").strip()
-        password_value = str(data.password or "")
-        user = await self.get_user(username_value)
-        if not user or user.disabled or not self._verify_password(password_value, user.password_hash):
-            return False
-        updated = await self.update_password(username=username, password=new_password)
-        if updated:
+        current = self._parse_authenticate_payload({"username": username, "password": current_password})
+        replacement = self._parse_update_password_payload({"username": username, "password": new_password})
+        username_value = str(current.username or "").strip()
+        current_password_value = str(current.password or "")
+        replacement_password_value = str(replacement.password or "")
+        now = datetime.now(timezone.utc).isoformat()
+
+        async with session_scope(self._repo.session):
+            user = await self._repo.get_user(username_value)
+            if not user or user.disabled or not self._verify_password(current_password_value, user.password_hash):
+                return False
+
+            password_hash = self._hash_password(replacement_password_value)
+            updated = await self._repo.update_password(user.username, password_hash, now)
+            if not updated:
+                return False
+
+            await self._repo.revoke_sessions(user.username)
             return True
-        return False
 
     @auth_error_handler()
     async def set_user_disabled(self, username: str, disabled: bool) -> int:

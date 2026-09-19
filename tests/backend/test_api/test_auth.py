@@ -86,6 +86,23 @@ async def test_change_password_rejects_incorrect_current_password(app_client):
 
 
 @pytest.mark.integration
+async def test_change_password_replaces_password_and_revokes_sessions(app_client):
+    """Changing a password invalidates existing sessions and credentials."""
+    token = await _login_admin(app_client)
+    response = await app_client.post(
+        "/auth/password/change",
+        json={"current_password": "admin", "new_password": "newpass123"},
+        headers={"X-Session-Token": token},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"updated": 1}
+    assert (await app_client.get("/auth/me", headers={"X-Session-Token": token})).status_code == 401
+    assert (await app_client.post("/auth/login", json={"username": "admin", "password": "admin"})).status_code == 401
+    assert (await app_client.post("/auth/login", json={"username": "admin", "password": "newpass123"})).status_code == 200
+
+
+@pytest.mark.integration
 async def test_create_user_invalid_role(app_client):
     """Creating a user with an invalid role fails request validation."""
     token = await _login_admin(app_client)
