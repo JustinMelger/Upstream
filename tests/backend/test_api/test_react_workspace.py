@@ -70,7 +70,11 @@ async def test_logout_only_current_session_and_reset_revokes_all(app_client):
     assert (await app_client.post("/auth/logout", headers=alice)).status_code == 200
     assert (await app_client.get("/auth/me", headers=alice)).status_code == 401
     assert (await app_client.get("/auth/me", headers=alice_second)).status_code == 200
-    response = await app_client.post("/auth/users/reset", headers=admin, json={"username": "alice", "password": "newpass"})
+    response = await app_client.post(
+        "/auth/users/reset",
+        headers=admin,
+        json={"username": "alice", "password": "new-password-123"},
+    )
     assert response.status_code == 200
     assert (await app_client.get("/auth/me", headers=alice_second)).status_code == 401
     refreshed = await login(app_client, "alice", "newpass")
