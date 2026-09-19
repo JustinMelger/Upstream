@@ -6,6 +6,7 @@ from backend.api.schemas.article_reviews import (
 )
 from backend.api.schemas.articles import ArticleCreateRequest, ArticlePayload
 from backend.api.schemas.auth import (
+    ChangePasswordRequest,
     CreateUserRequest,
     CreateUserResponse,
     DeleteUserResponse,
@@ -15,7 +16,6 @@ from backend.api.schemas.auth import (
     LoginResponse,
     LogoutResponse,
     MeResponse,
-    ChangePasswordRequest,
     ResetPasswordRequest,
     ResetPasswordResponse,
     RoleResponse,
@@ -64,6 +64,7 @@ from backend.api.schemas.video_reviews import (
     VideoReviewSummaryItem,
 )
 from backend.api.schemas.videos import VideoCreateRequest, VideoPayload
+
 
 __all__ = [
     "APIModel",
