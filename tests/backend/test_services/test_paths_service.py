@@ -47,7 +47,7 @@ async def test_create_path_with_mixed_learning_items(db_session):
     articles = ArticlesService(ArticlesRepository(db_session))
     auth = AuthService(AuthRepository(db_session))
     paths = PathsService(PathsRepository(db_session))
-    await auth.create_user("admin", "pass123", "admin")
+    await auth.create_user("admin", "test-password-123", "admin")
 
     course_id = (await courses.create_course({"title": "Course A", "description": "A"}))["id"]
     video_id = (
@@ -202,7 +202,7 @@ async def test_list_paths_includes_course_count(db_session):
     articles = ArticlesService(ArticlesRepository(db_session))
     auth = AuthService(AuthRepository(db_session))
     paths = PathsService(PathsRepository(db_session))
-    await auth.create_user("admin", "pass123", "admin")
+    await auth.create_user("admin", "test-password-123", "admin")
     course_a = (await courses.create_course({"title": "Course 1", "description": "A"}))["id"]
     course_b = (await courses.create_course({"title": "Course 2", "description": "B"}))["id"]
     article_id = (

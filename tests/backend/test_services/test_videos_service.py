@@ -30,7 +30,7 @@ async def test_videos_reads_keep_empty_images_without_http(db_session, monkeypat
         raise AssertionError("Content reads must not fetch URLs")
 
     monkeypatch.setattr(httpx.AsyncClient, "send", unexpected_http)
-    await AuthService(AuthRepository(db_session)).create_user("alice", "pass123", "user")
+    await AuthService(AuthRepository(db_session)).create_user("alice", "test-password-123", "user")
     service = VideosService(VideosRepository(db_session))
     created = await service.create_video(
         payload={"title": "Resource", "description": "Summary", "url": "https://example.com/resource"}, created_by="alice"

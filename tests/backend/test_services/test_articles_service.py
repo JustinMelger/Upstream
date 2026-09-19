@@ -18,7 +18,7 @@ async def test_articles_reads_keep_empty_images_without_http(db_session, monkeyp
         raise AssertionError("Content reads must not fetch URLs")
 
     monkeypatch.setattr(httpx.AsyncClient, "send", unexpected_http)
-    await AuthService(AuthRepository(db_session)).create_user("alice", "pass123", "user")
+    await AuthService(AuthRepository(db_session)).create_user("alice", "test-password-123", "user")
     service = ArticlesService(ArticlesRepository(db_session))
     created = await service.create_article(
         payload={"title": "Resource", "description": "Summary", "url": "https://example.com/resource"}, created_by="alice"

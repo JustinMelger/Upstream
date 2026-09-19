@@ -21,10 +21,10 @@ async def members(client):
     admin = await login(client)
     for username in ("alice", "bob"):
         response = await client.post(
-            "/auth/users", headers=admin, json={"username": username, "password": "pass123", "role": "user"}
+            "/auth/users", headers=admin, json={"username": username, "password": "test-password-123", "role": "user"}
         )
         assert response.status_code == 200, response.text
-    return admin, await login(client, "alice", "pass123"), await login(client, "bob", "pass123")
+    return admin, await login(client, "alice", "test-password-123"), await login(client, "bob", "test-password-123")
 
 
 async def create(client, headers, kind, title, **extra):
@@ -66,7 +66,7 @@ async def test_cookie_transport_csrf_header_precedence_and_logout(app_client):
 @pytest.mark.anyio
 async def test_logout_only_current_session_and_reset_revokes_all(app_client):
     admin, alice, _ = await members(app_client)
-    alice_second = await login(app_client, "alice", "pass123")
+    alice_second = await login(app_client, "alice", "test-password-123")
     assert (await app_client.post("/auth/logout", headers=alice)).status_code == 200
     assert (await app_client.get("/auth/me", headers=alice)).status_code == 401
     assert (await app_client.get("/auth/me", headers=alice_second)).status_code == 200

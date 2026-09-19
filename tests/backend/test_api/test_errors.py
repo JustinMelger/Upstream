@@ -67,22 +67,22 @@ async def test_http_exception_returns_standard_envelope(app_client):
     admin_token = await _login_admin(app_client)
     create_user = await app_client.post(
         "/auth/users",
-        json={"username": "student2", "password": "pass123", "role": "user"},
+        json={"username": "student2", "password": "test-password-123", "role": "user"},
         headers={"X-Session-Token": admin_token},
     )
     assert create_user.status_code in (200, 409)
 
-    user_login = await app_client.post("/auth/login", json={"username": "student2", "password": "pass123"})
+    user_login = await app_client.post("/auth/login", json={"username": "student2", "password": "test-password-123"})
     assert user_login.status_code == 200
     user_token = user_login.json()["token"]
 
     create_other = await app_client.post(
         "/auth/users",
-        json={"username": "student3", "password": "pass123", "role": "user"},
+        json={"username": "student3", "password": "test-password-123", "role": "user"},
         headers={"X-Session-Token": admin_token},
     )
     assert create_other.status_code in (200, 409)
-    other_login = await app_client.post("/auth/login", json={"username": "student3", "password": "pass123"})
+    other_login = await app_client.post("/auth/login", json={"username": "student3", "password": "test-password-123"})
     other_token = other_login.json()["token"]
 
     owned = await app_client.post(

@@ -49,7 +49,7 @@ async def _create_article(app_client, token, title):
 async def _create_user(app_client, token, username, role="user"):
     return await app_client.post(
         "/auth/users",
-        json={"username": username, "password": "pass123", "role": role},
+        json={"username": username, "password": "test-password-123", "role": role},
         headers={"X-Session-Token": token},
     )
 
@@ -113,7 +113,7 @@ async def test_path_lifecycle_and_selection(app_client):
     """Users can create paths, and users can select/unselect them."""
     token = await _login_admin(app_client)
     await _create_user(app_client, token, "alice", role="user")
-    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "test-password-123"})
     alice_token = alice_login.json()["token"]
     course_id = await _create_course(app_client, token, "Path Course 1")
     create = await app_client.post(
@@ -290,8 +290,8 @@ async def test_path_update_requires_owner_or_admin(app_client):
     await _create_user(app_client, admin_token, "alice", role="user")
     await _create_user(app_client, admin_token, "bob", role="user")
 
-    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
-    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "test-password-123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "test-password-123"})
     alice_token = alice_login.json()["token"]
     bob_token = bob_login.json()["token"]
 
@@ -365,8 +365,8 @@ async def test_path_review_lifecycle_and_moderation(app_client):
     await _create_user(app_client, admin_token, "alice", role="user")
     await _create_user(app_client, admin_token, "bob", role="user")
 
-    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
-    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "test-password-123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "test-password-123"})
     alice_token = alice_login.json()["token"]
     bob_token = bob_login.json()["token"]
 
