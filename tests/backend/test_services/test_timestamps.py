@@ -30,7 +30,7 @@ def _assert_iso_utc(value: str) -> None:
 async def test_session_and_tracking_timestamps_are_utc_iso8601(db_session):
     """Services emit ISO-8601 timestamps with UTC offsets."""
     auth = AuthService(AuthRepository(db_session))
-    await auth.create_user("alice", "pass123", "user")
+    await auth.create_user("alice", "test-password-123", "user")
     session = await auth.create_session("alice")
     _assert_iso_utc(session["expires_at"])
 
@@ -75,7 +75,7 @@ async def test_user_paths_repo_accepts_datetime_timestamps(db_session):
 async def test_content_and_review_repos_accept_datetime_and_return_iso(db_session):
     """Timestamp-migrated content and review repos keep ISO string contract."""
     auth = AuthService(AuthRepository(db_session))
-    await auth.create_user("alice", "pass123", "user")
+    await auth.create_user("alice", "test-password-123", "user")
 
     courses_repo = CoursesRepository(db_session)
     paths = PathsService(PathsRepository(db_session))

@@ -14,7 +14,7 @@ pytestmark = pytest.mark.anyio
 @pytest.mark.unit
 async def test_video_review_lifecycle_and_summary(db_session):
     auth = AuthService(AuthRepository(db_session))
-    await auth.create_user("alice", "pass123", "user")
+    await auth.create_user("alice", "test-password-123", "user")
     videos = VideosService(VideosRepository(db_session))
     reviews = VideoReviewsService(VideoReviewsRepository(db_session))
     video_id = int(

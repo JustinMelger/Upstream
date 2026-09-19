@@ -56,6 +56,29 @@ describe("browser API boundary", () => {
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener("session-expired", listener);
   });
+  it("turns structured validation details into a useful message", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            detail: [
+              {
+                loc: ["body", "new_password"],
+                msg: "Value error, password must contain at least 12 characters",
+              },
+            ],
+          }),
+          { status: 422 },
+        ),
+      ),
+    );
+
+    await expect(api("/auth/password/change")).rejects.toMatchObject({
+      status: 422,
+      message: "password must contain at least 12 characters",
+    });
+  });
   it.each([
     "https://evil.example",
     "//evil.example",

@@ -2,8 +2,9 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-from backend.api.deps import get_auth_service
+from backend.api.deps import get_auth_service, require_admin, require_session
 from backend.api.schemas import (
+    ChangePasswordRequest,
     CreateUserRequest,
     CreateUserResponse,
     DeleteUserResponse,
@@ -36,12 +37,10 @@ async def login(payload: LoginRequest, auth: AuthService = Depends(get_auth_serv
         dict: Session token, expiry, and user metadata.
 
     Raises:
-        HTTPException: If credentials are missing or invalid.
+        HTTPException: If credentials are invalid.
     """
-    username = (payload.username or "").strip()
-    password = (payload.password or "").strip()
-    if not username or not password:
-        raise HTTPException(status_code=400, detail="missing_fields")
+    username = payload.username
+    password = payload.password
 
     await auth.purge_expired_sessions()
 
@@ -136,34 +135,54 @@ async def get_role(
     return {"role": user.role}
 
 
+@router.post("/password/change", response_model=ResetPasswordResponse)
+async def change_password_endpoint(
+    payload: ChangePasswordRequest,
+    auth: AuthService = Depends(get_auth_service),
+    current_user: str = Depends(require_session),
+) -> dict[str, int]:
+    """Change the authenticated user's password.
+
+    Args:
+        payload: Current and replacement password.
+        auth: Request-scoped authentication service.
+        current_user: Username resolved from the validated session.
+
+    Returns:
+        dict: Number of updated accounts.
+
+    Raises:
+        HTTPException: If the current password is invalid or the user no longer
+            exists.
+    """
+
+    changed = await auth.change_password(
+        username=current_user, current_password=payload.current_password, new_password=payload.new_password
+    )
+    if not changed:
+        raise HTTPException(status_code=401, detail="invalid_credentials")
+
+    return {"updated": 1}
+
+
 @router.post("/users", response_model=CreateUserResponse)
 async def create_user_endpoint(
     payload: CreateUserRequest,
-    x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
+    _current_admin: str = Depends(require_admin),
 ) -> dict[str, Any]:
     """Create a new user account (admin only).
 
     Args:
         payload: User creation payload.
-        x_session_token: Session token from request headers.
 
     Returns:
         dict: Created user metadata.
     """
-    session = await auth.get_session(x_session_token)
-    if not session:
-        raise HTTPException(status_code=401, detail="unauthorized")
-    if not await auth.is_admin(session["colleague_id"]):
-        raise HTTPException(status_code=403, detail="admin_required")
 
-    username = (payload.username or "").strip()
-    password = (payload.password or "").strip()
-    role = (payload.role or "user").strip()
-    if not username or not password:
-        raise HTTPException(status_code=400, detail="missing_fields")
-    if role not in {"admin", "user"}:
-        raise HTTPException(status_code=400, detail="invalid_role")
+    username = payload.username
+    password = payload.password
+    role = payload.role
     if await auth.get_user(username):
         raise HTTPException(status_code=409, detail="user_exists")
 
@@ -172,8 +191,8 @@ async def create_user_endpoint(
 
 @router.get("/users", response_model=list[UserListItem])
 async def list_users_endpoint(
-    x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
+    _current_admin: str = Depends(require_admin),
 ) -> list[dict[str, Any]]:
     """List all users (admin only).
 
@@ -183,19 +202,14 @@ async def list_users_endpoint(
     Returns:
         list[dict]: User list.
     """
-    session = await auth.get_session(x_session_token)
-    if not session:
-        raise HTTPException(status_code=401, detail="unauthorized")
-    if not await auth.is_admin(session["colleague_id"]):
-        raise HTTPException(status_code=403, detail="admin_required")
     return await auth.list_users()
 
 
 @router.post("/users/reset", response_model=ResetPasswordResponse)
 async def reset_password_endpoint(
     payload: ResetPasswordRequest,
-    x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
+    _current_admin: str = Depends(require_admin),
 ) -> dict[str, int]:
     """Reset a user's password (admin only).
 
@@ -206,16 +220,9 @@ async def reset_password_endpoint(
     Returns:
         dict: Update result.
     """
-    session = await auth.get_session(x_session_token)
-    if not session:
-        raise HTTPException(status_code=401, detail="unauthorized")
-    if not await auth.is_admin(session["colleague_id"]):
-        raise HTTPException(status_code=403, detail="admin_required")
 
-    username = (payload.username or "").strip()
-    password = (payload.password or "").strip()
-    if not username or not password:
-        raise HTTPException(status_code=400, detail="missing_fields")
+    username = payload.username
+    password = payload.password
 
     updated = await auth.update_password(username, password)
     if updated == 0:
@@ -226,8 +233,8 @@ async def reset_password_endpoint(
 @router.delete("/users/{username}", response_model=DeleteUserResponse)
 async def delete_user_endpoint(
     username: str,
-    x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
+    _current_admin: str = Depends(require_admin),
 ) -> dict[str, int]:
     """Delete a user account (admin only).
 
@@ -238,13 +245,8 @@ async def delete_user_endpoint(
     Returns:
         dict: Delete result.
     """
-    session = await auth.get_session(x_session_token)
-    if not session:
-        raise HTTPException(status_code=401, detail="unauthorized")
-    if not await auth.is_admin(session["colleague_id"]):
-        raise HTTPException(status_code=403, detail="admin_required")
 
-    if session["colleague_id"].lower() == username.lower():
+    if _current_admin.lower() == username.lower():
         raise HTTPException(status_code=400, detail="cannot_delete_self")
     removed = await auth.delete_user(username)
     if removed == 0:
@@ -255,8 +257,8 @@ async def delete_user_endpoint(
 @router.post("/users/disable", response_model=DisableUserResponse)
 async def disable_user_endpoint(
     payload: DisableUserRequest,
-    x_session_token: str | None = Header(default=None),
     auth: AuthService = Depends(get_auth_service),
+    _current_admin: str = Depends(require_admin),
 ) -> dict[str, int | bool]:
     """Disable or enable a user (admin only).
 
@@ -267,17 +269,10 @@ async def disable_user_endpoint(
     Returns:
         dict: Update result.
     """
-    session = await auth.get_session(x_session_token)
-    if not session:
-        raise HTTPException(status_code=401, detail="unauthorized")
-    if not await auth.is_admin(session["colleague_id"]):
-        raise HTTPException(status_code=403, detail="admin_required")
 
-    username = (payload.username or "").strip()
+    username = payload.username
     disabled = bool(payload.disabled)
-    if not username:
-        raise HTTPException(status_code=400, detail="missing_fields")
-    if session["colleague_id"].lower() == username.lower() and disabled:
+    if _current_admin.lower() == username.lower() and disabled:
         raise HTTPException(status_code=400, detail="cannot_disable_self")
 
     updated = await auth.set_user_disabled(username, disabled)

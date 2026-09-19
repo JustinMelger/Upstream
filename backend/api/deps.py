@@ -128,3 +128,24 @@ async def require_session(
 async def get_workspace_service(session: AsyncSession = Depends(get_session)) -> WorkspaceService:
     """Provide bounded React read models in one request transaction."""
     return WorkspaceService(WorkspaceRepository(session))
+
+
+async def require_admin(
+    current_user: str = Depends(require_session),
+    auth: AuthService = Depends(get_auth_service),
+) -> str:
+    """Require an enabled authenticated administrator.
+
+    Args:
+        current_user: Username resolved from the validated session.
+        auth: Request-scoped authentication service.
+
+    Returns:
+        Username of the authenticated administrator.
+
+    Raises:
+        HTTPException: If the authenticated user is not an administrator.
+    """
+    if not await auth.is_admin(current_user):
+        raise HTTPException(status_code=403, detail="admin_required")
+    return current_user

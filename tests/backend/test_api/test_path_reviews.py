@@ -13,7 +13,7 @@ async def _login_admin(app_client):
 async def _create_user(app_client, token, username, role="user"):
     return await app_client.post(
         "/auth/users",
-        json={"username": username, "password": "pass123", "role": role},
+        json={"username": username, "password": "test-password-123", "role": role},
         headers={"X-Session-Token": token},
     )
 
@@ -39,7 +39,7 @@ async def test_path_reviews_create_and_list(app_client):
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "alice_pr", role="user")
 
-    login = await app_client.post("/auth/login", json={"username": "alice_pr", "password": "pass123"})
+    login = await app_client.post("/auth/login", json={"username": "alice_pr", "password": "test-password-123"})
     token = login.json()["token"]
     path_id = await _create_path(app_client, token, "Reviewable Path")
 
@@ -77,9 +77,9 @@ async def test_path_reviews_delete_permissions(app_client):
     await _create_user(app_client, admin_token, "alice_pr2", role="user")
     await _create_user(app_client, admin_token, "bob_pr2", role="user")
 
-    login_alice = await app_client.post("/auth/login", json={"username": "alice_pr2", "password": "pass123"})
+    login_alice = await app_client.post("/auth/login", json={"username": "alice_pr2", "password": "test-password-123"})
     token_alice = login_alice.json()["token"]
-    login_bob = await app_client.post("/auth/login", json={"username": "bob_pr2", "password": "pass123"})
+    login_bob = await app_client.post("/auth/login", json={"username": "bob_pr2", "password": "test-password-123"})
     token_bob = login_bob.json()["token"]
 
     path_id = await _create_path(app_client, token_alice, "Delete Path Review")
@@ -115,9 +115,9 @@ async def test_path_reviews_summary_endpoint(app_client):
     await _create_user(app_client, admin_token, "alice_pr3", role="user")
     await _create_user(app_client, admin_token, "bob_pr3", role="user")
 
-    login_alice = await app_client.post("/auth/login", json={"username": "alice_pr3", "password": "pass123"})
+    login_alice = await app_client.post("/auth/login", json={"username": "alice_pr3", "password": "test-password-123"})
     token_alice = login_alice.json()["token"]
-    login_bob = await app_client.post("/auth/login", json={"username": "bob_pr3", "password": "pass123"})
+    login_bob = await app_client.post("/auth/login", json={"username": "bob_pr3", "password": "test-password-123"})
     token_bob = login_bob.json()["token"]
 
     id1 = await _create_path(app_client, token_alice, "Summary Path 1")

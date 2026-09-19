@@ -13,7 +13,7 @@ async def _login_admin(app_client):
 async def _create_user(app_client, token, username, role="user"):
     return await app_client.post(
         "/auth/users",
-        json={"username": username, "password": "pass123", "role": role},
+        json={"username": username, "password": "test-password-123", "role": role},
         headers={"X-Session-Token": token},
     )
 
@@ -28,7 +28,7 @@ async def test_articles_requires_auth(app_client):
 async def test_article_create_and_list(app_client):
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "alice", role="user")
-    login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    login = await app_client.post("/auth/login", json={"username": "alice", "password": "test-password-123"})
     token = login.json()["token"]
 
     create = await app_client.post(
@@ -96,8 +96,8 @@ async def test_article_review_lifecycle_and_moderation(app_client):
     await _create_user(app_client, admin_token, "alice", role="user")
     await _create_user(app_client, admin_token, "bob", role="user")
 
-    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
-    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "pass123"})
+    alice_login = await app_client.post("/auth/login", json={"username": "alice", "password": "test-password-123"})
+    bob_login = await app_client.post("/auth/login", json={"username": "bob", "password": "test-password-123"})
     alice_token = alice_login.json()["token"]
     bob_token = bob_login.json()["token"]
 

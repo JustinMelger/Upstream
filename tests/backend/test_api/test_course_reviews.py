@@ -13,7 +13,7 @@ async def _login_admin(app_client):
 async def _create_user(app_client, token, username, role="user"):
     return await app_client.post(
         "/auth/users",
-        json={"username": username, "password": "pass123", "role": role},
+        json={"username": username, "password": "test-password-123", "role": role},
         headers={"X-Session-Token": token},
     )
 
@@ -29,7 +29,7 @@ async def test_course_reviews_create_and_list(app_client):
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "alice", role="user")
 
-    login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    login = await app_client.post("/auth/login", json={"username": "alice", "password": "test-password-123"})
     token = login.json()["token"]
 
     created_course = await app_client.post(
@@ -72,7 +72,7 @@ async def test_course_reviews_create_and_list(app_client):
 async def test_course_reviews_reject_invalid_rating(app_client):
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "alice2", role="user")
-    login = await app_client.post("/auth/login", json={"username": "alice2", "password": "pass123"})
+    login = await app_client.post("/auth/login", json={"username": "alice2", "password": "test-password-123"})
     token = login.json()["token"]
 
     created_course = await app_client.post(
@@ -96,9 +96,9 @@ async def test_course_reviews_delete_permissions(app_client):
     await _create_user(app_client, admin_token, "alice3", role="user")
     await _create_user(app_client, admin_token, "bob3", role="user")
 
-    login_alice = await app_client.post("/auth/login", json={"username": "alice3", "password": "pass123"})
+    login_alice = await app_client.post("/auth/login", json={"username": "alice3", "password": "test-password-123"})
     token_alice = login_alice.json()["token"]
-    login_bob = await app_client.post("/auth/login", json={"username": "bob3", "password": "pass123"})
+    login_bob = await app_client.post("/auth/login", json={"username": "bob3", "password": "test-password-123"})
     token_bob = login_bob.json()["token"]
 
     created_course = await app_client.post(
@@ -141,9 +141,9 @@ async def test_course_reviews_summary_endpoint(app_client):
     await _create_user(app_client, admin_token, "alice4", role="user")
     await _create_user(app_client, admin_token, "bob4", role="user")
 
-    login_alice = await app_client.post("/auth/login", json={"username": "alice4", "password": "pass123"})
+    login_alice = await app_client.post("/auth/login", json={"username": "alice4", "password": "test-password-123"})
     token_alice = login_alice.json()["token"]
-    login_bob = await app_client.post("/auth/login", json={"username": "bob4", "password": "pass123"})
+    login_bob = await app_client.post("/auth/login", json={"username": "bob4", "password": "test-password-123"})
     token_bob = login_bob.json()["token"]
 
     c1 = await app_client.post(

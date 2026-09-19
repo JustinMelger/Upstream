@@ -23,7 +23,7 @@ async def _create_course(app_client, token, title):
 async def _create_user(app_client, token, username: str, role: str = "user") -> None:
     response = await app_client.post(
         "/auth/users",
-        json={"username": username, "password": "pass123", "role": role},
+        json={"username": username, "password": "test-password-123", "role": role},
         headers={"X-Session-Token": token},
     )
     assert response.status_code in (200, 409)
@@ -74,11 +74,11 @@ async def test_tracking_stats_permissions(app_client):
     admin_token = await _login_admin(app_client)
     create_user = await app_client.post(
         "/auth/users",
-        json={"username": "viewer1", "password": "pass123", "role": "user"},
+        json={"username": "viewer1", "password": "test-password-123", "role": "user"},
         headers={"X-Session-Token": admin_token},
     )
     assert create_user.status_code in (200, 409)
-    user_login = await app_client.post("/auth/login", json={"username": "viewer1", "password": "pass123"})
+    user_login = await app_client.post("/auth/login", json={"username": "viewer1", "password": "test-password-123"})
     user_token = user_login.json()["token"]
 
     response = await app_client.get("/tracking/stats", headers={"X-Session-Token": user_token})
@@ -98,8 +98,8 @@ async def test_tracking_admin_team_totals_remain_global_without_teams(app_client
     await _create_user(app_client, admin_token, "alice")
     await _create_user(app_client, admin_token, "bob")
 
-    alice_token = await _login(app_client, "alice", "pass123")
-    bob_token = await _login(app_client, "bob", "pass123")
+    alice_token = await _login(app_client, "alice", "test-password-123")
+    bob_token = await _login(app_client, "bob", "test-password-123")
 
     alice_course_id = await _create_course(app_client, alice_token, "Alice Course")
     bob_course_id = await _create_course(app_client, bob_token, "Bob Course")

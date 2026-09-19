@@ -14,11 +14,11 @@ pytestmark = pytest.mark.anyio
 async def test_create_and_authenticate_user(db_session):
     """Users can be created and authenticated with valid credentials."""
     auth_service = AuthService(AuthRepository(db_session))
-    user = await auth_service.create_user("alice", "pass123", "user")
+    user = await auth_service.create_user("alice", "test-password-123", "user")
     assert user["username"] == "alice"
     assert await auth_service.get_user("alice") is not None
 
-    authed = await auth_service.authenticate_user("alice", "pass123")
+    authed = await auth_service.authenticate_user("alice", "test-password-123")
     assert authed["username"] == "alice"
 
 
@@ -26,7 +26,7 @@ async def test_create_and_authenticate_user(db_session):
 async def test_authentication_rejects_disabled_user(db_session):
     """Disabled users cannot authenticate."""
     auth_service = AuthService(AuthRepository(db_session))
-    await auth_service.create_user("bob", "pass123", "user")
+    await auth_service.create_user("bob", "test-password-123", "user")
     await auth_service.set_user_disabled("bob", True)
     assert await auth_service.authenticate_user("bob", "pass123") is None
 
@@ -35,8 +35,8 @@ async def test_authentication_rejects_disabled_user(db_session):
 async def test_is_admin_checks_role(db_session):
     """Admin role is required for admin checks."""
     auth_service = AuthService(AuthRepository(db_session))
-    await auth_service.create_user("admin1", "pass123", "admin")
-    await auth_service.create_user("user1", "pass123", "user")
+    await auth_service.create_user("admin1", "test-password-123", "admin")
+    await auth_service.create_user("user1", "test-password-123", "user")
     assert await auth_service.is_admin("admin1") is True
     assert await auth_service.is_admin("user1") is False
 
@@ -45,7 +45,7 @@ async def test_is_admin_checks_role(db_session):
 async def test_session_lifecycle(db_session):
     """Sessions can be created, retrieved, and revoked."""
     auth_service = AuthService(AuthRepository(db_session))
-    await auth_service.create_user("carol", "pass123", "user")
+    await auth_service.create_user("carol", "test-password-123", "user")
     token = (await auth_service.create_session("carol"))["token"]
     session = await auth_service.get_session(token)
     assert session["colleague_id"] == "carol"
@@ -59,7 +59,7 @@ async def test_session_lifecycle(db_session):
 async def test_session_creation_and_revocation_use_canonical_username(db_session):
     """Mixed-case auth inputs should resolve to the stored username casing."""
     auth_service = AuthService(AuthRepository(db_session))
-    await auth_service.create_user("Alice", "pass123", "user")
+    await auth_service.create_user("Alice", "test-password-123", "user")
 
     token = (await auth_service.create_session("alice"))["token"]
     session = await auth_service.get_session(token)
@@ -75,7 +75,7 @@ async def test_session_creation_and_revocation_use_canonical_username(db_session
 async def test_expired_session_is_purged(db_session):
     """Expired sessions are removed and not returned."""
     auth_service = AuthService(AuthRepository(db_session))
-    await auth_service.create_user("dave", "pass123", "user")
+    await auth_service.create_user("dave", "test-password-123", "user")
     token = (await auth_service.create_session("dave"))["token"]
 
     past = datetime.now(timezone.utc) - timedelta(days=1)
@@ -92,7 +92,7 @@ async def test_create_user_invalid_payload_type_returns_invalid_payload(db_sessi
     """Service-level payload parsing rejects invalid create-user payload types."""
     auth_service = AuthService(AuthRepository(db_session))
     with pytest.raises(AuthServiceError) as excinfo:
-        await auth_service.create_user(["bad"], "pass123", "user")  # type: ignore[arg-type]
+        await auth_service.create_user(["bad"], "test-password-123", "user")  # type: ignore[arg-type]
     assert excinfo.value.status_code == 400
     assert str(excinfo.value.detail) == "invalid_payload"
 

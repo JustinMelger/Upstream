@@ -6,6 +6,7 @@ from backend.api.schemas.article_reviews import (
 )
 from backend.api.schemas.articles import ArticleCreateRequest, ArticlePayload
 from backend.api.schemas.auth import (
+    ChangePasswordRequest,
     CreateUserRequest,
     CreateUserResponse,
     DeleteUserResponse,
@@ -77,6 +78,7 @@ __all__ = [
     "CreateUserRequest",
     "CreateUserResponse",
     "UserListItem",
+    "ChangePasswordRequest",
     "ResetPasswordRequest",
     "ResetPasswordResponse",
     "DeleteUserResponse",

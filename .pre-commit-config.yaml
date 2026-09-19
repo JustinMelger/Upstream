@@ -1,8 +1,18 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.0
     hooks:
       - id: ruff-check
+        args: [--fix]
       - id: ruff-format
 
   - repo: local
@@ -11,4 +21,11 @@ repos:
         name: mypy (scoped project gate)
         entry: uv run mypy backend
         language: system
+        pass_filenames: false
+
+      - id: frontend-lint
+        name: frontend lint
+        entry: npm run lint --prefix frontend/react
+        language: system
+        files: ^frontend/react/
         pass_filenames: false
