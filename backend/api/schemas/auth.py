@@ -22,12 +22,20 @@ class _UsernameRequest(APIModel):
         return username
 
 
-def _validate_password(value: str) -> str:
-    """Validate a password without altering intentional whitespace."""
+def _validate_present_password(value: str) -> str:
+    """Require a nonblank password without altering intentional whitespace."""
     if not value.strip():
         raise ValueError("password must not be blank")
+
+    return value
+
+
+def _validate_new_password(value: str) -> str:
+    """Validate the replacement password policy."""
+    _validate_present_password(value)
     if len(value) < 12:
         raise ValueError("password must contain at least 12 characters")
+
     return value
 
 
@@ -40,7 +48,7 @@ class LoginRequest(_UsernameRequest):
     @classmethod
     def validate_password(cls, value: str) -> str:
         """Require a nonblank password."""
-        return _validate_password(value)
+        return _validate_present_password(value)
 
 
 class LoginResponse(APIModel):
@@ -82,8 +90,8 @@ class CreateUserRequest(_UsernameRequest):
     @field_validator("password")
     @classmethod
     def validate_password(cls, value: str) -> str:
-        """Require a nonblank password."""
-        return _validate_password(value)
+        """Validate the initial password."""
+        return _validate_new_password(value)
 
 
 class CreateUserResponse(APIModel):
@@ -112,8 +120,8 @@ class ResetPasswordRequest(_UsernameRequest):
     @field_validator("password")
     @classmethod
     def validate_password(cls, value: str) -> str:
-        """Require a nonblank password."""
-        return _validate_password(value)
+        """Validate the replacement password."""
+        return _validate_new_password(value)
 
 
 class ChangePasswordRequest(APIModel):
@@ -122,11 +130,17 @@ class ChangePasswordRequest(APIModel):
     current_password: StrictStr
     new_password: StrictStr
 
-    @field_validator("current_password", "new_password")
+    @field_validator("current_password")
     @classmethod
-    def validate_password(cls, value: str) -> str:
-        """Require nonblank passwords without altering their values."""
-        return _validate_password(value)
+    def validate_current_password(cls, value: str) -> str:
+        """Require a nonblank current password."""
+        return _validate_present_password(value)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, value: str) -> str:
+        """Validate the replacement password policy."""
+        return _validate_new_password(value)
 
 
 class ResetPasswordResponse(APIModel):

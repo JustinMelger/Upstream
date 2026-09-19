@@ -98,13 +98,32 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!response.ok) {
     if (response.status === 401)
       window.dispatchEvent(new Event("session-expired"));
-    throw new ApiError(
-      response.status,
-      body?.message || body?.detail || "The request could not be completed.",
-    );
+    throw new ApiError(response.status, apiErrorMessage(body));
   }
 
   return normalizeIds(body) as T;
+}
+
+/** Turn structured API validation details into a message suitable for people. */
+function apiErrorMessage(body: unknown): string {
+  if (!body || typeof body !== "object")
+    return "The request could not be completed.";
+
+  const payload = body as { message?: unknown; detail?: unknown };
+  const detail = payload.message ?? payload.detail;
+  if (typeof detail === "string") return detail;
+  if (!Array.isArray(detail)) return "The request could not be completed.";
+
+  const messages = detail.flatMap((issue) => {
+    if (!issue || typeof issue !== "object") return [];
+
+    const message = (issue as { msg?: unknown }).msg;
+    if (typeof message !== "string") return [];
+
+    return [message.replace(/^Value error,\s*/i, "")];
+  });
+
+  return messages.join(" ") || "The request could not be completed.";
 }
 
 // Legacy mutation responses serialize numeric content IDs as strings.

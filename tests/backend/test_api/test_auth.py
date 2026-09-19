@@ -27,7 +27,7 @@ async def test_create_user(app_client):
     token = login.json()["token"]
     response = await app_client.post(
         "/auth/users",
-        json={"username": "user1", "password": "pass123", "role": "user"},
+        json={"username": "user1", "password": "secure-pass-123", "role": "user"},
         headers={"X-Session-Token": token},
     )
     assert response.status_code in (200, 409)
@@ -74,7 +74,7 @@ async def test_change_password_rejects_incorrect_current_password(app_client):
     token = await _login_admin(app_client)
     response = await app_client.post(
         "/auth/password/change",
-        json={"current_password": "incorrect", "new_password": "newpass123"},
+        json={"current_password": "incorrect", "new_password": "new-password-123"},
         headers={"X-Session-Token": token},
     )
 
@@ -82,7 +82,7 @@ async def test_change_password_rejects_incorrect_current_password(app_client):
     assert response.json().get("message") == "invalid_credentials"
     assert (await app_client.get("/auth/me", headers={"X-Session-Token": token})).status_code == 200
     assert (await app_client.post("/auth/login", json={"username": "admin", "password": "admin"})).status_code == 200
-    assert (await app_client.post("/auth/login", json={"username": "admin", "password": "newpass123"})).status_code == 401
+    assert (await app_client.post("/auth/login", json={"username": "admin", "password": "new-password-123"})).status_code == 401
 
 
 @pytest.mark.integration
@@ -91,7 +91,7 @@ async def test_change_password_replaces_password_and_revokes_sessions(app_client
     token = await _login_admin(app_client)
     response = await app_client.post(
         "/auth/password/change",
-        json={"current_password": "admin", "new_password": "newpass123"},
+        json={"current_password": "admin", "new_password": "new-password-123"},
         headers={"X-Session-Token": token},
     )
 
@@ -99,7 +99,23 @@ async def test_change_password_replaces_password_and_revokes_sessions(app_client
     assert response.json() == {"updated": 1}
     assert (await app_client.get("/auth/me", headers={"X-Session-Token": token})).status_code == 401
     assert (await app_client.post("/auth/login", json={"username": "admin", "password": "admin"})).status_code == 401
-    assert (await app_client.post("/auth/login", json={"username": "admin", "password": "newpass123"})).status_code == 200
+    assert (await app_client.post("/auth/login", json={"username": "admin", "password": "new-password-123"})).status_code == 200
+
+
+@pytest.mark.integration
+async def test_change_password_explains_a_short_new_password(app_client):
+    """The replacement password policy names the affected field and requirement."""
+    token = await _login_admin(app_client)
+    response = await app_client.post(
+        "/auth/password/change",
+        json={"current_password": "admin", "new_password": "short"},
+        headers={"X-Session-Token": token},
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail[0]["loc"] == ["body", "new_password"]
+    assert "at least 12 characters" in detail[0]["msg"]
 
 
 @pytest.mark.integration
@@ -108,7 +124,7 @@ async def test_create_user_invalid_role(app_client):
     token = await _login_admin(app_client)
     response = await app_client.post(
         "/auth/users",
-        json={"username": "role_user", "password": "pass123", "role": "manager"},
+        json={"username": "role_user", "password": "secure-pass-123", "role": "manager"},
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 422
@@ -142,7 +158,7 @@ async def test_reset_password_not_found(app_client):
     token = await _login_admin(app_client)
     response = await app_client.post(
         "/auth/users/reset",
-        json={"username": "missing-user", "password": "newpass"},
+        json={"username": "missing-user", "password": "secure-pass-123"},
         headers={"X-Session-Token": token},
     )
     assert response.status_code == 404
@@ -155,12 +171,12 @@ async def test_login_with_different_username_casing_uses_canonical_user_identity
     admin_token = await _login_admin(app_client)
     created = await app_client.post(
         "/auth/users",
-        json={"username": "Alice", "password": "pass123", "role": "user"},
+        json={"username": "Alice", "password": "secure-pass-123", "role": "user"},
         headers={"X-Session-Token": admin_token},
     )
     assert created.status_code == 200
 
-    login = await app_client.post("/auth/login", json={"username": "alice", "password": "pass123"})
+    login = await app_client.post("/auth/login", json={"username": "alice", "password": "secure-pass-123"})
     assert login.status_code == 200
     payload = login.json()
     assert payload["username"] == "Alice"

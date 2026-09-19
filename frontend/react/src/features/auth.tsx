@@ -38,6 +38,7 @@ type AuthState = {
   refresh: () => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  expireSession: () => void;
 };
 
 const Auth = createContext<AuthState>(null!);
@@ -69,19 +70,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, []);
+  const expireSession = useCallback(() => {
+    setUser(null);
+    setCsrf("");
+    cache.clear();
+  }, [cache]);
+
   useEffect(() => {
     void refresh();
 
-    const expire = () => {
-      setUser(null);
-      setCsrf("");
-      cache.clear();
-    };
+    window.addEventListener("session-expired", expireSession);
 
-    window.addEventListener("session-expired", expire);
-
-    return () => window.removeEventListener("session-expired", expire);
-  }, [cache, refresh]);
+    return () => window.removeEventListener("session-expired", expireSession);
+  }, [expireSession, refresh]);
 
   async function login(username: string, password: string) {
     const session = await send<Session>("/auth/browser/login", {
@@ -103,7 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <Auth.Provider value={{ user, loading, error, refresh, login, logout }}>
+    <Auth.Provider
+      value={{ user, loading, error, refresh, login, logout, expireSession }}
+    >
       {children}
     </Auth.Provider>
   );
@@ -148,6 +151,7 @@ export function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const target = safeReturn(params.get("returnTo"));
+  const passwordChanged = params.get("passwordChanged") === "1";
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -204,6 +208,11 @@ export function Login() {
             required
           />
         </label>
+        {passwordChanged && (
+          <p role="status" className="muted">
+            Password changed. Sign in again with your new password.
+          </p>
+        )}
         {error && (
           <p role="alert" className={s.error}>
             {error}
