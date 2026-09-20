@@ -1,0 +1,46 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Europe/Amsterdam",
+  "schedule": ["before 06:00 on Monday"],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 1,
+  "semanticCommits": "enabled",
+  "separateMajorMinor": true,
+  "separateMinorPatch": false,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 06:00 on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "description": "Keep routine Python and uv updates together for one backend review.",
+      "matchManagers": ["uv"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Python dependencies (non-major)"
+    },
+    {
+      "description": "Keep routine frontend dependency and lockfile updates together.",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Frontend dependencies (non-major)"
+    },
+    {
+      "description": "Review GitHub Actions updates together.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["digest", "minor", "patch"],
+      "groupName": "GitHub Actions (non-major)"
+    },
+    {
+      "description": "Keep routine Dockerfile and Compose base-image updates together.",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["digest", "minor", "patch"],
+      "groupName": "Container images (non-major)"
+    },
+    {
+      "description": "Major dependency and base-image changes need focused review.",
+      "matchUpdateTypes": ["major"],
+      "groupName": null
+    }
+  ]
+}
