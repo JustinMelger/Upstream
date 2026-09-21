@@ -27,7 +27,8 @@ async def test_authentication_rejects_disabled_user(db_session):
     """Disabled users cannot authenticate."""
     auth_service = AuthService(AuthRepository(db_session))
     await auth_service.create_user("bob", "test-password-123", "user")
-    await auth_service.set_user_disabled("bob", True)
+    await auth_service.create_user("admin", "test-password-123", "admin")
+    await auth_service.set_user_disabled("bob", True, actor="admin")
     assert await auth_service.authenticate_user("bob", "pass123") is None
 
 
@@ -102,6 +103,6 @@ async def test_set_user_disabled_invalid_payload_type_returns_invalid_payload(db
     """Service-level payload parsing rejects invalid set-disabled payload types."""
     auth_service = AuthService(AuthRepository(db_session))
     with pytest.raises(AuthServiceError) as excinfo:
-        await auth_service.set_user_disabled("alice", {"bad": True})  # type: ignore[arg-type]
+        await auth_service.set_user_disabled("alice", {"bad": True}, actor="admin")  # type: ignore[arg-type]
     assert excinfo.value.status_code == 400
     assert str(excinfo.value.detail) == "invalid_payload"

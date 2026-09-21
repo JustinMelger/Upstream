@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import hashlib
 import secrets
+from typing import Literal
 
 import bcrypt
 from pydantic import StrictBool, StrictStr, ValidationError
@@ -305,11 +306,12 @@ class AuthService:
             return updated
 
     @auth_error_handler()
-    async def delete_user(self, username: str) -> int:
+    async def delete_user(self, username: str, *, actor: str) -> int:
         """Delete a user by username.
 
         Args:
             username: Username.
+            actor: Administrator requesting deletion.
 
         Returns:
             Number of rows deleted.
@@ -317,7 +319,39 @@ class AuthService:
         data = self._parse_username_payload({"username": username})
         candidate = str(data.username or "").strip()
         async with session_scope(self._repo.session):
+            await self._validate_account_change(actor, candidate, "cannot_delete_self", removes_admin=True)
             return await self._repo.delete_user(candidate)
+
+    async def _validate_account_change(
+        self, actor: str, username: str, self_error: str | None, *, removes_admin: bool
+    ) -> UserRecord:
+        """Lock and reread authorization before changing account access."""
+        await self._repo.lock_account_management()
+        administrator = await self._repo.get_user(actor)
+        if not administrator or administrator.disabled or administrator.role != "admin":
+            raise AuthServiceError(status_code=403, detail="admin_required")
+        target = await self._repo.get_user(username)
+        if not target:
+            raise AuthServiceError(status_code=404, detail="user_not_found")
+        if self_error and administrator.username.lower() == target.username.lower():
+            raise AuthServiceError(status_code=400, detail=self_error)
+        if removes_admin and target.role == "admin" and not target.disabled:
+            if await self._repo.enabled_admin_count() <= 1:
+                raise AuthServiceError(status_code=409, detail="last_admin_required")
+        return target
+
+    @auth_error_handler()
+    async def change_role(self, username: str, role: Literal["admin", "user"], *, actor: str) -> dict[str, str]:
+        """Change another account's role without revoking its sessions."""
+        if role not in ("admin", "user"):
+            raise AuthServiceError(status_code=422, detail="invalid_role")
+        async with session_scope(self._repo.session):
+            target = await self._validate_account_change(
+                actor, username, "cannot_change_own_role", removes_admin=role == "user"
+            )
+            if target.role != role:
+                await self._repo.update_role(target.username, role, datetime.now(timezone.utc))
+            return {"username": target.username, "role": role}
 
     @auth_error_handler()
     async def authenticate_user(self, username: str, password: str) -> dict | None:
@@ -374,12 +408,13 @@ class AuthService:
             return True
 
     @auth_error_handler()
-    async def set_user_disabled(self, username: str, disabled: bool) -> int:
+    async def set_user_disabled(self, username: str, disabled: bool, *, actor: str) -> int:
         """Disable or enable a user.
 
         Args:
             username: Username.
             disabled: True to disable, False to enable.
+            actor: Administrator requesting the change.
 
         Returns:
             Number of rows updated.
@@ -391,6 +426,9 @@ class AuthService:
             raise AuthServiceError(detail="invalid_payload", status_code=400)
         now = datetime.now(timezone.utc).isoformat()
         async with session_scope(self._repo.session):
+            await self._validate_account_change(
+                actor, username_value, "cannot_disable_self" if disabled_value else None, removes_admin=disabled_value
+            )
             return await self._repo.set_user_disabled(username_value, disabled_value, now)
 
     @auth_error_handler()

@@ -21,6 +21,21 @@ class AuthRepository(RepositoryDateTimeCodec):
         """
         self.session = session
 
+    async def lock_account_management(self) -> None:
+        """Serialize permission-changing operations until the transaction ends."""
+        await self.session.execute(select(func.pg_advisory_xact_lock(852741, 1)))
+
+    async def enabled_admin_count(self) -> int:
+        """Count administrators who can still sign in."""
+        result = await self.session.execute(
+            select(func.count()).select_from(UserModel).where(UserModel.role == "admin", UserModel.disabled.is_(False))
+        )
+        return int(result.scalar_one())
+
+    async def update_role(self, username: str, role: str, now: datetime) -> None:
+        """Persist the role and modification time of a canonical account."""
+        await self.session.execute(update(UserModel).where(UserModel.username == username).values(role=role, updated_at=now))
+
     async def get_user(self, username: str) -> UserRecord | None:
         """Fetch a user by username (case-insensitive).
 

@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-from backend.api.deps import get_auth_service, require_admin, require_session
+from backend.api.deps import get_auth_service, require_account_admin, require_admin, require_session
 from backend.api.schemas import (
     ChangePasswordRequest,
     CreateUserRequest,
@@ -19,6 +19,7 @@ from backend.api.schemas import (
     RoleResponse,
     UserListItem,
 )
+from backend.api.schemas.auth import UpdateRoleRequest, UpdateRoleResponse
 from backend.core.config import settings
 from backend.services.auth_service import AuthService
 
@@ -234,7 +235,7 @@ async def reset_password_endpoint(
 async def delete_user_endpoint(
     username: str,
     auth: AuthService = Depends(get_auth_service),
-    _current_admin: str = Depends(require_admin),
+    _current_admin: str = Depends(require_account_admin),
 ) -> dict[str, int]:
     """Delete a user account (admin only).
 
@@ -246,9 +247,7 @@ async def delete_user_endpoint(
         dict: Delete result.
     """
 
-    if _current_admin.lower() == username.lower():
-        raise HTTPException(status_code=400, detail="cannot_delete_self")
-    removed = await auth.delete_user(username)
+    removed = await auth.delete_user(username, actor=_current_admin)
     if removed == 0:
         raise HTTPException(status_code=404, detail="user_not_found")
     return {"removed": removed}
@@ -258,7 +257,7 @@ async def delete_user_endpoint(
 async def disable_user_endpoint(
     payload: DisableUserRequest,
     auth: AuthService = Depends(get_auth_service),
-    _current_admin: str = Depends(require_admin),
+    _current_admin: str = Depends(require_account_admin),
 ) -> dict[str, int | bool]:
     """Disable or enable a user (admin only).
 
@@ -272,10 +271,18 @@ async def disable_user_endpoint(
 
     username = payload.username
     disabled = bool(payload.disabled)
-    if _current_admin.lower() == username.lower() and disabled:
-        raise HTTPException(status_code=400, detail="cannot_disable_self")
-
-    updated = await auth.set_user_disabled(username, disabled)
+    updated = await auth.set_user_disabled(username, disabled, actor=_current_admin)
     if updated == 0:
         raise HTTPException(status_code=404, detail="user_not_found")
     return {"updated": updated, "disabled": disabled}
+
+
+@router.patch("/users/{username}/role", response_model=UpdateRoleResponse)
+async def update_role_endpoint(
+    username: str,
+    payload: UpdateRoleRequest,
+    auth: AuthService = Depends(get_auth_service),
+    current_admin: str = Depends(require_account_admin),
+) -> dict[str, str]:
+    """Change another account's role while retaining its active sessions."""
+    return await auth.change_role(username, payload.role, actor=current_admin)

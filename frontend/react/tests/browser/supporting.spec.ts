@@ -304,6 +304,145 @@ test("admin mobile dialogs preserve failed input and restore keyboard focus", as
   await expect(page.getByRole("button", { name: "Manage sam" })).toBeFocused();
 });
 
+for (const mode of ["create", "reset"] as const) {
+  test(`admin ${mode} explains password length and prevents invalid requests`, async ({
+    page,
+  }) => {
+    await session(page, "admin");
+    let submissions = 0;
+    await page.route("**/api/auth/users", async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({
+          json: [{ username: "sam", role: "user", disabled: false }],
+        });
+      } else {
+        submissions += 1;
+        await route.fulfill({ json: { username: "sam", role: "user" } });
+      }
+    });
+    await page.route("**/api/auth/users/reset", async (route) => {
+      submissions += 1;
+      await route.fulfill({ json: { updated: 1 } });
+    });
+    await page.goto("/admin/users");
+
+    if (mode === "create") {
+      await page
+        .getByRole("button", { name: "Add member", exact: true })
+        .click();
+      await page.getByLabel("Username", { exact: true }).fill("sam");
+    } else {
+      await page.getByRole("button", { name: "Manage sam" }).click();
+      await page.getByRole("menuitem", { name: "Reset password" }).click();
+    }
+
+    const dialog = page.getByRole("dialog");
+    const password = dialog.getByLabel(
+      mode === "create" ? "Initial password" : "New password",
+      { exact: true },
+    );
+    const submit = dialog.getByRole("button", {
+      name: mode === "create" ? "Create account" : "Reset password",
+      exact: true,
+    });
+    await expect(dialog.getByText("Use at least 12 characters.")).toBeVisible();
+    await password.fill("short-pass1");
+    await submit.click();
+    await expect(dialog.getByRole("alert")).toHaveText(
+      "Password must contain at least 12 characters.",
+    );
+    await expect(password).toBeFocused();
+    await expect(password).toHaveValue("short-pass1");
+    await expect(password).toHaveAttribute("aria-invalid", "true");
+    expect(submissions).toBe(0);
+    await password.fill("            ");
+    await submit.click();
+    await expect(dialog.getByRole("alert")).toHaveText("Enter a password.");
+    expect(submissions).toBe(0);
+    await password.fill("exactly-12!!");
+    await submit.click();
+    await expect(dialog).not.toBeVisible();
+    expect(submissions).toBe(1);
+  });
+}
+
+test("admin role changes confirm, recover, refresh and restore focus", async ({
+  page,
+}) => {
+  await session(page, "admin");
+  let role = "user";
+  let attempts = 0;
+  let release: (() => void) | undefined;
+  await page.route("**/api/auth/users", (route) =>
+    route.fulfill({
+      json: [
+        { username: "alex", role: "admin", disabled: false },
+        { username: "sam", role, disabled: false },
+      ],
+    }),
+  );
+  await page.route("**/api/auth/users/sam/role", async (route) => {
+    expect(route.request().method()).toBe("PATCH");
+    expect(route.request().headers()["x-csrf-token"]).toBeTruthy();
+    attempts += 1;
+
+    if (attempts === 1) {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({
+        status: 409,
+        json: { message: "last_admin_required" },
+      });
+
+      return;
+    }
+
+    role = route.request().postDataJSON().role;
+    await route.fulfill({ json: { username: "sam", role } });
+  });
+  await page.goto("/admin/users");
+  await page.getByRole("button", { name: "Manage alex" }).click();
+  await expect(
+    page.getByRole("menuitem", { name: "Make member" }),
+  ).toHaveAttribute("aria-disabled", "true");
+  await page.keyboard.press("Escape");
+  const manage = page.getByRole("button", { name: "Manage sam" });
+  await manage.click();
+  await page.getByRole("menuitem", { name: "Make admin" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Make sam an admin?");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(manage).toBeFocused();
+  expect(attempts).toBe(0);
+  await manage.click();
+  await page.getByRole("menuitem", { name: "Make admin" }).click();
+  await dialog.getByRole("button", { name: "Make admin", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Saving…" })).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "Cancel" })).toBeDisabled();
+  await expect.poll(() => !!release).toBe(true);
+  release!();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Keep at least one enabled administrator",
+  );
+  await dialog.getByRole("button", { name: "Make admin", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(manage).toBeFocused();
+  await manage.click();
+  await page.getByRole("menuitem", { name: "Make member" }).click();
+  await expect(dialog).toContainText("Make sam a member?");
+  await expect(dialog.getByRole("alert")).toHaveCount(0);
+  await dialog
+    .getByRole("button", { name: "Make member", exact: true })
+    .click();
+  await expect(dialog).not.toBeVisible();
+  await manage.click();
+  await expect(
+    page.getByRole("menuitem", { name: "Make admin" }),
+  ).toBeVisible();
+  expect(attempts).toBe(3);
+});
+
 test("profile identity and contributions survive a summary failure", async ({
   page,
 }) => {

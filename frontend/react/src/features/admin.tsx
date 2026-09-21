@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Plus, X } from "lucide-react";
 import { Dialog, DropdownMenu } from "radix-ui";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useId, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { Contributor } from "../components/resources";
 import { Empty, ErrorPanel, Heading, Loading } from "../components/ui";
 import uiStyles from "../components/ui.module.css";
-import { api, humanError, send } from "../lib/api/client";
+import { api, humanError, send, updateUserRole } from "../lib/api/client";
 import { useAuth } from "./auth";
 import s from "./pages.module.css";
 import d from "./supporting.module.css";
@@ -163,7 +163,9 @@ function AccountActions({
 }) {
   const cache = useQueryClient();
   const trigger = useRef<HTMLButtonElement>(null);
-  const [dialog, setDialog] = useState<"reset" | "delete" | null>(null);
+  const [dialog, setDialog] = useState<
+    "reset" | "delete" | "promote" | "demote" | null
+  >(null);
   const mutation = useMutation({
     mutationFn: () =>
       send("/auth/users/disable", {
@@ -204,6 +206,15 @@ function AccountActions({
             <DropdownMenu.Item
               className={d.menuItem}
               disabled={self}
+              onSelect={() =>
+                setDialog(row.role === "admin" ? "demote" : "promote")
+              }
+            >
+              {row.role === "admin" ? "Make member" : "Make admin"}
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              className={d.menuItem}
+              disabled={self}
               onSelect={() => mutation.mutate()}
             >
               {row.disabled ? "Enable account" : "Disable account"}
@@ -226,6 +237,7 @@ function AccountActions({
         </p>
       )}
       <AccountDialog
+        key={dialog ?? "closed"}
         mode={dialog || "reset"}
         username={row.username}
         open={dialog !== null}
@@ -246,23 +258,28 @@ function AccountDialog({
   onClose,
   returnFocus,
 }: {
-  mode: "create" | "reset" | "delete";
+  mode: "create" | "reset" | "delete" | "promote" | "demote";
   username?: string;
   open: boolean;
   onClose: () => void;
   returnFocus: () => void;
 }) {
   const cache = useQueryClient();
+  const passwordHintId = useId();
+  const passwordErrorId = useId();
+  const [passwordError, setPasswordError] = useState("");
   const mutation = useMutation({
     mutationFn: (values: Record<string, FormDataEntryValue>) =>
-      mode === "delete"
-        ? api(`/auth/users/${encodeURIComponent(username!)}`, {
-            method: "DELETE",
-          })
-        : send(
-            mode === "create" ? "/auth/users" : "/auth/users/reset",
-            mode === "create" ? values : { ...values, username },
-          ),
+      mode === "promote" || mode === "demote"
+        ? updateUserRole(username!, mode === "promote" ? "admin" : "user")
+        : mode === "delete"
+          ? api(`/auth/users/${encodeURIComponent(username!)}`, {
+              method: "DELETE",
+            })
+          : send(
+              mode === "create" ? "/auth/users" : "/auth/users/reset",
+              mode === "create" ? values : { ...values, username },
+            ),
     onSuccess: async () => {
       onClose();
       await cache.invalidateQueries({ queryKey: ["users"] });
@@ -275,6 +292,7 @@ function AccountDialog({
 
   function close() {
     if (!mutation.isPending) {
+      setPasswordError("");
       onClose();
       mutation.reset();
     }
@@ -282,7 +300,29 @@ function AccountDialog({
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    mutation.mutate(Object.fromEntries(new FormData(e.currentTarget)));
+    if (mutation.isPending) return;
+    const values = Object.fromEntries(new FormData(e.currentTarget));
+    mutation.reset();
+
+    if (mode === "create" || mode === "reset") {
+      const password = String(values.password || "");
+      const error = !password.trim()
+        ? "Enter a password."
+        : password.length < 12
+          ? "Password must contain at least 12 characters."
+          : "";
+      setPasswordError(error);
+
+      if (error) {
+        (
+          e.currentTarget.elements.namedItem("password") as HTMLInputElement
+        )?.focus();
+
+        return;
+      }
+    }
+
+    mutation.mutate(values);
   }
 
   return (
@@ -313,14 +353,20 @@ function AccountDialog({
               ? "Add a member"
               : mode === "reset"
                 ? `Reset password for ${username}`
-                : `Delete ${username}?`}
+                : mode === "promote" || mode === "demote"
+                  ? `Make ${username} ${mode === "promote" ? "an admin" : "a member"}?`
+                  : `Delete ${username}?`}
           </Dialog.Title>
           <Dialog.Description>
             {mode === "create"
               ? "Create an account to give someone access to the learning library."
               : mode === "reset"
                 ? "Existing sessions will be revoked. Share the new password securely."
-                : "This permanently removes the account and associated records. Use Disable to retain the account and prevent access."}
+                : mode === "promote"
+                  ? "This grants administrator permissions, including managing accounts and shared content. Their existing sessions stay active."
+                  : mode === "demote"
+                    ? "This removes administrator permissions immediately. Their existing sessions stay active; navigation updates when they reload."
+                    : "This permanently removes the account and associated records. Use Disable to retain the account and prevent access."}
           </Dialog.Description>
           <form className={d.accountForm} onSubmit={submit}>
             {mode === "create" && (
@@ -329,16 +375,29 @@ function AccountDialog({
                 <input name="username" required autoComplete="off" />
               </label>
             )}
-            {mode !== "delete" && (
-              <label>
-                {mode === "create" ? "Initial password" : "New password"}
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                />
-              </label>
+            {(mode === "create" || mode === "reset") && (
+              <>
+                <label>
+                  {mode === "create" ? "Initial password" : "New password"}
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    autoComplete="new-password"
+                    aria-describedby={`${passwordHintId}${passwordError ? ` ${passwordErrorId}` : ""}`}
+                    aria-invalid={passwordError ? true : undefined}
+                    onChange={() => setPasswordError("")}
+                  />
+                </label>
+                <small id={passwordHintId} className="muted">
+                  Use at least 12 characters.
+                </small>
+              </>
+            )}
+            {passwordError && (
+              <p id={passwordErrorId} role="alert" className={s.error}>
+                {passwordError}
+              </p>
             )}
             {mode === "create" && (
               <label>
@@ -374,7 +433,11 @@ function AccountDialog({
                     ? "Create account"
                     : mode === "reset"
                       ? "Reset password"
-                      : "Delete"}
+                      : mode === "promote"
+                        ? "Make admin"
+                        : mode === "demote"
+                          ? "Make member"
+                          : "Delete"}
               </button>
             </div>
           </form>
