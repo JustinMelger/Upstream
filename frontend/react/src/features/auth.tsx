@@ -17,7 +17,6 @@ import {
 } from "react-router";
 
 import { Brand } from "../components/Brand";
-import { ResourceArtwork } from "../components/resources";
 import { ErrorPanel, Loading } from "../components/ui";
 import {
   api,
@@ -173,20 +172,27 @@ export function Login() {
 
   return (
     <main className={s.login}>
-      <div className={s.loginBrand}>
-        <Brand large />
-        <p className={s.brandTagline}>
-          A shared knowledge library for your team.
-        </p>
-      </div>
       <section>
+        <div className={s.loginBrand}>
+          <Brand large />
+          <h2 className={s.loginHeadline}>
+            Turn everyday discoveries
+            <br />
+            into team knowledge.
+          </h2>
+        </div>
         <div className={s.loginArtwork}>
-          <ResourceArtwork type="path" title="Your next idea" eager />
+          <img
+            src="/artwork/login-shared-library-v2.png"
+            alt=""
+            width={1672}
+            height={941}
+          />
         </div>
       </section>
       <form className={s.loginForm} onSubmit={submit}>
         <h1>Welcome back</h1>
-        <p className="muted">Sign in to your learning workspace.</p>
+        <p className="muted">Sign in to your workspace.</p>
         <label>
           Username
           <input name="username" autoComplete="username" required autoFocus />
