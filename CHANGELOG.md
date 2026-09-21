@@ -19,6 +19,25 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [1.1.0](https://github.com/JustinMelger/Upstream/compare/v1.0.1...v1.1.0) (2026-09-21)
+
+
+### Features
+
+* **admin:** add role management and protect administrator access ([#71](https://github.com/JustinMelger/Upstream/issues/71)) ([f69fa51](https://github.com/JustinMelger/Upstream/commit/f69fa51623f83a3f7e0e65b9308798a59b0c6f14))
+* member password management ([#68](https://github.com/JustinMelger/Upstream/issues/68)) ([3ca4f9c](https://github.com/JustinMelger/Upstream/commit/3ca4f9ccbdd4bf00f783a3e2ea8557b6525ee9e2))
+
+
+### Bug Fixes
+
+* **login:** layout and artwork ([#70](https://github.com/JustinMelger/Upstream/issues/70)) ([bc902a9](https://github.com/JustinMelger/Upstream/commit/bc902a9bbb5afe95a2531433feb606c07656bb83))
+* **login:** simplify introduction copy ([4cd9da8](https://github.com/JustinMelger/Upstream/commit/4cd9da8502376857939fe075ed3173b51813fdf4))
+
+
+### Documentation
+
+* simplify product and login copy ([49c1ba4](https://github.com/JustinMelger/Upstream/commit/49c1ba4ec79483e739f71120c694819d99ba8ff5))
+
 ## [1.0.1](https://github.com/JustinMelger/Upstream/compare/v1.0.0...v1.0.1) (2026-09-15)
 
 
