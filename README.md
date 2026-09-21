@@ -1,6 +1,6 @@
 # Upstream
 
-**A shared internal learning library, built by colleagues, for colleagues.**
+**A shared knowledge library for your team.**
 
 Upstream gives people one place to save and share useful online courses, videos and articles, and organise them into learning paths. Each contribution becomes part of an internal library that everyone in the organisation can discover and learn from.
 

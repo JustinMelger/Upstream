@@ -176,18 +176,10 @@ export function Login() {
       <div className={s.loginBrand}>
         <Brand large />
         <p className={s.brandTagline}>
-          Turn everyday discoveries into team knowledge.
+          A shared knowledge library for your team.
         </p>
       </div>
       <section>
-        <h1>
-          Good finds.
-          <br />
-          Shared knowledge.
-        </h1>
-        <p className="muted">
-          Discover what others find useful and add what helps you.
-        </p>
         <div className={s.loginArtwork}>
           <ResourceArtwork type="path" title="Your next idea" eager />
         </div>
