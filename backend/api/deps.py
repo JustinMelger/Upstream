@@ -149,3 +149,15 @@ async def require_admin(
     if not await auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="admin_required")
     return current_user
+
+
+async def require_account_admin(
+    x_session_token: str | None = Header(default=None),
+    session: AsyncSession = Depends(get_session),
+) -> str:
+    """Lock before session writes to avoid cross-account revocation deadlocks."""
+    repo = SQLAuthRepository(session)
+    await repo.lock_account_management()
+    auth = AuthService(repo)
+    username = await require_session(x_session_token, auth)
+    return await require_admin(username, auth)

@@ -86,6 +86,8 @@ for (const width of [390, 768, 1440]) {
     "profile",
     "admin",
     "admin-dialog",
+    "admin-promote",
+    "admin-demote",
     "journey-added",
     "journey-completed",
     "journey-start",
@@ -224,7 +226,11 @@ for (const width of [390, 768, 1440]) {
         else if (path === "/auth/users")
           body = [
             { username: "alex", role: "admin", disabled: false },
-            { username: "maya", role: "user", disabled: false },
+            {
+              username: "maya",
+              role: screen === "admin-demote" ? "admin" : "user",
+              disabled: false,
+            },
             { username: "sam", role: "user", disabled: false },
             { username: "jordan", role: "user", disabled: true },
           ];
@@ -300,6 +306,8 @@ for (const width of [390, 768, 1440]) {
         "activity-stats": "/activity?view=stats",
         admin: "/admin/users",
         "admin-dialog": "/admin/users",
+        "admin-promote": "/admin/users",
+        "admin-demote": "/admin/users",
       };
       const path =
         supportingRoutes[screen] ||
@@ -417,6 +425,15 @@ for (const width of [390, 768, 1440]) {
         await page
           .getByRole("button", { name: "Add member", exact: true })
           .click();
+
+      if (screen === "admin-promote" || screen === "admin-demote") {
+        await page.getByRole("button", { name: "Manage maya" }).click();
+        await page
+          .getByRole("menuitem", {
+            name: screen === "admin-promote" ? "Make admin" : "Make member",
+          })
+          .click();
+      }
 
       if (screen === "share") {
         await page

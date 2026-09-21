@@ -999,6 +999,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/users/{username}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Role Endpoint
+         * @description Change another account's role while retaining its active sessions.
+         */
+        patch: operations["update_role_endpoint_auth_users__username__role_patch"];
+        trace?: never;
+    };
     "/articles": {
         parameters: {
             query?: never;
@@ -2248,6 +2268,30 @@ export interface components {
         UnselectPathResponse: {
             /** Removed */
             removed: number;
+        };
+        /**
+         * UpdateRoleRequest
+         * @description Administrator-selected account role.
+         */
+        UpdateRoleRequest: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "admin" | "user";
+        };
+        /**
+         * UpdateRoleResponse
+         * @description Canonical username and persisted role.
+         */
+        UpdateRoleResponse: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "admin" | "user";
+            /** Username */
+            username: string;
         };
         /**
          * UrlPreviewMetadataRequest
@@ -4040,6 +4084,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DisableUserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_role_endpoint_auth_users__username__role_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+            };
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateRoleResponse"];
                 };
             };
             /** @description Validation Error */

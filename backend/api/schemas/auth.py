@@ -81,6 +81,18 @@ class RoleResponse(APIModel):
     role: str
 
 
+class UpdateRoleRequest(APIModel):
+    """Administrator-selected account role."""
+
+    role: Literal["admin", "user"]
+
+
+class UpdateRoleResponse(UpdateRoleRequest):
+    """Canonical username and persisted role."""
+
+    username: str
+
+
 class CreateUserRequest(_UsernameRequest):
     """Admin user-create request payload."""
 

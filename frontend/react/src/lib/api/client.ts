@@ -2,6 +2,22 @@ import type { components } from "./generated";
 
 export type Session = components["schemas"]["BrowserSession"];
 
+export type UpdateRoleRequest = components["schemas"]["UpdateRoleRequest"];
+
+export type UpdateRoleResponse = components["schemas"]["UpdateRoleResponse"];
+
+/** Change an account role through the authenticated, CSRF-protected API. */
+export function updateUserRole(
+  username: string,
+  role: UpdateRoleRequest["role"],
+) {
+  return send<UpdateRoleResponse>(
+    `/auth/users/${encodeURIComponent(username)}/role`,
+    { role },
+    "PATCH",
+  );
+}
+
 export type LearningItem = components["schemas"]["LearningItem"];
 
 export type CatalogItem = components["schemas"]["CatalogItem"];
@@ -179,10 +195,20 @@ export const plural = (type: ContentType) =>
 export const detailUrl = (type: ContentType, id: number) =>
   `/explore/${plural(type)}/${id}`;
 
-export const humanError = (error: unknown) =>
-  error instanceof Error
-    ? error.message.replaceAll("_", " ")
-    : "Something went wrong. Please try again.";
+export const humanError = (error: unknown) => {
+  if (!(error instanceof Error))
+    return "Something went wrong. Please try again.";
+  const accountErrors: Record<string, string> = {
+    last_admin_required:
+      "Keep at least one enabled administrator. Make another member an admin first.",
+    cannot_change_own_role:
+      "You cannot change your own role. Ask another administrator.",
+    admin_required:
+      "Administrator access is required. Reload to refresh your account permissions.",
+  };
+
+  return accountErrors[error.message] ?? error.message.replaceAll("_", " ");
+};
 
 /**
  * Normalize an absolute HTTP(S) link, returning undefined for invalid or unsupported URLs.

@@ -34,6 +34,8 @@ Resources support ratings and written reviews. Review removal is restricted to t
 
 ## Administration and access
 
-Administrators create accounts, search users, reset passwords, enable or disable accounts, and delete accounts according to server policy. Self-disable and self-delete are unavailable. Password reset and account disable revoke affected sessions. Members cannot access administrative account or aggregate/user-statistics endpoints.
+Administrators create accounts, search users, reset passwords, change roles, enable or disable accounts, and delete accounts according to server policy. The Manage menu offers **Make admin** or **Make member**, with confirmation before changing permissions. Administrators cannot change their own role, disable themselves, or delete themselves. Account changes preserve at least one enabled administrator, including when administrators act simultaneously. Promoting a disabled account does not enable it.
+
+Role changes take effect on the next authenticated request and preserve existing sessions. The affected user's navigation updates on reload. Password reset and account disable revoke affected sessions. Members cannot access administrative account or aggregate/user-statistics endpoints.
 
 See [operations](operations.md) for authentication, API contracts and deployment, and [artwork guidance](artwork/README.md) for how covers are assigned.

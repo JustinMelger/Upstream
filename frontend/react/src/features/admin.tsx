@@ -7,7 +7,7 @@ import { useSearchParams } from "react-router";
 import { Contributor } from "../components/resources";
 import { Empty, ErrorPanel, Heading, Loading } from "../components/ui";
 import uiStyles from "../components/ui.module.css";
-import { api, humanError, send } from "../lib/api/client";
+import { api, humanError, send, updateUserRole } from "../lib/api/client";
 import { useAuth } from "./auth";
 import s from "./pages.module.css";
 import d from "./supporting.module.css";
@@ -163,7 +163,9 @@ function AccountActions({
 }) {
   const cache = useQueryClient();
   const trigger = useRef<HTMLButtonElement>(null);
-  const [dialog, setDialog] = useState<"reset" | "delete" | null>(null);
+  const [dialog, setDialog] = useState<
+    "reset" | "delete" | "promote" | "demote" | null
+  >(null);
   const mutation = useMutation({
     mutationFn: () =>
       send("/auth/users/disable", {
@@ -204,6 +206,15 @@ function AccountActions({
             <DropdownMenu.Item
               className={d.menuItem}
               disabled={self}
+              onSelect={() =>
+                setDialog(row.role === "admin" ? "demote" : "promote")
+              }
+            >
+              {row.role === "admin" ? "Make member" : "Make admin"}
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              className={d.menuItem}
+              disabled={self}
               onSelect={() => mutation.mutate()}
             >
               {row.disabled ? "Enable account" : "Disable account"}
@@ -226,6 +237,7 @@ function AccountActions({
         </p>
       )}
       <AccountDialog
+        key={dialog ?? "closed"}
         mode={dialog || "reset"}
         username={row.username}
         open={dialog !== null}
@@ -246,7 +258,7 @@ function AccountDialog({
   onClose,
   returnFocus,
 }: {
-  mode: "create" | "reset" | "delete";
+  mode: "create" | "reset" | "delete" | "promote" | "demote";
   username?: string;
   open: boolean;
   onClose: () => void;
@@ -255,14 +267,16 @@ function AccountDialog({
   const cache = useQueryClient();
   const mutation = useMutation({
     mutationFn: (values: Record<string, FormDataEntryValue>) =>
-      mode === "delete"
-        ? api(`/auth/users/${encodeURIComponent(username!)}`, {
-            method: "DELETE",
-          })
-        : send(
-            mode === "create" ? "/auth/users" : "/auth/users/reset",
-            mode === "create" ? values : { ...values, username },
-          ),
+      mode === "promote" || mode === "demote"
+        ? updateUserRole(username!, mode === "promote" ? "admin" : "user")
+        : mode === "delete"
+          ? api(`/auth/users/${encodeURIComponent(username!)}`, {
+              method: "DELETE",
+            })
+          : send(
+              mode === "create" ? "/auth/users" : "/auth/users/reset",
+              mode === "create" ? values : { ...values, username },
+            ),
     onSuccess: async () => {
       onClose();
       await cache.invalidateQueries({ queryKey: ["users"] });
@@ -313,14 +327,20 @@ function AccountDialog({
               ? "Add a member"
               : mode === "reset"
                 ? `Reset password for ${username}`
-                : `Delete ${username}?`}
+                : mode === "promote" || mode === "demote"
+                  ? `Make ${username} ${mode === "promote" ? "an admin" : "a member"}?`
+                  : `Delete ${username}?`}
           </Dialog.Title>
           <Dialog.Description>
             {mode === "create"
               ? "Create an account to give someone access to the learning library."
               : mode === "reset"
                 ? "Existing sessions will be revoked. Share the new password securely."
-                : "This permanently removes the account and associated records. Use Disable to retain the account and prevent access."}
+                : mode === "promote"
+                  ? "This grants administrator permissions, including managing accounts and shared content. Their existing sessions stay active."
+                  : mode === "demote"
+                    ? "This removes administrator permissions immediately. Their existing sessions stay active; navigation updates when they reload."
+                    : "This permanently removes the account and associated records. Use Disable to retain the account and prevent access."}
           </Dialog.Description>
           <form className={d.accountForm} onSubmit={submit}>
             {mode === "create" && (
@@ -329,7 +349,7 @@ function AccountDialog({
                 <input name="username" required autoComplete="off" />
               </label>
             )}
-            {mode !== "delete" && (
+            {(mode === "create" || mode === "reset") && (
               <label>
                 {mode === "create" ? "Initial password" : "New password"}
                 <input
@@ -374,7 +394,11 @@ function AccountDialog({
                     ? "Create account"
                     : mode === "reset"
                       ? "Reset password"
-                      : "Delete"}
+                      : mode === "promote"
+                        ? "Make admin"
+                        : mode === "demote"
+                          ? "Make member"
+                          : "Delete"}
               </button>
             </div>
           </form>
