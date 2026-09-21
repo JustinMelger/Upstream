@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Plus, X } from "lucide-react";
 import { Dialog, DropdownMenu } from "radix-ui";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useId, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { Contributor } from "../components/resources";
@@ -265,6 +265,9 @@ function AccountDialog({
   returnFocus: () => void;
 }) {
   const cache = useQueryClient();
+  const passwordHintId = useId();
+  const passwordErrorId = useId();
+  const [passwordError, setPasswordError] = useState("");
   const mutation = useMutation({
     mutationFn: (values: Record<string, FormDataEntryValue>) =>
       mode === "promote" || mode === "demote"
@@ -289,6 +292,7 @@ function AccountDialog({
 
   function close() {
     if (!mutation.isPending) {
+      setPasswordError("");
       onClose();
       mutation.reset();
     }
@@ -296,7 +300,29 @@ function AccountDialog({
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    mutation.mutate(Object.fromEntries(new FormData(e.currentTarget)));
+    if (mutation.isPending) return;
+    const values = Object.fromEntries(new FormData(e.currentTarget));
+    mutation.reset();
+
+    if (mode === "create" || mode === "reset") {
+      const password = String(values.password || "");
+      const error = !password.trim()
+        ? "Enter a password."
+        : password.length < 12
+          ? "Password must contain at least 12 characters."
+          : "";
+      setPasswordError(error);
+
+      if (error) {
+        (
+          e.currentTarget.elements.namedItem("password") as HTMLInputElement
+        )?.focus();
+
+        return;
+      }
+    }
+
+    mutation.mutate(values);
   }
 
   return (
@@ -350,15 +376,28 @@ function AccountDialog({
               </label>
             )}
             {(mode === "create" || mode === "reset") && (
-              <label>
-                {mode === "create" ? "Initial password" : "New password"}
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                />
-              </label>
+              <>
+                <label>
+                  {mode === "create" ? "Initial password" : "New password"}
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    autoComplete="new-password"
+                    aria-describedby={`${passwordHintId}${passwordError ? ` ${passwordErrorId}` : ""}`}
+                    aria-invalid={passwordError ? true : undefined}
+                    onChange={() => setPasswordError("")}
+                  />
+                </label>
+                <small id={passwordHintId} className="muted">
+                  Use at least 12 characters.
+                </small>
+              </>
+            )}
+            {passwordError && (
+              <p id={passwordErrorId} role="alert" className={s.error}>
+                {passwordError}
+              </p>
             )}
             {mode === "create" && (
               <label>
