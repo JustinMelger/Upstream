@@ -509,10 +509,10 @@ td button {
 .login {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 30px 8vw;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  gap: 32px 72px;
   align-content: center;
-  align-items: stretch;
+  align-items: end;
   max-width: 1100px;
   padding: 60px 40px;
   margin: auto;
@@ -521,15 +521,23 @@ td button {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding-top: 0;
 }
 .loginBrand {
-  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
   font-family: "Space Grotesk";
   font-size: 24px;
+}
+.loginHeadline {
+  margin: 12px 0 0;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: clamp(26px, 2.2vw, 32px);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
 }
 .brandTagline {
   margin: 0;
@@ -547,14 +555,18 @@ td button {
 .loginForm {
   display: grid;
   align-content: start;
-  gap: 21px;
+  gap: 18px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 38px;
+  padding: 30px;
+}
+.loginForm input,
+.loginForm button {
+  min-height: 46px;
 }
 .loginForm h1 {
-  font-size: 26px;
+  font-size: 24px;
   margin: 0;
 }
 .loginForm p {
@@ -922,9 +934,6 @@ td button {
 .feed .eventIcon {
   margin-top: 5px;
 }
-.login h1 {
-  font-size: 40px;
-}
 @media (max-width: 1199px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -945,9 +954,6 @@ td button {
   .grid,
   .collectionGrid {
     grid-template-columns: 1fr;
-  }
-  .login h1 {
-    font-size: 28px;
   }
 }
 /* Resource introduction and actions, with mobile overrides immediately below. */
@@ -1128,26 +1134,32 @@ td button {
     flex-shrink: 0;
   }
 }
-/* Let the login artwork fill remaining column height while respecting its container. */
+/* Keep the login artwork a compact, wide companion to the sign-in form. */
 .loginArtwork {
   border-radius: 12px;
   overflow: hidden;
   margin-top: 24px;
-  flex: 1;
+  aspect-ratio: 16 / 9;
 }
-.loginArtwork > div {
+.loginArtwork > img {
+  display: block;
+  width: 100%;
   height: 100%;
-  min-height: 160px;
+  object-fit: cover;
+  /* Trim the illustration's empty margins without changing the aligned frame. */
+  transform: scale(1.1);
 }
 @media (max-width: 899px) {
   .login {
     display: block;
+    max-width: 500px;
   }
   .loginBrand {
     margin-bottom: 30px;
   }
   .login > section {
     margin-bottom: 32px;
+    padding-top: 0;
   }
   .loginArtwork {
     display: none;
