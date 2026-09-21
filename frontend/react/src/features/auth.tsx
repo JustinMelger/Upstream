@@ -185,7 +185,7 @@ export function Login() {
         </div>
       </section>
       <form className={s.loginForm} onSubmit={submit}>
-        <h2>Welcome back</h2>
+        <h1>Welcome back</h1>
         <p className="muted">Sign in to your learning workspace.</p>
         <label>
           Username

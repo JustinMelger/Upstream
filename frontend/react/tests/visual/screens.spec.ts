@@ -318,7 +318,7 @@ for (const width of [390, 768, 1440]) {
 
       if (screen === "login") {
         await expect(
-          page.getByText("Turn everyday discoveries into team knowledge.", {
+          page.getByText("A shared knowledge library for your team.", {
             exact: true,
           }),
         ).toBeVisible();
@@ -334,7 +334,7 @@ for (const width of [390, 768, 1440]) {
         }
       } else {
         await expect(
-          page.getByText("Turn everyday discoveries into team knowledge.", {
+          page.getByText("A shared knowledge library for your team.", {
             exact: true,
           }),
         ).toHaveCount(0);

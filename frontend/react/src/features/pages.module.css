@@ -517,11 +517,6 @@ td button {
   padding: 60px 40px;
   margin: auto;
 }
-.login h1 {
-  font-size: 36px;
-  line-height: 1.12;
-  margin-top: 0;
-}
 .login > section {
   display: flex;
   flex-direction: column;
@@ -558,7 +553,7 @@ td button {
   border-radius: 16px;
   padding: 38px;
 }
-.loginForm h2 {
+.loginForm h1 {
   font-size: 26px;
   margin: 0;
 }
@@ -638,9 +633,6 @@ td button {
   }
   .loginBrand {
     margin-bottom: 28px;
-  }
-  .login h1 {
-    font-size: 28px;
   }
   .loginForm {
     padding: 26px;
