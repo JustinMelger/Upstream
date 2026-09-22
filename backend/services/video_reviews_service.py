@@ -154,27 +154,3 @@ class VideoReviewsService:
         async with session_scope(self._repo.session):
             deleted = await self._repo.delete_review(review_id=int(review_id))
         return bool(deleted)
-
-    @video_reviews_error_handler()
-    async def summaries(self, *, video_ids: list[int]) -> list[dict]:
-        """Return review summaries for the given video ids."""
-        unique_ids: list[int] = []
-        seen: set[int] = set()
-        for vid in list(video_ids or []):
-            try:
-                vid_i = int(vid)
-            except (TypeError, ValueError):
-                continue
-            if vid_i <= 0 or vid_i in seen:
-                continue
-            seen.add(vid_i)
-            unique_ids.append(vid_i)
-
-        async with session_scope(self._repo.session):
-            summary_map = await self._repo.summaries_for_videos(video_ids=unique_ids)
-
-        out: list[dict] = []
-        for vid in unique_ids:
-            avg, count = summary_map.get(vid, (0.0, 0))
-            out.append({"video_id": vid, "avg_rating": float(avg), "review_count": int(count)})
-        return out

@@ -11,17 +11,12 @@ pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.unit
-async def test_add_list_remove_user_paths(db_session):
-    """Users can add, list, and remove selected paths."""
+async def test_add_remove_user_paths(db_session):
+    """Users can add and remove selected paths."""
     paths = PathsService(PathsRepository(db_session))
     user_paths = UserPathsService(UserPathsRepository(db_session))
     path_id = (await paths.create_path({"name": "Starter", "items": []}))["id"]
     await user_paths.add_user_path("user1", path_id)
-
-    selected = await user_paths.list_user_paths("user1")
-    assert len(selected) == 1
-    assert selected[0]["name"] == "Starter"
-    assert selected[0]["status"] == "interested"
 
     removed = await user_paths.remove_user_path("user1", path_id)
     assert removed == 1
@@ -63,19 +58,3 @@ async def test_user_paths_invalid_payload_type_returns_invalid_payload(db_sessio
         await user_paths.add_user_path("user1", {"bad": 1})  # type: ignore[arg-type]
     assert excinfo.value.status_code == 400
     assert str(excinfo.value.detail) == "invalid_payload"
-
-
-@pytest.mark.unit
-async def test_add_user_path_is_idempotent_and_keeps_existing_status(db_session):
-    """Selecting an already selected path should not overwrite explicit status."""
-    paths = PathsService(PathsRepository(db_session))
-    user_paths = UserPathsService(UserPathsRepository(db_session))
-    path_id = (await paths.create_path({"name": "Idempotent Keep Status", "items": []}))["id"]
-
-    await user_paths.add_user_path("user1", path_id)
-    await user_paths.update_user_path_status("user1", path_id, "completed")
-    await user_paths.add_user_path("user1", path_id)
-
-    selected = await user_paths.list_user_paths("user1")
-    assert len(selected) == 1
-    assert selected[0]["status"] == "completed"

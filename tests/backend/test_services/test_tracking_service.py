@@ -11,15 +11,13 @@ pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.unit
-async def test_upsert_and_list_tracking(db_session):
-    """Tracking entries can be added and listed."""
+async def test_upsert_tracking(db_session):
+    """Tracking entries can be added."""
     courses = CoursesService(CoursesRepository(db_session))
     course_id = (await courses.create_course({"title": "T1", "description": "Track me"}))["id"]
     tracking = TrackingService(TrackingRepository(db_session))
-    await tracking.upsert_tracking("user1", course_id, "interested")
-    items = await tracking.list_tracking(colleague_id="user1")
-    assert len(items) == 1
-    assert items[0]["status"] == "interested"
+    item = await tracking.upsert_tracking("user1", course_id, "interested")
+    assert item["status"] == "interested"
 
 
 @pytest.mark.unit
@@ -45,30 +43,12 @@ async def test_tracking_invalid_payload_type_returns_invalid_payload(db_session)
 
 
 @pytest.mark.unit
-async def test_tracking_recent_activity_invalid_limit_payload_returns_invalid_payload(db_session):
-    """Service-level payload parsing rejects invalid recent-activity limit types."""
-    tracking = TrackingService(TrackingRepository(db_session))
-    with pytest.raises(TrackingServiceError) as excinfo:
-        await tracking.list_recent_activity(limit={"bad": 1})  # type: ignore[arg-type]
-    assert excinfo.value.status_code == 400
-    assert str(excinfo.value.detail) == "invalid_payload"
-
-
-@pytest.mark.unit
-async def test_stats_and_remove(db_session):
-    """Tracking stats aggregate per user and overall."""
+async def test_remove_tracking(db_session):
+    """Tracking entries can be removed."""
     courses = CoursesService(CoursesRepository(db_session))
     c1 = (await courses.create_course({"title": "C1", "description": "C1"}))["id"]
-    c2 = (await courses.create_course({"title": "C2", "description": "C2"}))["id"]
-    c3 = (await courses.create_course({"title": "C3", "description": "C3"}))["id"]
     tracking = TrackingService(TrackingRepository(db_session))
     await tracking.upsert_tracking("user1", c1, "completed")
-    await tracking.upsert_tracking("user1", c2, "completed")
-    await tracking.upsert_tracking("user2", c3, "interested")
-
-    assert (await tracking.stats_for_colleague("user1"))["completed"] == 2
-    assert (await tracking.stats_all())["completed"] == 2
-    assert (await tracking.stats_by_user())[0]["completed"] >= 0
 
     removed = await tracking.remove_tracking("user1", c1)
     assert removed == 1

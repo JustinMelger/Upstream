@@ -177,13 +177,10 @@ async def test_course_reviews_summary_endpoint(app_client):
         headers={"X-Session-Token": token_bob},
     )
 
-    summary = await app_client.get(
-        "/courses/reviews/summary",
-        params=[("course_ids", id1), ("course_ids", id2)],
-        headers={"X-Session-Token": token_alice},
-    )
-    assert summary.status_code == 200
-    rows = summary.json()
-    by_id = {r.get("course_id"): r for r in rows}
+    catalog = await app_client.get("/catalog?type=course", headers={"X-Session-Token": token_alice})
+    assert catalog.status_code == 200
+    by_id = {row["id"]: row for row in catalog.json()["items"]}
     assert by_id[id1]["review_count"] == 2
     assert by_id[id2]["review_count"] == 1
+    assert by_id[id1]["rating"] == 3
+    assert by_id[id2]["rating"] == 5

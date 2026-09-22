@@ -12,7 +12,7 @@ pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.unit
-async def test_video_review_lifecycle_and_summary(db_session):
+async def test_video_review_lifecycle(db_session):
     auth = AuthService(AuthRepository(db_session))
     await auth.create_user("alice", "test-password-123", "user")
     videos = VideosService(VideosRepository(db_session))
@@ -43,11 +43,6 @@ async def test_video_review_lifecycle_and_summary(db_session):
     listed = await reviews.list_reviews(video_id=video_id)
     assert len(listed) == 1
     assert int(listed[0]["rating"]) == 5
-
-    summaries = await reviews.summaries(video_ids=[video_id])
-    assert len(summaries) == 1
-    assert int(summaries[0]["video_id"]) == video_id
-    assert int(summaries[0]["review_count"]) == 1
 
     assert await reviews.delete_review(review_id=int(created["id"])) is True
 

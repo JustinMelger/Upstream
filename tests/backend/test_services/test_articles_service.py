@@ -11,7 +11,7 @@ pytestmark = pytest.mark.anyio
 
 @pytest.mark.unit
 async def test_articles_reads_keep_empty_images_without_http(db_session, monkeypatch):
-    """Creation, lists and details never fetch external resource artwork."""
+    """Creation and detail reads never fetch external resource artwork."""
     import httpx
 
     async def unexpected_http(*args, **kwargs):
@@ -24,7 +24,5 @@ async def test_articles_reads_keep_empty_images_without_http(db_session, monkeyp
         payload={"title": "Resource", "description": "Summary", "url": "https://example.com/resource"}, created_by="alice"
     )
 
-    rows = await service.list_articles(query=None, tag=None)
     detail = await service.get_article_by_id(article_id=int(created["id"]))
-    assert rows[0]["preview_image_url"] == ""
     assert detail["preview_image_url"] == ""

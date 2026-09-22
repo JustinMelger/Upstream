@@ -139,13 +139,10 @@ async def test_path_reviews_summary_endpoint(app_client):
         headers={"X-Session-Token": token_bob},
     )
 
-    summary = await app_client.get(
-        "/paths/reviews/summary",
-        params=[("path_ids", id1), ("path_ids", id2)],
-        headers={"X-Session-Token": token_alice},
-    )
-    assert summary.status_code == 200
-    rows = summary.json()
-    by_id = {r.get("path_id"): r for r in rows}
+    catalog = await app_client.get("/catalog?type=path", headers={"X-Session-Token": token_alice})
+    assert catalog.status_code == 200
+    by_id = {row["id"]: row for row in catalog.json()["items"]}
     assert by_id[id1]["review_count"] == 2
     assert by_id[id2]["review_count"] == 1
+    assert by_id[id1]["rating"] == 3
+    assert by_id[id2]["rating"] == 5

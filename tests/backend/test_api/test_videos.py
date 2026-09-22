@@ -20,12 +20,12 @@ async def _create_user(app_client, token, username, role="user"):
 
 @pytest.mark.integration
 async def test_videos_requires_auth(app_client):
-    response = await app_client.get("/videos")
+    response = await app_client.get("/catalog?type=video")
     assert response.status_code == 401
 
 
 @pytest.mark.integration
-async def test_video_create_get_and_list(app_client):
+async def test_video_create_detail_and_catalog(app_client):
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "alice", role="user")
     login = await app_client.post("/auth/login", json={"username": "alice", "password": "test-password-123"})
@@ -53,9 +53,9 @@ async def test_video_create_get_and_list(app_client):
     assert detail.json()["provider"] == "YouTube"
     assert "preview_image_url" in detail.json()
 
-    listing = await app_client.get("/videos", headers={"X-Session-Token": token})
+    listing = await app_client.get("/catalog?type=video", headers={"X-Session-Token": token})
     assert listing.status_code == 200
-    rows = listing.json()
+    rows = listing.json()["items"]
     assert any(int(row.get("id") or 0) == int(payload["id"]) for row in rows)
 
 
@@ -124,15 +124,11 @@ async def test_video_review_lifecycle_and_moderation(app_client):
     rows = listing.json()
     assert rows and int(rows[0]["id"]) == review_id
 
-    summary = await app_client.get(
-        "/videos/reviews/summary",
-        params={"video_ids": [video_id]},
-        headers={"X-Session-Token": bob_token},
-    )
-    assert summary.status_code == 200
-    srows = summary.json()
-    assert srows and int(srows[0]["video_id"]) == video_id
-    assert int(srows[0]["review_count"]) == 1
+    catalog = await app_client.get("/catalog?type=video", headers={"X-Session-Token": bob_token})
+    assert catalog.status_code == 200
+    catalog_item = next(item for item in catalog.json()["items"] if int(item["id"]) == video_id)
+    assert catalog_item["review_count"] == 1
+    assert catalog_item["rating"] == 5
 
     forbidden = await app_client.delete(
         f"/videos/{video_id}/reviews/{review_id}",

@@ -23,14 +23,6 @@ class ArticleReviewCreateRequest(APIModel):
     text: StrictStr | None = None
 
 
-class ArticleReviewSummaryItem(APIModel):
-    """Review summary for an article."""
-
-    article_id: int
-    avg_rating: float
-    review_count: int
-
-
 class DeleteArticleReviewResponse(APIModel):
     """Article review delete response."""
 

@@ -36,7 +36,7 @@ Alembic migrations preserve existing records. Undated paths retain null creation
 
 The API image contains Python runtime dependencies only. Nginx serves the React assets and proxies `/api`; `API_ROOT_PATH=/api` keeps API documentation links correct. The migration container completes before API startup. React's Vite server proxies `/api` during development.
 
-OpenTelemetry instrumentation remains available, disabled by default. The repository does not bundle a Collector/Tempo/Prometheus/Loki/Grafana stack; enable instrumentation only with independently configured OTLP endpoints. Optional authenticated `/telemetry/events` ingestion requires `FEATURE_TELEMETRY=1`; the React UI does not require it.
+OpenTelemetry instrumentation remains available, disabled by default. The repository does not bundle a Collector/Tempo/Prometheus/Loki/Grafana stack; enable instrumentation only with independently configured OTLP endpoints. The API does not expose a product-event ingestion endpoint.
 
 See [operations](operations.md) and the [project README](../README.md) for verification, setup and rollback.
 

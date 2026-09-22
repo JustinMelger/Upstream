@@ -56,23 +56,24 @@ async def _create_user(app_client, token, username, role="user"):
 
 @pytest.mark.integration
 async def test_paths_requires_auth(app_client):
-    """Path listing requires authentication."""
-    response = await app_client.get("/paths")
+    """Path discovery requires authentication."""
+    response = await app_client.get("/catalog?type=path")
     assert response.status_code == 401
 
 
 @pytest.mark.integration
-async def test_list_paths_empty(app_client):
-    """Listing paths returns a list payload for authenticated users."""
+async def test_catalog_paths_empty(app_client):
+    """Path discovery returns an empty bounded page on a new installation."""
     token = await _login_admin(app_client)
-    response = await app_client.get("/paths", headers={"X-Session-Token": token})
+    response = await app_client.get("/catalog?type=path", headers={"X-Session-Token": token})
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert response.json()["items"] == []
+    assert response.json()["total"] == 0
 
 
 @pytest.mark.integration
-async def test_list_paths_includes_course_count(app_client):
-    """Path list payloads expose course_count for browse surfaces."""
+async def test_catalog_lists_created_paths(app_client):
+    """The bounded catalog exposes created paths for discovery."""
     token = await _login_admin(app_client)
     course_id = await _create_course(app_client, token, "Counted Path Course")
     article_id = await _create_article(app_client, token, "Counted Path Article")
@@ -90,10 +91,10 @@ async def test_list_paths_includes_course_count(app_client):
     )
     assert create.status_code == 200
 
-    response = await app_client.get("/paths", headers={"X-Session-Token": token})
+    response = await app_client.get("/catalog?type=path", headers={"X-Session-Token": token})
     assert response.status_code == 200
-    row = next(item for item in response.json() if str(item.get("name") or "") == "Counted Path")
-    assert row["course_count"] == 1
+    row = next(item for item in response.json()["items"] if item["title"] == "Counted Path")
+    assert row["type"] == "path"
 
 
 @pytest.mark.integration
@@ -128,9 +129,9 @@ async def test_path_lifecycle_and_selection(app_client):
     assert select.status_code == 200
     assert select.json()["path_id"] == str(path_id)
 
-    selected_after_select = await app_client.get("/paths/selected/list", headers={"X-Session-Token": token})
+    selected_after_select = await app_client.get("/learning/items?view=paths", headers={"X-Session-Token": token})
     assert selected_after_select.status_code == 200
-    selected_match = [item for item in selected_after_select.json() if item["id"] == path_id]
+    selected_match = [item for item in selected_after_select.json()["items"] if item["id"] == path_id]
     assert selected_match and selected_match[0]["status"] == "interested"
 
     status = await app_client.post(
@@ -141,9 +142,9 @@ async def test_path_lifecycle_and_selection(app_client):
     assert status.status_code == 200
     assert status.json()["updated"] == 1
 
-    selected = await app_client.get("/paths/selected/list", headers={"X-Session-Token": token})
+    selected = await app_client.get("/learning/items?view=paths", headers={"X-Session-Token": token})
     assert selected.status_code == 200
-    match = [item for item in selected.json() if item["id"] == path_id]
+    match = [item for item in selected.json()["items"] if item["id"] == path_id]
     assert match and match[0]["status"] == "in_progress"
 
     unselect = await app_client.post(f"/paths/{path_id}/unselect", headers={"X-Session-Token": token})
@@ -228,9 +229,9 @@ async def test_select_path_is_idempotent_and_keeps_interested_status(app_client)
     second = await app_client.post(f"/paths/{path_id}/select", headers={"X-Session-Token": token})
     assert second.status_code == 200
 
-    selected = await app_client.get("/paths/selected/list", headers={"X-Session-Token": token})
+    selected = await app_client.get("/learning/items?view=paths", headers={"X-Session-Token": token})
     assert selected.status_code == 200
-    rows = [item for item in selected.json() if int(item.get("id") or 0) == path_id]
+    rows = [item for item in selected.json()["items"] if int(item.get("id") or 0) == path_id]
     assert len(rows) == 1
     assert rows[0]["status"] == "interested"
 
@@ -276,9 +277,9 @@ async def test_reselect_path_preserves_existing_selected_status(app_client):
     second = await app_client.post(f"/paths/{path_id}/select", headers={"X-Session-Token": token})
     assert second.status_code == 200
 
-    selected = await app_client.get("/paths/selected/list", headers={"X-Session-Token": token})
+    selected = await app_client.get("/learning/items?view=paths", headers={"X-Session-Token": token})
     assert selected.status_code == 200
-    rows = [item for item in selected.json() if int(item.get("id") or 0) == path_id]
+    rows = [item for item in selected.json()["items"] if int(item.get("id") or 0) == path_id]
     assert len(rows) == 1
     assert rows[0]["status"] == "completed"
 
@@ -403,15 +404,11 @@ async def test_path_review_lifecycle_and_moderation(app_client):
     rows = listing.json()
     assert rows and int(rows[0]["id"]) == review_id
 
-    summary = await app_client.get(
-        "/paths/reviews/summary",
-        params={"path_ids": [path_id]},
-        headers={"X-Session-Token": bob_token},
-    )
-    assert summary.status_code == 200
-    srows = summary.json()
-    assert srows and int(srows[0]["path_id"]) == path_id
-    assert int(srows[0]["review_count"]) == 1
+    catalog = await app_client.get("/catalog?type=path", headers={"X-Session-Token": bob_token})
+    assert catalog.status_code == 200
+    catalog_item = next(item for item in catalog.json()["items"] if int(item["id"]) == path_id)
+    assert catalog_item["review_count"] == 1
+    assert catalog_item["rating"] == 5
 
     forbidden = await app_client.delete(
         f"/paths/{path_id}/reviews/{review_id}",

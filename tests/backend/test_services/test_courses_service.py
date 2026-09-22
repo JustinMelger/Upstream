@@ -24,35 +24,6 @@ async def test_create_course_requires_title(db_session):
 
 
 @pytest.mark.unit
-async def test_course_list_filters(db_session):
-    """Course listing supports query and field filters."""
-    courses = CoursesService(CoursesRepository(db_session))
-    await courses.create_course(
-        {
-            "title": "Python Basics",
-            "description": "Learn Python basics",
-            "provider": "ACME",
-            "category": "Dev",
-            "level": "Beginner",
-        }
-    )
-    await courses.create_course(
-        {
-            "title": "Advanced SQL",
-            "description": "Deep dive into SQL",
-            "provider": "DataCorp",
-            "category": "Data",
-            "level": "Advanced",
-        }
-    )
-
-    assert len(await courses.list_courses(query="python")) == 1
-    assert len(await courses.list_courses(provider="ACME")) == 1
-    assert len(await courses.list_courses(category="Data")) == 1
-    assert len(await courses.list_courses(level="Advanced")) == 1
-
-
-@pytest.mark.unit
 async def test_update_and_delete_course(db_session):
     """Courses can be updated and deleted."""
     courses = CoursesService(CoursesRepository(db_session))
@@ -107,14 +78,14 @@ async def test_courses_service_works_inside_existing_transaction_scope(db_sessio
     courses = CoursesService(CoursesRepository(db_session))
     async with db_session.begin():
         created = await courses.create_course({"title": "Nested Tx", "description": "Nested tx"})
-        listed = await courses.list_courses(query="nested")
+        detail = await courses.get_course_by_id(int(created["id"]))
     assert int(created["id"]) > 0
-    assert len(listed) == 1
+    assert detail is not None
 
 
 @pytest.mark.unit
 async def test_courses_reads_keep_empty_images_without_http(db_session, monkeypatch):
-    """Creation, lists and details never fetch external resource artwork."""
+    """Creation and detail reads never fetch external resource artwork."""
     import httpx
 
     async def unexpected_http(*args, **kwargs):
@@ -126,7 +97,5 @@ async def test_courses_reads_keep_empty_images_without_http(db_session, monkeypa
         {"title": "Resource", "description": "Summary", "url": "https://example.com/resource"}
     )
 
-    rows = await service.list_courses()
     detail = await service.get_course_by_id(course_id=int(created["id"]))
-    assert rows[0]["preview_image_url"] == ""
     assert detail["preview_image_url"] == ""

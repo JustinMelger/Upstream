@@ -1,6 +1,6 @@
-from typing import Any, List, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import get_auth_service, get_video_reviews_service, get_videos_service, require_session
 from backend.api.policies import require_existing_owner_or_admin, require_row_exists, require_row_parent_match
@@ -10,7 +10,6 @@ from backend.api.schemas import (
     VideoPayload,
     VideoReviewCreateRequest,
     VideoReviewPayload,
-    VideoReviewSummaryItem,
 )
 from backend.api.schemas.videos import VideoUpdateRequest
 from backend.services.auth_service import AuthService
@@ -19,28 +18,6 @@ from backend.services.videos_service import VideosService
 
 
 router = APIRouter(prefix="/videos", tags=["videos"])
-
-
-@router.get("", response_model=List[VideoPayload])
-async def list_videos(
-    q: Optional[str] = Query(default=None, description="Search query"),
-    provider: Optional[str] = Query(default=None, description="Provider filter"),
-    category: Optional[str] = Query(default=None, description="Category filter"),
-    _current_user: str = Depends(require_session),
-    videos: VideosService = Depends(get_videos_service),
-) -> list[dict[str, Any]]:
-    """List videos."""
-    return await videos.list_videos(query=q, provider=provider, category=category)
-
-
-@router.get("/reviews/summary", response_model=list[VideoReviewSummaryItem])
-async def video_review_summaries(
-    video_ids: list[int] = Query(default_factory=list),
-    _current_user: str = Depends(require_session),
-    reviews: VideoReviewsService = Depends(get_video_reviews_service),
-) -> list[dict[str, Any]]:
-    """Get review summaries for a list of video ids."""
-    return await reviews.summaries(video_ids=list(video_ids or []))
 
 
 @router.get("/{video_id}", response_model=VideoPayload)

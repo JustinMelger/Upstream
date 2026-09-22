@@ -184,67 +184,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/courses": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Courses
-         * @description List courses with optional filters.
-         *
-         *     Args:
-         *         q: Search query.
-         *         provider: Provider filter.
-         *         category: Category filter.
-         *         level: Level filter.
-         *         _current_user: Authenticated username.
-         *
-         *     Returns:
-         *         list[dict]: Course list.
-         */
-        get: operations["list_courses_courses_get"];
-        put?: never;
-        /**
-         * Add Course
-         * @description Create a course (any authenticated user).
-         *
-         *     Args:
-         *         payload: Course payload.
-         *         current_user: Authenticated username.
-         *
-         *     Returns:
-         *         dict: Created course.
-         */
-        post: operations["add_course_courses_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/courses/reviews/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Course Review Summaries
-         * @description Return average rating + count for each course id.
-         */
-        get: operations["course_review_summaries_courses_reviews_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/courses/{course_id}": {
         parameters: {
             query?: never;
@@ -290,6 +229,33 @@ export interface paths {
          *         dict: Delete result.
          */
         delete: operations["remove_course_courses__course_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Course
+         * @description Create a course (any authenticated user).
+         *
+         *     Args:
+         *         payload: Course payload.
+         *         current_user: Authenticated username.
+         *
+         *     Returns:
+         *         dict: Created course.
+         */
+        post: operations["add_course_courses_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -346,17 +312,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Paths
-         * @description List all learning paths.
-         *
-         *     Args:
-         *         _current_user: Authenticated username.
-         *
-         *     Returns:
-         *         list[dict]: Path list.
-         */
-        get: operations["list_paths_paths_get"];
+        get?: never;
         put?: never;
         /**
          * Add Path
@@ -370,26 +326,6 @@ export interface paths {
          *         dict: Created path.
          */
         post: operations["add_path_paths_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/paths/reviews/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Path Review Summaries
-         * @description Return average rating + count for each path id.
-         */
-        get: operations["path_review_summaries_paths_reviews_summary_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -472,32 +408,6 @@ export interface paths {
          *         dict: Update result.
          */
         post: operations["set_path_status_paths__path_id__status_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/paths/selected/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Selected Paths
-         * @description List paths selected by the current user.
-         *
-         *     Args:
-         *         current_user: Authenticated username.
-         *
-         *     Returns:
-         *         list[dict]: Selected paths.
-         */
-        get: operations["list_selected_paths_paths_selected_list_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -605,18 +515,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Tracking
-         * @description List tracking entries for a colleague.
-         *
-         *     Args:
-         *         colleague_id: Optional colleague username to query.
-         *         current_user: Authenticated username.
-         *
-         *     Returns:
-         *         list[dict]: Tracking entries.
-         */
-        get: operations["get_tracking_tracking_get"];
+        get?: never;
         put?: never;
         /**
          * Set Tracking
@@ -657,86 +556,6 @@ export interface paths {
          *         dict: Delete result.
          */
         post: operations["delete_tracking_tracking_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tracking/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Stats
-         * @description Return self-only statistics, or aggregate statistics for administrators.
-         *
-         *     Args:
-         *         colleague_id: Optional colleague username to query.
-         *         current_user: Authenticated username.
-         *
-         *     Returns:
-         *         dict: Stats payload.
-         */
-        get: operations["get_stats_tracking_stats_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tracking/stats/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Stats By User
-         * @description Return tracking statistics grouped by user for administrators.
-         *
-         *     Args:
-         *         current_user: Authenticated username.
-         *
-         *     Returns:
-         *         list[dict]: Stats by user.
-         */
-        get: operations["get_stats_by_user_tracking_stats_users_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tracking/recent": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Recent Activity
-         * @description Return recent tracking activity (admin only).
-         *
-         *     Args:
-         *         limit: Max number of records.
-         *         current_user: Authenticated username.
-         *
-         *     Returns:
-         *         list[dict]: Recent activity records.
-         */
-        get: operations["get_recent_activity_tracking_recent_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1026,37 +845,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Articles
-         * @description List articles.
-         */
-        get: operations["list_articles_articles_get"];
+        get?: never;
         put?: never;
         /**
          * Create Article
          * @description Create an article (any authenticated user).
          */
         post: operations["create_article_articles_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/articles/reviews/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Article Review Summaries
-         * @description Get review summaries for a list of article ids.
-         */
-        get: operations["article_review_summaries_articles_reviews_summary_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1135,50 +930,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/videos": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Videos
-         * @description List videos.
-         */
-        get: operations["list_videos_videos_get"];
-        put?: never;
-        /**
-         * Create Video
-         * @description Create a video.
-         */
-        post: operations["create_video_videos_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/videos/reviews/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Video Review Summaries
-         * @description Get review summaries for a list of video ids.
-         */
-        get: operations["video_review_summaries_videos_reviews_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/videos/{video_id}": {
         parameters: {
             query?: never;
@@ -1202,6 +953,26 @@ export interface paths {
          * @description Delete content and its reviews/path references as owner or admin.
          */
         delete: operations["delete_video_videos__video_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Video
+         * @description Create a video.
+         */
+        post: operations["create_video_videos_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1403,18 +1174,6 @@ export interface components {
             created_by: string;
             /** Created At */
             created_at: string;
-        };
-        /**
-         * ArticleReviewSummaryItem
-         * @description Review summary for an article.
-         */
-        ArticleReviewSummaryItem: {
-            /** Article Id */
-            article_id: number;
-            /** Avg Rating */
-            avg_rating: number;
-            /** Review Count */
-            review_count: number;
         };
         /**
          * ArticleUpdateRequest
@@ -1621,18 +1380,6 @@ export interface components {
             created_by: string;
             /** Created At */
             created_at: string;
-        };
-        /**
-         * CourseReviewSummaryItem
-         * @description Review summary for a course.
-         */
-        CourseReviewSummaryItem: {
-            /** Course Id */
-            course_id: number;
-            /** Avg Rating */
-            avg_rating: number;
-            /** Review Count */
-            review_count: number;
         };
         /**
          * CourseUpdateRequest
@@ -2049,27 +1796,6 @@ export interface components {
             preview_image_url: string;
         };
         /**
-         * PathListItem
-         * @description Path list item payload.
-         */
-        PathListItem: {
-            /** Recommendation Note */
-            recommendation_note?: string | null;
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Created By */
-            created_by: string | null;
-            /**
-             * Course Count
-             * @default 0
-             */
-            course_count: number;
-        };
-        /**
          * PathProgress
          * @description Selection state is independent of course completion.
          */
@@ -2112,18 +1838,6 @@ export interface components {
             created_by: string;
             /** Created At */
             created_at: string;
-        };
-        /**
-         * PathReviewSummaryItem
-         * @description Review summary for a path.
-         */
-        PathReviewSummaryItem: {
-            /** Path Id */
-            path_id: number;
-            /** Avg Rating */
-            avg_rating: number;
-            /** Review Count */
-            review_count: number;
         };
         /**
          * PathStatusRequest
@@ -2194,20 +1908,6 @@ export interface components {
             created_at: string;
         };
         /**
-         * SelectedPathItem
-         * @description Selected path item payload.
-         */
-        SelectedPathItem: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Status */
-            status: string;
-        };
-        /**
          * TrackingDeleteRequest
          * @description Tracking delete request payload.
          */
@@ -2236,20 +1936,6 @@ export interface components {
             status: string;
             /** Updated At */
             updated_at: string;
-        };
-        /**
-         * TrackingStatsByUserItem
-         * @description Tracking stats-by-user item payload.
-         */
-        TrackingStatsByUserItem: {
-            /** Colleague Id */
-            colleague_id: string;
-            /** Interested */
-            interested: number;
-            /** In Progress */
-            in_progress: number;
-            /** Completed */
-            completed: number;
         };
         /**
          * TrackingUpsertRequest
@@ -2456,18 +2142,6 @@ export interface components {
             created_by: string;
             /** Created At */
             created_at: string;
-        };
-        /**
-         * VideoReviewSummaryItem
-         * @description Review summary for a video.
-         */
-        VideoReviewSummaryItem: {
-            /** Video Id */
-            video_id: number;
-            /** Avg Rating */
-            avg_rating: number;
-            /** Review Count */
-            review_count: number;
         };
         /**
          * VideoUpdateRequest
@@ -2811,112 +2485,6 @@ export interface operations {
             };
         };
     };
-    list_courses_courses_get: {
-        parameters: {
-            query?: {
-                /** @description Search query */
-                q?: string | null;
-                provider?: string | null;
-                category?: string | null;
-                level?: string | null;
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CoursePayload"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    add_course_courses_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CourseCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CoursePayload"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    course_review_summaries_courses_reviews_summary_get: {
-        parameters: {
-            query?: {
-                /** @description Course IDs to summarize */
-                course_ids?: number[];
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CourseReviewSummaryItem"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_course_courses__course_id__get: {
         parameters: {
             query?: never;
@@ -3007,6 +2575,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteCourseResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_course_courses_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CourseCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoursePayload"];
                 };
             };
             /** @description Validation Error */
@@ -3124,37 +2727,6 @@ export interface operations {
             };
         };
     };
-    list_paths_paths_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PathListItem"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     add_path_paths_post: {
         parameters: {
             query?: never;
@@ -3177,40 +2749,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PathDetailResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    path_review_summaries_paths_reviews_summary_get: {
-        parameters: {
-            query?: {
-                /** @description Path IDs to summarize */
-                path_ids?: number[];
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PathReviewSummaryItem"][];
                 };
             };
             /** @description Validation Error */
@@ -3314,37 +2852,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PathStatusResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_selected_paths_paths_selected_list_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SelectedPathItem"][];
                 };
             };
             /** @description Validation Error */
@@ -3565,39 +3072,6 @@ export interface operations {
             };
         };
     };
-    get_tracking_tracking_get: {
-        parameters: {
-            query?: {
-                colleague_id?: string | null;
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TrackingRecordPayload"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     set_tracking_tracking_post: {
         parameters: {
             query?: never;
@@ -3655,105 +3129,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrackingDeleteResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_stats_tracking_stats_get: {
-        parameters: {
-            query?: {
-                colleague_id?: string | null;
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: number;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_stats_by_user_tracking_stats_users_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TrackingStatsByUserItem"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_recent_activity_tracking_recent_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TrackingRecordPayload"][];
                 };
             };
             /** @description Validation Error */
@@ -4134,42 +3509,6 @@ export interface operations {
             };
         };
     };
-    list_articles_articles_get: {
-        parameters: {
-            query?: {
-                /** @description Search query */
-                q?: string | null;
-                /** @description Tag filter */
-                tag?: string | null;
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArticlePayload"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_article_articles_post: {
         parameters: {
             query?: never;
@@ -4192,39 +3531,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArticlePayload"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    article_review_summaries_articles_reviews_summary_get: {
-        parameters: {
-            query?: {
-                article_ids?: number[];
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArticleReviewSummaryItem"][];
                 };
             };
             /** @description Validation Error */
@@ -4447,112 +3753,6 @@ export interface operations {
             };
         };
     };
-    list_videos_videos_get: {
-        parameters: {
-            query?: {
-                /** @description Search query */
-                q?: string | null;
-                /** @description Provider filter */
-                provider?: string | null;
-                /** @description Category filter */
-                category?: string | null;
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideoPayload"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_video_videos_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VideoCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideoPayload"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    video_review_summaries_videos_reviews_summary_get: {
-        parameters: {
-            query?: {
-                video_ids?: number[];
-            };
-            header?: {
-                "x-session-token"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideoReviewSummaryItem"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_video_videos__video_id__get: {
         parameters: {
             query?: never;
@@ -4645,6 +3845,41 @@ export interface operations {
                     "application/json": {
                         [key: string]: boolean;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_video_videos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-session-token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoPayload"];
                 };
             };
             /** @description Validation Error */

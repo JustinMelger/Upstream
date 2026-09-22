@@ -1,6 +1,6 @@
-from typing import Any, List
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import (
     get_auth_service,
@@ -18,17 +18,14 @@ from backend.api.schemas.path_reviews import (
     DeletePathReviewResponse,
     PathReviewCreateRequest,
     PathReviewPayload,
-    PathReviewSummaryItem,
 )
 from backend.api.schemas.paths import (
     DeletePathResponse,
     PathCreateRequest,
     PathDetailResponse,
-    PathListItem,
     PathStatusRequest,
     PathStatusResponse,
     PathUpdateRequest,
-    SelectedPathItem,
     SelectPathResponse,
     UnselectPathResponse,
 )
@@ -39,32 +36,6 @@ from backend.services.user_paths_service import UserPathsService
 
 
 router = APIRouter(prefix="/paths", tags=["paths"])
-
-
-@router.get("", response_model=List[PathListItem])
-async def list_paths(
-    _current_user: str = Depends(require_session),
-    paths: PathsService = Depends(get_paths_service),
-) -> list[dict[str, Any]]:
-    """List all learning paths.
-
-    Args:
-        _current_user: Authenticated username.
-
-    Returns:
-        list[dict]: Path list.
-    """
-    return await paths.list_paths()
-
-
-@router.get("/reviews/summary", response_model=list[PathReviewSummaryItem])
-async def path_review_summaries(
-    path_ids: List[int] = Query(default=[], description="Path IDs to summarize"),
-    _current_user: str = Depends(require_session),
-    reviews: PathReviewsService = Depends(get_path_reviews_service),
-) -> list[dict[str, Any]]:
-    """Return average rating + count for each path id."""
-    return await reviews.summaries(path_ids=list(path_ids or []))
 
 
 @router.post("", response_model=PathDetailResponse)
@@ -149,22 +120,6 @@ async def set_path_status(
         raise HTTPException(status_code=404, detail="path_not_selected")
 
     return {"updated": updated}
-
-
-@router.get("/selected/list", response_model=list[SelectedPathItem])
-async def list_selected_paths(
-    current_user: str = Depends(require_session),
-    user_paths: UserPathsService = Depends(get_user_paths_service),
-) -> list[dict[str, Any]]:
-    """List paths selected by the current user.
-
-    Args:
-        current_user: Authenticated username.
-
-    Returns:
-        list[dict]: Selected paths.
-    """
-    return await user_paths.list_user_paths(current_user)
 
 
 @router.get("/{path_id}", response_model=PathDetailResponse)

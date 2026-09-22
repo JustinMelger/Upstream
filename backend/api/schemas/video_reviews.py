@@ -23,14 +23,6 @@ class VideoReviewCreateRequest(APIModel):
     text: StrictStr | None = None
 
 
-class VideoReviewSummaryItem(APIModel):
-    """Review summary for a video."""
-
-    video_id: int
-    avg_rating: float
-    review_count: int
-
-
 class DeleteVideoReviewResponse(APIModel):
     """Video review delete response."""
 

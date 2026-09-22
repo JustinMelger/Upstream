@@ -171,27 +171,3 @@ class PathReviewsService:
         async with session_scope(self._repo.session):
             deleted = await self._repo.delete_review(review_id=int(review_id))
         return bool(deleted)
-
-    @path_reviews_error_handler()
-    async def summaries(self, *, path_ids: list[int]) -> list[dict]:
-        """Return review summaries for the given path ids."""
-        unique_ids: list[int] = []
-        seen: set[int] = set()
-        for pid in list(path_ids or []):
-            try:
-                pid_i = int(pid)
-            except (TypeError, ValueError):
-                continue
-            if pid_i <= 0 or pid_i in seen:
-                continue
-            seen.add(pid_i)
-            unique_ids.append(pid_i)
-
-        async with session_scope(self._repo.session):
-            summary_map = await self._repo.summaries_for_paths(path_ids=unique_ids)
-
-        out: list[dict] = []
-        for pid in unique_ids:
-            avg, count = summary_map.get(pid, (0.0, 0))
-            out.append({"path_id": pid, "avg_rating": float(avg), "review_count": int(count)})
-        return out

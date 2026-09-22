@@ -39,21 +39,6 @@ class ArticlesService:
         self._repo = repo
 
     @articles_error_handler()
-    async def list_articles(self, *, query: str | None, tag: str | None) -> list[dict]:
-        """List articles.
-
-        Args:
-            query: Optional search query.
-            tag: Optional tag substring filter.
-
-        Returns:
-            List of article payloads.
-        """
-        async with session_scope(self._repo.session):
-            rows = await self._repo.list_articles(query=query, tag=tag)
-        return [self._to_payload(r) for r in rows]
-
-    @articles_error_handler()
     async def create_article(self, *, payload: dict, created_by: str) -> dict:
         """Create a new article.
 

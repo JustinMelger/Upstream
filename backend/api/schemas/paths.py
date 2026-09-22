@@ -5,18 +5,6 @@ from pydantic import Field, StrictInt, StrictStr
 from backend.api.schemas.common import APIModel
 
 
-class PathListItem(APIModel):
-    """Path list item payload."""
-
-    recommendation_note: str | None = Field(default=None, max_length=1000)
-
-    id: int
-    name: str
-    description: str
-    created_by: str | None
-    course_count: int = 0
-
-
 class PathDetailResponse(APIModel):
     """Path detail response payload."""
 
@@ -102,12 +90,3 @@ class PathStatusResponse(APIModel):
     """Path status update response payload."""
 
     updated: int
-
-
-class SelectedPathItem(APIModel):
-    """Selected path item payload."""
-
-    id: int
-    name: str
-    description: str
-    status: str

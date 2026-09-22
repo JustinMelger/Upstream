@@ -21,39 +21,6 @@ class VideosRepository(RepositoryDateTimeCodec):
         """Persist an explicitly supplied sharing note."""
         await self.session.execute(update(VideoModel).where(VideoModel.id == content_id).values(recommendation_note=note))
 
-    async def list_videos(self, *, query: str | None, provider: str | None, category: str | None) -> list[VideoRecord]:
-        """List videos with optional filters."""
-        stmt = select(VideoModel).order_by(VideoModel.id.desc())
-        if query:
-            like = f"%{query.lower()}%"
-            stmt = stmt.where(
-                func.lower(VideoModel.title).like(like)
-                | func.lower(func.coalesce(VideoModel.description, "")).like(like)
-                | func.lower(func.coalesce(VideoModel.provider, "")).like(like)
-                | func.lower(func.coalesce(VideoModel.category, "")).like(like)
-                | func.lower(VideoModel.url).like(like)
-            )
-        if provider:
-            stmt = stmt.where(VideoModel.provider == provider)
-        if category:
-            stmt = stmt.where(VideoModel.category == category)
-        result = await self.session.execute(stmt)
-        rows = result.scalars().all()
-        return [
-            VideoRecord(
-                id=int(row.id),
-                title=str(row.title or ""),
-                description=str(row.description or ""),
-                provider=row.provider,
-                category=row.category,
-                url=str(row.url or ""),
-                recommendation_note=row.recommendation_note,
-                created_by=str(row.created_by or ""),
-                created_at=self._as_iso_or_empty(row.created_at),
-            )
-            for row in rows
-        ]
-
     async def get_video_by_id(self, video_id: int) -> VideoRecord | None:
         """Fetch a video by id."""
         result = await self.session.execute(select(VideoModel).where(VideoModel.id == int(video_id)).limit(1))

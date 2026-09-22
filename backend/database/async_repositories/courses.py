@@ -26,69 +26,6 @@ class CoursesRepository(RepositoryDateTimeCodec):
         """Persist an explicitly supplied sharing note."""
         await self.session.execute(update(CourseModel).where(CourseModel.id == content_id).values(recommendation_note=note))
 
-    async def list_courses(
-        self,
-        *,
-        query: str | None,
-        provider: str | None,
-        category: str | None,
-        level: str | None,
-    ) -> list[CourseRecord]:
-        """List courses with optional filters.
-
-        Args:
-            query: Free-text query applied to course fields.
-            provider: Provider filter.
-            category: Category filter.
-            level: Level filter.
-
-        Returns:
-            List of course records.
-        """
-        stmt = select(CourseModel).order_by(CourseModel.title.asc())
-
-        if query:
-            like = f"%{query.lower()}%"
-            stmt = stmt.where(
-                func.lower(CourseModel.title).like(like)
-                | func.lower(func.coalesce(CourseModel.description, "")).like(like)
-                | func.lower(func.coalesce(CourseModel.learning_outcomes, "")).like(like)
-                | func.lower(func.coalesce(CourseModel.prerequisites, "")).like(like)
-                | func.lower(func.coalesce(CourseModel.language, "")).like(like)
-                | func.lower(func.coalesce(CourseModel.provider, "")).like(like)
-                | func.lower(func.coalesce(CourseModel.category, "")).like(like)
-                | func.lower(func.coalesce(CourseModel.level, "")).like(like)
-                | func.lower(func.coalesce(CourseModel.url, "")).like(like)
-            )
-        if provider:
-            stmt = stmt.where(CourseModel.provider == provider)
-        if category:
-            stmt = stmt.where(CourseModel.category == category)
-        if level:
-            stmt = stmt.where(CourseModel.level == level)
-
-        result = await self.session.execute(stmt)
-        rows = result.scalars().all()
-        return [
-            CourseRecord(
-                id=row.id,
-                title=row.title or "",
-                description=row.description or "",
-                learning_outcomes=row.learning_outcomes,
-                prerequisites=row.prerequisites,
-                language=row.language,
-                provider=row.provider,
-                category=row.category,
-                level=row.level,
-                duration_hours=row.duration_hours,
-                url=row.url,
-                created_at=self._as_iso(row.created_at),
-                recommendation_note=row.recommendation_note,
-                created_by=row.created_by,
-            )
-            for row in rows
-        ]
-
     async def get_course_by_id(self, course_id: int) -> CourseRecord | None:
         """Fetch a course by ID.
 

@@ -23,7 +23,7 @@ async def test_create_video_invalid_payload_type_returns_invalid_payload(db_sess
 
 @pytest.mark.unit
 async def test_videos_reads_keep_empty_images_without_http(db_session, monkeypatch):
-    """Creation, lists and details never fetch external resource artwork."""
+    """Creation and detail reads never fetch external resource artwork."""
     import httpx
 
     async def unexpected_http(*args, **kwargs):
@@ -36,7 +36,5 @@ async def test_videos_reads_keep_empty_images_without_http(db_session, monkeypat
         payload={"title": "Resource", "description": "Summary", "url": "https://example.com/resource"}, created_by="alice"
     )
 
-    rows = await service.list_videos(query=None, provider=None, category=None)
     detail = await service.get_video_by_id(video_id=int(created["id"]))
-    assert rows[0]["preview_image_url"] == ""
     assert detail["preview_image_url"] == ""

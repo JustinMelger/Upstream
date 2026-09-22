@@ -1,7 +1,6 @@
 from backend.api.schemas.article_reviews import (
     ArticleReviewCreateRequest,
     ArticleReviewPayload,
-    ArticleReviewSummaryItem,
     DeleteArticleReviewResponse,
 )
 from backend.api.schemas.articles import ArticleCreateRequest, ArticlePayload
@@ -25,35 +24,28 @@ from backend.api.schemas.common import APIModel, ErrorResponse, HealthResponse
 from backend.api.schemas.course_reviews import (
     CourseReviewCreateRequest,
     CourseReviewPayload,
-    CourseReviewSummaryItem,
     DeleteCourseReviewResponse,
 )
 from backend.api.schemas.courses import CourseCreateRequest, CoursePayload, CourseUpdateRequest, DeleteCourseResponse
-from backend.api.schemas.notifications import NotificationActivityItem
 from backend.api.schemas.path_reviews import (
     DeletePathReviewResponse,
     PathReviewCreateRequest,
     PathReviewPayload,
-    PathReviewSummaryItem,
 )
 from backend.api.schemas.paths import (
     DeletePathResponse,
     PathCreateRequest,
     PathDetailResponse,
-    PathListItem,
     PathStatusRequest,
     PathStatusResponse,
     PathUpdateRequest,
-    SelectedPathItem,
     SelectPathResponse,
     UnselectPathResponse,
 )
-from backend.api.schemas.telemetry import TelemetryEventRequest, TelemetryEventResponse
 from backend.api.schemas.tracking import (
     TrackingDeleteRequest,
     TrackingDeleteResponse,
     TrackingRecordPayload,
-    TrackingStatsByUserItem,
     TrackingUpsertRequest,
 )
 from backend.api.schemas.url_preview import UrlPreviewMetadataRequest, UrlPreviewMetadataResponse
@@ -61,7 +53,6 @@ from backend.api.schemas.video_reviews import (
     DeleteVideoReviewResponse,
     VideoReviewCreateRequest,
     VideoReviewPayload,
-    VideoReviewSummaryItem,
 )
 from backend.api.schemas.videos import VideoCreateRequest, VideoPayload
 
@@ -90,11 +81,9 @@ __all__ = [
     "VideoCreateRequest",
     "VideoReviewPayload",
     "VideoReviewCreateRequest",
-    "VideoReviewSummaryItem",
     "DeleteVideoReviewResponse",
     "ArticleReviewPayload",
     "ArticleReviewCreateRequest",
-    "ArticleReviewSummaryItem",
     "DeleteArticleReviewResponse",
     "CoursePayload",
     "CourseCreateRequest",
@@ -102,9 +91,7 @@ __all__ = [
     "DeleteCourseResponse",
     "CourseReviewPayload",
     "CourseReviewCreateRequest",
-    "CourseReviewSummaryItem",
     "DeleteCourseReviewResponse",
-    "PathListItem",
     "PathDetailResponse",
     "PathCreateRequest",
     "PathUpdateRequest",
@@ -113,19 +100,13 @@ __all__ = [
     "UnselectPathResponse",
     "PathReviewPayload",
     "PathReviewCreateRequest",
-    "PathReviewSummaryItem",
     "DeletePathReviewResponse",
     "PathStatusRequest",
     "PathStatusResponse",
-    "SelectedPathItem",
-    "NotificationActivityItem",
     "TrackingUpsertRequest",
     "TrackingDeleteRequest",
     "TrackingRecordPayload",
     "TrackingDeleteResponse",
-    "TrackingStatsByUserItem",
-    "TelemetryEventRequest",
-    "TelemetryEventResponse",
     "UrlPreviewMetadataRequest",
     "UrlPreviewMetadataResponse",
 ]

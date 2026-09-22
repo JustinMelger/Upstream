@@ -58,13 +58,6 @@ class VideosService:
         self._repo = repo
 
     @videos_error_handler()
-    async def list_videos(self, *, query: str | None, provider: str | None, category: str | None) -> list[dict]:
-        """List videos."""
-        async with session_scope(self._repo.session):
-            rows = await self._repo.list_videos(query=query, provider=provider, category=category)
-        return [self._to_payload(row) for row in rows]
-
-    @videos_error_handler()
     async def get_video_by_id(self, *, video_id: int) -> dict | None:
         """Fetch one video payload."""
         async with session_scope(self._repo.session):
