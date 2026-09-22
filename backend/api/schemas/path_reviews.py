@@ -23,14 +23,6 @@ class PathReviewCreateRequest(APIModel):
     text: StrictStr | None = None
 
 
-class PathReviewSummaryItem(APIModel):
-    """Review summary for a path."""
-
-    path_id: int
-    avg_rating: float
-    review_count: int
-
-
 class DeletePathReviewResponse(APIModel):
     """Path review delete response."""
 

@@ -799,253 +799,6 @@
         }
       }
     },
-    "/courses": {
-      "get": {
-        "tags": [
-          "courses"
-        ],
-        "summary": "List Courses",
-        "description": "List courses with optional filters.\n\nArgs:\n    q: Search query.\n    provider: Provider filter.\n    category: Category filter.\n    level: Level filter.\n    _current_user: Authenticated username.\n\nReturns:\n    list[dict]: Course list.",
-        "operationId": "list_courses_courses_get",
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Search query",
-              "title": "Q"
-            },
-            "description": "Search query"
-          },
-          {
-            "name": "provider",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Provider"
-            }
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Category"
-            }
-          },
-          {
-            "name": "level",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Level"
-            }
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CoursePayload"
-                  },
-                  "title": "Response List Courses Courses Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "courses"
-        ],
-        "summary": "Add Course",
-        "description": "Create a course (any authenticated user).\n\nArgs:\n    payload: Course payload.\n    current_user: Authenticated username.\n\nReturns:\n    dict: Created course.",
-        "operationId": "add_course_courses_post",
-        "parameters": [
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CourseCreateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoursePayload"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/courses/reviews/summary": {
-      "get": {
-        "tags": [
-          "courses"
-        ],
-        "summary": "Course Review Summaries",
-        "description": "Return average rating + count for each course id.",
-        "operationId": "course_review_summaries_courses_reviews_summary_get",
-        "parameters": [
-          {
-            "name": "course_ids",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer"
-              },
-              "description": "Course IDs to summarize",
-              "default": [],
-              "title": "Course Ids"
-            },
-            "description": "Course IDs to summarize"
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CourseReviewSummaryItem"
-                  },
-                  "title": "Response Course Review Summaries Courses Reviews Summary Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/courses/{course_id}": {
       "get": {
         "tags": [
@@ -1212,6 +965,66 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteCourseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses": {
+      "post": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Add Course",
+        "description": "Create a course (any authenticated user).\n\nArgs:\n    payload: Course payload.\n    current_user: Authenticated username.\n\nReturns:\n    dict: Created course.",
+        "operationId": "add_course_courses_post",
+        "parameters": [
+          {
+            "name": "x-session-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoursePayload"
                 }
               }
             }
@@ -1428,58 +1241,6 @@
       }
     },
     "/paths": {
-      "get": {
-        "tags": [
-          "paths"
-        ],
-        "summary": "List Paths",
-        "description": "List all learning paths.\n\nArgs:\n    _current_user: Authenticated username.\n\nReturns:\n    list[dict]: Path list.",
-        "operationId": "list_paths_paths_get",
-        "parameters": [
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PathListItem"
-                  },
-                  "title": "Response List Paths Paths Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "paths"
@@ -1522,75 +1283,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PathDetailResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/paths/reviews/summary": {
-      "get": {
-        "tags": [
-          "paths"
-        ],
-        "summary": "Path Review Summaries",
-        "description": "Return average rating + count for each path id.",
-        "operationId": "path_review_summaries_paths_reviews_summary_get",
-        "parameters": [
-          {
-            "name": "path_ids",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer"
-              },
-              "description": "Path IDs to summarize",
-              "default": [],
-              "title": "Path Ids"
-            },
-            "description": "Path IDs to summarize"
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PathReviewSummaryItem"
-                  },
-                  "title": "Response Path Review Summaries Paths Reviews Summary Get"
                 }
               }
             }
@@ -1778,60 +1470,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PathStatusResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/paths/selected/list": {
-      "get": {
-        "tags": [
-          "paths"
-        ],
-        "summary": "List Selected Paths",
-        "description": "List paths selected by the current user.\n\nArgs:\n    current_user: Authenticated username.\n\nReturns:\n    list[dict]: Selected paths.",
-        "operationId": "list_selected_paths_paths_selected_list_get",
-        "parameters": [
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SelectedPathItem"
-                  },
-                  "title": "Response List Selected Paths Paths Selected List Get"
                 }
               }
             }
@@ -2231,74 +1869,6 @@
       }
     },
     "/tracking": {
-      "get": {
-        "tags": [
-          "tracking"
-        ],
-        "summary": "Get Tracking",
-        "description": "List tracking entries for a colleague.\n\nArgs:\n    colleague_id: Optional colleague username to query.\n    current_user: Authenticated username.\n\nReturns:\n    list[dict]: Tracking entries.",
-        "operationId": "get_tracking_tracking_get",
-        "parameters": [
-          {
-            "name": "colleague_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Colleague Id"
-            }
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TrackingRecordPayload"
-                  },
-                  "title": "Response Get Tracking Tracking Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "tracking"
@@ -2401,194 +1971,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TrackingDeleteResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/tracking/stats": {
-      "get": {
-        "tags": [
-          "tracking"
-        ],
-        "summary": "Get Stats",
-        "description": "Return self-only statistics, or aggregate statistics for administrators.\n\nArgs:\n    colleague_id: Optional colleague username to query.\n    current_user: Authenticated username.\n\nReturns:\n    dict: Stats payload.",
-        "operationId": "get_stats_tracking_stats_get",
-        "parameters": [
-          {
-            "name": "colleague_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Colleague Id"
-            }
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "title": "Response Get Stats Tracking Stats Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/tracking/stats/users": {
-      "get": {
-        "tags": [
-          "tracking"
-        ],
-        "summary": "Get Stats By User",
-        "description": "Return tracking statistics grouped by user for administrators.\n\nArgs:\n    current_user: Authenticated username.\n\nReturns:\n    list[dict]: Stats by user.",
-        "operationId": "get_stats_by_user_tracking_stats_users_get",
-        "parameters": [
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TrackingStatsByUserItem"
-                  },
-                  "title": "Response Get Stats By User Tracking Stats Users Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/tracking/recent": {
-      "get": {
-        "tags": [
-          "tracking"
-        ],
-        "summary": "Get Recent Activity",
-        "description": "Return recent tracking activity (admin only).\n\nArgs:\n    limit: Max number of records.\n    current_user: Authenticated username.\n\nReturns:\n    list[dict]: Recent activity records.",
-        "operationId": "get_recent_activity_tracking_recent_get",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 10,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TrackingRecordPayload"
-                  },
-                  "title": "Response Get Recent Activity Tracking Recent Get"
                 }
               }
             }
@@ -3219,94 +2601,6 @@
       }
     },
     "/articles": {
-      "get": {
-        "tags": [
-          "articles"
-        ],
-        "summary": "List Articles",
-        "description": "List articles.",
-        "operationId": "list_articles_articles_get",
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Search query",
-              "title": "Q"
-            },
-            "description": "Search query"
-          },
-          {
-            "name": "tag",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Tag filter",
-              "title": "Tag"
-            },
-            "description": "Tag filter"
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ArticlePayload"
-                  },
-                  "title": "Response List Articles Articles Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "articles"
@@ -3349,72 +2643,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ArticlePayload"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/articles/reviews/summary": {
-      "get": {
-        "tags": [
-          "articles"
-        ],
-        "summary": "Article Review Summaries",
-        "description": "Get review summaries for a list of article ids.",
-        "operationId": "article_review_summaries_articles_reviews_summary_get",
-        "parameters": [
-          {
-            "name": "article_ids",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer"
-              },
-              "title": "Article Ids"
-            }
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ArticleReviewSummaryItem"
-                  },
-                  "title": "Response Article Review Summaries Articles Reviews Summary Get"
                 }
               }
             }
@@ -3817,238 +3045,6 @@
         }
       }
     },
-    "/videos": {
-      "get": {
-        "tags": [
-          "videos"
-        ],
-        "summary": "List Videos",
-        "description": "List videos.",
-        "operationId": "list_videos_videos_get",
-        "parameters": [
-          {
-            "name": "q",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Search query",
-              "title": "Q"
-            },
-            "description": "Search query"
-          },
-          {
-            "name": "provider",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Provider filter",
-              "title": "Provider"
-            },
-            "description": "Provider filter"
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Category filter",
-              "title": "Category"
-            },
-            "description": "Category filter"
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/VideoPayload"
-                  },
-                  "title": "Response List Videos Videos Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "videos"
-        ],
-        "summary": "Create Video",
-        "description": "Create a video.",
-        "operationId": "create_video_videos_post",
-        "parameters": [
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VideoCreateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VideoPayload"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/videos/reviews/summary": {
-      "get": {
-        "tags": [
-          "videos"
-        ],
-        "summary": "Video Review Summaries",
-        "description": "Get review summaries for a list of video ids.",
-        "operationId": "video_review_summaries_videos_reviews_summary_get",
-        "parameters": [
-          {
-            "name": "video_ids",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer"
-              },
-              "title": "Video Ids"
-            }
-          },
-          {
-            "name": "x-session-token",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/VideoReviewSummaryItem"
-                  },
-                  "title": "Response Video Review Summaries Videos Reviews Summary Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/videos/{video_id}": {
       "get": {
         "tags": [
@@ -4219,6 +3215,66 @@
                     "type": "boolean"
                   },
                   "title": "Response Delete Video Videos  Video Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/videos": {
+      "post": {
+        "tags": [
+          "videos"
+        ],
+        "summary": "Create Video",
+        "description": "Create a video.",
+        "operationId": "create_video_videos_post",
+        "parameters": [
+          {
+            "name": "x-session-token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoPayload"
                 }
               }
             }
@@ -4810,30 +3866,6 @@
         ],
         "title": "ArticleReviewPayload",
         "description": "Article review payload."
-      },
-      "ArticleReviewSummaryItem": {
-        "properties": {
-          "article_id": {
-            "type": "integer",
-            "title": "Article Id"
-          },
-          "avg_rating": {
-            "type": "number",
-            "title": "Avg Rating"
-          },
-          "review_count": {
-            "type": "integer",
-            "title": "Review Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "article_id",
-          "avg_rating",
-          "review_count"
-        ],
-        "title": "ArticleReviewSummaryItem",
-        "description": "Review summary for an article."
       },
       "ArticleUpdateRequest": {
         "properties": {
@@ -5432,30 +4464,6 @@
         ],
         "title": "CourseReviewPayload",
         "description": "Course review payload."
-      },
-      "CourseReviewSummaryItem": {
-        "properties": {
-          "course_id": {
-            "type": "integer",
-            "title": "Course Id"
-          },
-          "avg_rating": {
-            "type": "number",
-            "title": "Avg Rating"
-          },
-          "review_count": {
-            "type": "integer",
-            "title": "Review Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "course_id",
-          "avg_rating",
-          "review_count"
-        ],
-        "title": "CourseReviewSummaryItem",
-        "description": "Review summary for a course."
       },
       "CourseUpdateRequest": {
         "properties": {
@@ -6473,59 +5481,6 @@
         "title": "PathLearningItem",
         "description": "Typed learning-item payload embedded within a path."
       },
-      "PathListItem": {
-        "properties": {
-          "recommendation_note": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Recommendation Note"
-          },
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "created_by": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created By"
-          },
-          "course_count": {
-            "type": "integer",
-            "title": "Course Count",
-            "default": 0
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "created_by"
-        ],
-        "title": "PathListItem",
-        "description": "Path list item payload."
-      },
       "PathProgress": {
         "properties": {
           "selected": {
@@ -6638,30 +5593,6 @@
         ],
         "title": "PathReviewPayload",
         "description": "Path review payload."
-      },
-      "PathReviewSummaryItem": {
-        "properties": {
-          "path_id": {
-            "type": "integer",
-            "title": "Path Id"
-          },
-          "avg_rating": {
-            "type": "number",
-            "title": "Avg Rating"
-          },
-          "review_count": {
-            "type": "integer",
-            "title": "Review Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "path_id",
-          "avg_rating",
-          "review_count"
-        ],
-        "title": "PathReviewSummaryItem",
-        "description": "Review summary for a path."
       },
       "PathStatusRequest": {
         "properties": {
@@ -6814,35 +5745,6 @@
         "title": "SelectPathResponse",
         "description": "Path select response payload."
       },
-      "SelectedPathItem": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "status"
-        ],
-        "title": "SelectedPathItem",
-        "description": "Selected path item payload."
-      },
       "TrackingDeleteRequest": {
         "properties": {
           "course_id": {
@@ -6901,35 +5803,6 @@
         ],
         "title": "TrackingRecordPayload",
         "description": "Tracking record response payload."
-      },
-      "TrackingStatsByUserItem": {
-        "properties": {
-          "colleague_id": {
-            "type": "string",
-            "title": "Colleague Id"
-          },
-          "interested": {
-            "type": "integer",
-            "title": "Interested"
-          },
-          "in_progress": {
-            "type": "integer",
-            "title": "In Progress"
-          },
-          "completed": {
-            "type": "integer",
-            "title": "Completed"
-          }
-        },
-        "type": "object",
-        "required": [
-          "colleague_id",
-          "interested",
-          "in_progress",
-          "completed"
-        ],
-        "title": "TrackingStatsByUserItem",
-        "description": "Tracking stats-by-user item payload."
       },
       "TrackingUpsertRequest": {
         "properties": {
@@ -7379,30 +6252,6 @@
         ],
         "title": "VideoReviewPayload",
         "description": "Video review payload."
-      },
-      "VideoReviewSummaryItem": {
-        "properties": {
-          "video_id": {
-            "type": "integer",
-            "title": "Video Id"
-          },
-          "avg_rating": {
-            "type": "number",
-            "title": "Avg Rating"
-          },
-          "review_count": {
-            "type": "integer",
-            "title": "Review Count"
-          }
-        },
-        "type": "object",
-        "required": [
-          "video_id",
-          "avg_rating",
-          "review_count"
-        ],
-        "title": "VideoReviewSummaryItem",
-        "description": "Review summary for a video."
       },
       "VideoUpdateRequest": {
         "properties": {

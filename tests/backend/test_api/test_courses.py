@@ -19,19 +19,20 @@ async def _create_user(app_client, token, username, role="user"):
 
 
 @pytest.mark.integration
-async def test_courses_requires_auth(app_client):
-    """Course listing requires authentication."""
-    response = await app_client.get("/courses")
+async def test_catalog_requires_auth(app_client):
+    """Catalog discovery requires authentication."""
+    response = await app_client.get("/catalog")
     assert response.status_code == 401
 
 
 @pytest.mark.integration
-async def test_list_courses_empty(app_client):
-    """Listing courses returns a list payload for authenticated users."""
+async def test_catalog_is_empty_before_content_is_created(app_client):
+    """The bounded catalog returns an empty page for a new installation."""
     token = await _login_admin(app_client)
-    response = await app_client.get("/courses", headers={"X-Session-Token": token})
+    response = await app_client.get("/catalog", headers={"X-Session-Token": token})
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert response.json()["items"] == []
+    assert response.json()["total"] == 0
 
 
 @pytest.mark.integration

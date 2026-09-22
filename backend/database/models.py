@@ -50,7 +50,6 @@ class PathRecord:
     name: str
     description: str | None
     created_by: str | None
-    course_count: int = 0
 
     recommendation_note: str | None = None
 
@@ -70,26 +69,6 @@ class PathLearningItemRecord:
     url: str | None
     preview_image_url: str | None
     position: int | None
-
-
-@dataclass(frozen=True)
-class SelectedPathRecord:
-    """A learning path selected by a user (includes status)."""
-
-    id: int
-    name: str
-    description: str | None
-    status: str | None
-
-
-@dataclass(frozen=True)
-class TrackingRecord:
-    """Course tracking row representation."""
-
-    colleague_id: str
-    course_id: int
-    status: str
-    updated_at: str
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,6 @@
-from typing import Any, List, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 from backend.api.deps import get_article_reviews_service, get_articles_service, get_auth_service, require_session
 from backend.api.policies import require_existing_owner_or_admin, require_row_exists, require_row_parent_match
@@ -9,7 +9,6 @@ from backend.api.schemas import (
     ArticlePayload,
     ArticleReviewCreateRequest,
     ArticleReviewPayload,
-    ArticleReviewSummaryItem,
     DeleteArticleReviewResponse,
 )
 from backend.api.schemas.articles import ArticleUpdateRequest
@@ -21,17 +20,6 @@ from backend.services.auth_service import AuthService
 router = APIRouter(prefix="/articles", tags=["articles"])
 
 
-@router.get("", response_model=List[ArticlePayload])
-async def list_articles(
-    q: Optional[str] = Query(default=None, description="Search query"),
-    tag: Optional[str] = Query(default=None, description="Tag filter"),
-    _current_user: str = Depends(require_session),
-    articles: ArticlesService = Depends(get_articles_service),
-) -> list[dict[str, Any]]:
-    """List articles."""
-    return await articles.list_articles(query=q, tag=tag)
-
-
 @router.post("", response_model=ArticlePayload)
 async def create_article(
     payload: ArticleCreateRequest,
@@ -40,16 +28,6 @@ async def create_article(
 ) -> dict[str, Any]:
     """Create an article (any authenticated user)."""
     return await articles.create_article(payload=payload.model_dump(exclude_unset=True), created_by=current_user)
-
-
-@router.get("/reviews/summary", response_model=list[ArticleReviewSummaryItem])
-async def article_review_summaries(
-    article_ids: list[int] = Query(default_factory=list),
-    _current_user: str = Depends(require_session),
-    reviews: ArticleReviewsService = Depends(get_article_reviews_service),
-) -> list[dict[str, Any]]:
-    """Get review summaries for a list of article ids."""
-    return await reviews.summaries(article_ids=list(article_ids or []))
 
 
 @router.get("/{article_id}", response_model=ArticlePayload)

@@ -26,10 +26,6 @@ app.include_router(auth.router)
 app.include_router(articles.router)
 app.include_router(videos.router)
 app.include_router(url_preview.router)
-if settings.feature_telemetry:
-    from backend.api import telemetry
-
-    app.include_router(telemetry.router)
 
 
 @app.exception_handler(HTTPException)

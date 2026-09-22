@@ -42,17 +42,6 @@ class PathsService:
         self._repo = repo
 
     @paths_error_handler()
-    async def list_paths(self) -> list[dict]:
-        """List all learning paths.
-
-        Returns:
-            Path list payloads.
-        """
-        async with session_scope(self._repo.session):
-            rows = await self._repo.list_paths()
-        return [self._path_payload(path) for path in rows]
-
-    @paths_error_handler()
     async def get_path(self, path_id: int) -> dict | None:
         """Fetch a path and its learning items by ID.
 
@@ -159,18 +148,6 @@ class PathsService:
         """
         async with session_scope(self._repo.session):
             return (await self._repo.delete_path_with_items(path_id)) > 0
-
-    @staticmethod
-    def _path_payload(path: PathRecord) -> dict:
-        """Convert a path record into an API payload."""
-        return {
-            "id": path.id,
-            "name": path.name,
-            "description": path.description or "",
-            "created_by": path.created_by,
-            "recommendation_note": path.recommendation_note,
-            "course_count": int(path.course_count or 0),
-        }
 
     @staticmethod
     def _item_payload(item: PathLearningItemRecord) -> dict:

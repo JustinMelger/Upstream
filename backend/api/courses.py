@@ -1,6 +1,6 @@
-from typing import Any, List, Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.deps import (
     get_auth_service,
@@ -18,7 +18,6 @@ from backend.api.schemas import (
     CoursePayload,
     CourseReviewCreateRequest,
     CourseReviewPayload,
-    CourseReviewSummaryItem,
     CourseUpdateRequest,
     DeleteCourseResponse,
     DeleteCourseReviewResponse,
@@ -29,40 +28,6 @@ from backend.services.courses_service import CoursesService
 
 
 router = APIRouter(prefix="/courses", tags=["courses"])
-
-
-@router.get("", response_model=List[CoursePayload])
-async def list_courses(
-    q: Optional[str] = Query(default=None, description="Search query"),
-    provider: Optional[str] = None,
-    category: Optional[str] = None,
-    level: Optional[str] = None,
-    _current_user: str = Depends(require_session),
-    courses: CoursesService = Depends(get_courses_service),
-) -> list[dict[str, Any]]:
-    """List courses with optional filters.
-
-    Args:
-        q: Search query.
-        provider: Provider filter.
-        category: Category filter.
-        level: Level filter.
-        _current_user: Authenticated username.
-
-    Returns:
-        list[dict]: Course list.
-    """
-    return await courses.list_courses(query=q, provider=provider, category=category, level=level)
-
-
-@router.get("/reviews/summary", response_model=list[CourseReviewSummaryItem])
-async def course_review_summaries(
-    course_ids: List[int] = Query(default=[], description="Course IDs to summarize"),
-    _current_user: str = Depends(require_session),
-    reviews: CourseReviewsService = Depends(get_course_reviews_service),
-) -> list[dict[str, Any]]:
-    """Return average rating + count for each course id."""
-    return await reviews.summaries(course_ids=list(course_ids or []))
 
 
 @router.get("/{course_id}", response_model=CoursePayload)

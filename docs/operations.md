@@ -39,7 +39,9 @@ Backend paths below are exposed under `/api` by Nginx/Vite:
 - `/learning/items`: tracked courses, selected paths with personal course totals, or contributions.
 - `/learning/paths/:id`: personal course-only path progress and selection state.
 - `/activity`: personal review updates or shared-content events.
-- Existing `/courses`, `/articles`, `/videos`, `/paths`, review, tracking, and account endpoints.
+- Content detail, sharing, review, course tracking, and account endpoints remain supported. Header authentication remains available for the rollback window.
+
+The bounded workspace reads above replace the retired unbounded content lists, batch review summaries, selected-path list, and tracking/statistics reads. Content detail and mutation routes remain supported. Retired reads are no longer part of the public API contract.
 
 Paginated reads return `{items, total, page, page_size}`; default page size is 24 and maximum is 100. Articles and videos support owner/admin `PUT` and `DELETE`. Deletion removes reviews and path references without deleting the path. Recommendation notes are plain text, nullable, and limited to 1,000 characters; omitted update fields preserve the note and null clears it.
 
@@ -53,6 +55,8 @@ npm run api:generate --prefix frontend/react
 ```
 
 Commit both `frontend/react/openapi.json` and its generated TypeScript types. CI checks drift.
+
+Rollback uses retained React UI and backend image versions. NiceGUI rollback images are no longer retained. Header authentication and team tables remain available during their separate compatibility window.
 
 ## Tests and quality checks
 
@@ -122,9 +126,9 @@ Retain compatible previous application images and a recoverable database backup 
 
 Header authentication and retained team tables remain protected during the rollback window. The repository does not establish that this window has closed. Do not remove the compatibility transport, drop retained tables or edit historical migrations until retirement is explicitly authorized. Restoring older application images requires a compatible schema; do not pair an image rollback with destructive schema changes. New nullable content fields should survive an image rollback.
 
-## Optional telemetry
+## Optional observability
 
-Backend OpenTelemetry is disabled by default. Enable it only with independently configured OTLP trace and metric endpoints; the repository does not bundle a monitoring stack. Authenticated application telemetry ingestion is separately gated by `FEATURE_TELEMETRY=1`. See [backend architecture](architecture_backend.md#deployment-and-observability).
+Backend OpenTelemetry is disabled by default. Enable it only with independently configured OTLP trace and metric endpoints; the repository does not bundle a monitoring stack or expose a product-event ingestion endpoint. See [backend architecture](architecture_backend.md#deployment-and-observability).
 
 ## Task shortcuts
 

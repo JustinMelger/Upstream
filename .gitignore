@@ -24,3 +24,6 @@ dist/
 test-results/
 playwright-report/
 .DS_Store
+
+# Personal cleanup notes that are useful locally but not part of product documentation.
+docs/backend_cleanup.md

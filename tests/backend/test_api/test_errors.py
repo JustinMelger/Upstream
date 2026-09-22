@@ -57,7 +57,7 @@ async def test_service_error_returns_standard_envelope_for_400_invalid_tracking_
 @pytest.mark.integration
 async def test_http_exception_returns_standard_envelope(app_client):
     """HTTPExceptions return the same standard envelope as domain errors."""
-    unauth = await app_client.get("/courses")
+    unauth = await app_client.get("/courses/1")
     assert unauth.status_code == 401
     body = unauth.json()
     assert body.get("status") == "error"
@@ -110,11 +110,8 @@ async def test_unexpected_exception_is_converted_to_500_service_error_envelope(a
     """Uncaught exceptions in a service return a 500 domain error envelope."""
 
     class FailingCoursesRepo:
-        async def list_courses(self, **_kwargs):
+        async def get_course_by_id(self, course_id: int):
             raise Exception("boom")
-
-        async def get_course_by_id(self, course_id: int):  # pragma: no cover
-            raise AssertionError("not used")
 
         async def create_course(self, **_kwargs):  # pragma: no cover
             raise AssertionError("not used")
@@ -136,7 +133,7 @@ async def test_unexpected_exception_is_converted_to_500_service_error_envelope(a
 
     app.dependency_overrides[get_courses_service] = _override_courses_service
     try:
-        response = await app_client.get("/courses", headers={"X-Session-Token": token})
+        response = await app_client.get("/courses/1", headers={"X-Session-Token": token})
         assert response.status_code == 500
         body = response.json()
         assert body.get("status") == "error"

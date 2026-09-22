@@ -33,12 +33,3 @@ class TrackingDeleteResponse(APIModel):
     """Tracking delete response payload."""
 
     removed: int
-
-
-class TrackingStatsByUserItem(APIModel):
-    """Tracking stats-by-user item payload."""
-
-    colleague_id: str
-    interested: int
-    in_progress: int
-    completed: int

@@ -20,12 +20,12 @@ async def _create_user(app_client, token, username, role="user"):
 
 @pytest.mark.integration
 async def test_articles_requires_auth(app_client):
-    response = await app_client.get("/articles")
+    response = await app_client.get("/catalog?type=article")
     assert response.status_code == 401
 
 
 @pytest.mark.integration
-async def test_article_create_and_list(app_client):
+async def test_article_create_detail_and_catalog(app_client):
     admin_token = await _login_admin(app_client)
     await _create_user(app_client, admin_token, "alice", role="user")
     login = await app_client.post("/auth/login", json={"username": "alice", "password": "test-password-123"})
@@ -42,9 +42,9 @@ async def test_article_create_and_list(app_client):
     assert payload["created_by"] == "alice"
     assert payload["url"].startswith("https://")
 
-    listing = await app_client.get("/articles", headers={"X-Session-Token": token})
+    listing = await app_client.get("/catalog?type=article", headers={"X-Session-Token": token})
     assert listing.status_code == 200
-    rows = listing.json()
+    rows = listing.json()["items"]
     assert any(r.get("id") == payload["id"] for r in rows)
 
     detail = await app_client.get(f"/articles/{int(payload['id'])}", headers={"X-Session-Token": token})
@@ -133,15 +133,11 @@ async def test_article_review_lifecycle_and_moderation(app_client):
     rows = listing.json()
     assert rows and int(rows[0]["id"]) == review_id
 
-    summary = await app_client.get(
-        "/articles/reviews/summary",
-        params={"article_ids": [article_id]},
-        headers={"X-Session-Token": bob_token},
-    )
-    assert summary.status_code == 200
-    srows = summary.json()
-    assert srows and int(srows[0]["article_id"]) == article_id
-    assert int(srows[0]["review_count"]) == 1
+    catalog = await app_client.get("/catalog?type=article", headers={"X-Session-Token": bob_token})
+    assert catalog.status_code == 200
+    catalog_item = next(item for item in catalog.json()["items"] if int(item["id"]) == article_id)
+    assert catalog_item["review_count"] == 1
+    assert catalog_item["rating"] == 5
 
     # Non-owner non-admin cannot delete.
     forbidden = await app_client.delete(

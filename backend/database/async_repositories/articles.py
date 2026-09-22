@@ -25,45 +25,6 @@ class ArticlesRepository(RepositoryDateTimeCodec):
         """Persist an explicitly supplied sharing note."""
         await self.session.execute(update(ArticleModel).where(ArticleModel.id == content_id).values(recommendation_note=note))
 
-    async def list_articles(self, *, query: str | None, tag: str | None) -> list[ArticleRecord]:
-        """List articles with optional filters.
-
-        Args:
-            query: Free-text query applied to title/url/tags.
-            tag: Optional tag substring filter.
-
-        Returns:
-            List of articles ordered by newest first.
-        """
-        stmt = select(ArticleModel).order_by(ArticleModel.id.desc())
-
-        if query:
-            like = f"%{query.lower()}%"
-            stmt = stmt.where(
-                func.lower(ArticleModel.title).like(like)
-                | func.lower(ArticleModel.url).like(like)
-                | func.lower(func.coalesce(ArticleModel.tags, "")).like(like)
-            )
-        if tag:
-            tag_like = f"%{tag.lower()}%"
-            stmt = stmt.where(func.lower(func.coalesce(ArticleModel.tags, "")).like(tag_like))
-
-        result = await self.session.execute(stmt)
-        rows = result.scalars().all()
-        return [
-            ArticleRecord(
-                id=int(r.id),
-                title=str(r.title or ""),
-                url=str(r.url or ""),
-                tags=r.tags,
-                description=r.description,
-                recommendation_note=r.recommendation_note,
-                created_by=str(r.created_by or ""),
-                created_at=self._as_iso_or_empty(r.created_at),
-            )
-            for r in rows
-        ]
-
     async def create_article(
         self,
         *,

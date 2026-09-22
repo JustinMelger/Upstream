@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
@@ -108,27 +108,6 @@ class PathReviewsRepository(RepositoryDateTimeCodec):
         """
         result = await self.session.execute(delete(PathReviewModel).where(PathReviewModel.id == int(review_id)))
         return self._rowcount(result)
-
-    async def summaries_for_paths(self, *, path_ids: list[int]) -> dict[int, tuple[float, int]]:
-        """Return (avg_rating, count) per path id for the given ids."""
-        if not path_ids:
-            return {}
-        result = await self.session.execute(
-            select(
-                PathReviewModel.path_id,
-                func.avg(PathReviewModel.rating),
-                func.count(PathReviewModel.id),
-            )
-            .where(PathReviewModel.path_id.in_([int(i) for i in path_ids]))
-            .group_by(PathReviewModel.path_id)
-        )
-        out: dict[int, tuple[float, int]] = {}
-        for path_id, avg_rating, count in result.all():
-            try:
-                out[int(path_id)] = (float(avg_rating or 0.0), int(count or 0))
-            except (TypeError, ValueError):
-                continue
-        return out
 
     async def get_review_by_id(self, review_id: int) -> PathReviewRecord | None:
         """Fetch a review by id."""

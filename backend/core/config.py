@@ -32,7 +32,6 @@ class Settings(BaseSettings):
                 raise ValueError("Production requires an HTTPS PUBLIC_ORIGIN")
         return self
 
-    feature_telemetry: bool = False
     otel_enabled: bool = False
     otel_service_name: str = "learning-hub-api"
     otel_service_version: str = "0.1.0"

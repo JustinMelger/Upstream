@@ -116,7 +116,6 @@ async def test_catalog_is_globally_paginated_and_filterable(app_client):
     assert [r["title"] for r in second.json()["items"]] == ["Charlie", "Delta"]
     assert (await app_client.get("/catalog?type=course&q=Delta&author=admin", headers=admin)).json()["total"] == 1
     assert (await app_client.get("/catalog?page_size=101", headers=admin)).status_code == 422
-    assert (await app_client.get("/articles/reviews/summary", headers=admin)).status_code == 200
 
 
 @pytest.mark.anyio
@@ -139,7 +138,6 @@ async def test_activity_covers_all_types_without_private_tracking(app_client):
     assert (await app_client.get("/activity?scope=personal", headers=bob)).json()["total"] == 0
     assert (await app_client.get("/learning/summary", headers=alice)).json()["completed"] == 0
     assert (await app_client.get("/learning/summary", headers=bob)).json()["completed"] == 1
-    assert (await app_client.get("/tracking/stats/users", headers=alice)).status_code == 403
 
 
 @pytest.mark.anyio

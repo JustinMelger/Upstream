@@ -7,7 +7,6 @@ from pydantic.dataclasses import dataclass
 
 from backend.core.errors import user_paths_error_handler, UserPathsServiceError
 from backend.database.async_repositories.user_paths import UserPathsRepository
-from backend.database.models import SelectedPathRecord
 from backend.database.tx import session_scope
 
 
@@ -21,13 +20,6 @@ class UserPathMutationPayload:
     colleague_id: StrictStr | None = None
     path_id: StrictInt | None = None
     status: StrictStr | None = None
-
-
-@dataclass
-class UserPathListPayload:
-    """Typed service-layer payload for user path list queries."""
-
-    colleague_id: StrictStr | None = None
 
 
 class UserPathsService:
@@ -65,24 +57,6 @@ class UserPathsService:
                 raise UserPathsServiceError(detail="not_found", status_code=404)
             await self._repo.add_user_path(username, path_id_i, now)
         return {"colleague_id": username, "path_id": str(path_id_i), "created_at": now}
-
-    @user_paths_error_handler()
-    async def list_user_paths(self, colleague_id: str) -> list[dict]:
-        """List paths selected by a colleague.
-
-        Args:
-            colleague_id: Colleague username.
-
-        Returns:
-            Selected path payloads.
-        """
-        data = self._parse_list_payload({"colleague_id": colleague_id})
-        username = str(data.colleague_id or "").strip()
-        if not username:
-            raise UserPathsServiceError(detail="invalid_payload", status_code=400)
-        async with session_scope(self._repo.session):
-            rows = await self._repo.list_user_paths(username)
-        return [self._to_payload(path) for path in rows]
 
     @user_paths_error_handler()
     async def remove_user_path(self, colleague_id: str, path_id: int) -> int:
@@ -141,27 +115,9 @@ class UserPathsService:
             return await self._repo.update_user_path_status(username, path_id_i, status_value, now)
 
     @staticmethod
-    def _to_payload(path: SelectedPathRecord) -> dict:
-        """Convert a selected path record into an API payload."""
-        return {
-            "id": path.id,
-            "name": path.name,
-            "description": path.description or "",
-            "status": path.status or "",
-        }
-
-    @staticmethod
     def _parse_mutation_payload(payload: dict) -> UserPathMutationPayload:
         """Parse and validate a user path mutation payload."""
         try:
             return UserPathMutationPayload(**dict(payload or {}))
-        except ValidationError as exc:
-            raise UserPathsServiceError(detail="invalid_payload", status_code=400) from exc
-
-    @staticmethod
-    def _parse_list_payload(payload: dict) -> UserPathListPayload:
-        """Parse and validate a user path list payload."""
-        try:
-            return UserPathListPayload(**dict(payload or {}))
         except ValidationError as exc:
             raise UserPathsServiceError(detail="invalid_payload", status_code=400) from exc

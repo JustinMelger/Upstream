@@ -51,30 +51,6 @@ class CoursesService:
         self._repo = repo
 
     @courses_error_handler()
-    async def list_courses(
-        self,
-        *,
-        query: str | None = None,
-        provider: str | None = None,
-        category: str | None = None,
-        level: str | None = None,
-    ) -> list[dict]:
-        """List courses with optional filters.
-
-        Args:
-            query: Search query.
-            provider: Provider filter.
-            category: Category filter.
-            level: Level filter.
-
-        Returns:
-            Course list payloads.
-        """
-        async with session_scope(self._repo.session):
-            rows = await self._repo.list_courses(query=query, provider=provider, category=category, level=level)
-        return [self._to_payload(row) for row in rows]
-
-    @courses_error_handler()
     async def get_course_by_id(self, course_id: int) -> dict | None:
         """Fetch a course by ID.
 

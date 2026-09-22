@@ -7,7 +7,6 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.database.async_repositories.datetime_utils import RepositoryDateTimeCodec
-from backend.database.models import SelectedPathRecord
 from backend.database.orm_models import Path as PathModel, UserPath as UserPathModel
 
 
@@ -60,24 +59,6 @@ class UserPathsRepository(RepositoryDateTimeCodec):
         )
         await self.session.execute(stmt)
         return 1
-
-    async def list_user_paths(self, colleague_id: str) -> list[SelectedPathRecord]:
-        """List selected paths for a colleague.
-
-        Args:
-            colleague_id: Colleague username.
-
-        Returns:
-            List of selected path records.
-        """
-        result = await self.session.execute(
-            select(PathModel.id, PathModel.name, PathModel.description, UserPathModel.status)
-            .join(UserPathModel, UserPathModel.path_id == PathModel.id)
-            .where(func.lower(UserPathModel.colleague_id) == func.lower(colleague_id))
-            .order_by(PathModel.name.asc())
-        )
-        rows = result.all()
-        return [SelectedPathRecord(id=row.id, name=row.name, description=row.description, status=row.status) for row in rows]
 
     async def remove_user_path(self, colleague_id: str, path_id: int) -> int:
         """Remove a selected path for a colleague.
