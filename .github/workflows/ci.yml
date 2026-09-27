@@ -82,7 +82,7 @@ jobs:
       - run: npx --prefix frontend/react playwright install --with-deps chromium
       - run: uv run python -m scripts.seed_react_demo
       - run: npm run e2e --prefix frontend/react
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: browser-results
@@ -97,7 +97,7 @@ jobs:
         run: docker build -t learning-visual -f frontend/react/Dockerfile.visual frontend/react
       - name: Compare reviewed baselines
         run: docker run --rm --ipc=host -v "$PWD/frontend/react/test-results:/app/test-results" learning-visual
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: visual-differences
