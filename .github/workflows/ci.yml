@@ -20,7 +20,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+asyncpg://react_test:react_test@127.0.0.1:5432/learning_react_test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -42,7 +42,7 @@ jobs:
       run:
         working-directory: frontend/react
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
@@ -69,7 +69,7 @@ jobs:
       DATABASE_URL: postgresql+asyncpg://react_test:react_test@127.0.0.1:5432/learning_browser_test
       E2E_DATABASE_IS_DISPOSABLE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build pinned browser environment
         run: docker build -t learning-visual -f frontend/react/Dockerfile.visual frontend/react
       - name: Compare reviewed baselines
