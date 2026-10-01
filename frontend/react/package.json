@@ -43,7 +43,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "globals": "^15.14.0",
-    "jsdom": "^26.0.0",
+    "jsdom": "^30.0.0",
     "openapi-typescript": "^7.6.1",
     "prettier": "^3.5.0",
     "typescript": "^5.7.0",
