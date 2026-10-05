@@ -19,6 +19,14 @@
 
 * basic team functionality ([fc13a43](https://github.com/JustinMelger/learning-platform/commit/fc13a4352cf81e5a8752a8a9ad7642a029ac3cf9))
 
+## [1.1.1](https://github.com/JustinMelger/Upstream/compare/v1.1.0...v1.1.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency lucide-react to v1 ([#98](https://github.com/JustinMelger/Upstream/issues/98)) ([420d765](https://github.com/JustinMelger/Upstream/commit/420d765452e6f9e852c190c6bf5542f30afc796a))
+* **deps:** update dependency react-router to v8 ([#99](https://github.com/JustinMelger/Upstream/issues/99)) ([4b59ce4](https://github.com/JustinMelger/Upstream/commit/4b59ce48dfc988baf806b654fd9f42192f2b6f6a))
+
 ## [1.1.0](https://github.com/JustinMelger/Upstream/compare/v1.0.1...v1.1.0) (2026-09-21)
 
 
