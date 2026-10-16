@@ -1,4 +1,4 @@
-FROM python:3.13-slim-bookworm AS compile-image
+FROM python:3.14-slim-bookworm AS compile-image
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ ENV PATH="/.venv/bin:$PATH"
 COPY pyproject.toml uv.lock ./
 RUN uv sync --active --no-install-project --frozen --no-dev
 
-FROM python:3.13-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 
 COPY --from=compile-image /.venv /.venv
 ENV VIRTUAL_ENV=/.venv
