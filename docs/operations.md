@@ -10,6 +10,8 @@ The API and migration containers run as UID/GID `10001:10001`. The UI runs as th
 
 Both Dockerfiles use the repository root as their build context. To build the API image directly, run `docker build -f backend/Dockerfile -t upstream-api:local .` from the repository root. Compose and CI use the same Dockerfile.
 
+The API build and runtime stages both use Python 3.14. The virtual environment must reference the system interpreter available in both stages; a uv-managed interpreter installed only in the build stage leaves broken executable links in the runtime image. The image build checks that Alembic and Uvicorn run as the application user.
+
 ## Published images
 
 Releases publish `ghcr.io/<owner>/upstream-api` and `ghcr.io/<owner>/upstream-ui`. Stable releases provide exact version, minor, major and `latest` tags; release candidates provide their release tag and `rc`. Prefer the same exact version for both images in a deployment. Release tags continue to use `v…`; package renaming does not reset version history.

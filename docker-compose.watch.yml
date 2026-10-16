@@ -1,4 +1,4 @@
-# Use with: docker compose -f docker-compose.yml -f docker-compose.watch.yml up --watch
+# Use with: docker compose -f docker-compose.yml -f docker-compose.watch.yml up --build --watch
 services:
   api:
     develop:

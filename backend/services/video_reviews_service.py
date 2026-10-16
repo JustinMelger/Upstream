@@ -55,7 +55,7 @@ class VideoReviewsService:
             raise VideoReviewsServiceError(detail="invalid_rating", status_code=400)
         try:
             rating_i = int(value)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             raise VideoReviewsServiceError(detail="invalid_rating", status_code=400)
         if rating_i < 1 or rating_i > 5:
             raise VideoReviewsServiceError(detail="invalid_rating", status_code=400)
