@@ -62,6 +62,8 @@ Rollback uses retained React UI and backend image versions. NiceGUI rollback ima
 
 ## Tests and quality checks
 
+Renovate dependency updates and lockfile maintenance are scheduled for Mondays from 00:00 to 07:00 in `Europe/Amsterdam`. Existing branches are also updated only within that window. The limits remain three open Renovate PRs and one new PR per hour, with a seven-day minimum release age.
+
 Dependency audits run in the separate `dependency-audit` workflow daily at 06:23 UTC (08:23 Amsterdam summer time, 07:23 winter time), with a manual Actions trigger. Scheduled runs use the default branch, so the schedule takes effect after merge. Backend and frontend audits run independently; frontend findings at moderate severity or higher fail its job. Pull-request and main-push CI no longer include the dedicated audit steps. Local `just audit` and `just test` retain their audit checks.
 
 **Use a disposable PostgreSQL database. Backend fixtures truncate its tables. Never point tests at your working application database.**
