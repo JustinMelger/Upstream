@@ -2,6 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "timezone": "Europe/Amsterdam",
+  "schedule": ["* 0-6 * * 1"],
+  "updateNotScheduled": false,
   "minimumReleaseAge": "7 days",
   "prConcurrentLimit": 3,
   "prHourlyLimit": 1,
@@ -9,7 +11,8 @@
   "separateMajorMinor": true,
   "separateMinorPatch": false,
   "lockFileMaintenance": {
-    "enabled": true
+    "enabled": true,
+    "schedule": ["* 0-6 * * 1"]
   },
   "packageRules": [
     {

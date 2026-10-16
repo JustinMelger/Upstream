@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
-RUN uv venv /.venv --python 3.13
+RUN uv venv /.venv --python /usr/local/bin/python3.14
 ENV VIRTUAL_ENV=/.venv
 ENV PATH="/.venv/bin:$PATH"
 
@@ -28,5 +28,6 @@ COPY --chown=app:app alembic ./alembic
 COPY --chown=app:app alembic.ini ./alembic.ini
 
 USER 10001:10001
+RUN alembic --version && uvicorn --version
 EXPOSE 8000
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

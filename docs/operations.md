@@ -10,6 +10,8 @@ The API and migration containers run as UID/GID `10001:10001`. The UI runs as th
 
 Both Dockerfiles use the repository root as their build context. To build the API image directly, run `docker build -f backend/Dockerfile -t upstream-api:local .` from the repository root. Compose and CI use the same Dockerfile.
 
+The API build and runtime stages both use Python 3.14. The virtual environment must reference the system interpreter available in both stages; a uv-managed interpreter installed only in the build stage leaves broken executable links in the runtime image. The image build checks that Alembic and Uvicorn run as the application user.
+
 ## Published images
 
 Releases publish `ghcr.io/<owner>/upstream-api` and `ghcr.io/<owner>/upstream-ui`. Stable releases provide exact version, minor, major and `latest` tags; release candidates provide their release tag and `rc`. Prefer the same exact version for both images in a deployment. Release tags continue to use `v…`; package renaming does not reset version history.
@@ -59,6 +61,8 @@ Commit both `frontend/react/openapi.json` and its generated TypeScript types. CI
 Rollback uses retained React UI and backend image versions. NiceGUI rollback images are no longer retained. Header authentication and team tables remain available during their separate compatibility window.
 
 ## Tests and quality checks
+
+Renovate dependency updates and lockfile maintenance are scheduled for Mondays from 00:00 to 07:00 in `Europe/Amsterdam`. Existing branches are also updated only within that window. The limits remain three open Renovate PRs and one new PR per hour, with a seven-day minimum release age.
 
 Dependency audits run in the separate `dependency-audit` workflow daily at 06:23 UTC (08:23 Amsterdam summer time, 07:23 winter time), with a manual Actions trigger. Scheduled runs use the default branch, so the schedule takes effect after merge. Backend and frontend audits run independently; frontend findings at moderate severity or higher fail its job. Pull-request and main-push CI no longer include the dedicated audit steps. Local `just audit` and `just test` retain their audit checks.
 

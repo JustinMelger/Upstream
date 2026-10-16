@@ -74,7 +74,7 @@ build-ui:
     npm --prefix frontend/react run build
 
 watch:
-    docker compose -f docker-compose.yml -f docker-compose.watch.yml up --watch
+    docker compose -f docker-compose.yml -f docker-compose.watch.yml up --build --watch
 
 db-up:
     docker compose up -d postgres

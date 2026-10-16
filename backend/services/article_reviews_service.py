@@ -64,7 +64,7 @@ class ArticleReviewsService:
             raise ArticleReviewsServiceError(detail="invalid_rating", status_code=400)
         try:
             rating_i = int(value)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             raise ArticleReviewsServiceError(detail="invalid_rating", status_code=400)
         if rating_i < 1 or rating_i > 5:
             raise ArticleReviewsServiceError(detail="invalid_rating", status_code=400)
