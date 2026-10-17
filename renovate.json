@@ -43,6 +43,17 @@
       "description": "Major dependency and base-image changes need focused review.",
       "matchUpdateTypes": ["major"],
       "groupName": null
+    },
+    {
+      "description": "Update Playwright packages and the browser image together.",
+      "matchPackageNames": [
+        "@playwright/test",
+        "playwright",
+        "playwright-core",
+        "mcr.microsoft.com/playwright"
+      ],
+      "groupName": "Playwright",
+      "rangeStrategy": "pin"
     }
   ]
 }

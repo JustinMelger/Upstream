@@ -10,13 +10,14 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit",
+    "check:playwright": "node check-playwright-version.js",
     "lint": "eslint .",
     "test": "vitest run",
     "e2e": "playwright test",
     "api:generate": "openapi-typescript openapi.json -o src/lib/api/generated.ts",
     "format": "eslint . --fix && prettier --write src tests *.ts *.json *.js",
     "format:check": "prettier --check src tests *.ts *.json *.js",
-    "test:visual": "playwright test --config playwright.visual.config.ts"
+    "test:visual": "npm run check:playwright && playwright test --config playwright.visual.config.ts"
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans": "^5.1.0",
@@ -30,7 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
-    "@playwright/test": "^1.51.0",
+    "@playwright/test": "1.64.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.1.0",

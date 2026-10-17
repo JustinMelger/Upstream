@@ -49,6 +49,8 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/react/package-lock.json
       - run: npm ci
+      - name: Verify Playwright package and Docker versions
+        run: npm run check:playwright
       - run: npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build
       - run: npm run api:generate && git diff --exit-code -- src/lib/api/generated.ts
   browser:
