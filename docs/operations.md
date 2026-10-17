@@ -98,6 +98,8 @@ The seed command refuses non-test databases and databases with existing users. B
 
 Reviewed baselines live in `frontend/react/tests/visual/baselines`. The pinned Linux Playwright image keeps local and CI rendering consistent. Tests mock only API responses, use local fonts, and cover My learning, Explore, Activity, detail, sharing, artwork fallback, empty, loading, and error states at 390px, 768px, and 1440px.
 
+Keep `@playwright/test` pinned to an exact version matching the tag in `frontend/react/Dockerfile.visual`, and update the image digest with the tag. Renovate groups Playwright npm and Docker updates in one PR. Run `npm run check:playwright --prefix frontend/react` after installing dependencies to verify the manifest, lockfile, installed package and Docker tag agree. CI and visual tests also run this check because grouped updates may become available at different times.
+
 ```sh
 docker build -t learning-visual -f frontend/react/Dockerfile.visual frontend/react
 docker run --rm --ipc=host learning-visual
