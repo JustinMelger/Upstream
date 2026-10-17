@@ -18,7 +18,7 @@ def require_row_parent_match(*, row: dict[str, Any], parent_field: str, parent_i
     """Raise 404 when a child row does not belong to the expected parent id."""
     try:
         row_parent_id = int(row.get(parent_field) or 0)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         row_parent_id = 0
     if row_parent_id != int(parent_id):
         raise HTTPException(status_code=404, detail="not_found")

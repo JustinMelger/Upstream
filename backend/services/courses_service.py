@@ -206,7 +206,7 @@ class CoursesService:
         """Parse a float value or return None."""
         try:
             return float(value) if value not in (None, "") else None
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
 
     @staticmethod

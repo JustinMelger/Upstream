@@ -36,7 +36,7 @@ Courses support progress tracking. Articles and videos support reviews; they do 
 
 Upstream uses a React frontend, a FastAPI backend and PostgreSQL.
 
-Python 3.13, uv, Node.js 22.13 or later, npm, and Docker Compose. `just` is optional.
+Python 3.14, uv, Node.js 22.13 or later, npm, and Docker Compose. `just` is optional.
 
 ## Run with Docker
 
@@ -47,7 +47,7 @@ Python 3.13, uv, Node.js 22.13 or later, npm, and Docker Compose. `just` is opti
 
 The one-shot migration service applies additive migrations before the API starts. Nginx serves React and proxies `/api` on the same origin. Existing PostgreSQL volumes retain their data; changing an environment password does not change an existing database user's password.
 
-For source watching: `docker compose -f docker-compose.yml -f docker-compose.watch.yml up --watch`.
+For source watching: `just watch` or `docker compose -f docker-compose.yml -f docker-compose.watch.yml up --build --watch`. This builds current images before starting the watch session.
 
 ## Local development
 
