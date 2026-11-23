@@ -17,7 +17,7 @@
   "packageRules": [
     {
       "description": "Keep routine Python and uv updates together for one backend review.",
-      "matchManagers": ["uv"],
+      "matchManagers": ["pep621"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Python dependencies (non-major)"
     },
